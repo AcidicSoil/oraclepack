@@ -1,0 +1,799 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": "1",
+        "title": "Initialize Go Module and Core Error Handling",
+        "description": "Set up the Go module structure and implement the foundational error handling package with typed errors and exit codes.",
+        "details": "Initialize the `go.mod` file with `go mod init`. Create the directory structure `internal/errors`. Define custom error types representing different failure domains (e.g., `ErrInvalidPack`, `ErrExecutionFailed`). Implement an `ExitCode(err error) int` function to map these errors to specific integer exit codes for the CLI. Add unit tests to ensure correct mapping.",
+        "testStrategy": "Unit tests verifying that specific error types map to the expected integer exit codes.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Initialize Go Module",
+            "description": "Initialize the Go module for the project using the standard Go toolchain.",
+            "dependencies": [],
+            "details": "Run `go mod init <module-name>` (likely `oraclepack` or similar based on context) in the project root. This creates the `go.mod` file which tracks dependencies. Ensure the Go version is set to a recent stable version (e.g., 1.21+).",
+            "status": "done",
+            "testStrategy": null,
+            "parentId": "undefined",
+            "updatedAt": "2025-12-30T21:37:57.613Z"
+          },
+          {
+            "id": 2,
+            "title": "Create Error Handling Package Structure",
+            "description": "Set up the directory structure for the custom error handling package.",
+            "dependencies": [
+              1
+            ],
+            "details": "Create the directory `internal/errors`. Inside this directory, create the initial Go file, likely `errors.go`, which will house the custom error definitions and logic. This establishes the package `errors` (or `apierrors` to avoid conflict with stdlib).",
+            "status": "done",
+            "testStrategy": null,
+            "parentId": "undefined",
+            "updatedAt": "2025-12-30T21:38:15.207Z"
+          },
+          {
+            "id": 3,
+            "title": "Define Domain-Specific Error Types",
+            "description": "Implement custom error types and sentinel errors representing specific failure domains.",
+            "dependencies": [
+              2
+            ],
+            "details": "In `internal/errors`, define error variables or structs for expected failure modes. Examples include `ErrInvalidPack` (parsing errors), `ErrExecutionFailed` (runtime errors), `ErrConfigInvalid`. Ensure these implement the standard `error` interface.",
+            "status": "done",
+            "testStrategy": null,
+            "parentId": "undefined",
+            "updatedAt": "2025-12-30T21:38:15.209Z"
+          },
+          {
+            "id": 4,
+            "title": "Implement Exit Code Mapping Logic",
+            "description": "Create a function to map specific errors to integer exit codes for CLI termination.",
+            "dependencies": [
+              3
+            ],
+            "details": "Implement a function signature like `func ExitCode(err error) int`. Use `errors.Is` or type switching to determine the error type and return a specific integer code (e.g., 1 for generic, 2 for config, 3 for parsing). Default to 1 for unknown errors and 0 for nil.",
+            "status": "done",
+            "testStrategy": "Unit tests passing various error types into ExitCode and asserting the returned integer matches the specification.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-30T21:38:15.210Z"
+          },
+          {
+            "id": 5,
+            "title": "Add Unit Tests for Error Handling",
+            "description": "Write comprehensive unit tests to verify the error types and exit code mapping.",
+            "dependencies": [
+              4
+            ],
+            "details": "Create `internal/errors/errors_test.go`. Test that wrapped errors are correctly identified by the `ExitCode` function using `fmt.Errorf(\"%w\", err)`. Verify that the correct exit codes are returned for `ErrInvalidPack`, `ErrExecutionFailed`, etc.",
+            "status": "done",
+            "testStrategy": "Run `go test ./internal/errors` and ensure 100% pass rate.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-30T21:38:31.645Z"
+          }
+        ],
+        "updatedAt": "2025-12-30T21:38:31.645Z"
+      },
+      {
+        "id": "2",
+        "title": "Implement Pack Parsing and Validation",
+        "description": "Develop the Markdown parser to extract bash blocks, parse steps/prelude, and validate structure.",
+        "details": "Implement `internal/pack`. Use a library like `github.com/yuin/goldmark` or standard regex to locate the first bash fence. Parse the content to separate the 'prelude' (before first `# NN)`) from 'steps'. Create structs `Pack`, `Step`, and `Prelude`. Implement `Validate(p Pack)` to enforce rules (1+ steps, 2-digit numbering, no duplicates). Implement `DeriveMetadata` to extract `out_dir` and `--write-output` using regex. Handle edge cases like missing fences.",
+        "testStrategy": "Table-driven unit tests with various Markdown inputs (valid, missing fence, malformed headers, duplicate steps) to verify parsing accuracy and error reporting.",
+        "priority": "high",
+        "dependencies": [
+          "1"
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Define Pack, Step, and Prelude Structures",
+            "description": "Create the core data structures in `internal/pack` to represent the parsed Markdown content.",
+            "dependencies": [],
+            "details": "Create `internal/pack/types.go`. Define structs `Pack` (containing Prelude, Steps, Source path), `Step` (ID, Number, Code, OriginalLine), and `Prelude` (Code, Metadata). Include fields for derived metadata like `OutDir` and `WriteOutput`.",
+            "status": "done",
+            "testStrategy": null,
+            "parentId": "undefined",
+            "updatedAt": "2025-12-30T21:39:47.853Z"
+          },
+          {
+            "id": 2,
+            "title": "Implement Markdown Parsing Logic",
+            "description": "Develop the parser to read a Markdown file and extract the first bash code block.",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement `Parse(content []byte) (*Pack, error)` in `internal/pack/parser.go`. Use a library like `goldmark` or regex to identify the first ````bash` fence. Extract the content within the fence for further processing. Handle errors for missing fences.",
+            "status": "done",
+            "testStrategy": "Unit tests with sample Markdown files containing valid and invalid bash blocks.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-30T21:39:47.855Z"
+          },
+          {
+            "id": 3,
+            "title": "Implement Step and Prelude Separation",
+            "description": "Logic to split the extracted bash block into a prelude and individual numbered steps.",
+            "dependencies": [
+              2
+            ],
+            "details": "In `internal/pack/parser.go`, implement logic to iterate through lines of the extracted bash block. Identify steps using the `# NN)` pattern. Everything before the first step is `Prelude`. Populate the `Step` slice in the `Pack` struct.",
+            "status": "done",
+            "testStrategy": "Unit tests with various internal structures: prelude only, steps only, mixed, and malformed step headers.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-30T21:39:47.857Z"
+          },
+          {
+            "id": 4,
+            "title": "Implement Metadata Extraction and Derivation",
+            "description": "Extract specific configuration values like output directory from the parsed content.",
+            "dependencies": [
+              3
+            ],
+            "details": "Implement `DeriveMetadata` method on the `Pack` or `Prelude` struct. Use regex to scan the prelude or specific comments for `out_dir` assignments and `--write-output` flags. Populate the corresponding fields in the `Pack` struct.",
+            "status": "done",
+            "testStrategy": "Unit tests verifying that metadata variables are correctly extracted from shell assignment syntax.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-30T21:39:47.860Z"
+          },
+          {
+            "id": 5,
+            "title": "Implement Pack Validation Rules",
+            "description": "Enforce structural rules on the parsed Pack object to ensure integrity.",
+            "dependencies": [
+              3
+            ],
+            "details": "Implement `Validate() error` method for `Pack`. Check requirements: at least one step exists, step numbers are sequential and valid 2-digit format, and no duplicate step numbers. Return specific errors for violations.",
+            "status": "done",
+            "testStrategy": "Table-driven tests covering edge cases: missing steps, non-sequential numbers, duplicate IDs, and invalid numbering formats.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-30T21:39:47.862Z"
+          }
+        ],
+        "updatedAt": "2025-12-30T21:39:47.862Z"
+      },
+      {
+        "id": "3",
+        "title": "Implement State Persistence and Reporting Models",
+        "description": "Create the data models for run state and reporting, including atomic JSON persistence.",
+        "details": "Implement `internal/state` and `internal/report`. Define `RunState` struct with schema version, pack hash, and step statuses. Implement `SaveStateAtomic(path, state)` using a temp-file-rename strategy to prevent corruption. Define `ReportV1` struct for the machine-readable summary. Include JSON tags. Use `encoding/json` for serialization.",
+        "testStrategy": "Unit tests checking serialization/deserialization cycles and atomic write behavior (simulating write failures if possible).",
+        "priority": "medium",
+        "dependencies": [
+          "1"
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Define RunState Structure",
+            "description": "Create the data model for the execution state in `internal/state` package, including schema versioning and step tracking.",
+            "dependencies": [],
+            "details": "Define a `RunState` struct in `internal/state/types.go`. It should include fields for `SchemaVersion` (string or int), `PackHash` (string), `StartTime` (time.Time), and `StepStatuses` (map[string]StepStatus or a slice). Define `StepStatus` struct to hold individual step outcomes (Pending, Running, Success, Failed, Skipped), exit codes, and timestamps. Use proper JSON tags.",
+            "status": "done",
+            "testStrategy": "Unit tests verifying struct initialization and JSON marshaling/unmarshaling.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-30T21:42:14.950Z"
+          },
+          {
+            "id": 2,
+            "title": "Implement Atomic State Persistence",
+            "description": "Develop functionality to save the run state to a file atomically to prevent data corruption.",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement `SaveStateAtomic(path string, state *RunState) error` in `internal/state/persist.go`. Use `encoding/json` to marshal the state. Write to a temporary file first (e.g., using `os.CreateTemp` or appending `.tmp` to the path), ensure the write is flushed (`file.Sync`), and then use `os.Rename` to replace the target file atomically. Handle file permission setup.",
+            "status": "done",
+            "testStrategy": "Unit tests creating a state, saving it, and verifying the file exists. Simulate concurrent writes or interruptions if possible (though difficult in pure unit tests), or verify temp file cleanup.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-30T21:42:14.952Z"
+          },
+          {
+            "id": 3,
+            "title": "Implement State Loading Logic",
+            "description": "Create functionality to load and validate existing run state from disk.",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement `LoadState(path string) (*RunState, error)` in `internal/state/persist.go`. Read the file using `os.ReadFile` or `os.Open`. Decode using `encoding/json`. Validate the `SchemaVersion` to ensure compatibility. If the file doesn't exist, return a specific error or a default empty state depending on the design decision (usually specific error `ErrStateNotFound`).",
+            "status": "done",
+            "testStrategy": "Unit tests loading valid JSON files, corrupted JSON files, and non-existent files.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-30T21:42:14.954Z"
+          },
+          {
+            "id": 4,
+            "title": "Define ReportV1 Data Model",
+            "description": "Create the machine-readable reporting data model in `internal/report`.",
+            "dependencies": [],
+            "details": "Define `ReportV1` struct in `internal/report/types.go`. This should be distinct from `RunState` but potentially overlapping. It is intended for final output. Fields should include `Summary` (total steps, success count, duration), `PackInfo` (name, hash), and `Steps` (a simplified list of executed steps and their results). Ensure strict JSON tagging for external consumption.",
+            "status": "done",
+            "testStrategy": "Unit test checking the JSON structure matches the expected schema output.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-30T21:42:14.956Z"
+          },
+          {
+            "id": 5,
+            "title": "Implement Report Generation Logic",
+            "description": "Implement the logic to generate a ReportV1 object from a RunState.",
+            "dependencies": [
+              1,
+              4
+            ],
+            "details": "Implement a function `GenerateReport(state *state.RunState, packInfo ...interface{}) *ReportV1` in `internal/report/generate.go`. This function maps the internal `RunState` data to the public `ReportV1` format, calculating derived metrics like total duration or success rates if they aren't explicitly stored in RunState.",
+            "status": "done",
+            "testStrategy": "Unit tests passing a populated RunState and asserting the fields in the generated ReportV1 are correct.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-30T21:42:14.958Z"
+          }
+        ],
+        "updatedAt": "2025-12-30T21:42:14.958Z"
+      },
+      {
+        "id": "4",
+        "title": "Implement Shell Execution Engine",
+        "description": "Build the execution runner to run bash scripts, stream output, and manage log files.",
+        "details": "Implement `internal/exec`. Create `Runner` struct with fields for Shell, WorkDir, and Env. Implement `RunPrelude` and `RunStep`. Use `os/exec` to invoke `bash -lc`. Pipe `Cmd.Stdout` and `Cmd.Stderr`. Implement a streaming mechanism (e.g., `io.MultiWriter` to file and a callback function) to capture logs in real-time. Ensure process termination handling.",
+        "testStrategy": "Integration tests executing simple shell scripts (e.g., echo, exit 1) and verifying that output is captured in the log file and the callback receives lines.",
+        "priority": "high",
+        "dependencies": [
+          "2"
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Define Runner Interface and Structs",
+            "description": "Create the basic Runner structure and interface in `internal/exec` to define how the shell execution will be structured.",
+            "dependencies": [],
+            "details": "Create `internal/exec/runner.go`. Define `Runner` struct with fields: `Shell` (defaulting to /bin/bash), `WorkDir` (string), and `Env` (map[string]string or []string). Define `RunnerOptions` for configuration. Create a `NewRunner` factory function. Define the basic method signatures `RunPrelude` and `RunStep` without full implementation yet. Ensure compatibility with the `Pack` and `Step` structs from `internal/pack`.",
+            "status": "done",
+            "testStrategy": "Unit tests ensuring the Runner is initialized with correct default values and options.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-30T21:41:02.561Z"
+          },
+          {
+            "id": 2,
+            "title": "Implement Output Streaming Mechanism",
+            "description": "Develop a helper to capture stdout/stderr from a command, streaming it simultaneously to a writer (file) and a callback function.",
+            "dependencies": [
+              1
+            ],
+            "details": "In `internal/exec/stream.go`, implement a custom `io.Writer` or use `io.MultiWriter` logic. Create a function `StreamOutput(reader io.Reader, writers ...io.Writer) error` or similar. Implement a line-scanning mechanism (using `bufio.Scanner`) that allows passing a callback function `OnLine(line string)` for real-time log processing (needed for the TUI later). Ensure it handles concurrency properly if reading stdout and stderr simultaneously.",
+            "status": "done",
+            "testStrategy": "Unit tests writing to a pipe and asserting that data appears in both the destination buffer and the callback function.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-30T21:41:02.564Z"
+          },
+          {
+            "id": 3,
+            "title": "Implement Basic Command Execution Logic",
+            "description": "Implement the core logic to invoke a shell command using `os/exec` within the Runner context.",
+            "dependencies": [
+              2
+            ],
+            "details": "In `internal/exec/exec.go` (or `runner.go`), implement a private method `execCommand(script string, env []string) error`. This should construct `exec.Command` using `bash -lc` (or configured shell). It must attach the `WorkDir` and merge the process environment with the Runner's `Env`. Wire up the `Stdout` and `Stderr` pipes to the streaming mechanism defined in the previous subtask. Handle process start and wait.",
+            "status": "done",
+            "testStrategy": "Integration test: Run a simple `echo hello` command and verify successful exit code and captured output.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-30T21:41:02.565Z"
+          },
+          {
+            "id": 4,
+            "title": "Implement RunPrelude and RunStep Methods",
+            "description": "Flesh out the public methods to execute specific parts of a Pack.",
+            "dependencies": [
+              3
+            ],
+            "details": "Implement `RunPrelude(p *pack.Prelude, logWriter io.Writer)` and `RunStep(s *pack.Step, logWriter io.Writer)`. These methods should construct the shell script string from the provided model (concatenating commands if necessary, or passing the raw script block). They should invoke the internal command execution logic, passing the appropriate log writers. Ensure `RunStep` handles errors by returning a specific error type that indicates failure.",
+            "status": "done",
+            "testStrategy": "Mock the `pack` structs and verify that `RunStep` executes the script content contained in the step.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-30T21:41:02.567Z"
+          },
+          {
+            "id": 5,
+            "title": "Implement Process Termination and Context Handling",
+            "description": "Add support for context-based cancellation to handle interrupts and timeouts gracefully.",
+            "dependencies": [
+              4
+            ],
+            "details": "Update the Runner methods to accept `context.Context`. Modify the `os/exec` command creation to use `exec.CommandContext`. Ensure that if the context is cancelled, the underlying process is killed (using `cmd.Wait` and potentially process group killing if the shell spawns children). This is crucial for stopping a run gracefully via Ctrl+C.",
+            "status": "done",
+            "testStrategy": "Test starting a long-running command (e.g., `sleep 10`) and cancelling the context immediately, verifying the process terminates quickly.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-30T21:41:02.568Z"
+          }
+        ],
+        "updatedAt": "2025-12-30T21:41:02.568Z"
+      },
+      {
+        "id": "5",
+        "title": "Implement Flag Injection Logic",
+        "description": "Add logic to safely inject user-provided flags into `oracle` command invocations within steps.",
+        "details": "Extend `internal/exec` or `internal/pack` with a transformation function. It should scan step body lines; if a line matches `^\\s*oracle\\s+`, append the extra flags. Ensure it handles whitespace correctly and does not modify non-oracle lines. This must be conservative to avoid breaking scripts.",
+        "testStrategy": "Unit tests with various step bodies, asserting that only 'oracle' lines are modified and others remain untouched.",
+        "priority": "medium",
+        "dependencies": [
+          "4"
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Analyze and Define Regex Strategy for Oracle Command Detection",
+            "description": "Create a robust regular expression strategy to correctly identify `oracle` command invocations within a shell script body.",
+            "dependencies": [],
+            "details": "Analyze various shell command patterns (e.g., `oracle ...`, `  oracle ...`, `path/to/oracle ...`). Define a regex pattern, likely `^\\s*oracle(\\s+|$)`, to safely target lines calling the oracle binary without matching false positives like comments or strings. Document edge cases.",
+            "status": "done",
+            "testStrategy": "Create a list of test strings (positive and negative matches) to verify regex behavior before implementation.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-30T21:43:01.568Z"
+          },
+          {
+            "id": 2,
+            "title": "Implement Script Transformation Function in `internal/exec`",
+            "description": "Develop the core function `InjectFlags(script string, flags []string) string` to process script bodies.",
+            "dependencies": [
+              1
+            ],
+            "details": "In `internal/exec`, add a new file or utility function. The function should accept the raw script content and a list of flags. It must iterate line-by-line, detect lines matching the defined regex, and append the provided flags to the end of the command line, preserving existing whitespace and arguments.",
+            "status": "done",
+            "testStrategy": "Unit test the function with string inputs representing shell scripts, ensuring output strings contain injected flags on correct lines.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-30T21:43:01.570Z"
+          },
+          {
+            "id": 3,
+            "title": "Integrate Flag Injection into Runner Execution Flow",
+            "description": "Modify the `Runner` struct and `RunStep` method to accept and apply extra flags.",
+            "dependencies": [
+              2
+            ],
+            "details": "Update the `Runner` struct in `internal/exec/runner.go` (or equivalent) to hold an `OracleFlags` field (slice of strings). Update the `RunStep` method to call the transformation function on the step's script body before passing it to `os/exec` or writing it to a temporary file.",
+            "status": "done",
+            "testStrategy": "Integration test: Instantiate a Runner with specific flags, run a mock step containing `oracle`, and verify the executed command includes the flags (e.g., via echoed output or log inspection).",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-30T21:43:01.572Z"
+          },
+          {
+            "id": 4,
+            "title": "Add Configuration Support for Oracle Flags",
+            "description": "Ensure the application configuration can pass these flags down to the execution engine.",
+            "dependencies": [
+              3
+            ],
+            "details": "Update the main application config structure (likely in `internal/app` or `internal/config`) to include a field for user-provided flags (e.g., from CLI args). Ensure this configuration is correctly propagated when initializing the `Runner` instance.",
+            "status": "done",
+            "testStrategy": "Verify that a configured list of flags in the App struct results in a populated `OracleFlags` field in the Runner.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-30T21:43:01.577Z"
+          },
+          {
+            "id": 5,
+            "title": "Verify Injection Safety and Side Effects",
+            "description": "Conduct comprehensive testing to ensure non-oracle lines and complex scripts remain unbroken.",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "Write a suite of test cases covering edge cases: multi-line scripts, indentation, other commands starting with 'o', and scripts with no oracle calls. Ensure the transformation is idempotent or harmless if run multiple times (though it should only run once per execution).",
+            "status": "done",
+            "testStrategy": "Run a regression test suite with complex step bodies to ensure the script syntax remains valid and only target lines are modified.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-30T21:43:01.574Z"
+          }
+        ],
+        "updatedAt": "2025-12-30T21:43:01.577Z"
+      },
+      {
+        "id": "6",
+        "title": "Wire Application Core (Plain Mode)",
+        "description": "Connect parser, executor, and state modules to create a functional non-TUI application runner.",
+        "details": "Implement `internal/app`. Create `RunPlain` method. Orchestrate the flow: Load Pack -> Load State (if resume) -> Iterate Steps -> (Prompt/Confirm if interactive) -> Execute -> Update State -> Write Report. Handle `stop-on-fail` logic. This forms the business logic layer independent of the UI.",
+        "testStrategy": "Integration tests running the full flow with a mock executor or simple scripts, verifying state updates and report generation.",
+        "priority": "high",
+        "dependencies": [
+          "3",
+          "5"
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Define Application Context and Config Structures",
+            "description": "Create the core App struct in internal/app containing configuration for execution mode, paths, and dependencies.",
+            "dependencies": [],
+            "details": "Create `internal/app/app.go`. Define a `Config` struct holding flags like `Verbose`, `DryRun`, `StopOnFail`, and `Resume`. Define the `App` struct that aggregates `parser.Pack`, `state.Manager`, and `exec.Runner`. Include a constructor `New(config Config)` that initializes these components.",
+            "status": "done",
+            "testStrategy": "Unit tests ensuring configuration options are correctly applied to the App struct.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-30T21:44:25.768Z"
+          },
+          {
+            "id": 2,
+            "title": "Implement Workflow Orchestration Logic",
+            "description": "Develop the RunPlain method to iterate through pack steps and manage the execution flow.",
+            "dependencies": [
+              1
+            ],
+            "details": "In `internal/app/run.go`, implement `RunPlain() error`. This method should load the pack using `internal/parser`, initialize or load the state using `internal/state`, and loop through `Pack.Steps`. Inside the loop, check if the step is already completed (if resuming) before proceeding.",
+            "status": "done",
+            "testStrategy": "Mock dependencies (Parser, State) to test flow logic: skipping completed steps on resume, and stopping on error.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-30T21:44:25.770Z"
+          },
+          {
+            "id": 3,
+            "title": "Integrate Step Execution and Logging",
+            "description": "Connect the orchestration loop to the executor engine to actually run step commands.",
+            "dependencies": [
+              2
+            ],
+            "details": "Within the `RunPlain` loop, invoke `exec.Runner.RunStep`. Configure the runner to stream output to stdout (for plain mode) and write logs to the file defined in the state/config. Handle `exec` errors by wrapping them in domain specific errors defined in `internal/errors`.",
+            "status": "done",
+            "testStrategy": "Integration test with a mock script to verify that the executor is called and logs are directed to the correct writer.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-30T21:44:25.772Z"
+          },
+          {
+            "id": 4,
+            "title": "Implement State Transitions and Persistence",
+            "description": "Update the state manager after each step execution to record success or failure.",
+            "dependencies": [
+              3
+            ],
+            "details": "After `exec.Runner.RunStep` returns, update the current step's status in `internal/state`. Call `state.Save()` to persist progress to disk immediately. Ensure that the 'running' status is set before execution and 'completed'/'failed' after execution to support crash recovery.",
+            "status": "done",
+            "testStrategy": "Verify that the state file on disk reflects the progress after each step in a multi-step workflow.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-30T21:44:25.774Z"
+          },
+          {
+            "id": 5,
+            "title": "Generate Final Report and Cleanup",
+            "description": "Implement the logic to finalize the run and generate a summary report.",
+            "dependencies": [
+              4
+            ],
+            "details": "At the end of `RunPlain`, regardless of success or failure (use `defer` or final block), generate a run report. This should summarize total time, steps completed, and any errors. Use the report format defined in `internal/parser` or `internal/state` if available, or create a simple text summary.",
+            "status": "done",
+            "testStrategy": "Run a full flow and assert that the report file/output exists and contains accurate summary data.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-30T21:44:25.776Z"
+          }
+        ],
+        "updatedAt": "2025-12-30T21:44:25.776Z"
+      },
+      {
+        "id": "7",
+        "title": "Implement CLI Entrypoint and Subcommands",
+        "description": "Set up the CLI framework using Cobra or standard flag parsing to expose functionality.",
+        "details": "Implement `internal/cli`. Use `github.com/spf13/cobra` for robust command handling. Create `root` command and subcommands `run`, `validate`, `list`. specific flags: `--yes`, `--resume`, `--no-tui`, `--oracle-bin`. Map these flags to the `app` configuration. Ensure `help` text is auto-generated.",
+        "testStrategy": "CLI tests parsing arguments and flags, asserting that the correct app configuration object is constructed.",
+        "priority": "medium",
+        "dependencies": [
+          "6"
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Initialize Cobra CLI Structure and Root Command",
+            "description": "Set up the internal/cli package, create the root command, and define the global flags structure.",
+            "dependencies": [],
+            "details": "Create `internal/cli/root.go`. Initialize the root `cobra.Command` representing the entry point. Define a `Config` struct (or use an existing one from `internal/app` if available) to hold flag values. Define global flags like `--no-tui` and `--oracle-bin` here if they apply globally, or prepare them for specific subcommands. Ensure `Execute()` function is exported for `main.go`.",
+            "status": "done",
+            "testStrategy": "Unit test verifying the root command executes and displays help text without errors.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-30T21:45:35.697Z"
+          },
+          {
+            "id": 2,
+            "title": "Implement 'run' Subcommand with Flags",
+            "description": "Create the 'run' subcommand to execute the pack, binding specific flags like --yes and --resume.",
+            "dependencies": [
+              1
+            ],
+            "details": "Create `internal/cli/run.go`. Define the `runCmd` struct. Register flags `--yes` (bool), `--resume` (bool), `--oracle-bin` (string), and `--no-tui` (bool) specifically for this command if they are not global. In the `RunE` handler, validate arguments (path to markdown file). This handler will eventually call the application logic.",
+            "status": "done",
+            "testStrategy": "Unit test invoking the run command with various flag combinations and asserting the config struct is populated correctly.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-30T21:45:35.699Z"
+          },
+          {
+            "id": 3,
+            "title": "Implement 'validate' and 'list' Subcommands",
+            "description": "Add the 'validate' and 'list' subcommands to check pack integrity and list steps without execution.",
+            "dependencies": [
+              1
+            ],
+            "details": "Create `internal/cli/validate.go` and `internal/cli/list.go`. `validate` should accept a file path and call the parser's validation logic. `list` should parse the file and print steps. Ensure both commands inherit necessary global settings but generally require fewer flags than `run`.",
+            "status": "done",
+            "testStrategy": "Unit tests ensuring commands parse arguments correctly and fail on missing file arguments.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-30T21:45:35.702Z"
+          },
+          {
+            "id": 4,
+            "title": "Connect CLI to Application Logic",
+            "description": "Map the parsed CLI flags and arguments to the main application controller or configuration object.",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "In each command's `RunE` method, instantiate the necessary components (e.g., `PackParser`, `Runner`, `App`). Pass the flag values (e.g., `resume`, `oracleBinary`) into an options struct used to initialize the application. Ensure the `run` command conditionally initializes the TUI based on the `--no-tui` flag.",
+            "status": "done",
+            "testStrategy": "Integration test mocking the internal app controller and verifying it receives the correct parameters from the CLI execution.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-30T21:45:35.703Z"
+          },
+          {
+            "id": 5,
+            "title": "Create Main Entrypoint",
+            "description": "Implement the main.go file to invoke the CLI entry point.",
+            "dependencies": [
+              1
+            ],
+            "details": "Create `cmd/oraclepack/main.go`. This file should be minimal, importing `internal/cli` and calling `cli.Execute()`. It should handle the top-level error exit code (e.g., `os.Exit(1)` if `Execute` returns an error).",
+            "status": "done",
+            "testStrategy": "Build test (go build ./cmd/oraclepack) to ensure the binary compiles and basic manual execution test.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-30T21:45:35.705Z"
+          }
+        ],
+        "updatedAt": "2025-12-30T21:45:35.705Z"
+      },
+      {
+        "id": "8",
+        "title": "Develop Markdown Rendering for Terminal",
+        "description": "Implement a renderer to display Markdown content (previews) as ANSI-styled text.",
+        "details": "Implement `internal/render`. integrate `github.com/charmbracelet/glamour`. Create a function `RenderMarkdown(text string) string` that returns ANSI strings. Configure a style (dark/light mode aware if possible, or fixed high-contrast).",
+        "testStrategy": "Golden file tests comparing raw Markdown input against expected ANSI output strings.",
+        "priority": "low",
+        "dependencies": [
+          "1"
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Add Glamour Dependency and Create Render Package",
+            "description": "Initialize the internal/render package and add the github.com/charmbracelet/glamour dependency to the project.",
+            "dependencies": [],
+            "details": "Run `go get github.com/charmbracelet/glamour` to update go.mod. Create the directory `internal/render`. Create a `render.go` file within this package. This sets up the foundational environment for markdown rendering.",
+            "status": "done",
+            "testStrategy": "Verify go.mod contains the dependency and the package compiles.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-30T21:46:38.916Z"
+          },
+          {
+            "id": 2,
+            "title": "Define RenderMarkdown Interface and Setup Glamour Renderer",
+            "description": "Implement the core RenderMarkdown function and initialize the glamour renderer with a specific style.",
+            "dependencies": [
+              1
+            ],
+            "details": "In `internal/render/render.go`, define `func RenderMarkdown(text string) (string, error)`. Inside, initialize a glamour renderer using `glamour.NewTermRenderer`. Configure it to use a standard style like 'dark' or 'notty' initially. This function should take raw markdown text and return the ANSI string.",
+            "status": "done",
+            "testStrategy": "Unit test passing a simple markdown string (**bold**) and asserting the output contains ANSI escape codes.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-30T21:46:38.918Z"
+          },
+          {
+            "id": 3,
+            "title": "Implement Custom Style Configuration",
+            "description": "Configure the glamour renderer to attempt auto-detection of the terminal background or fallback to a high-contrast style.",
+            "dependencies": [
+              2
+            ],
+            "details": "Enhance the renderer initialization logic. Use `glamour.WithAutoStyle()` if appropriate, or allow passing a style preference (Light/Dark) via a configuration struct/parameter. Ensure the style ensures readability in standard terminal environments. Handle initialization errors gracefully.",
+            "status": "done",
+            "testStrategy": "Manual verification in a terminal or unit tests checking that different styles produce different ANSI codes.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-30T21:46:38.920Z"
+          },
+          {
+            "id": 4,
+            "title": "Integrate Rendering with Pack Structures",
+            "description": "Create a helper to render the description or content of a Pack Step directly.",
+            "dependencies": [
+              2
+            ],
+            "details": "Import `internal/pack`. Add a function `RenderStepDescription(step pack.Step) (string, error)` (or similar) in `internal/render`. This function should extract the relevant text field from the Step struct (e.g., the markdown body or prelude) and pass it to `RenderMarkdown`. This bridges the domain model with the view logic.",
+            "status": "done",
+            "testStrategy": "Unit test creating a mock Step object and verifying its markdown content is correctly rendered to ANSI.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-30T21:46:38.922Z"
+          },
+          {
+            "id": 5,
+            "title": "Create Golden File Tests for Markdown Rendering",
+            "description": "Establish a robust testing suite using golden files to ensure rendering output remains consistent.",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "Create `internal/render/render_test.go`. Setup a test data directory `testdata/`. Add `.md` files with various markdown features (lists, code blocks, headers) and corresponding `.golden` files containing the expected ANSI output. Write a test function that renders the input and compares it to the golden file.",
+            "status": "done",
+            "testStrategy": "Run `go test ./internal/render` and verify that changes to styles break tests (prompting golden file updates) and output matches expectations.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-30T21:46:38.923Z"
+          }
+        ],
+        "updatedAt": "2025-12-30T21:46:38.923Z"
+      },
+      {
+        "id": "9",
+        "title": "Build TUI with Bubble Tea",
+        "description": "Create the interactive terminal UI using Bubble Tea, featuring step lists and log streaming.",
+        "details": "Implement `internal/tui`. Define the Bubble Tea `Model`. Use `github.com/charmbracelet/bubbles/list` for the step list and `github.com/charmbracelet/bubbles/viewport` for logs. Implement `Update` loop to handle messages (KeyMsg, WindowSizeMsg, custom StatusMsg). Bind the `app` logic to trigger execution commands that return `Cmd`s. Show step status (spinner for running, check for success). Integrate `internal/render` for previews.",
+        "testStrategy": "Manual testing of UI flows. Unit tests for Update function state transitions based on messages.",
+        "priority": "high",
+        "dependencies": [
+          "6",
+          "8"
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Define TUI Model and Initialize Layout",
+            "description": "Create the base Bubble Tea model structure and initialize the list and viewport components.",
+            "dependencies": [],
+            "details": "Create `internal/tui/model.go`. Define a `Model` struct containing state fields: `pack` (from internal/pack), `steps` (list.Model), `logs` (viewport.Model), `spinner` (spinner.Model), `currentStepIdx` int, and `running` bool. Implement `Init()`, returning a batch command to start the spinner. In `NewModel(pack)`, initialize the `list.Model` with step items derived from the pack and the `viewport.Model` for log output. Configure default styles for the list and viewport.",
+            "status": "done",
+            "testStrategy": "Unit test `NewModel` to verify initial state configuration.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-30T21:48:37.631Z"
+          },
+          {
+            "id": 2,
+            "title": "Implement Update Loop and Key Bindings",
+            "description": "Implement the Update method to handle key presses and window resizing.",
+            "dependencies": [
+              1
+            ],
+            "details": "In `internal/tui/update.go`, implement `Update(msg tea.Msg) (tea.Model, tea.Cmd)`. Handle `tea.KeyMsg`: 'q'/Ctrl+C to quit, 'enter' to run selected step (if not running), up/down to navigate list. Handle `tea.WindowSizeMsg` to resize the list and viewport dynamically (e.g., list takes 1/3 width, viewport 2/3). Handle `spinner.TickMsg` to update the spinner if a step is running. Ensure navigation is disabled while a step is executing.",
+            "status": "done",
+            "testStrategy": "Unit tests simulating KeyMsg inputs to verify model state changes (e.g., selection index updates).",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-30T21:48:37.633Z"
+          },
+          {
+            "id": 3,
+            "title": "Integrate Step Execution and Command Triggering",
+            "description": "Bind the execution logic to the TUI model using Bubble Tea Commands.",
+            "dependencies": [
+              2
+            ],
+            "details": "Define custom messages: `StepStartedMsg`, `LogLineMsg`, `StepFinishedMsg`. Create a `runStepCmd(runner, step)` function that returns a `tea.Cmd`. This command should invoke `internal/exec` logic. Since `exec` streams logs, wrap the execution in a way that it sends `LogLineMsg` back to the Update loop via a channel or callback, finally returning `StepFinishedMsg`. Update the Model to handle `StepStartedMsg` (set running=true), `StepFinishedMsg` (set running=false, update status icon), and append content to viewport on `LogLineMsg`.",
+            "status": "done",
+            "testStrategy": "Integration test mocking the executor to verify messages flow correctly through the Update loop.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-30T21:48:37.635Z"
+          },
+          {
+            "id": 4,
+            "title": "Implement View Rendering with Styles",
+            "description": "Construct the UI layout string in the View method using Lip Gloss for styling.",
+            "dependencies": [
+              1
+            ],
+            "details": "In `internal/tui/view.go`, implement `View() string`. Use `lipgloss` to create a split view: left pane for the step list, right pane for the log viewport. Apply borders and colors. Render the current step's status (pending, running, success, fail) using icons next to list items. Display a help footer (e.g., 'Enter: Run, q: Quit'). Ensure the view handles the current terminal dimensions correctly based on previous WindowSizeMsg.",
+            "status": "done",
+            "testStrategy": "Visual inspection via manual run; Snapshot testing of View output string if feasible.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-30T21:48:37.637Z"
+          },
+          {
+            "id": 5,
+            "title": "Connect TUI to Main Application Entrypoint",
+            "description": "Wire the TUI into the main CLI command to launch the interface.",
+            "dependencies": [
+              3,
+              4
+            ],
+            "details": "Update `cmd/oraclepack/main.go` (or wherever the root command runs). Add a flag or command to start interactive mode. Load the `Pack` using `internal/pack`. Initialize `internal/exec.Runner`. Create the TUI model via `tui.NewModel`. Start the program with `tea.NewProgram(model).Run()`. Ensure graceful shutdown and error reporting if TUI fails to initialize.",
+            "status": "done",
+            "testStrategy": "Manual verification: Run the binary with a sample pack and check if the TUI launches and interacts correctly.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-30T21:48:37.639Z"
+          }
+        ],
+        "updatedAt": "2025-12-30T21:48:37.639Z"
+      },
+      {
+        "id": "10",
+        "title": "Setup Release Automation",
+        "description": "Configure GoReleaser to automate builds and packaging for distribution.",
+        "details": "Create `.goreleaser.yaml`. Configure builds for Linux (amd64/arm64), macOS (amd64/arm64), and Windows. Set up archive formats (tar.gz, zip). Configure Homebrew tap integration. Ensure binary is stripped and optimized.",
+        "testStrategy": "Run `goreleaser release --snapshot --clean` locally to verify artifact generation.",
+        "priority": "low",
+        "dependencies": [
+          "7",
+          "9"
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Initialize GoReleaser Configuration",
+            "description": "Generate and configure the initial .goreleaser.yaml file for the project.",
+            "dependencies": [],
+            "details": "Run `goreleaser init` or manually create `.goreleaser.yaml` at the project root. define the `project_name` as 'oraclepack'. Configure the `before` hooks to run `go mod tidy`. Set up the basic `builds` section pointing to the main package entry point (e.g., `cmd/oraclepack` or `.`).",
+            "status": "done",
+            "testStrategy": "Run `goreleaser check` to validate the syntax of the configuration file.",
+            "updatedAt": "2025-12-30T21:48:59.868Z",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Configure Cross-Platform Builds",
+            "description": "Define build targets for Linux, macOS, and Windows with appropriate architectures.",
+            "dependencies": [
+              1
+            ],
+            "details": "Update the `builds` section in `.goreleaser.yaml`. Enable `env` with `CGO_ENABLED=0` for static binaries. specific `goos` as [linux, darwin, windows] and `goarch` as [amd64, arm64]. Ensure binary names follow the standard convention (e.g., `oraclepack`).",
+            "status": "done",
+            "testStrategy": "Run `goreleaser build --snapshot --clean` and inspect the `dist/` folder to verify binaries are created for all targets.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-30T21:48:59.870Z"
+          },
+          {
+            "id": 3,
+            "title": "Configure Archives and Checksums",
+            "description": "Set up archive formats (tar.gz, zip) and name templates for distribution.",
+            "dependencies": [
+              2
+            ],
+            "details": "Configure the `archives` section. Use `tar.gz` for Linux/macOS and `zip` for Windows. Define `name_template` to include project name, version, OS, and architecture. Add files like `README.md` and `LICENSE` to the archive. Enable `checksum` generation.",
+            "status": "done",
+            "testStrategy": "Run `goreleaser release --snapshot --clean` and verify the structure and contents of the generated archives in `dist/`.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-30T21:48:59.872Z"
+          },
+          {
+            "id": 4,
+            "title": "Enable Binary Optimization and Stripping",
+            "description": "Configure linker flags to strip debug information and reduce binary size.",
+            "dependencies": [
+              2
+            ],
+            "details": "In the `builds` section, add `ldflags` to strip the binary (e.g., `-s -w`). Also, inject version information (version, commit, date) into the main package variables if applicable (e.g., `-X main.version={{.Version}}`).",
+            "status": "done",
+            "testStrategy": "Build a snapshot and check binary size comparison with/without flags. Use `go tool objdump` or `file` to confirm symbols are stripped.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-30T21:48:59.874Z"
+          },
+          {
+            "id": 5,
+            "title": "Configure Homebrew Tap Integration",
+            "description": "Add Homebrew formula generation to the release process.",
+            "dependencies": [
+              3
+            ],
+            "details": "Configure the `brews` section in `.goreleaser.yaml`. Define the tap repository (e.g., `github.com/user/homebrew-tap`). Set the formula description and homepage. ensure the install instructions copy the binary properly. Note: This requires a GitHub token which should be configured in the CI environment, not hardcoded.",
+            "status": "done",
+            "testStrategy": "Dry-run the release locally using `goreleaser release --snapshot --skip-publish` to verify the formula is generated correctly in `dist/`.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-30T21:48:59.876Z"
+          }
+        ],
+        "updatedAt": "2025-12-30T21:48:59.876Z"
+      }
+    ],
+    "metadata": {
+      "version": "1.0.0",
+      "lastModified": "2025-12-30T21:48:59.876Z",
+      "taskCount": 10,
+      "completedCount": 10,
+      "tags": [
+        "master"
+      ]
+    }
+  }
+}

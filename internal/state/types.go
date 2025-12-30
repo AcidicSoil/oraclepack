@@ -1,0 +1,32 @@
+package state
+
+import (
+	"time"
+)
+
+type Status string
+
+const (
+	StatusPending  Status = "pending"
+	StatusRunning  Status = "running"
+	StatusSuccess  Status = "success"
+	StatusFailed   Status = "failed"
+	StatusSkipped  Status = "skipped"
+)
+
+// RunState tracks the execution progress of an oracle pack.
+type RunState struct {
+	SchemaVersion int                   `json:"schema_version"`
+	PackHash      string                `json:"pack_hash"`
+	StartTime     time.Time             `json:"start_time"`
+	StepStatuses  map[string]StepStatus `json:"step_statuses"`
+}
+
+// StepStatus holds the outcome of an individual step.
+type StepStatus struct {
+	Status    Status    `json:"status"`
+	ExitCode  int       `json:"exit_code"`
+	StartedAt time.Time `json:"started_at"`
+	EndedAt   time.Time `json:"ended_at"`
+	Error     string    `json:"error,omitempty"`
+}
