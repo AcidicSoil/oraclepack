@@ -12,7 +12,8 @@ import (
 
 var (
 	bashFenceRegex = regexp.MustCompile("(?s)```bash\n(.*?)\n```")
-	stepHeaderRegex = regexp.MustCompile(`^#\s*(\d{2})\)\s*$`)
+	// Updated regex to allow text after the step number
+	stepHeaderRegex = regexp.MustCompile(`^#\s*(\d{2})\)`) 
 	outDirRegex    = regexp.MustCompile(`(?m)^out_dir=["']?([^"'\s]+)["']?`)
 	writeOutputRegex = regexp.MustCompile(`(?m)--write-output`)
 )
