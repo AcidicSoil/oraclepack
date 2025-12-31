@@ -5,6 +5,7 @@
 ## 🚀 Features
 
 - **Interactive TUI:** A beautiful Terminal UI built with Bubble Tea for navigating and executing steps.
+- **Run All (Sequential):** Execute all steps one after another with a single command or keypress.
 - **State Persistence:** Automatically saves progress to `.state.json`, allowing you to `--resume` after failure or interruption.
 - **Real-time Streaming:** Watch command output live in a styled viewport.
 - **Flag Injection:** Safely injects extra flags into `oracle` command calls within your scripts.
@@ -81,7 +82,17 @@ This is the default mode. It opens an interactive list where you can select step
 oraclepack run examples/setup-project.md
 ```
 
-### 2. Resume a Previous Run
+### 2. Run All Steps Sequentially
+
+Automate the entire pack execution in the TUI:
+
+```bash
+oraclepack run examples/setup-project.md --run-all
+```
+
+*Note: You can also press `a` within the TUI to start running all steps from the current selection.*
+
+### 3. Resume a Previous Run
 
 If a step failed, fix the issue and resume exactly where you left off:
 
@@ -89,7 +100,7 @@ If a step failed, fix the issue and resume exactly where you left off:
 oraclepack run examples/setup-project.md --resume
 ```
 
-### 3. Plain Mode (Non-Interactive)
+### 4. Plain Mode (Non-Interactive)
 
 Ideal for CI/CD or users who prefer standard terminal output:
 
@@ -97,7 +108,7 @@ Ideal for CI/CD or users who prefer standard terminal output:
 oraclepack run examples/setup-project.md --no-tui
 ```
 
-### 4. Inject Oracle Flags
+### 5. Inject Oracle Flags
 
 Pass extra flags down to every `oracle` command invocation inside the pack:
 
@@ -105,7 +116,7 @@ Pass extra flags down to every `oracle` command invocation inside the pack:
 oraclepack run my-pack.md --oracle-bin="/path/to/oracle" -- --verbose --debug
 ```
 
-### 5. Validate a Pack
+### 6. Validate a Pack
 
 Check if your Markdown file follows the Oracle Pack specification:
 
@@ -113,7 +124,7 @@ Check if your Markdown file follows the Oracle Pack specification:
 oraclepack validate my-pack.md
 ```
 
-### 6. List Steps
+### 7. List Steps
 
 Quickly view all steps defined in a pack without executing them:
 
