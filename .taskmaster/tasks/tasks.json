@@ -861,13 +861,27 @@
           }
         ],
         "updatedAt": "2025-12-31T03:49:55.846Z"
+      },
+      {
+        "id": "12",
+        "title": "Fix Step Header Parsing for Em-Dash Support",
+        "description": "Update the Markdown parser to correctly handle step headers formatted with an em-dash (e.g., '# 01 — Step Title') in addition to the existing parenthesis format.",
+        "details": "The current `ExtractSteps` function in `internal/parser/parser.go` uses a regular expression that strictly expects a closing parenthesis after the step number (e.g., `^#\\s+(\\d+)\\)\\s+(.*)`). This causes validation failures for files using the em-dash format commonly found in some documentation styles (e.g., `^#\\s+(\\d+)\\s+[—-]\\s+(.*)`).\n\nImplementation Steps:\n1.  Locate `stepRegex` in `internal/parser/parser.go`.\n2.  Modify the regular expression to allow for alternate separators. A proposed pattern is `^#\\s+(\\d+)(?:\\)|\\.|\\s+[—-])\\s+(.*)`, covering `1)`, `1.`, and `1 —` formats.\n3.  Update the logic that parses the captured groups to ensure the step number and title are correctly extracted regardless of the separator used.\n4.  Ensure that the change does not break existing support for parenthesis-based headers.\n5.  (Optional) If strict formatting is desired, normalize the stored title, but the primary goal is parsing flexibility.",
+        "testStrategy": "1. Add a new test case in `internal/parser/parser_test.go` specifically using a sample Markdown content with em-dash headers (e.g., `# 01 — Install Dependencies`).\n2. Verify that the parser correctly extracts the ID `1` and the title `Install Dependencies`.\n3. Run existing tests to ensure no regression for `# 01) Title` formats.\n4. specific CLI test: Run `oraclepack validate` against a file with em-dash headers to confirm it passes.",
+        "status": "done",
+        "dependencies": [
+          "7"
+        ],
+        "priority": "high",
+        "subtasks": [],
+        "updatedAt": "2025-12-31T20:08:52.250Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-31T03:49:55.847Z",
-      "taskCount": 11,
-      "completedCount": 11,
+      "lastModified": "2025-12-31T20:08:52.254Z",
+      "taskCount": 12,
+      "completedCount": 12,
       "tags": [
         "master"
       ]

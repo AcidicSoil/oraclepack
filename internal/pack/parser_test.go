@@ -47,6 +47,44 @@ echo "world"
 	}
 }
 
+func TestParseVariants(t *testing.T) {
+	tests := []struct {
+		name    string
+		content string
+	}{
+		{
+			"em dash",
+			`
+` + "```" + `bash
+# 01 — ROI=...
+echo "step 1"
+` + "```" + `
+`,
+		},
+		{
+			"hyphen",
+			`
+` + "```" + `bash
+# 01 - ROI=...
+echo "step 1"
+` + "```" + `
+`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			p, err := Parse([]byte(tt.content))
+			if err != nil {
+				t.Fatalf("Parse failed: %v", err)
+			}
+			if len(p.Steps) != 1 {
+				t.Errorf("expected 1 step, got %d", len(p.Steps))
+			}
+		})
+	}
+}
+
 func TestValidateErrors(t *testing.T) {
 	tests := []struct {
 		name    string
