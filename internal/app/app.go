@@ -10,15 +10,17 @@ import (
 
 // Config holds application-wide configuration.
 type Config struct {
-	PackPath    string
-	StatePath   string
-	ReportPath  string
-	StopOnFail  bool
-	Resume      bool
-	Verbose     bool
-	DryRun      bool
-	OracleFlags []string
-	WorkDir     string
+	PackPath     string
+	StatePath    string
+	ReportPath   string
+	StopOnFail   bool
+	Resume       bool
+	Verbose      bool
+	DryRun       bool
+	OracleFlags  []string
+	WorkDir      string
+	ROIThreshold float64
+	ROIMode      string // "over" or "under"
 }
 
 // App orchestrates the execution flow.

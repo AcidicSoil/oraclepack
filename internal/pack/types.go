@@ -16,8 +16,9 @@ type Prelude struct {
 
 // Step represents an individual executable step within the pack.
 type Step struct {
-	ID           string // e.g., "01"
-	Number       int    // e.g., 1
-	Code         string // The bash code
-	OriginalLine string // The header line, e.g., "# 01)"
+	ID           string  // e.g., "01"
+	Number       int     // e.g., 1
+	Code         string  // The bash code
+	OriginalLine string  // The header line, e.g., "# 01)"
+	ROI          float64 // Return on Investment value extracted from header
 }

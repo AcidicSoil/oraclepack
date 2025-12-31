@@ -13,10 +13,11 @@ import (
 )
 
 var (
-	yes        bool
-	resume     bool
-	stopOnFail bool
-	runAll     bool
+	yes          bool
+	resume       bool
+	stopOnFail   bool
+	roiThreshold float64
+	roiMode      string
 )
 
 var runCmd = &cobra.Command{
@@ -32,12 +33,14 @@ var runCmd = &cobra.Command{
 		reportPath := base + ".report.json"
 
 		cfg := app.Config{
-			PackPath:   packPath,
-			StatePath:  statePath,
-			ReportPath: reportPath,
-			Resume:     resume,
-			StopOnFail: stopOnFail,
-			WorkDir:    ".",
+			PackPath:     packPath,
+			StatePath:    statePath,
+			ReportPath:   reportPath,
+			Resume:       resume,
+			StopOnFail:   stopOnFail,
+			WorkDir:      ".",
+			ROIThreshold: roiThreshold,
+			ROIMode:      roiMode,
 		}
 
 		a := app.New(cfg)
@@ -52,7 +55,7 @@ var runCmd = &cobra.Command{
 			return a.RunPlain(context.Background(), os.Stdout)
 		}
 
-		m := tui.NewModel(a.Pack, a.Runner, a.State, runAll)
+		m := tui.NewModel(a.Pack, a.Runner, a.State, cfg.ROIThreshold, cfg.ROIMode)
 		p := tea.NewProgram(m, tea.WithAltScreen())
 		_, err := p.Run()
 		return err
@@ -63,6 +66,7 @@ func init() {
 	runCmd.Flags().BoolVarP(&yes, "yes", "y", false, "Auto-approve all steps")
 	runCmd.Flags().BoolVar(&resume, "resume", false, "Resume from last successful step")
 	runCmd.Flags().BoolVar(&stopOnFail, "stop-on-fail", true, "Stop execution if a step fails")
-	runCmd.Flags().BoolVar(&runAll, "run-all", false, "Auto-advance through all steps sequentially in TUI")
+	runCmd.Flags().Float64Var(&roiThreshold, "roi-threshold", 0.0, "Filter steps by ROI threshold")
+	runCmd.Flags().StringVar(&roiMode, "roi-mode", "over", "ROI filter mode ('over' or 'under')")
 	rootCmd.AddCommand(runCmd)
 }

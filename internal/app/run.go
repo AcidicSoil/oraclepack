@@ -41,6 +41,23 @@ func (a *App) RunPlain(ctx context.Context, out io.Writer) error {
 	}
 
 	for _, step := range a.Pack.Steps {
+		// Filter by ROI
+		if a.Config.ROIThreshold > 0 {
+			if a.Config.ROIMode == "under" {
+				// "under" is strictly less than
+				if step.ROI >= a.Config.ROIThreshold {
+					fmt.Fprintf(out, "Skipping step %s (ROI %.2f >= %.2f)\n", step.ID, step.ROI, a.Config.ROIThreshold)
+					continue
+				}
+			} else {
+				// "over" is greater than or equal to (3.3 or higher)
+				if step.ROI < a.Config.ROIThreshold {
+					fmt.Fprintf(out, "Skipping step %s (ROI %.2f < %.2f)\n", step.ID, step.ROI, a.Config.ROIThreshold)
+					continue
+				}
+			}
+		}
+
 		// Check resume
 		if s, ok := a.State.StepStatuses[step.ID]; ok && s.Status == state.StatusSuccess {
 			fmt.Fprintf(out, "Skipping step %s (already succeeded)\n", step.ID)

@@ -875,13 +875,89 @@
         "priority": "high",
         "subtasks": [],
         "updatedAt": "2025-12-31T20:08:52.250Z"
+      },
+      {
+        "id": "13",
+        "title": "Implement ROI Extraction and Execution Filtering",
+        "description": "Parse ROI values from step headers and add CLI flags to filter step execution based on an ROI threshold.",
+        "details": "Update the core parser and execution engine to support value-based step filtering.\n\n1. **Parser Update (`internal/parser`)**: Modify `ExtractSteps` and the `Step` struct. Update the header regex (building on Task 12's em-dash support) to capture an optional `ROI=(\\d+(\\.\\d+)?)` pattern. Store this as a `float64` in the `Step` struct. Ideally, strip the 'ROI=...' substring from the final `Step.Title` for cleaner UI display.\n\n2. **CLI Flags (`internal/cli`)**: Add new flags to the `run` command: `--roi-threshold` (float, default 0) and `--roi-mode` (string, options: 'over', 'under', default 'over'). Bind these to the application configuration.\n\n3. **Filtering Logic (`internal/app`)**: In the `RunPlain` loop (and TUI equivalent), inject a filtering check before execution. \n   - If `mode` is 'over', skip steps where `step.ROI < threshold`.\n   - If `mode` is 'under', skip steps where `step.ROI > threshold`.\n   - Treat steps without an explicit ROI tag as having an ROI of 0.0.",
+        "testStrategy": "1. **Unit Tests**: Extend `internal/parser/parser_test.go` with table-driven tests containing headers like `# 01) Task ROI=5.5` and `# 02 — Low Value ROI=0.1`. Assert that `ROI` fields are populated correctly.\n2. **Integration Tests**: Create a dummy pack with varying ROI values. Execute the CLI with `--roi-threshold=1.0 --roi-mode=over` and verify via logs or report output that only high-ROI steps were executed.",
+        "status": "done",
+        "dependencies": [
+          "6",
+          "7",
+          "12"
+        ],
+        "priority": "high",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Update Step Struct and Header Regex for ROI",
+            "description": "Modify the Step struct to include an ROI float64 field and update the header parsing regex to capture 'ROI=value' patterns.",
+            "dependencies": [],
+            "details": "In `internal/parser`, add `ROI float64` to the `Step` struct. Update the regex in `ExtractSteps` (or helper function) to identify `ROI=(\\d+(\\.\\d+)?)` within the header line. Ensure the parsing logic converts the captured string to a float using `strconv.ParseFloat`. The regex must support existing formats (parenthesis, em-dash) while optionally capturing this new tag.",
+            "status": "pending",
+            "testStrategy": "Unit tests in `internal/parser` checking that `Step.ROI` is correctly populated for headers like `# 01) Title ROI=5.5` and defaults to 0.0 otherwise.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Implement ROI Tag Stripping from Step Titles",
+            "description": "Clean up the step title by removing the raw ROI tag string after extraction to ensure clean UI output.",
+            "dependencies": [
+              1
+            ],
+            "details": "After extracting the ROI value in `internal/parser`, implement string manipulation to remove the substring `ROI=...` from the `Step.Title`. Use `strings.Replace` or regex replacement to trim this tag and any surrounding extra whitespace so the user sees `# 01) Task Name` instead of `# 01) Task Name ROI=5.5`.",
+            "status": "pending",
+            "testStrategy": "Extend parser unit tests to assert `Step.Title` does not contain the 'ROI=' substring after parsing.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Add ROI Flags to CLI Configuration",
+            "description": "Define `--roi-threshold` and `--roi-mode` flags in the CLI and bind them to the application configuration.",
+            "dependencies": [
+              1
+            ],
+            "details": "In `internal/cli`, specifically within the `run` command setup, add two new flags: `--roi-threshold` (float, default 0.0) and `--roi-mode` (string, default 'over', validation options: 'over', 'under'). Ensure these values are propagated to the `app.Config` or `RunConfig` struct passed to the execution engine.",
+            "status": "pending",
+            "testStrategy": "CLI tests invoking the run command with these flags and asserting the config object reflects the provided values.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Implement Execution Filtering Logic in Run Loop",
+            "description": "Inject logic into the main execution loop to skip steps based on the configured ROI threshold and mode.",
+            "dependencies": [
+              1,
+              3
+            ],
+            "details": "In `internal/app` (within `RunPlain` and potentially TUI logic), add a conditional check before executing a step. If `roi-mode` is 'over', continue only if `step.ROI >= threshold`. If 'under', continue only if `step.ROI <= threshold`. Log a specific message when a step is skipped due to ROI filtering.",
+            "status": "pending",
+            "testStrategy": "Integration test with a mock pack containing high and low ROI steps. Verify via logs that steps failing the threshold check are skipped.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 5,
+            "title": "Verify ROI Filtering in TUI/Interactive Mode",
+            "description": "Ensure the ROI filtering logic is correctly applied or visualized in the TUI mode if applicable.",
+            "dependencies": [
+              4
+            ],
+            "details": "Review the TUI implementation in `internal/tui` or the shared execution logic in `internal/app` to ensure the filtering condition applies consistently across both plain and TUI modes. If the TUI displays a list of steps beforehand, consider visually dimming or marking skipped steps, or simply enforcing the skip during execution.",
+            "status": "pending",
+            "testStrategy": "Manual verification or integration test running in TUI mode (if testable) to ensure consistency with the plain runner.",
+            "parentId": "undefined"
+          }
+        ],
+        "updatedAt": "2025-12-31T20:45:25.293Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-31T20:08:52.254Z",
-      "taskCount": 12,
-      "completedCount": 12,
+      "lastModified": "2025-12-31T20:45:25.298Z",
+      "taskCount": 13,
+      "completedCount": 13,
       "tags": [
         "master"
       ]

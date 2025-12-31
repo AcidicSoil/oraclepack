@@ -1,6 +1,7 @@
 package pack
 
 import (
+	"strings"
 	"testing"
 )
 
@@ -82,6 +83,45 @@ echo "step 1"
 				t.Errorf("expected 1 step, got %d", len(p.Steps))
 			}
 		})
+	}
+}
+
+func TestParseROI(t *testing.T) {
+	content := []byte(`
+` + "```" + `bash
+# 01) ROI=4.5 clean me
+echo "high value"
+
+# 02) ROI=0.5
+echo "low value"
+
+# 03) No ROI
+echo "default"
+` + "```" + `
+`)
+
+	p, err := Parse(content)
+	if err != nil {
+		t.Fatalf("Parse failed: %v", err)
+	}
+
+	if len(p.Steps) != 3 {
+		t.Fatalf("expected 3 steps, got %d", len(p.Steps))
+	}
+
+	if p.Steps[0].ROI != 4.5 {
+		t.Errorf("step 1 ROI mismatch: expected 4.5, got %f", p.Steps[0].ROI)
+	}
+	if strings.Contains(p.Steps[0].OriginalLine, "ROI=4.5") {
+		t.Errorf("step 1 title was not cleaned: %q", p.Steps[0].OriginalLine)
+	}
+
+	if p.Steps[1].ROI != 0.5 {
+		t.Errorf("step 2 ROI mismatch: expected 0.5, got %f", p.Steps[1].ROI)
+	}
+
+	if p.Steps[2].ROI != 0.0 {
+		t.Errorf("step 3 ROI mismatch: expected 0.0, got %f", p.Steps[2].ROI)
 	}
 }
 
