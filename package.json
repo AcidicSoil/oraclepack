@@ -3,7 +3,7 @@
     "codefetch": "^2.2.0"
   },
   "scripts": {
-    "code": "codefetch -t 5 --include-dir cmd,internal --exclude-dir prompts/codex-skills -o oraclepack.md --max-tokens 50000 --token-limiter truncated",
+    "code": "codefetch -t 5 --include-dir cmd,internal -o oraclepack.md --max-tokens 50000 --token-limiter truncated",
     "codea": "codefetch -t 5 -o oraclepack-all.md --max-tokens 50000 --token-limiter truncated"
   }
 }

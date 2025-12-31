@@ -1,0 +1,220 @@
+# path: commands/oraclepack/oracle-pack_v2.toml
+# invoked via: /oraclepack:oracle-pack_v2 {{args}}
+
+description = "Generate a strategist-questions Oracle pack that validates/runs under oraclepack (```bash fence + # NN) headers), writes oracle outputs under docs/, and preserves the Codex-style template (parsed args + ROI ordering + coverage check)."
+
+prompt = """
+You are generating output for a STRICT downstream CLI parser (oraclepack).
+Your output MUST be parseable by oraclepack’s Markdown parser:
+- The commands MUST be inside a ```bash fenced code block (triple backticks), not ~~~.
+- Step headers MUST be exactly: # NN) ... (e.g., # 01) ...). Do NOT use em dashes (—) in place of the ')'.
+
+User args (raw): {{args}}
+
+------------------------------------------------------------
+A) ARG PARSING (no follow-ups; apply defaults)
+Extract from {{args}} if present (key=value or similar), else default:
+
+- codebase_name: Unknown
+- constraints: None
+- non_goals: None
+- team_size: Unknown
+- deadline: Unknown
+
+Oracle pack controls:
+- out_dir: docs/oracle/strategist-questions/$(date +%F)
+- oracle_cmd: oracle
+- oracle_flags: --browser-attachments always --files-report
+- extra_files: (empty; if present, treat as comma-separated file paths/globs to include as additional -f entries in EVERY command)
+
+You MUST render these values into the final output under the “parsed args” section.
+
+------------------------------------------------------------
+B) INFERENCE-FIRST DISCOVERY (adaptive; evidence-driven; deterministic)
+Goal: infer what exists before searching broadly.
+
+1) Prefer cheap “index” artifacts first:
+   - README / docs index (if present)
+   - primary manifests (package.json, pyproject.toml, go.mod, Cargo.toml, etc.)
+   - obvious entrypoints referenced by scripts/manifests
+
+2) Derive a search plan from evidence:
+   - follow imports/registrations from entrypoints into:
+     routing/handlers, auth/permissions, jobs/queues, data layer/migrations,
+     feature flags, observability/logging, caching/state, failure modes.
+
+3) Harvest >= 20 candidate anchors, each as ONE of:
+   - {path}:{symbol} (preferred)
+   - {endpoint}
+   - {event}
+If a category cannot be evidenced, keep its anchor as Unknown AND record the missing artifact pattern.
+
+Required coverage categories (must appear across your 20 questions):
+- contracts/interfaces
+- invariants
+- caching/state
+- background jobs
+- observability
+- permissions
+- migrations
+- UX flows
+- failure modes
+- feature flags
+
+------------------------------------------------------------
+C) QUESTION GENERATION (exactly 20; 12 Immediate + 8 Strategic)
+For each question, produce:
+- Reference: {path}:{symbol} OR {endpoint} OR {event} OR Unknown
+- Category: one of the required categories (or a sensible subcategory that still maps to them)
+- Horizon: Immediate or Strategic
+- Question: focused, feasibility-first
+- Rationale: EXACTLY one sentence
+- Smallest experiment today: EXACTLY one concrete action
+
+No duplicates by intent or reference.
+
+------------------------------------------------------------
+D) ROI SCORING + ORDERING (required)
+For each question, choose:
+- impact, confidence, effort ∈ {0.1..1.0} with one decimal
+Compute:
+- ROI = (impact * confidence) / effort
+
+Sort ALL 20 commands by:
+1) ROI descending
+2) tie-breaker: lower effort first
+
+Numbering remains 01..20 in this final sorted order.
+
+------------------------------------------------------------
+E) ORACLE COMMAND EMISSION + ATTACHMENTS (minimal; evidence-driven)
+For each command:
+- Use exactly:
+  <oracle_cmd> \
+    <oracle_flags> \
+    --write-output "<out_dir>/<nn>-<slug>.md" \
+    -p "<prompt>" \
+    -f "<file 1>" \
+    -f "<file 2>" \
+    ... \
+    <extra_files...>
+
+Attachment minimization:
+- Prefer 1–3 attachments per command.
+- If Reference is {path}:{symbol}: attach that file; optionally ONE more upstream entrypoint/router/config if needed.
+- If Reference is {endpoint}: attach route map + handler file (if different).
+- If Reference is {event}: attach job registration + worker implementation (if different).
+- If Reference is Unknown: attach only “index” files (README + primary manifest + 1 best-guess entrypoint if found).
+- NEVER attach files you did not discover or cannot justify.
+
+extra_files behavior:
+- If extra_files was provided, append those as additional -f entries at the end of EVERY command (after the minimal evidence attachments).
+
+Slug rules:
+- <slug> lowercase a-z0-9 and hyphens only.
+- Derive from category + a hint of reference (fallback: category only).
+
+------------------------------------------------------------
+F) SAVE / WRITE SEMANTICS (required; docs/)
+- The oracle outputs are written by oracle itself via --write-output "<out_dir>/...".
+  Because out_dir defaults under docs/, oracle outputs will land under docs/.
+- This slash-command response (the pack Markdown) is printed to stdout.
+  The caller MUST save it to the path printed on the first line:
+  Output file: docs/strategist-questions-oracle-pack-YYYY-MM-DD.md
+  (If you cannot determine date, use: docs/strategist-questions-oracle-pack.md)
+
+------------------------------------------------------------
+G) OUTPUT FORMAT (STRICT; MUST MATCH THIS SHAPE)
+1) First line of the assistant response MUST be:
+   Output file: docs/strategist-questions-oracle-pack-YYYY-MM-DD.md
+   (Use today’s date if known; otherwise: docs/strategist-questions-oracle-pack.md)
+
+2) After that line, output EXACTLY ONE Markdown document matching the template below.
+3) Do NOT add any extra prose, headings, or fences beyond what the template requires.
+4) The ```bash code fence MUST be triple-backtick fenced, and MUST close with triple-backticks.
+5) Step headers inside the bash fence MUST be: # NN) ... (to satisfy oraclepack).
+
+TEMPLATE (MUST MATCH):
+<!-- begin template -->
+# oracle strategist question pack
+
+---
+
+## parsed args
+
+- codebase_name: <Unknown|value>
+- constraints: <None|value>
+- non_goals: <None|value>
+- team_size: <Unknown|value>
+- deadline: <Unknown|value>
+- out_dir: <docs/oracle/strategist-questions/$(date +%F)|value>
+- oracle_cmd: <oracle|value>
+- oracle_flags: <--browser-attachments always --files-report|value>
+- extra_files: <empty|value>
+
+---
+
+## commands (exactly 20; sorted by ROI desc; ties by lower effort)
+
+```bash
+out_dir="<out_dir>"
+mkdir -p "$out_dir"
+
+# 01) ROI=<..> impact=<..> confidence=<..> effort=<..> horizon=<Immediate|Strategic> category=<...> reference=<...>
+<oracle_cmd> \
+  <oracle_flags> \
+  --write-output "<out_dir>/01-<slug>.md" \
+  -p "Strategist question #01
+Reference: <{path}:{symbol} OR {endpoint} OR {event} OR Unknown>
+Category: <one of required categories>
+Horizon: <Immediate|Strategic>
+ROI: <roi> (impact=<i>, confidence=<c>, effort=<e>)
+Question: <question text>
+Rationale: <exactly one sentence>
+Smallest experiment today: <exactly one action>
+Constraints: <constraints or None>
+Non-goals: <non_goals or None>
+
+Answer format:
+1) Direct answer (1–4 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (1 action) — may differ from the suggested one if you justify it
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next." \
+  -f "<minimal evidence file 1>" \
+  -f "<optional supporting file 2>" \
+  <optional extra_files entries...>
+
+# 02) ...
+# ...
+# 20) ...
+````
+
+---
+
+## coverage check (must be satisfied)
+
+* contracts/interfaces: <OK|Missing (state missing artifact pattern)>
+
+* invariants: <OK|Missing (...)>
+
+* caching/state: <OK|Missing (...)>
+
+* background jobs: <OK|Missing (...)>
+
+* observability: <OK|Missing (...)>
+
+* permissions: <OK|Missing (...)>
+
+* migrations: <OK|Missing (...)>
+
+* UX flows: <OK|Missing (...)>
+
+* failure modes: <OK|Missing (...)>
+
+* feature flags: <OK|Missing (...)>
+
+<!-- end template -->
+
+Now generate the final output that matches the template exactly.
+"""
+
