@@ -27,11 +27,13 @@ go build -o oraclepack ./cmd/oraclepack
 ### Building for Windows (.exe)
 
 #### On Windows (PowerShell/CMD)
+
 ```powershell
 go build -o oraclepack.exe ./cmd/oraclepack
 ```
 
 #### Cross-Compiling for Windows (from Linux/macOS)
+
 ```bash
 GOOS=windows GOARCH=amd64 go build -o oraclepack.exe ./cmd/oraclepack
 ```
@@ -41,6 +43,7 @@ GOOS=windows GOARCH=amd64 go build -o oraclepack.exe ./cmd/oraclepack
 To run `oraclepack` from any directory, move the binary to a location in your system's `PATH`.
 
 #### Linux & macOS
+
 ```bash
 # Move the binary to /usr/local/bin (requires sudo)
 sudo mv oraclepack /usr/local/bin/
@@ -52,12 +55,25 @@ mv oraclepack ~/.local/bin/
 ```
 
 #### Windows (PowerShell)
+
 1. Create a directory for your tools (e.g., `C:\Tools`).
 2. Move `oraclepack.exe` into that directory.
 3. Add that directory to your PATH:
+
 ```powershell
 $env:Path += ";C:\Tools"
 [Environment]::SetEnvironmentVariable("Path", $env:Path, [EnvironmentVariableTarget]::User)
+```
+
+```bash
+oraclepack completion bash >& oraclepack.completion.sh
+mkdir -p ~/.local/share/bash-completion/completions
+install -m 0644 oraclepack.completion.sh \
+  ~/.local/share/bash-completion/completions/oraclepack
+
+# reload shell
+exec bash
+
 ```
 
 ## Fix: Git Bash wrapper with path-conversion disabled
@@ -82,6 +98,7 @@ hash -r
 ```
 
 #### WSL (Windows Subsystem for Linux)
+
 Follow the **Linux** instructions above.
 
 ## 🛠 Usage
@@ -168,7 +185,8 @@ oracle query "check-integrity"
 ```
 ````
 
-### Rules:
+### Rules
+
 1. Steps must start with `# NN)` (e.g., `# 01)`, `# 02)`).
 2. Step numbering must be sequential starting from `01`.
 3. The first bash code block in the file is the one executed.
