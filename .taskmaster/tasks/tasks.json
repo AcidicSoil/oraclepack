@@ -2,7 +2,7 @@
   "master": {
     "tasks": [
       {
-        "id": "1",
+        "id": 1,
         "title": "Initialize Go Module and Core Error Handling",
         "description": "Set up the Go module structure and implement the foundational error handling package with typed errors and exit codes.",
         "details": "Initialize the `go.mod` file with `go mod init`. Create the directory structure `internal/errors`. Define custom error types representing different failure domains (e.g., `ErrInvalidPack`, `ErrExecutionFailed`). Implement an `ExitCode(err error) int` function to map these errors to specific integer exit codes for the CLI. Add unit tests to ensure correct mapping.",
@@ -78,7 +78,7 @@
         "updatedAt": "2025-12-30T21:38:31.645Z"
       },
       {
-        "id": "2",
+        "id": 2,
         "title": "Implement Pack Parsing and Validation",
         "description": "Develop the Markdown parser to extract bash blocks, parse steps/prelude, and validate structure.",
         "details": "Implement `internal/pack`. Use a library like `github.com/yuin/goldmark` or standard regex to locate the first bash fence. Parse the content to separate the 'prelude' (before first `# NN)`) from 'steps'. Create structs `Pack`, `Step`, and `Prelude`. Implement `Validate(p Pack)` to enforce rules (1+ steps, 2-digit numbering, no duplicates). Implement `DeriveMetadata` to extract `out_dir` and `--write-output` using regex. Handle edge cases like missing fences.",
@@ -156,7 +156,7 @@
         "updatedAt": "2025-12-30T21:39:47.862Z"
       },
       {
-        "id": "3",
+        "id": 3,
         "title": "Implement State Persistence and Reporting Models",
         "description": "Create the data models for run state and reporting, including atomic JSON persistence.",
         "details": "Implement `internal/state` and `internal/report`. Define `RunState` struct with schema version, pack hash, and step statuses. Implement `SaveStateAtomic(path, state)` using a temp-file-rename strategy to prevent corruption. Define `ReportV1` struct for the machine-readable summary. Include JSON tags. Use `encoding/json` for serialization.",
@@ -233,7 +233,7 @@
         "updatedAt": "2025-12-30T21:42:14.958Z"
       },
       {
-        "id": "4",
+        "id": 4,
         "title": "Implement Shell Execution Engine",
         "description": "Build the execution runner to run bash scripts, stream output, and manage log files.",
         "details": "Implement `internal/exec`. Create `Runner` struct with fields for Shell, WorkDir, and Env. Implement `RunPrelude` and `RunStep`. Use `os/exec` to invoke `bash -lc`. Pipe `Cmd.Stdout` and `Cmd.Stderr`. Implement a streaming mechanism (e.g., `io.MultiWriter` to file and a callback function) to capture logs in real-time. Ensure process termination handling.",
@@ -311,7 +311,7 @@
         "updatedAt": "2025-12-30T21:41:02.568Z"
       },
       {
-        "id": "5",
+        "id": 5,
         "title": "Implement Flag Injection Logic",
         "description": "Add logic to safely inject user-provided flags into `oracle` command invocations within steps.",
         "details": "Extend `internal/exec` or `internal/pack` with a transformation function. It should scan step body lines; if a line matches `^\\s*oracle\\s+`, append the extra flags. Ensure it handles whitespace correctly and does not modify non-oracle lines. This must be conservative to avoid breaking scripts.",
@@ -390,7 +390,7 @@
         "updatedAt": "2025-12-30T21:43:01.577Z"
       },
       {
-        "id": "6",
+        "id": 6,
         "title": "Wire Application Core (Plain Mode)",
         "description": "Connect parser, executor, and state modules to create a functional non-TUI application runner.",
         "details": "Implement `internal/app`. Create `RunPlain` method. Orchestrate the flow: Load Pack -> Load State (if resume) -> Iterate Steps -> (Prompt/Confirm if interactive) -> Execute -> Update State -> Write Report. Handle `stop-on-fail` logic. This forms the business logic layer independent of the UI.",
@@ -469,7 +469,7 @@
         "updatedAt": "2025-12-30T21:44:25.776Z"
       },
       {
-        "id": "7",
+        "id": 7,
         "title": "Implement CLI Entrypoint and Subcommands",
         "description": "Set up the CLI framework using Cobra or standard flag parsing to expose functionality.",
         "details": "Implement `internal/cli`. Use `github.com/spf13/cobra` for robust command handling. Create `root` command and subcommands `run`, `validate`, `list`. specific flags: `--yes`, `--resume`, `--no-tui`, `--oracle-bin`. Map these flags to the `app` configuration. Ensure `help` text is auto-generated.",
@@ -548,7 +548,7 @@
         "updatedAt": "2025-12-30T21:45:35.705Z"
       },
       {
-        "id": "8",
+        "id": 8,
         "title": "Develop Markdown Rendering for Terminal",
         "description": "Implement a renderer to display Markdown content (previews) as ANSI-styled text.",
         "details": "Implement `internal/render`. integrate `github.com/charmbracelet/glamour`. Create a function `RenderMarkdown(text string) string` that returns ANSI strings. Configure a style (dark/light mode aware if possible, or fixed high-contrast).",
@@ -627,7 +627,7 @@
         "updatedAt": "2025-12-30T21:46:38.923Z"
       },
       {
-        "id": "9",
+        "id": 9,
         "title": "Build TUI with Bubble Tea",
         "description": "Create the interactive terminal UI using Bubble Tea, featuring step lists and log streaming.",
         "details": "Implement `internal/tui`. Define the Bubble Tea `Model`. Use `github.com/charmbracelet/bubbles/list` for the step list and `github.com/charmbracelet/bubbles/viewport` for logs. Implement `Update` loop to handle messages (KeyMsg, WindowSizeMsg, custom StatusMsg). Bind the `app` logic to trigger execution commands that return `Cmd`s. Show step status (spinner for running, check for success). Integrate `internal/render` for previews.",
@@ -707,7 +707,7 @@
         "updatedAt": "2025-12-30T21:48:37.639Z"
       },
       {
-        "id": "10",
+        "id": 10,
         "title": "Setup Release Automation",
         "description": "Configure GoReleaser to automate builds and packaging for distribution.",
         "details": "Create `.goreleaser.yaml`. Configure builds for Linux (amd64/arm64), macOS (amd64/arm64), and Windows. Set up archive formats (tar.gz, zip). Configure Homebrew tap integration. Ensure binary is stripped and optimized.",
@@ -786,7 +786,7 @@
         "updatedAt": "2025-12-30T21:48:59.876Z"
       },
       {
-        "id": "11",
+        "id": 11,
         "title": "Implement 'Run All' Sequential Execution in TUI",
         "description": "Add capability to execute all steps sequentially in TUI mode, triggered by CLI flag or keybinding.",
         "details": "",
@@ -863,7 +863,7 @@
         "updatedAt": "2025-12-31T03:49:55.846Z"
       },
       {
-        "id": "12",
+        "id": 12,
         "title": "Fix Step Header Parsing for Em-Dash Support",
         "description": "Update the Markdown parser to correctly handle step headers formatted with an em-dash (e.g., '# 01 — Step Title') in addition to the existing parenthesis format.",
         "details": "The current `ExtractSteps` function in `internal/parser/parser.go` uses a regular expression that strictly expects a closing parenthesis after the step number (e.g., `^#\\s+(\\d+)\\)\\s+(.*)`). This causes validation failures for files using the em-dash format commonly found in some documentation styles (e.g., `^#\\s+(\\d+)\\s+[—-]\\s+(.*)`).\n\nImplementation Steps:\n1.  Locate `stepRegex` in `internal/parser/parser.go`.\n2.  Modify the regular expression to allow for alternate separators. A proposed pattern is `^#\\s+(\\d+)(?:\\)|\\.|\\s+[—-])\\s+(.*)`, covering `1)`, `1.`, and `1 —` formats.\n3.  Update the logic that parses the captured groups to ensure the step number and title are correctly extracted regardless of the separator used.\n4.  Ensure that the change does not break existing support for parenthesis-based headers.\n5.  (Optional) If strict formatting is desired, normalize the stored title, but the primary goal is parsing flexibility.",
@@ -877,7 +877,7 @@
         "updatedAt": "2025-12-31T20:08:52.250Z"
       },
       {
-        "id": "13",
+        "id": 13,
         "title": "Implement ROI Extraction and Execution Filtering",
         "description": "Parse ROI values from step headers and add CLI flags to filter step execution based on an ROI threshold.",
         "details": "Update the core parser and execution engine to support value-based step filtering.\n\n1. **Parser Update (`internal/parser`)**: Modify `ExtractSteps` and the `Step` struct. Update the header regex (building on Task 12's em-dash support) to capture an optional `ROI=(\\d+(\\.\\d+)?)` pattern. Store this as a `float64` in the `Step` struct. Ideally, strip the 'ROI=...' substring from the final `Step.Title` for cleaner UI display.\n\n2. **CLI Flags (`internal/cli`)**: Add new flags to the `run` command: `--roi-threshold` (float, default 0) and `--roi-mode` (string, options: 'over', 'under', default 'over'). Bind these to the application configuration.\n\n3. **Filtering Logic (`internal/app`)**: In the `RunPlain` loop (and TUI equivalent), inject a filtering check before execution. \n   - If `mode` is 'over', skip steps where `step.ROI < threshold`.\n   - If `mode` is 'under', skip steps where `step.ROI > threshold`.\n   - Treat steps without an explicit ROI tag as having an ROI of 0.0.",
@@ -960,7 +960,10 @@
       "completedCount": 13,
       "tags": [
         "master"
-      ]
+      ],
+      "created": "2025-12-31T22:18:01.945Z",
+      "description": "Tasks for master context",
+      "updated": "2025-12-31T22:18:01.945Z"
     }
   }
 }

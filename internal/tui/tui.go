@@ -37,6 +37,9 @@ type Model struct {
 	width    int
 	height   int
 	running  bool
+	runAll   bool
+	currentIdx int
+	
 	err      error
 	logLines []string
 	logChan  chan string
@@ -45,14 +48,15 @@ type Model struct {
 func NewModel(p *pack.Pack, r *exec.Runner, s *state.RunState, roiThreshold float64, roiMode string) Model {
 	var items []list.Item
 	for _, step := range p.Steps {
-		// Filter by ROI
+		// Filter by ROI for the display list
 		if roiThreshold > 0 {
 			if roiMode == "under" {
+				// Exclusive: skip if ROI is greater than or equal to threshold
 				if step.ROI >= roiThreshold {
 					continue
 				}
 			} else {
-				// Default to "over" (includes threshold)
+				// Default "over": inclusive, skip if ROI is strictly less than threshold
 				if step.ROI < roiThreshold {
 					continue
 				}
@@ -74,16 +78,16 @@ func NewModel(p *pack.Pack, r *exec.Runner, s *state.RunState, roiThreshold floa
 	sp.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
 
 	vp := viewport.New(0, 0)
-	vp.SetContent("Select a step and press Enter to run...")
+	vp.SetContent("Press Enter to run selected, 'a' to run all filtered steps.")
 
 	return Model{
-		list:     l,
-		viewport: vp,
-		spinner:  sp,
-		pack:     p,
-		runner:   r,
-		state:    s,
-		logChan:  make(chan string, 100),
+		list:         l,
+		viewport:     vp,
+		spinner:      sp,
+		pack:         p,
+		runner:       r,
+		state:        s,
+		logChan:      make(chan string, 100),
 	}
 }
 
@@ -92,7 +96,7 @@ func (m Model) Init() tea.Cmd {
 }
 
 type LogMsg string
-type FinishedMsg struct{ Err error }
+type FinishedMsg struct{ Err error; ID string }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
@@ -107,10 +111,23 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				i, ok := m.list.SelectedItem().(item)
 				if ok {
 					m.running = true
+					m.runAll = false
 					m.logLines = nil
 					m.viewport.SetContent("Starting execution...")
 					return m, tea.Batch(m.runStep(i.id), m.waitForLogs(), m.spinner.Tick)
 				}
+			}
+		case "a":
+			if !m.running && len(m.list.Items()) > 0 {
+				m.running = true
+				m.runAll = true
+				m.currentIdx = 0
+				m.logLines = nil
+				// Select first item and start
+				m.list.Select(0)
+				i := m.list.Items()[0].(item)
+				m.viewport.SetContent(fmt.Sprintf("Starting sequential run (Step 1/%d)...", len(m.list.Items())))
+				return m, tea.Batch(m.runStep(i.id), m.waitForLogs(), m.spinner.Tick)
 			}
 		}
 
@@ -128,16 +145,35 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, m.waitForLogs()
 
 	case FinishedMsg:
-		m.running = false
 		if msg.Err != nil {
 			m.err = msg.Err
-			m.logLines = append(m.logLines, fmt.Sprintf("\nERROR: %v", msg.Err))
+			m.logLines = append(m.logLines, fmt.Sprintf("\n❌ ERROR: %v", msg.Err))
+			m.running = false
+			m.runAll = false
 		} else {
-			m.logLines = append(m.logLines, "\nSUCCESS")
+			m.logLines = append(m.logLines, "\n✅ SUCCESS")
+			
+			if m.runAll {
+				m.currentIdx++
+				if m.currentIdx < len(m.list.Items()) {
+					// Move to next
+					m.list.Select(m.currentIdx)
+					i := m.list.Items()[m.currentIdx].(item)
+					m.logLines = append(m.logLines, fmt.Sprintf("\n--- Starting Step %d/%d ---\\n", m.currentIdx+1, len(m.list.Items())))
+					// Keep spinner going, trigger next step
+					return m, m.runStep(i.id)
+				} else {
+					m.logLines = append(m.logLines, "\n🏁 ALL STEPS COMPLETED")
+					m.running = false
+					m.runAll = false
+				}
+			} else {
+				m.running = false
+			}
 		}
 		m.viewport.SetContent(strings.Join(m.logLines, "\n"))
 		m.viewport.GotoBottom()
-		
+	
 	case spinner.TickMsg:
 		var cmd tea.Cmd
 		m.spinner, cmd = m.spinner.Update(msg)
@@ -162,7 +198,11 @@ func (m Model) View() string {
 	right := m.viewport.View()
 
 	if m.running {
-		right = m.spinner.View() + " Running...\n" + right
+		status := "Running..."
+		if m.runAll {
+			status = fmt.Sprintf("Running All (%d/%d)...", m.currentIdx+1, len(m.list.Items()))
+		}
+		right = m.spinner.View() + " " + status + "\n" + right
 	}
 
 	return lipgloss.JoinHorizontal(lipgloss.Top, left, " | ", right)
@@ -170,7 +210,11 @@ func (m Model) View() string {
 
 func (m Model) waitForLogs() tea.Cmd {
 	return func() tea.Msg {
-		return LogMsg(<-m.logChan)
+		line, ok := <-m.logChan
+		if !ok {
+			return nil
+		}
+		return LogMsg(line)
 	}
 }
 
@@ -185,7 +229,7 @@ func (m Model) runStep(id string) tea.Cmd {
 		}
 
 		if step == nil {
-			return FinishedMsg{Err: fmt.Errorf("step not found")}
+			return FinishedMsg{Err: fmt.Errorf("step not found"), ID: id}
 		}
 
 		lw := &exec.LineWriter{
@@ -196,6 +240,6 @@ func (m Model) runStep(id string) tea.Cmd {
 		
 		err := m.runner.RunStep(context.Background(), step, lw)
 		lw.Close()
-		return FinishedMsg{Err: err}
+		return FinishedMsg{Err: err, ID: id}
 	}
 }
