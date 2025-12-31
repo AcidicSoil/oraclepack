@@ -27,22 +27,24 @@ func (i item) Description() string { return i.desc }
 func (i item) FilterValue() string { return i.title }
 
 type Model struct {
-	list     list.Model
-	viewport viewport.Model
-	spinner  spinner.Model
-	pack     *pack.Pack
-	runner   *exec.Runner
-	state    *state.RunState
+	list        list.Model
+	viewport    viewport.Model
+	spinner     spinner.Model
+	pack        *pack.Pack
+	runner      *exec.Runner
+	state       *state.RunState
 	
-	width    int
-	height   int
-	running  bool
-	err      error
-	logLines []string
-	logChan  chan string
+	width       int
+	height      int
+	running     bool
+	autoAdvance bool // NEW: Tracks if we are running all steps sequentially
+	err         error
+	logLines    []string
+	logChan     chan string
 }
 
-func NewModel(p *pack.Pack, r *exec.Runner, s *state.RunState) Model {
+// NewModel creates a new TUI model.
+func NewModel(p *pack.Pack, r *exec.Runner, s *state.RunState, autoAdvance bool) Model {
 	items := make([]list.Item, len(p.Steps))
 	for i, step := range p.Steps {
 		items[i] = item{
@@ -63,22 +65,35 @@ func NewModel(p *pack.Pack, r *exec.Runner, s *state.RunState) Model {
 	vp.SetContent("Select a step and press Enter to run...")
 
 	return Model{
-		list:     l,
-		viewport: vp,
-		spinner:  sp,
-		pack:     p,
-		runner:   r,
-		state:    s,
-		logChan:  make(chan string, 100),
+		list:        l,
+		viewport:    vp,
+		spinner:     sp,
+		pack:        p,
+		runner:      r,
+		state:       s,
+		autoAdvance: autoAdvance,
+		logChan:     make(chan string, 100),
 	}
 }
 
 func (m Model) Init() tea.Cmd {
+	if m.autoAdvance {
+		// If auto-advance is on at init, trigger the first step immediately
+		// But wait, Update handles the logic better. 
+		// We can return a specific command to trigger the run of the *first* selected item.
+		// By default list selects the first item (index 0).
+		
+		// To be safe, let's just trigger a custom msg or rely on Update?
+		// Update is only called on Msg.
+		// Let's return a command that sends a "StartAutoRunMsg"
+		return tea.Batch(m.spinner.Tick, func() tea.Msg { return StartAutoRunMsg{} })
+	}
 	return nil
 }
 
 type LogMsg string
 type FinishedMsg struct{ Err error }
+type StartAutoRunMsg struct{}
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
@@ -88,6 +103,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "ctrl+c", "q":
 			return m, tea.Quit
+		case "a":
+			// Toggle Auto Advance
+			if !m.running {
+				m.autoAdvance = true
+				return m, func() tea.Msg { return StartAutoRunMsg{} }
+			}
 		case "enter":
 			if !m.running {
 				i, ok := m.list.SelectedItem().(item)
@@ -97,6 +118,18 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.viewport.SetContent("Starting execution...")
 					return m, tea.Batch(m.runStep(i.id), m.waitForLogs(), m.spinner.Tick)
 				}
+			}
+		}
+
+	case StartAutoRunMsg:
+		if !m.running {
+			i, ok := m.list.SelectedItem().(item)
+			if ok {
+				m.running = true
+				m.autoAdvance = true // Ensure it's set
+				m.logLines = nil
+				m.viewport.SetContent(fmt.Sprintf("Auto-running Step %s...", i.id))
+				return m, tea.Batch(m.runStep(i.id), m.waitForLogs(), m.spinner.Tick)
 			}
 		}
 
@@ -118,12 +151,26 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.Err != nil {
 			m.err = msg.Err
 			m.logLines = append(m.logLines, fmt.Sprintf("\nERROR: %v", msg.Err))
+			m.autoAdvance = false // Stop on error
 		} else {
 			m.logLines = append(m.logLines, "\nSUCCESS")
+			
+			if m.autoAdvance {
+				// Move to next item
+				idx := m.list.Index()
+				if idx < len(m.list.Items())-1 {
+					m.list.Select(idx + 1)
+					// Trigger run for next
+					return m, func() tea.Msg { return StartAutoRunMsg{} }
+				} else {
+					m.autoAdvance = false // Done
+					m.logLines = append(m.logLines, "\nAll steps completed.")
+				}
+			}
 		}
 		m.viewport.SetContent(strings.Join(m.logLines, "\n"))
 		m.viewport.GotoBottom()
-		
+	
 	case spinner.TickMsg:
 		var cmd tea.Cmd
 		m.spinner, cmd = m.spinner.Update(msg)
@@ -148,7 +195,15 @@ func (m Model) View() string {
 	right := m.viewport.View()
 
 	if m.running {
-		right = m.spinner.View() + " Running...\n" + right
+		status := "Running..."
+		if m.autoAdvance {
+			status = "Auto-Running..."
+		}
+		right = m.spinner.View() + " " + status + "\n" + right
+	} else if m.autoAdvance {
+		right = "Auto-Advance Active (Starting next step...)\n" + right
+	} else {
+		right = "[a] Run All | [Enter] Run Step | [q] Quit\n" + right
 	}
 
 	return lipgloss.JoinHorizontal(lipgloss.Top, left, " | ", right)

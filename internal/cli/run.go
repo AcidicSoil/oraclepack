@@ -16,6 +16,7 @@ var (
 	yes        bool
 	resume     bool
 	stopOnFail bool
+	runAll     bool
 )
 
 var runCmd = &cobra.Command{
@@ -51,7 +52,7 @@ var runCmd = &cobra.Command{
 			return a.RunPlain(context.Background(), os.Stdout)
 		}
 
-		m := tui.NewModel(a.Pack, a.Runner, a.State)
+		m := tui.NewModel(a.Pack, a.Runner, a.State, runAll)
 		p := tea.NewProgram(m, tea.WithAltScreen())
 		_, err := p.Run()
 		return err
@@ -62,5 +63,6 @@ func init() {
 	runCmd.Flags().BoolVarP(&yes, "yes", "y", false, "Auto-approve all steps")
 	runCmd.Flags().BoolVar(&resume, "resume", false, "Resume from last successful step")
 	runCmd.Flags().BoolVar(&stopOnFail, "stop-on-fail", true, "Stop execution if a step fails")
+	runCmd.Flags().BoolVar(&runAll, "run-all", false, "Auto-advance through all steps sequentially in TUI")
 	rootCmd.AddCommand(runCmd)
 }

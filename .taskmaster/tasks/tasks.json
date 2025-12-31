@@ -784,13 +784,90 @@
           }
         ],
         "updatedAt": "2025-12-30T21:48:59.876Z"
+      },
+      {
+        "id": "11",
+        "title": "Implement 'Run All' Sequential Execution in TUI",
+        "description": "Add capability to execute all steps sequentially in TUI mode, triggered by CLI flag or keybinding.",
+        "details": "",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Analyze and Refactor TUI Model for Sequential Execution State",
+            "description": "Examine the current Bubble Tea model in `internal/tui` and add state fields necessary to track a 'Run All' process.",
+            "dependencies": [],
+            "details": "Update the TUI model struct to include fields like `runningAll bool`, `pendingSteps []int` (indices or IDs), and `stopOnFailure bool`. This state will track whether the TUI is currently in the auto-advance mode. Review `internal/tui/model.go` (or equivalent) to ensure the `Update` loop can distinguish between a single manual run and a sequential run.",
+            "status": "done",
+            "testStrategy": "Unit tests for the model's initial state and state transitions when `runningAll` flags are toggled.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-31T03:49:55.837Z"
+          },
+          {
+            "id": 2,
+            "title": "Implement CLI Flag for Auto-Start and Pass to TUI",
+            "description": "Add a `--run-all` or similar flag to the CLI and propagate this configuration to the TUI initialization.",
+            "dependencies": [
+              1
+            ],
+            "details": "Modify `internal/cli` to accept a new boolean flag (e.g., `--run-all` or `--auto`). Pass this boolean value into the function that constructs the TUI model. Ensure that if this flag is true, the TUI initializes in the `runningAll` state immediately upon startup.",
+            "status": "done",
+            "testStrategy": "Integration test invoking the binary with `--run-all`, verifying via mock or logs that the TUI enters the auto-run state immediately.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-31T03:49:55.839Z"
+          },
+          {
+            "id": 3,
+            "title": "Implement 'Run All' Keybinding in TUI",
+            "description": "Register a new keybinding in the Bubble Tea application to trigger the sequential execution mode manually.",
+            "dependencies": [
+              1
+            ],
+            "details": "In `internal/tui/update.go` (or wherever key messages are handled), add a case for the chosen key (e.g., 'a' or 'r'). When pressed, set `model.runningAll = true`, identify the first pending step, and trigger the `Cmd` to run that step. Add visual feedback (e.g., a status line update) indicating 'Running All Steps'.",
+            "status": "done",
+            "testStrategy": "Manual verification or UI test harness (if available) pressing the key and observing the state change.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-31T03:49:55.841Z"
+          },
+          {
+            "id": 4,
+            "title": "Implement Sequential Step Chaining Logic",
+            "description": "Modify the TUI Update loop to automatically trigger the next step upon the successful completion of the current step when in 'Run All' mode.",
+            "dependencies": [
+              1,
+              3
+            ],
+            "details": "In the `Update` function, locate the message handling for a step completion (e.g., `StepFinishedMsg`). If `model.runningAll` is true and the step succeeded, locate the next step index. Return a command to run the next step immediately. If the step failed or was the last one, set `runningAll = false` and update the status message.",
+            "status": "done",
+            "testStrategy": "Unit tests for the `Update` function: simulate a `StepFinishedMsg` (success) while `runningAll` is true, asserting that the returned command is the execution of the next step.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-31T03:49:55.844Z"
+          },
+          {
+            "id": 5,
+            "title": "Implement User Interruption Handling",
+            "description": "Allow the user to interrupt the sequential execution flow using a keybinding (e.g., Esc or Ctrl+C).",
+            "dependencies": [
+              4
+            ],
+            "details": "In the `Update` loop, ensure that key presses like `Esc` or `q` are checked during the 'Run All' sequence. If pressed, set `runningAll = false` to stop the chain after the current step finishes (or attempt to cancel the current running step if the execution engine supports cancellation context).",
+            "status": "done",
+            "testStrategy": "Unit test simulating an interrupt key press during `runningAll` state, verifying that the state resets to `runningAll = false` and no further steps are queued.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-31T03:49:55.846Z"
+          }
+        ],
+        "updatedAt": "2025-12-31T03:49:55.846Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-30T21:48:59.876Z",
-      "taskCount": 10,
-      "completedCount": 10,
+      "lastModified": "2025-12-31T03:49:55.847Z",
+      "taskCount": 11,
+      "completedCount": 11,
       "tags": [
         "master"
       ]
