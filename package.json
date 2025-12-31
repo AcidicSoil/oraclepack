@@ -1,0 +1,9 @@
+{
+  "devDependencies": {
+    "codefetch": "^2.2.0"
+  },
+  "scripts": {
+    "code:p": "codefetch --include-dir prompts --exclude-dir prompts/codex-skills -o prompts.md --max-tokens 500 --token-limiter truncated",
+    "code:s": "codefetch -t 5 --include-dir skills -e .md --exclude-dir skills/canvas-fonts --exclude-files *.txt -o skills.md --max-tokens 75000 --token-limiter truncated"
+  }
+}
