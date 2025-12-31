@@ -24,6 +24,18 @@ cd oraclepack
 go build -o oraclepack ./cmd/oraclepack
 ```
 
+### Building for Windows (.exe)
+
+#### On Windows (PowerShell/CMD)
+```powershell
+go build -o oraclepack.exe ./cmd/oraclepack
+```
+
+#### Cross-Compiling for Windows (from Linux/macOS)
+```bash
+GOOS=windows GOARCH=amd64 go build -o oraclepack.exe ./cmd/oraclepack
+```
+
 ### Global Installation (Run from Anywhere)
 
 To run `oraclepack` from any directory, move the binary to a location in your system's `PATH`.
