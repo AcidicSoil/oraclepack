@@ -47,6 +47,27 @@ $env:Path += ";C:\Tools"
 [Environment]::SetEnvironmentVariable("Path", $env:Path, [EnvironmentVariableTarget]::User)
 ```
 
+## Fix: Git Bash wrapper with path-conversion disabled
+
+### Run in Git Bash on Windows
+
+```bash
+cat > "$HOME/bin/oraclepack" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Git for Windows (Git Bash) path-conversion off for this exec call.
+# Required so /home/... is not rewritten into C:/Program Files/Git/...
+MSYS_NO_PATHCONV=1 exec wsl.exe -d Ubuntu-24.04 -u user -- /home/user/.local/bin/oraclepack "$@"
+EOF
+
+# ensure LF line endings + executable
+sed -i 's/\r$//' "$HOME/bin/oraclepack"
+chmod +x "$HOME/bin/oraclepack"
+hash -r
+
+```
+
 #### WSL (Windows Subsystem for Linux)
 Follow the **Linux** instructions above.
 
