@@ -23,6 +23,33 @@ cd oraclepack
 go build -o oraclepack ./cmd/oraclepack
 ```
 
+### Global Installation (Run from Anywhere)
+
+To run `oraclepack` from any directory, move the binary to a location in your system's `PATH`.
+
+#### Linux & macOS
+```bash
+# Move the binary to /usr/local/bin (requires sudo)
+sudo mv oraclepack /usr/local/bin/
+
+# OR install to your local bin (no sudo required)
+mkdir -p ~/.local/bin
+mv oraclepack ~/.local/bin/
+# Note: Ensure ~/.local/bin is in your shell's PATH
+```
+
+#### Windows (PowerShell)
+1. Create a directory for your tools (e.g., `C:\Tools`).
+2. Move `oraclepack.exe` into that directory.
+3. Add that directory to your PATH:
+```powershell
+$env:Path += ";C:\Tools"
+[Environment]::SetEnvironmentVariable("Path", $env:Path, [EnvironmentVariableTarget]::User)
+```
+
+#### WSL (Windows Subsystem for Linux)
+Follow the **Linux** instructions above.
+
 ## 🛠 Usage
 
 ### 1. Run a Pack (Interactive TUI)
@@ -30,7 +57,7 @@ go build -o oraclepack ./cmd/oraclepack
 This is the default mode. It opens an interactive list where you can select steps and run them.
 
 ```bash
-./oraclepack run examples/setup-project.md
+oraclepack run examples/setup-project.md
 ```
 
 ### 2. Resume a Previous Run
@@ -38,7 +65,7 @@ This is the default mode. It opens an interactive list where you can select step
 If a step failed, fix the issue and resume exactly where you left off:
 
 ```bash
-./oraclepack run examples/setup-project.md --resume
+oraclepack run examples/setup-project.md --resume
 ```
 
 ### 3. Plain Mode (Non-Interactive)
@@ -46,7 +73,7 @@ If a step failed, fix the issue and resume exactly where you left off:
 Ideal for CI/CD or users who prefer standard terminal output:
 
 ```bash
-./oraclepack run examples/setup-project.md --no-tui
+oraclepack run examples/setup-project.md --no-tui
 ```
 
 ### 4. Inject Oracle Flags
@@ -54,7 +81,7 @@ Ideal for CI/CD or users who prefer standard terminal output:
 Pass extra flags down to every `oracle` command invocation inside the pack:
 
 ```bash
-./oraclepack run my-pack.md --oracle-bin="/path/to/oracle" -- --verbose --debug
+oraclepack run my-pack.md --oracle-bin="/path/to/oracle" -- --verbose --debug
 ```
 
 ### 5. Validate a Pack
@@ -62,7 +89,7 @@ Pass extra flags down to every `oracle` command invocation inside the pack:
 Check if your Markdown file follows the Oracle Pack specification:
 
 ```bash
-./oraclepack validate my-pack.md
+oraclepack validate my-pack.md
 ```
 
 ### 6. List Steps
@@ -70,7 +97,7 @@ Check if your Markdown file follows the Oracle Pack specification:
 Quickly view all steps defined in a pack without executing them:
 
 ```bash
-./oraclepack list my-pack.md
+oraclepack list my-pack.md
 ```
 
 ## 📝 Oracle Pack Format
