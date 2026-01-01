@@ -1255,21 +1255,6 @@
         "updatedAt": "2026-01-01T01:21:52.861Z"
       },
       {
-        "id": 18,
-        "title": "Fix Regression: Restore Runner Working Directory to Project Root",
-        "description": "Revert the runner execution context to use the project root instead of the output directory to preserve relative file path resolution, while ensuring the output path is available via environment variables.",
-        "details": "This task addresses a regression introduced in Task 16 where changing the runner's working directory broke scripts relying on relative paths (e.g., sourcing files). \n\n1. **Modify App Logic (`internal/app/app.go`)**: \n   - Locate the initialization of the `exec.Runner`. \n   - Revert the `WorkDir` assignment: Ensure it is set to the project root (current working directory `.`) instead of the resolved `out_dir`. \n   - Ensure `os.MkdirAll(config.OutDir, 0755)` is still called explicitly during initialization to guarantee the target directory exists.\n\n2. **Environment Variable Injection**: \n   - Pass the resolved absolute path of the output directory to the runner's environment.\n   - Use the key `ORACLE_OUT_DIR` (or simply `OUT_DIR` if preferred, but namespaced is safer) in the `Env` map of the `Runner` struct.\n\n3. **Runner Verification (`internal/exec/runner.go`)**: \n   - Verify that the `Runner` correctly merges these injected variables with the system environment before execution.",
-        "testStrategy": "1. **Regression Test**: Create a test pack in `examples/test_paths` containing a step that attempts to source a dummy file from the project root (e.g., `source ./examples/test_paths/helper.sh`). Failure to find the file indicates the working directory is incorrect.\n2. **Environment Check**: The test script should also write a file to `$ORACLE_OUT_DIR/test_artifact.txt`.\n3. **Verification**: Run the pack with a specific `--out-dir` (e.g., `./dist`). Assert that the script succeeds (exit code 0) and that `test_artifact.txt` exists inside `./dist`.",
-        "status": "pending",
-        "dependencies": [
-          "4",
-          "6",
-          "16"
-        ],
-        "priority": "high",
-        "subtasks": []
-      },
-      {
         "id": 19,
         "title": "Fix Regression in Relative Path Handling and Output Directory Context",
         "description": "Modify the application core to prevent the runner from changing the working directory to out_dir, ensuring relative paths resolve from the project root while preserving output directory availability via environment variables.",
