@@ -106,7 +106,11 @@ func (a *App) Prepare() error {
 	}
 
 	// Update Runner
-	a.Runner.WorkDir = outDir
+	// We do NOT set WorkDir to outDir, so execution happens in the project root.
+	// This preserves relative path resolution for -f flags.
+	// a.Runner.WorkDir = outDir 
+	
+	// Add out_dir to Env so scripts can reference it
 	a.Runner.Env = append(a.Runner.Env, fmt.Sprintf("out_dir=%s", outDir))
 
 	return nil

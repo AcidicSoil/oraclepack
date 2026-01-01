@@ -1253,13 +1253,44 @@
           }
         ],
         "updatedAt": "2026-01-01T01:21:52.861Z"
+      },
+      {
+        "id": "18",
+        "title": "Fix Regression: Restore Runner Working Directory to Project Root",
+        "description": "Revert the runner execution context to use the project root instead of the output directory to preserve relative file path resolution, while ensuring the output path is available via environment variables.",
+        "details": "This task addresses a regression introduced in Task 16 where changing the runner's working directory broke scripts relying on relative paths (e.g., sourcing files). \n\n1. **Modify App Logic (`internal/app/app.go`)**: \n   - Locate the initialization of the `exec.Runner`. \n   - Revert the `WorkDir` assignment: Ensure it is set to the project root (current working directory `.`) instead of the resolved `out_dir`. \n   - Ensure `os.MkdirAll(config.OutDir, 0755)` is still called explicitly during initialization to guarantee the target directory exists.\n\n2. **Environment Variable Injection**: \n   - Pass the resolved absolute path of the output directory to the runner's environment.\n   - Use the key `ORACLE_OUT_DIR` (or simply `OUT_DIR` if preferred, but namespaced is safer) in the `Env` map of the `Runner` struct.\n\n3. **Runner Verification (`internal/exec/runner.go`)**: \n   - Verify that the `Runner` correctly merges these injected variables with the system environment before execution.",
+        "testStrategy": "1. **Regression Test**: Create a test pack in `examples/test_paths` containing a step that attempts to source a dummy file from the project root (e.g., `source ./examples/test_paths/helper.sh`). Failure to find the file indicates the working directory is incorrect.\n2. **Environment Check**: The test script should also write a file to `$ORACLE_OUT_DIR/test_artifact.txt`.\n3. **Verification**: Run the pack with a specific `--out-dir` (e.g., `./dist`). Assert that the script succeeds (exit code 0) and that `test_artifact.txt` exists inside `./dist`.",
+        "status": "pending",
+        "dependencies": [
+          "4",
+          "6",
+          "16"
+        ],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": "19",
+        "title": "Fix Regression in Relative Path Handling and Output Directory Context",
+        "description": "Modify the application core to prevent the runner from changing the working directory to out_dir, ensuring relative paths resolve from the project root while preserving output directory availability via environment variables.",
+        "details": "This task addresses a regression where setting an output directory changed the execution working directory, breaking scripts that rely on relative paths for sourcing files or reading project assets.\n\n1. **Modify App Wiring (`internal/app/app.go`)**: Locate the `RunPlain` method and any TUI initialization logic where the `exec.Runner` is constructed. Identify the line where `Runner.WorkDir` is currently set to `config.OutDir`.\n2. **Restore Working Directory**: Change the `WorkDir` assignment to use the project root (current working directory `.`) regardless of whether `out_dir` is set. This ensures paths like `./internal/...` resolve correctly.\n3. **Environment Variable Injection**: Ensure that `config.OutDir` is passed into the runner's `Env` map (e.g., as `ORACLE_OUT_DIR`). This allows scripts to explicitly target the output directory for artifacts (e.g., `cp result.json $ORACLE_OUT_DIR/`).\n4. **Directory Creation**: Retain the `os.MkdirAll(config.OutDir, 0755)` call to ensure the target directory exists before execution begins.",
+        "testStrategy": "Create a regression test pack `examples/test_paths_regression`.\n1. **Setup**: The pack should contain a step that attempts to read a known file from the project root using a relative path (e.g., `cat ./README.md`).\n2. **Output Verification**: The step should also write a file to the configured output path variable: `echo 'test' > \"$ORACLE_OUT_DIR/verification.txt\"`.\n3. **Execution**: Run this pack with the CLI flag `--out-dir ./temp_output`.\n4. **Assertions**: Verify the command succeeds (exit code 0), proving `README.md` was found. Verify `./temp_output/verification.txt` exists, proving the environment variable was passed correctly.",
+        "status": "done",
+        "dependencies": [
+          "4",
+          "6",
+          "16"
+        ],
+        "priority": "high",
+        "subtasks": [],
+        "updatedAt": "2026-01-01T18:50:16.938Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-01-01T01:21:52.865Z",
-      "taskCount": 17,
-      "completedCount": 17,
+      "lastModified": "2026-01-01T18:50:16.939Z",
+      "taskCount": 19,
+      "completedCount": 18,
       "tags": [
         "master"
       ]
