@@ -1102,13 +1102,164 @@
           }
         ],
         "updatedAt": "2026-01-01T00:30:34.168Z"
+      },
+      {
+        "id": "16",
+        "title": "Implement Robust Output Directory Handling and CLI Override",
+        "description": "Implement logic to parse `out_dir` from the pack prelude, support a CLI override flag, and propagate the resolved path to the execution environment with a safe default.",
+        "details": "1. **CLI Extension (`internal/cli`)**: Add a global `--out-dir` string flag to the root or `run` command using Cobra. Map this flag to the application configuration.\n2. **Configuration Resolution (`internal/app`)**: In the application entry point (wired in Task 6), implement precedence logic: `CLI Flag` > `Prelude Metadata (out_dir)` > `Default (.)`. Ensure that if no value is provided, it defaults to the current working directory (`.`) rather than an empty string (which could imply root).\n3. **Directory Provisioning**: Before starting the `internal/exec.Runner`, ensure the target directory exists using `os.MkdirAll(path, 0755)`. Handle permission errors gracefully.\n4. **Execution Context (`internal/exec`)**: Pass the resolved path to the `Runner` struct. Ensure the `os/exec.Cmd` uses this path as its `Dir` field so that scripts run relative to the output directory. Alternatively, export it as an environment variable (e.g., `ORACLE_OUT_DIR`).\n5. **Parser Integration**: Verify `internal/pack.DeriveMetadata` correctly extracts the `out_dir` pattern from the Markdown prelude as implemented in Task 2.",
+        "testStrategy": "1. **Unit Tests (`internal/app`)**: Create a test case validating the precedence logic (e.g., define `out_dir` in a mock pack, provide a different CLI flag, assertion should match CLI flag). Test the default case ensuring it resolves to `.`.\n2. **Integration Tests**: Create a temporary test pack with `out_dir: ./subdir`. Run it and verify `subdir` is created and output files appear there. Repeat with the `--out-dir` flag overriding it to `./override`.",
+        "status": "done",
+        "dependencies": [
+          "2",
+          "4",
+          "6",
+          "7"
+        ],
+        "priority": "high",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Add Output Directory Flag to CLI",
+            "description": "Extend the root command in internal/cli/root.go to include a global string flag '--out-dir' (shorthand '-o') and bind it to the configuration.",
+            "dependencies": [],
+            "details": "In 'internal/cli/root.go', define a 'outDir' variable. Add 'rootCmd.PersistentFlags().StringVarP(&outDir, \"out-dir\", \"o\", \"\", ...)' in the init function. Ensure this value is accessible when commands execute, potentially by binding it to viper or passing it to the config struct.",
+            "status": "pending",
+            "testStrategy": "Unit test in 'internal/cli/root_test.go' verifying that parsing arguments with '--out-dir' correctly sets the variable.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Verify and Expose Pack Metadata Extraction",
+            "description": "Review internal/pack to ensure the Pack struct includes an OutDir field populated from the prelude, and ensure it is accessible to the app layer.",
+            "dependencies": [
+              1
+            ],
+            "details": "Check 'internal/pack/parser.go' and the 'Pack' struct definition. Verify 'DeriveMetadata' regex matches 'out_dir: <path>'. If missing, implement the regex extraction logic. Ensure the 'Pack' struct has a public 'OutDir' field (string) that holds this value.",
+            "status": "pending",
+            "testStrategy": "Unit test in 'internal/pack/parser_test.go' with a sample markdown containing 'out_dir: ./build' in the prelude and asserting the parsed Pack struct reflects this.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Implement Configuration Resolution Logic",
+            "description": "Create a resolution function in internal/app that determines the final output directory based on precedence rules.",
+            "dependencies": [
+              2
+            ],
+            "details": "In 'internal/app/config.go' (or similar), implement 'ResolveOutDir(cliFlag string, packOutDir string) string'. Logic: If cliFlag != \"\", use cliFlag. Else if packOutDir != \"\", use packOutDir. Else return \".\" (current directory). Ensure absolute path resolution is considered if needed.",
+            "status": "pending",
+            "testStrategy": "Table-driven unit tests in 'internal/app/config_test.go' covering all permutation cases (CLI only, Pack only, Both, None).",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Provision Output Directory",
+            "description": "Add logic to the application flow to create the resolved output directory before execution begins.",
+            "dependencies": [
+              3
+            ],
+            "details": "In the main execution flow (likely 'internal/app/app.go' or 'internal/cli/run.go'), call 'ResolveOutDir'. Then use 'os.MkdirAll(resolvedPath, 0755)' to ensure the directory exists. Return a user-friendly error if creation fails (e.g., permissions issues).",
+            "status": "pending",
+            "testStrategy": "Integration test creating a temporary directory structure, running the provisioning logic, and verifying the directory is created on the filesystem.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 5,
+            "title": "Propagate Directory to Execution Runner",
+            "description": "Update the Runner initialization in internal/exec to accept the resolved working directory and use it during command execution.",
+            "dependencies": [
+              4
+            ],
+            "details": "Modify 'internal/exec/runner.go': Update the 'Runner' struct to include a 'WorkDir' field. Update 'NewRunner' signature. In the 'Run' or 'execCmd' method, set 'cmd.Dir = r.WorkDir'. Optionally set an 'ORACLE_OUT_DIR' environment variable in 'cmd.Env'. Update call sites in 'internal/app' to pass the resolved path.",
+            "status": "pending",
+            "testStrategy": "Integration test in 'internal/exec/runner_test.go': Configure a Runner with a specific temporary WorkDir, execute 'pwd', and assert the output matches the WorkDir.",
+            "parentId": "undefined"
+          }
+        ],
+        "updatedAt": "2026-01-01T01:17:49.560Z"
+      },
+      {
+        "id": "17",
+        "title": "Implement TUI Post-Run Navigation and State Reset",
+        "description": "Implement a state machine within the TUI to manage transitions between list, running, and summary views, including logic for resetting the run state.",
+        "details": "Extend the Bubble Tea model in `internal/tui` to support distinct application states: `ViewSteps`, `ViewRunning`, and `ViewDone`.\n\n1. **State Machine (`internal/tui/model.go`)**: Introduce an enumerated type for the view state. Refactor the `Update` method to process key messages differently based on the current state.\n2. **Done Screen**: Create a new view function `viewDone()` that displays a summary of the execution (e.g., 'All steps completed', 'Failed at step X').\n3. **Navigation Logic (`internal/tui/update.go`)**:\n   - **'b' (Back)**: Transition from `ViewDone` to `ViewSteps` without resetting state, allowing the user to review the list.\n   - **'n' (New Run)**: Trigger a `ResetState()` function. This function must traverse the `internal/state.RunState` and mark all steps as `StatusPending`, clear the execution logs in the UI, reset the list cursor to index 0, and transition to `ViewSteps`.\n   - **'r' (Rerun)**: If in `ViewDone`, trigger the execution logic for the specific failed step or restart the sequence (depending on context), transitioning back to `ViewRunning`.\n   - **'q' (Quit)**: Terminate the application.\n4. **Integration**: Ensure that the completion of the `Run All` command (Task 11) automatically transitions the state to `ViewDone`.",
+        "testStrategy": "1. **Unit Tests (`internal/tui/model_test.go`)**: Create a test initializing the model in `ViewDone`. Send the 'n' KeyMsg and assert that the view state changes to `ViewSteps` and the step status map is cleared. Send 'b' and assert the view changes but state remains.\n2. **Manual Integration**: Run the full tool. Execute all steps. Verify the UI automatically switches to the Done screen. Press 'n' and verify all green checkmarks reset to empty/pending. Press 'q' to ensure clean exit.",
+        "status": "done",
+        "dependencies": [
+          "3",
+          "11",
+          "15"
+        ],
+        "priority": "medium",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Define TUI View States and Refactor Model",
+            "description": "Introduce an enumerated type for application states and update the Model struct to track the current view state.",
+            "dependencies": [],
+            "details": "In `internal/tui/model.go`, define an enum (e.g., `ViewState`) with values `ViewSteps`, `ViewRunning`, and `ViewDone`. Add a `state ViewState` field to the `Model` struct. Refactor `NewModel` to initialize the state to `ViewSteps`.",
+            "status": "pending",
+            "testStrategy": "Unit test verifying that NewModel initializes with the correct default ViewState.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Implement Update Loop State Routing",
+            "description": "Refactor the Bubble Tea Update method to delegate logic based on the current ViewState.",
+            "dependencies": [
+              1
+            ],
+            "details": "In `internal/tui/update.go`, modify the `Update` function to switch on `m.state`. Create separate handler methods (e.g., `updateSteps`, `updateRunning`, `updateDone`) for handling key messages specific to each view. Ensure global keys like Ctrl+C still work universally.",
+            "status": "pending",
+            "testStrategy": "Unit tests mocking key presses in different states to ensure only relevant handlers are triggered.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Implement ViewDone UI Rendering",
+            "description": "Create the view logic for the summary screen displayed after execution completes.",
+            "dependencies": [
+              1
+            ],
+            "details": "In `internal/tui/view.go`, implement a `viewDone()` function. It should render a summary string based on the `RunState` (e.g., success message or error details). Update the main `View()` method to call `viewDone()` when the state is `ViewDone`.",
+            "status": "pending",
+            "testStrategy": "Manual verification by forcing the state to ViewDone and checking the rendered output for correct summary information.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Implement State Transitions and Reset Logic",
+            "description": "Add logic to handle transitions between views, including a complete state reset for new runs.",
+            "dependencies": [
+              2
+            ],
+            "details": "In `internal/tui/update.go`, implement the 'n' key logic in `ViewDone` to call a new method `resetState()`. This method must iterate through `m.store.Steps`, resetting their status to `StatusPending` and clearing logs. It should then switch `m.state` back to `ViewSteps`. Implement 'b' to switch to `ViewSteps` without resetting.",
+            "status": "pending",
+            "testStrategy": "Unit test initializing model in ViewDone with executed steps, sending 'n', and verifying steps are pending and state is ViewSteps.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 5,
+            "title": "Integrate Run Completion with ViewDone Transition",
+            "description": "Ensure the TUI automatically transitions to the Done view when the runner finishes execution.",
+            "dependencies": [
+              2
+            ],
+            "details": "Modify the `Update` method in `internal/tui/update.go`. Listen for a specific completion message (e.g., `RunFinishedMsg`) generated by the execution command. Upon receipt, update `m.state` to `ViewDone`. Ensure this transition preserves the final execution status for display.",
+            "status": "pending",
+            "testStrategy": "Integration test simulating a run completion message and asserting the model state transitions to ViewDone.",
+            "parentId": "undefined"
+          }
+        ],
+        "updatedAt": "2026-01-01T01:21:52.861Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-01-01T00:30:34.172Z",
-      "taskCount": 15,
-      "completedCount": 15,
+      "lastModified": "2026-01-01T01:21:52.865Z",
+      "taskCount": 17,
+      "completedCount": 17,
       "tags": [
         "master"
       ]

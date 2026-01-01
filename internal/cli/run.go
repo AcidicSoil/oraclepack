@@ -40,14 +40,17 @@ var runCmd = &cobra.Command{
 			Resume:       resume,
 			StopOnFail:   stopOnFail,
 			WorkDir:      ".",
+			OutDir:       outDir,
 			ROIThreshold: roiThreshold,
 			ROIMode:      roiMode,
 		}
 
 		a := app.New(cfg)
-		if err := a.LoadPack(); err != nil {
+		// Prepare the application (loads pack, resolves out_dir, provisions env)
+		if err := a.Prepare(); err != nil {
 			return err
 		}
+		
 		if err := a.LoadState(); err != nil {
 			return err
 		}
@@ -56,7 +59,7 @@ var runCmd = &cobra.Command{
 			return a.RunPlain(context.Background(), os.Stdout)
 		}
 
-		m := tui.NewModel(a.Pack, a.Runner, a.State, cfg.ROIThreshold, cfg.ROIMode, runAll)
+		m := tui.NewModel(a.Pack, a.Runner, a.State, cfg.StatePath, cfg.ROIThreshold, cfg.ROIMode, runAll)
 		p := tea.NewProgram(m, tea.WithAltScreen())
 		_, err := p.Run()
 		return err

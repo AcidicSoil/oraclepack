@@ -14,15 +14,12 @@ import (
 )
 
 func (a *App) RunPlain(ctx context.Context, out io.Writer) error {
+	// Assumes a.Prepare() and a.LoadState() have been called by the CLI entrypoint.
 	if a.Pack == nil {
-		if err := a.LoadPack(); err != nil {
-			return err
-		}
+		return fmt.Errorf("pack not loaded")
 	}
 	if a.State == nil {
-		if err := a.LoadState(); err != nil {
-			return err
-		}
+		return fmt.Errorf("state not loaded")
 	}
 
 	if a.State.StartTime.IsZero() {
@@ -30,6 +27,7 @@ func (a *App) RunPlain(ctx context.Context, out io.Writer) error {
 	}
 
 	fmt.Fprintf(out, "Running pack: %s\n", a.Config.PackPath)
+	fmt.Fprintf(out, "Output directory: %s\n", a.Runner.WorkDir)
 	
 	// Prelude
 	if a.Pack.Prelude.Code != "" {

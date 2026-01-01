@@ -11,6 +11,7 @@ import (
 var (
 	noTUI     bool
 	oracleBin string
+	outDir    string
 )
 
 var rootCmd = &cobra.Command{
@@ -30,4 +31,5 @@ func Execute() {
 func init() {
 	rootCmd.PersistentFlags().BoolVar(&noTUI, "no-tui", false, "Disable the TUI and run in plain terminal mode")
 	rootCmd.PersistentFlags().StringVar(&oracleBin, "oracle-bin", "oracle", "Path to the oracle binary")
+	rootCmd.PersistentFlags().StringVarP(&outDir, "out-dir", "o", "", "Output directory for step execution")
 }

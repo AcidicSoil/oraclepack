@@ -33,6 +33,12 @@ echo "low"
 			ROIMode:      "over",
 		}
 		app := New(cfg)
+		if err := app.Prepare(); err != nil {
+			t.Fatalf("Prepare failed: %v", err)
+		}
+		if err := app.LoadState(); err != nil {
+			t.Fatalf("LoadState failed: %v", err)
+		}
 		if err := app.RunPlain(context.Background(), &out); err != nil {
 			t.Fatalf("RunPlain failed: %v", err)
 		}
@@ -57,6 +63,12 @@ echo "low"
 			ROIMode:      "under",
 		}
 		app := New(cfg)
+		if err := app.Prepare(); err != nil {
+			t.Fatalf("Prepare failed: %v", err)
+		}
+		if err := app.LoadState(); err != nil {
+			t.Fatalf("LoadState failed: %v", err)
+		}
 		if err := app.RunPlain(context.Background(), &out); err != nil {
 			t.Fatalf("RunPlain failed: %v", err)
 		}

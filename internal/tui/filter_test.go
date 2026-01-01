@@ -21,7 +21,7 @@ func TestFilterLogic(t *testing.T) {
 	s := &state.RunState{}
 
 	// Initialize model with no filter (threshold 0)
-	m := NewModel(p, r, s, 0, "over", false)
+	m := NewModel(p, r, s, "", 0, "over", false)
 
 	if len(m.list.Items()) != 3 {
 		t.Fatalf("expected 3 items initially, got %d", len(m.list.Items()))

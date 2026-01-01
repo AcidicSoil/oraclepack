@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/spinner"
@@ -14,6 +15,14 @@ import (
 	"github.com/user/oraclepack/internal/exec"
 	"github.com/user/oraclepack/internal/pack"
 	"github.com/user/oraclepack/internal/state"
+)
+
+type ViewState int
+
+const (
+	ViewSteps ViewState = iota
+	ViewRunning
+	ViewDone
 )
 
 type item struct {
@@ -35,13 +44,16 @@ type Model struct {
 	pack        *pack.Pack
 	runner      *exec.Runner
 	state       *state.RunState
+	statePath   string
 	
 	width    int
 	height   int
-	running  bool
-	runAll   bool // State for sequential execution
+	
+	viewState ViewState
+	running   bool
+	runAll    bool // State for sequential execution
 	currentIdx int
-	autoRun  bool // Config to auto-start on init
+	autoRun   bool // Config to auto-start on init
 	
 	// Filtering state
 	allSteps     []item // Store all items to support dynamic filtering
@@ -54,7 +66,7 @@ type Model struct {
 	logChan  chan string
 }
 
-func NewModel(p *pack.Pack, r *exec.Runner, s *state.RunState, roiThreshold float64, roiMode string, autoRun bool) Model {
+func NewModel(p *pack.Pack, r *exec.Runner, s *state.RunState, statePath string, roiThreshold float64, roiMode string, autoRun bool) Model {
 	var allItems []item
 	for _, step := range p.Steps {
 		allItems = append(allItems, item{
@@ -85,13 +97,15 @@ func NewModel(p *pack.Pack, r *exec.Runner, s *state.RunState, roiThreshold floa
 		spinner:      sp,
 		filterInput:  ti,
 		pack:         p,
-	runner:       r,
+		runner:       r,
 		state:        s,
+		statePath:    statePath,
 		autoRun:      autoRun,
 		allSteps:     allItems,
 		roiThreshold: roiThreshold,
 		roiMode:      roiMode,
 		logChan:      make(chan string, 100),
+		viewState:    ViewSteps,
 	}
 
 	// Apply initial filter
@@ -147,52 +161,58 @@ type FinishedMsg struct{ Err error; ID string }
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
-	// Handle global keys first if not filtering
-	if !m.isFiltering {
-		switch msg := msg.(type) {
-		case tea.KeyMsg:
+	// Global keys (Quit)
+	if msg, ok := msg.(tea.KeyMsg); ok {
+		switch msg.String() {
+		case "ctrl+c":
+			return m, tea.Quit
+		}
+	}
+
+	switch m.viewState {
+	case ViewDone:
+		if msg, ok := msg.(tea.KeyMsg); ok {
 			switch msg.String() {
-			case "ctrl+c", "q":
+			case "q":
 				return m, tea.Quit
-			case "enter":
-				if !m.running {
-					i, ok := m.list.SelectedItem().(item)
-					if ok {
-						m.running = true
-						m.runAll = false
-						m.logLines = nil
-						m.viewport.SetContent("Starting execution...")
-						return m, tea.Batch(m.runStep(i.id), m.waitForLogs(), m.spinner.Tick)
-					}
-				}
-			case "a":
-				if !m.running && len(m.list.Items()) > 0 {
+			case "b":
+				m.viewState = ViewSteps
+				return m, nil
+			case "n":
+				m.resetState()
+				return m, nil
+			case "r":
+				// Rerun selected step (if we have one selected in list)
+				// Or rerun the whole sequence if that was the context?
+				// Requirement says "rerun a step ('r')". Assuming selected step.
+				// We need to transition to ViewSteps logic or trigger run directly.
+				m.viewState = ViewSteps // Go back to steps view? Or Running?
+				// To trigger run, we can fall through or simulate Enter.
+				// Let's just switch to steps and let user press Enter, or trigger run immediately?
+				// "trigger the execution logic for the specific failed step"
+				i, ok := m.list.SelectedItem().(item)
+				if ok {
 					m.running = true
-					m.runAll = true
-					m.currentIdx = 0
+					m.viewState = ViewRunning
 					m.logLines = nil
-					m.list.Select(0)
-					i := m.list.Items()[0].(item)
-					m.viewport.SetContent(fmt.Sprintf("Starting sequential run (Step 1/%d)...", len(m.list.Items())))
+					m.viewport.SetContent("Re-running execution...")
 					return m, tea.Batch(m.runStep(i.id), m.waitForLogs(), m.spinner.Tick)
-				}
-			case "f":
-				if !m.running {
-					m.isFiltering = true
-					m.filterInput.Focus()
-					// Reset input to current threshold
-					m.filterInput.SetValue(fmt.Sprintf("%.1f", m.roiThreshold))
-					return m, textinput.Blink
 				}
 			}
 		}
-	} else {
-		// Handling filter input
+		// In Done view, we might still want to handle window size?
+		if msg, ok := msg.(tea.WindowSizeMsg); ok {
+			m.handleWindowSize(msg)
+		}
+		return m, nil
+	}
+
+	// Filter Input Mode
+	if m.isFiltering {
 		switch msg := msg.(type) {
 		case tea.KeyMsg:
 			switch msg.String() {
 			case "enter":
-				// Apply filter
 				var val float64
 				_, err := fmt.Sscanf(m.filterInput.Value(), "%f", &val)
 				if err == nil {
@@ -214,26 +234,62 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Batch(cmds...)
 	}
 
+	// Normal Steps View / Running
 	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "q":
+			if !m.running {
+				return m, tea.Quit
+			}
+		case "enter":
+			if !m.running {
+				i, ok := m.list.SelectedItem().(item)
+				if ok {
+					m.running = true
+					m.viewState = ViewRunning
+					m.runAll = false
+					m.logLines = nil
+					m.viewport.SetContent("Starting execution...")
+					return m, tea.Batch(m.runStep(i.id), m.waitForLogs(), m.spinner.Tick)
+				}
+			}
+		case "a":
+			if !m.running && len(m.list.Items()) > 0 {
+				m.running = true
+				m.viewState = ViewRunning
+				m.runAll = true
+				m.currentIdx = 0
+				m.logLines = nil
+				m.list.Select(0)
+				i := m.list.Items()[0].(item)
+				m.viewport.SetContent(fmt.Sprintf("Starting sequential run (Step 1/%d)...", len(m.list.Items())))
+				return m, tea.Batch(m.runStep(i.id), m.waitForLogs(), m.spinner.Tick)
+			}
+		case "f":
+			if !m.running {
+				m.isFiltering = true
+				m.filterInput.Focus()
+				m.filterInput.SetValue(fmt.Sprintf("%.1f", m.roiThreshold))
+				return m, textinput.Blink
+			}
+		}
+
 	case StartAutoRunMsg:
 		if !m.running && len(m.list.Items()) > 0 {
 			m.running = true
+			m.viewState = ViewRunning
 			m.runAll = true
 			m.currentIdx = 0
 			m.logLines = nil
 			m.list.Select(0)
-			// Trigger first step
 			i := m.list.Items()[0].(item)
 			m.viewport.SetContent(fmt.Sprintf("Auto-running all steps (Step 1/%d)...", len(m.list.Items())))
 			return m, tea.Batch(m.runStep(i.id), m.waitForLogs(), m.spinner.Tick)
 		}
 
 	case tea.WindowSizeMsg:
-		m.width = msg.Width
-		m.height = msg.Height
-		m.list.SetSize(msg.Width/3, msg.Height-4)
-		m.viewport.Width = msg.Width - (msg.Width / 3) - 6
-		m.viewport.Height = msg.Height - 4
+		m.handleWindowSize(msg)
 
 	case LogMsg:
 		m.logLines = append(m.logLines, string(msg))
@@ -247,6 +303,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.logLines = append(m.logLines, fmt.Sprintf("\n❌ ERROR: %v", msg.Err))
 			m.running = false
 			m.runAll = false
+			m.viewState = ViewDone // Or stay in steps? Requirement says ViewDone on completion?
+			// If error, maybe stay on steps or go to done with error?
+			// "Failed at step X" is a summary state.
+			m.viewState = ViewDone
 		} else {
 			m.logLines = append(m.logLines, "\n✅ SUCCESS")
 			
@@ -255,15 +315,17 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if m.currentIdx < len(m.list.Items()) {
 					m.list.Select(m.currentIdx)
 					i := m.list.Items()[m.currentIdx].(item)
-					m.logLines = append(m.logLines, fmt.Sprintf("\n--- Starting Step %d/%d ---\\n", m.currentIdx+1, len(m.list.Items())))
+					m.logLines = append(m.logLines, fmt.Sprintf("\n--- Starting Step %d/%d ---\n", m.currentIdx+1, len(m.list.Items())))
 					return m, m.runStep(i.id)
 				} else {
 					m.logLines = append(m.logLines, "\n🏁 ALL STEPS COMPLETED")
 					m.running = false
 					m.runAll = false
+					m.viewState = ViewDone
 				}
 			} else {
 				m.running = false
+				m.viewState = ViewDone // Single step done
 			}
 		}
 		m.viewport.SetContent(strings.Join(m.logLines, "\n"))
@@ -275,7 +337,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, cmd
 	}
 
-	if !m.running && !m.isFiltering {
+	if !m.running && !m.isFiltering && m.viewState == ViewSteps {
 		var cmd tea.Cmd
 		m.list, cmd = m.list.Update(msg)
 		cmds = append(cmds, cmd)
@@ -284,9 +346,40 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
+func (m *Model) handleWindowSize(msg tea.WindowSizeMsg) {
+	m.width = msg.Width
+	m.height = msg.Height
+	m.list.SetSize(msg.Width/3, msg.Height-4)
+	m.viewport.Width = msg.Width - (msg.Width / 3) - 6
+	m.viewport.Height = msg.Height - 4
+}
+
+func (m *Model) resetState() {
+	// Reset RunState
+	m.state.StartTime = time.Now()
+	m.state.StepStatuses = make(map[string]state.StepStatus)
+	
+	// Save cleared state to disk
+	if m.statePath != "" {
+		_ = state.SaveStateAtomic(m.statePath, m.state)
+	}
+
+	// Reset UI
+	m.logLines = nil
+	m.viewport.SetContent("State reset. Ready for new run.")
+	m.list.Select(0)
+	m.viewState = ViewSteps
+	m.running = false
+	m.runAll = false
+}
+
 func (m Model) View() string {
 	if m.width == 0 {
 		return "Initializing..."
+	}
+
+	if m.viewState == ViewDone {
+		return m.viewDone()
 	}
 
 	if m.isFiltering {
@@ -310,7 +403,6 @@ func (m Model) View() string {
 		}
 		right = m.spinner.View() + " " + status + "\n" + right
 	} else {
-		// Show filter status if active
 		filterStatus := ""
 		if m.roiThreshold > 0 {
 			modeSym := ">="
@@ -325,6 +417,30 @@ func (m Model) View() string {
 	}
 
 	return lipgloss.JoinHorizontal(lipgloss.Top, left, " | ", right)
+}
+
+func (m Model) viewDone() string {
+	title := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("42")).Render("Execution Complete")
+	if m.err != nil {
+		title = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("196")).Render("Execution Failed")
+	}
+
+	help := "[n] New Run  [r] Rerun  [b] Back to List  [q] Quit"
+	
+	// Show the log viewport in the done screen too? Or just a summary?
+	// Requirement says "displays a summary".
+	// But viewing the logs is useful.
+	// I'll show the viewport in the center/bottom.
+	
+	content := lipgloss.JoinVertical(lipgloss.Center,
+		title,
+		"",
+		m.viewport.View(),
+		"",
+		help,
+	)
+	
+	return lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, content)
 }
 
 func (m Model) waitForLogs() tea.Cmd {

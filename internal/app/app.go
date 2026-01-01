@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/user/oraclepack/internal/exec"
@@ -19,6 +20,7 @@ type Config struct {
 	DryRun       bool
 	OracleFlags  []string
 	WorkDir      string
+	OutDir       string // CLI override for output directory
 	ROIThreshold float64
 	ROIMode      string // "over" or "under"
 }
@@ -77,5 +79,35 @@ func (a *App) LoadState() error {
 		SchemaVersion: 1,
 		StepStatuses:  make(map[string]state.StepStatus),
 	}
+	return nil
+}
+
+// Prepare resolves configuration and prepares the runtime environment.
+func (a *App) Prepare() error {
+	if a.Pack == nil {
+		if err := a.LoadPack(); err != nil {
+			return err
+		}
+	}
+
+	// Resolve Output Directory
+	// Precedence: CLI > Pack > Default (.)
+	outDir := a.Config.OutDir
+	if outDir == "" && a.Pack.OutDir != "" {
+		outDir = a.Pack.OutDir
+	}
+	if outDir == "" {
+		outDir = "."
+	}
+
+	// Provision Directory
+	if err := os.MkdirAll(outDir, 0755); err != nil {
+		return fmt.Errorf("failed to create output directory %s: %w", outDir, err)
+	}
+
+	// Update Runner
+	a.Runner.WorkDir = outDir
+	a.Runner.Env = append(a.Runner.Env, fmt.Sprintf("out_dir=%s", outDir))
+
 	return nil
 }

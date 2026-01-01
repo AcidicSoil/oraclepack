@@ -33,6 +33,13 @@ echo "step 2"
 	}
 
 	a := New(cfg)
+	if err := a.Prepare(); err != nil {
+		t.Fatalf("Prepare failed: %v", err)
+	}
+	if err := a.LoadState(); err != nil {
+		t.Fatalf("LoadState failed: %v", err)
+	}
+	
 	var out bytes.Buffer
 	err := a.RunPlain(context.Background(), &out)
 	if err != nil {
