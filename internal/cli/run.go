@@ -18,6 +18,7 @@ var (
 	stopOnFail   bool
 	roiThreshold float64
 	roiMode      string
+	runAll       bool
 )
 
 var runCmd = &cobra.Command{
@@ -55,7 +56,7 @@ var runCmd = &cobra.Command{
 			return a.RunPlain(context.Background(), os.Stdout)
 		}
 
-		m := tui.NewModel(a.Pack, a.Runner, a.State, cfg.ROIThreshold, cfg.ROIMode)
+		m := tui.NewModel(a.Pack, a.Runner, a.State, cfg.ROIThreshold, cfg.ROIMode, runAll)
 		p := tea.NewProgram(m, tea.WithAltScreen())
 		_, err := p.Run()
 		return err
@@ -68,5 +69,6 @@ func init() {
 	runCmd.Flags().BoolVar(&stopOnFail, "stop-on-fail", true, "Stop execution if a step fails")
 	runCmd.Flags().Float64Var(&roiThreshold, "roi-threshold", 0.0, "Filter steps by ROI threshold")
 	runCmd.Flags().StringVar(&roiMode, "roi-mode", "over", "ROI filter mode ('over' or 'under')")
+	runCmd.Flags().BoolVar(&runAll, "run-all", false, "Automatically run all steps sequentially on start")
 	rootCmd.AddCommand(runCmd)
 }
