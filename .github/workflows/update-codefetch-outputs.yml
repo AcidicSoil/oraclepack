@@ -1,0 +1,68 @@
+# path: .github/workflows/update-codefetch-outputs.yml
+name: Update codefetch outputs
+
+on:
+  push:
+    # Run on every push, but ignore pushes that only update the generated docs
+    paths-ignore:
+      - "codefetch/oraclepack.md"
+      - "codefetch/oraclepack-all.md"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-codefetch-outputs-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  generate-and-commit:
+    runs-on: ubuntu-latest
+
+    # Avoid running on the bot's own commit if you ever change paths-ignore later
+    if: github.actor != 'github-actions[bot]'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -f package-lock.json ]]; then
+            npm ci
+          else
+            npm install
+          fi
+
+      - name: Run code generation
+        run: |
+          npm run code
+          npm run codea
+
+      - name: Commit and push changes (if any)
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ -z "$(git status --porcelain)" ]]; then
+            echo "No changes to commit."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add oraclepack.md oraclepack-all.md
+          git commit -m "chore(codefetch): update generated outputs [skip ci]"
+          git push

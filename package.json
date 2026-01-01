@@ -4,6 +4,6 @@
   },
   "scripts": {
     "code": "codefetch -t 5 --include-dir cmd,internal -o oraclepack.md --max-tokens 50000 --token-limiter truncated",
-    "codea": "codefetch -t 5 -o oraclepack-all.md --max-tokens 50000 --token-limiter truncated"
+    "codea": "codefetch -t 5 -o oraclepack-all.md"
   }
 }
