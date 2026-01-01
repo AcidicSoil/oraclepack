@@ -1,0 +1,15 @@
+Usage: task-master tags [options] [command]
+
+Manage tags for task organization
+
+Options:
+  -h, --help                        display help for command
+
+Commands:
+  list [options]                    List all tags with statistics (default
+                                    action)
+  add [options] <name>              Create a new tag
+  use <name>                        Switch to a different tag
+  remove [options] <name>           Remove a tag
+  rename <oldName> <newName>        Rename a tag
+  copy [options] <source> <target>  Copy a tag with all its tasks
