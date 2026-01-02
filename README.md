@@ -1,5 +1,29 @@
 # oraclepack
 
+<p align="center">
+  <a href="https://github.com/&lt;OWNER&gt;/&lt;REPO&gt;/actions/workflows/ci.yml">
+    <img alt="CI" src="https://github.com/&lt;OWNER&gt;/&lt;REPO&gt;/actions/workflows/ci.yml/badge.svg" />
+  </a>
+
+  <a href="https://github.com/&lt;OWNER&gt;/&lt;REPO&gt;/actions/workflows/release.yml">
+    <img alt="Release" src="https://github.com/&lt;OWNER&gt;/&lt;REPO&gt;/actions/workflows/release.yml/badge.svg" />
+  </a>
+
+  <a href="https://github.com/&lt;OWNER&gt;/&lt;REPO&gt;/releases/latest">
+    <img alt="Release Version" src="https://img.shields.io/github/v/release/&lt;OWNER&gt;/&lt;REPO&gt;?sort=semver" />
+  </a>
+
+  <a href="https://github.com/&lt;OWNER&gt;/&lt;REPO&gt;/blob/main/LICENSE">
+    <img alt="License" src="https://img.shields.io/github/license/&lt;OWNER&gt;/&lt;REPO&gt;" />
+  </a>
+
+  <a href="https://github.com/&lt;OWNER&gt;/&lt;REPO&gt;/blob/main/go.mod">
+    <img alt="Go Version" src="https://img.shields.io/github/go-mod/go-version/&lt;OWNER&gt;/&lt;REPO&gt;" />
+  </a>
+</p>
+
+
+
 `oraclepack` is a polished, TUI-driven runner for **Oracle Packs**—interactive bash scripts embedded within Markdown files. It's designed for developers who want to share, validate, and execute complex multi-step workflows with real-time feedback and state persistence.
 
 ## 🚀 Features
