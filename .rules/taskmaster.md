@@ -6,9 +6,9 @@ alwaysApply: true
 
 # Taskmaster Tool & Command Reference
 
-This document provides a detailed reference for interacting with Taskmaster, covering both the recommended MCP tools, suitable for integrations like Cline, and the corresponding `task-master` CLI commands, designed for direct user interaction or fallback.
+This document provides a detailed reference for interacting with Taskmaster, covering both the recommended MCP tools, suitable for integrations like <AGENT>, and the corresponding `task-master` CLI commands, designed for direct user interaction or fallback.
 
-**Note:** For interacting with Taskmaster programmatically or via integrated tools, using the **MCP tools is strongly recommended** due to better performance, structured data, and error handling. The CLI commands serve as a user-friendly alternative and fallback. 
+**Note:** For interacting with Taskmaster programmatically or via integrated tools, using the **MCP tools is strongly recommended** due to better performance, structured data, and error handling. The CLI commands serve as a user-friendly alternative and fallback.
 
 **Important:** Several MCP tools involve AI processing... The AI-powered tools include `parse_prd`, `analyze_project_complexity`, `update_subtask`, `update_task`, `update`, `expand_all`, `expand_task`, and `add_task`.
 
@@ -38,8 +38,8 @@ This document provides a detailed reference for interacting with Taskmaster, cov
     *   `skipInstall`: `Skip installing dependencies. Default is false.` (CLI: `--skip-install`)
     *   `addAliases`: `Add shell aliases tm, taskmaster, hamster, and ham. Default is false.` (CLI: `--aliases`)
     *   `yes`: `Skip prompts and use defaults/provided arguments. Default is false.` (CLI: `-y, --yes`)
-*   **Usage:** Run this once at the beginning of a new project, typically via an integrated tool like Cline. Operates on the current working directory of the MCP server. 
-*   **Important:** Once complete, you *MUST* parse a prd in order to generate tasks. There will be no tasks files until then. The next step after initializing should be to create a PRD using the example PRD in .taskmaster/templates/example_prd.txt. 
+*   **Usage:** Run this once at the beginning of a new project, typically via an integrated tool like <AGENT>. Operates on the current working directory of the MCP server.
+*   **Important:** Once complete, you *MUST* parse a prd in order to generate tasks. There will be no tasks files until then. The next step after initializing should be to create a PRD using the example PRD in .taskmaster/templates/example_prd.txt.
 *   **Tagging:** Use the `--tag` option to parse the PRD into a specific, non-default tag context. If the tag doesn't exist, it will be created automatically. Example: `task-master parse-prd spec.txt --tag=new-feature`.
 
 ### 2. Parse PRD (`parse_prd`)
@@ -84,7 +84,7 @@ This document provides a detailed reference for interacting with Taskmaster, cov
 *   **Usage (CLI):** Run without flags to view current configuration and available models. Use set flags to update specific roles. Use `--setup` for guided configuration, including custom models. To set a custom model via flags, use `--set-<role>=<model_id>` along with either `--ollama` or `--openrouter`.
 *   **Notes:** Configuration is stored in `.taskmaster/config.json` in the project root. This command/tool modifies that file. Use `listAvailableModels` or `task-master models` to see internally supported models. OpenRouter custom models are validated against their live API. Ollama custom models are not validated live.
 *   **API note:** API keys for selected AI providers (based on their model) need to exist in the mcp.json file to be accessible in MCP context. The API keys must be present in the local .env file for the CLI to be able to read them.
-*   **Model costs:** The costs in supported models are expressed in dollars. An input/output value of 3 is $3.00. A value of 0.8 is $0.80. 
+*   **Model costs:** The costs in supported models are expressed in dollars. An input/output value of 3 is $3.00. A value of 0.8 is $0.80.
 *   **Warning:** DO NOT MANUALLY EDIT THE .taskmaster/config.json FILE. Use the included commands either in the MCP or CLI format as needed. Always prioritize MCP tools when available and use the CLI as a fallback.
 
 ---
@@ -552,7 +552,7 @@ Environment variables are used **only** for sensitive API keys related to AI pro
     *   `AZURE_OPENAI_ENDPOINT`
     *   `OLLAMA_BASE_URL` (Default: `http://localhost:11434/api`)
 
-**Set API keys** in your **`.env`** file in the project root (for CLI use) or within the `env` section of your **`.cline/mcp.json`** file (for MCP/Cline integration). All other settings (model choice, max tokens, temperature, log level, custom endpoints) are managed in `.taskmaster/config.json` via `task-master models` command or `models` MCP tool.
+**Set API keys** in your **`.env`** file in the project root (for CLI use) or within the `env` section of your **`<AGENT>/mcp.json`** file (for MCP/<AGENT> integration). All other settings (model choice, max tokens, temperature, log level, custom endpoints) are managed in `.taskmaster/config.json` via `task-master models` command or `models` MCP tool.
 
 ---
 
@@ -566,8 +566,8 @@ Default: `core` (7 tools). Set via `TASK_MASTER_TOOLS` env var in MCP config.
 | `standard` | 14 | core + `initialize_project`, `analyze_project_complexity`, `expand_all`, `add_subtask`, `remove_task`, `add_task`, `complexity_report` |
 | `all` | 44+ | standard + dependencies, tags, research, autopilot, scoping, models, rules |
 
-**Upgrade when tool unavailable:** Edit MCP config (`.cline/mcp.json`, `.mcp.json`, or `.vscode/mcp.json`), change `TASK_MASTER_TOOLS` from `"core"` to `"standard"` or `"all"`, restart MCP.
+**Upgrade when tool unavailable:** Edit MCP config (`<AGENT>/mcp.json`, `.mcp.json`, or `.vscode/mcp.json`), change `TASK_MASTER_TOOLS` from `"core"` to `"standard"` or `"all"`, restart MCP.
 
 ---
 
-For details on how these commands fit into the development process, see the [dev_workflow.md](.clinerules/dev_workflow.md).
+For details on how these commands fit into the development process, see the [dev_workflow.md](<AGENT>rules/dev_workflow.md).

@@ -1283,5 +1283,13 @@
       "description": "Tasks for master context",
       "updated": "2026-01-01T19:43:53.899Z"
     }
+  },
+  "bugfix-tui": {
+    "tasks": [],
+    "metadata": {
+      "created": "2026-01-02T00:07:37.152Z",
+      "updated": "2026-01-02T00:07:37.152Z",
+      "description": "TUI Runtime Overrides Implementation"
+    }
   }
 }

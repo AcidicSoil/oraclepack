@@ -33,22 +33,22 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: "npm"
+          cache: "pnpm"
 
       - name: Install dependencies
         shell: bash
         run: |
           set -euo pipefail
-          if [[ -f package-lock.json ]]; then
-            npm ci
+          if [[ -f pnpm-lock.json ]]; then
+            pnpm ci
           else
-            npm install
+            pnpm install
           fi
 
       - name: Run code generation
         run: |
-          npm run code
-          npm run codea
+          pnpm code
+          pnpm codea
 
       - name: Commit and push changes (if any)
         shell: bash

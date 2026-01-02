@@ -609,6 +609,79 @@ func init() {
 }
 ```
 
+internal/errors/errors.go
+```
+package errors
+
+import (
+	"errors"
+)
+
+var (
+	// ErrInvalidPack is returned when the Markdown pack is malformed.
+	ErrInvalidPack = errors.New("invalid pack structure")
+	// ErrExecutionFailed is returned when a shell command fails.
+	ErrExecutionFailed = errors.New("execution failed")
+	// ErrConfigInvalid is returned when CLI flags or environment variables are incorrect.
+	ErrConfigInvalid = errors.New("invalid configuration")
+)
+
+// ExitCode returns the appropriate exit code for a given error.
+func ExitCode(err error) int {
+	if err == nil {
+		return 0
+	}
+
+	if errors.Is(err, ErrConfigInvalid) {
+		return 2
+	}
+
+	if errors.Is(err, ErrInvalidPack) {
+		return 3
+	}
+
+	if errors.Is(err, ErrExecutionFailed) {
+		return 4
+	}
+
+	return 1 // Generic error
+}
+```
+
+internal/errors/errors_test.go
+```
+package errors
+
+import (
+	"errors"
+	"fmt"
+	"testing"
+)
+
+func TestExitCode(t *testing.T) {
+	tests := []struct {
+		name     string
+		err      error
+		expected int
+	}{
+		{"nil error", nil, 0},
+		{"generic error", errors.New("generic"), 1},
+		{"invalid pack", ErrInvalidPack, 3},
+		{"execution failed", ErrExecutionFailed, 4},
+		{"config invalid", ErrConfigInvalid, 2},
+		{"wrapped invalid pack", fmt.Errorf("wrap: %w", ErrInvalidPack), 3},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := ExitCode(tt.err); got != tt.expected {
+				t.Errorf("ExitCode() = %v, want %v", got, tt.expected)
+			}
+		})
+	}
+}
+```
+
 internal/exec/inject.go
 ```
 package exec
@@ -883,79 +956,6 @@ func (w *LineWriter) Close() error {
 // MultiWriter handles multiple writers efficiently.
 func MultiWriter(writers ...io.Writer) io.Writer {
 	return io.MultiWriter(writers...)
-}
-```
-
-internal/errors/errors.go
-```
-package errors
-
-import (
-	"errors"
-)
-
-var (
-	// ErrInvalidPack is returned when the Markdown pack is malformed.
-	ErrInvalidPack = errors.New("invalid pack structure")
-	// ErrExecutionFailed is returned when a shell command fails.
-	ErrExecutionFailed = errors.New("execution failed")
-	// ErrConfigInvalid is returned when CLI flags or environment variables are incorrect.
-	ErrConfigInvalid = errors.New("invalid configuration")
-)
-
-// ExitCode returns the appropriate exit code for a given error.
-func ExitCode(err error) int {
-	if err == nil {
-		return 0
-	}
-
-	if errors.Is(err, ErrConfigInvalid) {
-		return 2
-	}
-
-	if errors.Is(err, ErrInvalidPack) {
-		return 3
-	}
-
-	if errors.Is(err, ErrExecutionFailed) {
-		return 4
-	}
-
-	return 1 // Generic error
-}
-```
-
-internal/errors/errors_test.go
-```
-package errors
-
-import (
-	"errors"
-	"fmt"
-	"testing"
-)
-
-func TestExitCode(t *testing.T) {
-	tests := []struct {
-		name     string
-		err      error
-		expected int
-	}{
-		{"nil error", nil, 0},
-		{"generic error", errors.New("generic"), 1},
-		{"invalid pack", ErrInvalidPack, 3},
-		{"execution failed", ErrExecutionFailed, 4},
-		{"config invalid", ErrConfigInvalid, 2},
-		{"wrapped invalid pack", fmt.Errorf("wrap: %w", ErrInvalidPack), 3},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := ExitCode(tt.err); got != tt.expected {
-				t.Errorf("ExitCode() = %v, want %v", got, tt.expected)
-			}
-		})
-	}
 }
 ```
 

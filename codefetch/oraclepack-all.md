@@ -19,6 +19,9 @@ Project Structure:
 │           │   ├── inference-first-discovery.md
 │           │   └── oracle-scratch-format.md
 │           └── SKILL.md
+├── .github
+│   └── workflows
+│       └── update-codefetch-outputs.yml
 ├── internal
 │   ├── app
 │   │   ├── app.go
@@ -61,6 +64,7 @@ Project Structure:
 │   └── strategist-questions-oracle-pack-2025-12-30.md
 ├── .browser-echo-mcp.json
 ├── .goreleaser.yaml
+├── TUI Runtime Overrides Implementation.md
 ├── go.mod
 └── package.json
 
@@ -113,6 +117,223 @@ changelog:
     exclude:
       - '^docs:'
       - '^test:'
+```
+
+TUI Runtime Overrides Implementation.md
+```
+Title:
+
+* Add TUI “Runtime Overrides” picker to inject Oracle flags + project URLs per selected oraclepack steps (with Mode 2 validation)
+
+Summary:
+
+* Extend the `oraclepack` Go TUI to let users (1) choose/enter ChatGPT project URLs (endpoints) and (2) add/remove Oracle CLI flags at runtime, then (3) select which oraclepack steps should receive those overrides, and (4) confirm before returning to the main run screen. Validation should use the “mode 2” approach (per user preference) to ensure selected flags/overrides are accepted by the upstream `oracle` CLI before running.
+
+    Branch · Extending OraclePack F…
+
+Background / Context:
+
+* `oraclepack` is a wrapper around upstream `oracle` ([https://github.com/steipete/oracle](https://github.com/steipete/oracle)) and currently injects `Runner.OracleFlags` into steps by rewriting step shell scripts via `InjectFlags` in `internal/exec/Runner.RunStep` (per assistant).
+
+    Branch · Extending OraclePack F…
+
+* User goal: allow runtime customization for different use cases, specifically cherry-picking flags and selecting/entering different project endpoints (project URLs) without editing config files per run.
+
+    Branch · Extending OraclePack F…
+
+* TUI flow requested by user: flags picker → steps-to-modify picker → confirm → return to initial run screen; plus a separate menu for project URL input/injection; a broader config menu is explicitly deferred to the future.
+
+    Branch · Extending OraclePack F…
+
+Current Behavior (Actual):
+
+* Runtime flag/endpoint selection via TUI pickers is not available (per user request implying missing functionality).
+
+    Branch · Extending OraclePack F…
+
+* Current injection mechanism is line-based regex append-at-EOL; assistant notes it can break common multi-line `oracle \` command formatting (risk/limitation in current approach).
+
+    Branch · Extending OraclePack F…
+
+Expected Behavior:
+
+* From the main run screen, a user can open a TUI flow to:
+
+  * Add/remove Oracle flags (multi-select).
+
+  * Choose which oraclepack steps will be affected (multi-select).
+
+  * Enter/select project URL(s) to be injected (separate menu in TUI).
+
+  * Confirm changes and return to the initial run screen to proceed with normal step selection and run.
+
+        Branch · Extending OraclePack F…
+
+* “Mode 2” validation runs before returning to the run screen, rejecting invalid flag combinations/overrides and showing an actionable error.
+
+    Branch · Extending OraclePack F…
+
+Requirements:
+
+* TUI picker flow:
+
+  * Multi-select UI to add/remove flags for a run.
+
+        Branch · Extending OraclePack F…
+
+  * Multi-select UI to choose which oraclepack steps are modified by the selected flag changes.
+
+        Branch · Extending OraclePack F…
+
+  * Confirmation step summarizing selected flags and affected steps; then return to the initial run screen (no immediate run required).
+
+        Branch · Extending OraclePack F…
+
+* Project URL injection:
+
+  * Provide a separate TUI menu for users to input project URL(s) that oraclepacks get sent to (endpoint customization).
+
+        Branch · Extending OraclePack F…
+
+* Validation:
+
+  * Use “mode 2” validation (user preference) to verify the injected flags/overrides are valid for `oracle` before proceeding.
+
+        Branch · Extending OraclePack F…
+
+  * Assistant proposed “dry-run parse per affected step” as the practical mode-2 mechanism, executing affected `oracle ...` invocations in `--dry-run` and failing fast with step + invocation + error output.
+
+        Branch · Extending OraclePack F…
+
+* Constraints:
+
+  * Do not build the “full customizable config menu” now; stick to the runtime pickers and project URL input described above.
+
+        Branch · Extending OraclePack F…
+
+Out of Scope:
+
+* Full configurable config/settings menu beyond project URL injection and runtime flag/step selection (explicitly deferred).
+
+    Branch · Extending OraclePack F…
+
+Reproduction Steps:
+
+* Not provided.
+
+Environment:
+
+* OS: Unknown
+
+* `oraclepack` version/commit: Unknown
+
+* TUI framework: Bubble Tea (implied by assistant discussion; exact versions unknown).
+
+    Branch · Extending OraclePack F…
+
+Evidence:
+
+* Conversation export: /mnt/data/Branch · Extending OraclePack Functionality.md
+
+    Branch · Extending OraclePack F…
+
+* Notable referenced components/files (content not included in the export):
+
+  * `oraclepack-all.md` (referenced as code base context)
+
+  * `config.json` (referenced for project URL / remote fields)
+
+        Branch · Extending OraclePack F…
+
+* Key quoted intent (per user, from the export): “picker in the TUI… cherry-pick additional flags… cherry-pick which oraclepack steps… confirm changes… separate menu… project urls… In the future… full customizable config menu… but for now…”
+
+    Branch · Extending OraclePack F…
+
+Decisions / Agreements:
+
+* Use a picker-based TUI flow (not arbitrary runtime command injection UI as the primary UX) (per user).
+
+    Branch · Extending OraclePack F…
+
+* Prefer “mode 2” validation (per user).
+
+    Branch · Extending OraclePack F…
+
+* Defer full config menu; implement only the specified pickers + project URL input now (per user).
+
+    Branch · Extending OraclePack F…
+
+Open Items / Unknowns:
+
+* Definition of “mode 2” validation is partially ambiguous:
+
+  * Assistant earlier described mode 2 as help-based preflight (`oracle --help` / `oracle <subcommand> --help`), and later described mode 2 as `--dry-run` validation per invocation; user only confirmed “mode 2” generally.
+
+        Branch · Extending OraclePack F…
+
+* Where and how project URLs should be stored (ephemeral per run vs persisted registry) is not specified by the user.
+
+    Branch · Extending OraclePack F…
+
+* Exact oraclepack step model (IDs/titles, where steps are defined) and where in the TUI state machine to add the new screens is not provided in the export (assistant referenced `internal/tui/tui.go`, but code is not attached).
+
+    Branch · Extending OraclePack F…
+
+Risks / Dependencies:
+
+* Dependency on upstream `oracle` CLI behavior and flags (validation and injected overrides must match supported CLI semantics).
+
+    Branch · Extending OraclePack F…
+
+* Injection mechanism risk: current line-based `InjectFlags` approach may break multi-line commands with `\` continuations; may require hardening or more robust parsing to safely inject flags (per assistant).
+
+    Branch · Extending OraclePack F…
+
+Acceptance Criteria:
+
+* A new TUI menu entry (from the main run screen) launches a runtime overrides flow that:
+
+  * Lets the user add/remove flags (multi-select) and proceeds to a step-selection picker (multi-select).
+
+        Branch · Extending OraclePack F…
+
+  * Includes a project URL input/selection menu to control where oraclepacks are sent.
+
+        Branch · Extending OraclePack F…
+
+  * Shows a confirmation screen summarizing: selected flags (added/removed), affected steps, and selected/entered project URL(s).
+
+        Branch · Extending OraclePack F…
+
+  * On confirmation, performs “mode 2” validation; if validation fails, the UI displays the failure and does not proceed back to the main run screen as “ready”.
+
+        Branch · Extending OraclePack F…
+
+  * If validation succeeds, returns to the main run screen with overrides staged for the run, and the user can run steps as normal.
+
+        Branch · Extending OraclePack F…
+
+Priority & Severity (if inferable from text):
+
+* Not provided.
+
+Labels (optional):
+
+* enhancement
+
+* tui
+
+* flags
+
+* validation
+
+* config
+
+* endpoints
+
+* oraclepack
+
+---
 ```
 
 go.mod
@@ -174,8 +395,9 @@ package.json
     "codefetch": "^2.2.0"
   },
   "scripts": {
-    "code": "codefetch -t 5 --include-dir cmd,internal -o oraclepack.md --max-tokens 50000 --token-limiter truncated",
-    "codea": "codefetch -t 5 -o oraclepack-all.md"
+    "code:tui": "codefetch -t 5 --include-dir cmd,internal -o oraclepack.md --max-tokens 50000 --token-limiter truncated",
+    "code:all": "codefetch -t 5 -o oraclepack-all.md",
+    "code": "pnpm code:tui && pnpm code:all"
   }
 }
 ```
@@ -1499,6 +1721,78 @@ echo "==> Version (if supported):"
 hash -r 2>/dev/null || true
 ```
 
+.github/workflows/update-codefetch-outputs.yml
+```
+# path: .github/workflows/update-codefetch-outputs.yml
+name: Update codefetch outputs
+
+on:
+  push:
+    # Run on every push, but ignore pushes that only update the generated docs
+    paths-ignore:
+      - "codefetch/oraclepack.md"
+      - "codefetch/oraclepack-all.md"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-codefetch-outputs-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  generate-and-commit:
+    runs-on: ubuntu-latest
+
+    # Avoid running on the bot's own commit if you ever change paths-ignore later
+    if: github.actor != 'github-actions[bot]'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -f pnpm-lock.json ]]; then
+            pnpm ci
+          else
+            pnpm install
+          fi
+
+      - name: Run code generation
+        run: |
+          pnpm code
+          pnpm codea
+
+      - name: Commit and push changes (if any)
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ -z "$(git status --porcelain)" ]]; then
+            echo "No changes to commit."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add oraclepack.md oraclepack-all.md
+          git commit -m "chore(codefetch): update generated outputs [skip ci]"
+          git push
+```
+
 internal/app/app.go
 ```
 package app
@@ -2066,6 +2360,79 @@ func init() {
 }
 ```
 
+internal/errors/errors.go
+```
+package errors
+
+import (
+	"errors"
+)
+
+var (
+	// ErrInvalidPack is returned when the Markdown pack is malformed.
+	ErrInvalidPack = errors.New("invalid pack structure")
+	// ErrExecutionFailed is returned when a shell command fails.
+	ErrExecutionFailed = errors.New("execution failed")
+	// ErrConfigInvalid is returned when CLI flags or environment variables are incorrect.
+	ErrConfigInvalid = errors.New("invalid configuration")
+)
+
+// ExitCode returns the appropriate exit code for a given error.
+func ExitCode(err error) int {
+	if err == nil {
+		return 0
+	}
+
+	if errors.Is(err, ErrConfigInvalid) {
+		return 2
+	}
+
+	if errors.Is(err, ErrInvalidPack) {
+		return 3
+	}
+
+	if errors.Is(err, ErrExecutionFailed) {
+		return 4
+	}
+
+	return 1 // Generic error
+}
+```
+
+internal/errors/errors_test.go
+```
+package errors
+
+import (
+	"errors"
+	"fmt"
+	"testing"
+)
+
+func TestExitCode(t *testing.T) {
+	tests := []struct {
+		name     string
+		err      error
+		expected int
+	}{
+		{"nil error", nil, 0},
+		{"generic error", errors.New("generic"), 1},
+		{"invalid pack", ErrInvalidPack, 3},
+		{"execution failed", ErrExecutionFailed, 4},
+		{"config invalid", ErrConfigInvalid, 2},
+		{"wrapped invalid pack", fmt.Errorf("wrap: %w", ErrInvalidPack), 3},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := ExitCode(tt.err); got != tt.expected {
+				t.Errorf("ExitCode() = %v, want %v", got, tt.expected)
+			}
+		})
+	}
+}
+```
+
 internal/exec/inject.go
 ```
 package exec
@@ -2340,132 +2707,6 @@ func (w *LineWriter) Close() error {
 // MultiWriter handles multiple writers efficiently.
 func MultiWriter(writers ...io.Writer) io.Writer {
 	return io.MultiWriter(writers...)
-}
-```
-
-internal/errors/errors.go
-```
-package errors
-
-import (
-	"errors"
-)
-
-var (
-	// ErrInvalidPack is returned when the Markdown pack is malformed.
-	ErrInvalidPack = errors.New("invalid pack structure")
-	// ErrExecutionFailed is returned when a shell command fails.
-	ErrExecutionFailed = errors.New("execution failed")
-	// ErrConfigInvalid is returned when CLI flags or environment variables are incorrect.
-	ErrConfigInvalid = errors.New("invalid configuration")
-)
-
-// ExitCode returns the appropriate exit code for a given error.
-func ExitCode(err error) int {
-	if err == nil {
-		return 0
-	}
-
-	if errors.Is(err, ErrConfigInvalid) {
-		return 2
-	}
-
-	if errors.Is(err, ErrInvalidPack) {
-		return 3
-	}
-
-	if errors.Is(err, ErrExecutionFailed) {
-		return 4
-	}
-
-	return 1 // Generic error
-}
-```
-
-internal/errors/errors_test.go
-```
-package errors
-
-import (
-	"errors"
-	"fmt"
-	"testing"
-)
-
-func TestExitCode(t *testing.T) {
-	tests := []struct {
-		name     string
-		err      error
-		expected int
-	}{
-		{"nil error", nil, 0},
-		{"generic error", errors.New("generic"), 1},
-		{"invalid pack", ErrInvalidPack, 3},
-		{"execution failed", ErrExecutionFailed, 4},
-		{"config invalid", ErrConfigInvalid, 2},
-		{"wrapped invalid pack", fmt.Errorf("wrap: %w", ErrInvalidPack), 3},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := ExitCode(tt.err); got != tt.expected {
-				t.Errorf("ExitCode() = %v, want %v", got, tt.expected)
-			}
-		})
-	}
-}
-```
-
-internal/render/render.go
-```
-package render
-
-import (
-	"github.com/charmbracelet/glamour"
-	"github.com/user/oraclepack/internal/pack"
-)
-
-// RenderMarkdown renders markdown text as ANSI-styled text.
-func RenderMarkdown(text string) (string, error) {
-	r, err := glamour.NewTermRenderer(
-		glamour.WithStandardStyle("dark"),
-		glamour.WithWordWrap(80),
-	)
-	if err != nil {
-		return "", err
-	}
-
-	return r.Render(text)
-}
-
-// RenderStepCode renders a step's code block for preview.
-func RenderStepCode(s pack.Step) (string, error) {
-	md := "```bash\n" + s.Code + "\n```"
-	return RenderMarkdown(md)
-}
-
-```
-
-internal/render/render_test.go
-```
-package render
-
-import (
-	"strings"
-	"testing"
-)
-
-func TestRenderMarkdown(t *testing.T) {
-	text := "# Hello\n**bold**"
-	got, err := RenderMarkdown(text)
-	if err != nil {
-		t.Fatalf("RenderMarkdown failed: %v", err)
-	}
-
-	// ANSI escape codes start with \x1b[
-	if !strings.Contains(got, "\x1b[") {
-		t.Errorf("expected ANSI codes in output, got: %q", got)
-	}
 }
 ```
 
@@ -2812,6 +3053,59 @@ type Step struct {
 }
 ```
 
+internal/render/render.go
+```
+package render
+
+import (
+	"github.com/charmbracelet/glamour"
+	"github.com/user/oraclepack/internal/pack"
+)
+
+// RenderMarkdown renders markdown text as ANSI-styled text.
+func RenderMarkdown(text string) (string, error) {
+	r, err := glamour.NewTermRenderer(
+		glamour.WithStandardStyle("dark"),
+		glamour.WithWordWrap(80),
+	)
+	if err != nil {
+		return "", err
+	}
+
+	return r.Render(text)
+}
+
+// RenderStepCode renders a step's code block for preview.
+func RenderStepCode(s pack.Step) (string, error) {
+	md := "```bash\n" + s.Code + "\n```"
+	return RenderMarkdown(md)
+}
+
+```
+
+internal/render/render_test.go
+```
+package render
+
+import (
+	"strings"
+	"testing"
+)
+
+func TestRenderMarkdown(t *testing.T) {
+	text := "# Hello\n**bold**"
+	got, err := RenderMarkdown(text)
+	if err != nil {
+		t.Fatalf("RenderMarkdown failed: %v", err)
+	}
+
+	// ANSI escape codes start with \x1b[
+	if !strings.Contains(got, "\x1b[") {
+		t.Errorf("expected ANSI codes in output, got: %q", got)
+	}
+}
+```
+
 internal/report/generate.go
 ```
 package report
@@ -2953,131 +3247,6 @@ type StepReport struct {
 	Duration  time.Duration `json:"duration"`
 	DurationMs int64         `json:"duration_ms"`
 	Error     string `json:"error,omitempty"`
-}
-```
-
-internal/state/persist.go
-```
-package state
-
-import (
-	"encoding/json"
-	"fmt"
-	"os"
-)
-
-// SaveStateAtomic saves the state to a file atomically.
-func SaveStateAtomic(path string, state *RunState) error {
-	data, err := json.MarshalIndent(state, "", "  ")
-	if err != nil {
-		return fmt.Errorf("marshal state: %w", err)
-	}
-
-	tempPath := path + ".tmp"
-	if err := os.WriteFile(tempPath, data, 0644); err != nil {
-		return fmt.Errorf("write temp file: %w", err)
-	}
-
-	if err := os.Rename(tempPath, path); err != nil {
-		os.Remove(tempPath)
-		return fmt.Errorf("rename temp file: %w", err)
-	}
-
-	return nil
-}
-
-// LoadState loads the state from a file.
-func LoadState(path string) (*RunState, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, fmt.Errorf("state file not found: %w", err)
-		}
-		return nil, fmt.Errorf("read state file: %w", err)
-	}
-
-	var state RunState
-	if err := json.Unmarshal(data, &state); err != nil {
-		return nil, fmt.Errorf("unmarshal state: %w", err)
-	}
-
-	return &state, nil
-}
-```
-
-internal/state/state_test.go
-```
-package state
-
-import (
-	"os"
-	"testing"
-)
-
-func TestStatePersistence(t *testing.T) {
-	tmpFile := "test_state.json"
-	defer os.Remove(tmpFile)
-
-	s := &RunState{
-		SchemaVersion: 1,
-		PackHash:      "abc",
-		StepStatuses: map[string]StepStatus{
-			"01": {Status: StatusSuccess, ExitCode: 0},
-		},
-	}
-
-	if err := SaveStateAtomic(tmpFile, s); err != nil {
-		t.Fatalf("SaveStateAtomic failed: %v", err)
-	}
-
-	loaded, err := LoadState(tmpFile)
-	if err != nil {
-		t.Fatalf("LoadState failed: %v", err)
-	}
-
-	if loaded.PackHash != s.PackHash {
-		t.Errorf("expected hash %s, got %s", s.PackHash, loaded.PackHash)
-	}
-
-	if loaded.StepStatuses["01"].Status != StatusSuccess {
-		t.Errorf("expected status success, got %s", loaded.StepStatuses["01"].Status)
-	}
-}
-```
-
-internal/state/types.go
-```
-package state
-
-import (
-	"time"
-)
-
-type Status string
-
-const (
-	StatusPending  Status = "pending"
-	StatusRunning  Status = "running"
-	StatusSuccess  Status = "success"
-	StatusFailed   Status = "failed"
-	StatusSkipped  Status = "skipped"
-)
-
-// RunState tracks the execution progress of an oracle pack.
-type RunState struct {
-	SchemaVersion int                   `json:"schema_version"`
-	PackHash      string                `json:"pack_hash"`
-	StartTime     time.Time             `json:"start_time"`
-	StepStatuses  map[string]StepStatus `json:"step_statuses"`
-}
-
-// StepStatus holds the outcome of an individual step.
-type StepStatus struct {
-	Status    Status    `json:"status"`
-	ExitCode  int       `json:"exit_code"`
-	StartedAt time.Time `json:"started_at"`
-	EndedAt   time.Time `json:"ended_at"`
-	Error     string    `json:"error,omitempty"`
 }
 ```
 
@@ -3668,6 +3837,131 @@ func TestInitAutoRun(t *testing.T) {
 }
 ```
 
+internal/state/persist.go
+```
+package state
+
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+)
+
+// SaveStateAtomic saves the state to a file atomically.
+func SaveStateAtomic(path string, state *RunState) error {
+	data, err := json.MarshalIndent(state, "", "  ")
+	if err != nil {
+		return fmt.Errorf("marshal state: %w", err)
+	}
+
+	tempPath := path + ".tmp"
+	if err := os.WriteFile(tempPath, data, 0644); err != nil {
+		return fmt.Errorf("write temp file: %w", err)
+	}
+
+	if err := os.Rename(tempPath, path); err != nil {
+		os.Remove(tempPath)
+		return fmt.Errorf("rename temp file: %w", err)
+	}
+
+	return nil
+}
+
+// LoadState loads the state from a file.
+func LoadState(path string) (*RunState, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, fmt.Errorf("state file not found: %w", err)
+		}
+		return nil, fmt.Errorf("read state file: %w", err)
+	}
+
+	var state RunState
+	if err := json.Unmarshal(data, &state); err != nil {
+		return nil, fmt.Errorf("unmarshal state: %w", err)
+	}
+
+	return &state, nil
+}
+```
+
+internal/state/state_test.go
+```
+package state
+
+import (
+	"os"
+	"testing"
+)
+
+func TestStatePersistence(t *testing.T) {
+	tmpFile := "test_state.json"
+	defer os.Remove(tmpFile)
+
+	s := &RunState{
+		SchemaVersion: 1,
+		PackHash:      "abc",
+		StepStatuses: map[string]StepStatus{
+			"01": {Status: StatusSuccess, ExitCode: 0},
+		},
+	}
+
+	if err := SaveStateAtomic(tmpFile, s); err != nil {
+		t.Fatalf("SaveStateAtomic failed: %v", err)
+	}
+
+	loaded, err := LoadState(tmpFile)
+	if err != nil {
+		t.Fatalf("LoadState failed: %v", err)
+	}
+
+	if loaded.PackHash != s.PackHash {
+		t.Errorf("expected hash %s, got %s", s.PackHash, loaded.PackHash)
+	}
+
+	if loaded.StepStatuses["01"].Status != StatusSuccess {
+		t.Errorf("expected status success, got %s", loaded.StepStatuses["01"].Status)
+	}
+}
+```
+
+internal/state/types.go
+```
+package state
+
+import (
+	"time"
+)
+
+type Status string
+
+const (
+	StatusPending  Status = "pending"
+	StatusRunning  Status = "running"
+	StatusSuccess  Status = "success"
+	StatusFailed   Status = "failed"
+	StatusSkipped  Status = "skipped"
+)
+
+// RunState tracks the execution progress of an oracle pack.
+type RunState struct {
+	SchemaVersion int                   `json:"schema_version"`
+	PackHash      string                `json:"pack_hash"`
+	StartTime     time.Time             `json:"start_time"`
+	StepStatuses  map[string]StepStatus `json:"step_statuses"`
+}
+
+// StepStatus holds the outcome of an individual step.
+type StepStatus struct {
+	Status    Status    `json:"status"`
+	ExitCode  int       `json:"exit_code"`
+	StartedAt time.Time `json:"started_at"`
+	EndedAt   time.Time `json:"ended_at"`
+	Error     string    `json:"error,omitempty"`
+}
+```
+
 .config/skill/strategist-questions-oracle-pack/SKILL.md
 ```
 ---
@@ -3909,6 +4203,85 @@ Produce exactly one Markdown deliverable that:
 - In the assistant response, print the chosen path first on a single line: `Output file: <path>`, then print the same Markdown content.
 ```
 
+.config/skill/strategist-questions-oracle-pack/assets/oracle-pack-template.md
+```
+<!-- path: ~/.codex/skills/strategist-questions-oracle-pack/assets/oracle-pack-template.md -->
+# oracle strategist question pack
+
+---
+
+## parsed args
+
+- codebase_name: <Unknown|value>
+- constraints: <None|value>
+- non_goals: <None|value>
+- team_size: <Unknown|value>
+- deadline: <Unknown|value>
+- out_dir: <oracle-out|value>
+- oracle_cmd: <oracle|value>
+- oracle_flags: <--browser-attachments always --files-report|value>
+- extra_files: <empty|value>
+
+---
+
+## commands (exactly 20; sorted by ROI desc; ties by lower effort)
+
+```bash
+# 01 — ROI=<..> impact=<..> confidence=<..> effort=<..> horizon=<Immediate|Strategic> category=<...> reference=<...>
+<oracle_cmd> \
+  <oracle_flags> \
+  --write-output "<out_dir>/01-<slug>.md" \
+  -p "Strategist question #01
+Reference: <{path}:{symbol} OR {endpoint} OR {event} OR Unknown>
+Category: <one of required categories>
+Horizon: <Immediate|Strategic>
+ROI: <roi> (impact=<i>, confidence=<c>, effort=<e>)
+Question: <question text>
+Rationale: <exactly one sentence>
+Smallest experiment today: <exactly one action>
+Constraints: <constraints or None>
+Non-goals: <non_goals or None>
+
+Answer format:
+1) Direct answer (1–4 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (1 action) — may differ from the suggested one if you justify it
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next." \
+  -f "<minimal evidence file 1>" \
+  -f "<optional supporting file 2>" \
+  <optional extra_files entries...>
+
+# 02 ...
+# ...
+# 20 ...
+```
+
+---
+
+## coverage check (must be satisfied)
+
+*   contracts/interfaces: <OK|Missing (state missing artifact pattern)>
+
+*   invariants: <OK|Missing (...)>
+
+*   caching/state: <OK|Missing (...)>
+
+*   background jobs: <OK|Missing (...)>
+
+*   observability: <OK|Missing (...)>
+
+*   permissions: <OK|Missing (...)>
+
+*   migrations: <OK|Missing (...)>
+
+*   UX flows: <OK|Missing (...)>
+
+*   failure modes: <OK|Missing (...)>
+
+*   feature flags: <OK|Missing (...)>
+```
+```
+
 .config/skill/strategist-questions-oracle-pack/references/attachment-minimization.md
 ```
 <!-- path: ~/.codex/skills/strategist-questions-oracle-pack/references/attachment-minimization.md -->
@@ -4147,85 +4520,6 @@ oracle  \
   --file "codefetch/packages.md"
 ```
 
-```
-
-.config/skill/strategist-questions-oracle-pack/assets/oracle-pack-template.md
-```
-<!-- path: ~/.codex/skills/strategist-questions-oracle-pack/assets/oracle-pack-template.md -->
-# oracle strategist question pack
-
----
-
-## parsed args
-
-- codebase_name: <Unknown|value>
-- constraints: <None|value>
-- non_goals: <None|value>
-- team_size: <Unknown|value>
-- deadline: <Unknown|value>
-- out_dir: <oracle-out|value>
-- oracle_cmd: <oracle|value>
-- oracle_flags: <--browser-attachments always --files-report|value>
-- extra_files: <empty|value>
-
----
-
-## commands (exactly 20; sorted by ROI desc; ties by lower effort)
-
-```bash
-# 01 — ROI=<..> impact=<..> confidence=<..> effort=<..> horizon=<Immediate|Strategic> category=<...> reference=<...>
-<oracle_cmd> \
-  <oracle_flags> \
-  --write-output "<out_dir>/01-<slug>.md" \
-  -p "Strategist question #01
-Reference: <{path}:{symbol} OR {endpoint} OR {event} OR Unknown>
-Category: <one of required categories>
-Horizon: <Immediate|Strategic>
-ROI: <roi> (impact=<i>, confidence=<c>, effort=<e>)
-Question: <question text>
-Rationale: <exactly one sentence>
-Smallest experiment today: <exactly one action>
-Constraints: <constraints or None>
-Non-goals: <non_goals or None>
-
-Answer format:
-1) Direct answer (1–4 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (1 action) — may differ from the suggested one if you justify it
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next." \
-  -f "<minimal evidence file 1>" \
-  -f "<optional supporting file 2>" \
-  <optional extra_files entries...>
-
-# 02 ...
-# ...
-# 20 ...
-```
-
----
-
-## coverage check (must be satisfied)
-
-*   contracts/interfaces: <OK|Missing (state missing artifact pattern)>
-
-*   invariants: <OK|Missing (...)>
-
-*   caching/state: <OK|Missing (...)>
-
-*   background jobs: <OK|Missing (...)>
-
-*   observability: <OK|Missing (...)>
-
-*   permissions: <OK|Missing (...)>
-
-*   migrations: <OK|Missing (...)>
-
-*   UX flows: <OK|Missing (...)>
-
-*   failure modes: <OK|Missing (...)>
-
-*   feature flags: <OK|Missing (...)>
-```
 ```
 
 </source_code>

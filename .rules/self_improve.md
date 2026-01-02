@@ -1,7 +1,5 @@
 ---
-description: Guidelines for continuously improving Cline rules based on emerging code patterns and best practices.
-globs: **/*
-alwaysApply: true
+description: Guidelines for continuously improving  rules based on emerging code patterns and best practices.
 ---
 
 - **Rule Improvement Triggers:**
@@ -38,8 +36,8 @@ alwaysApply: true
     select: { id: true, email: true },
     where: { status: 'ACTIVE' }
   });
-  
-  // Consider adding to [prisma.md](.clinerules/prisma.md):
+
+  // Consider adding to [prisma.md](.ruler/prisma.md):
   // - Standard select fields
   // - Common where conditions
   // - Performance optimization patterns
@@ -69,4 +67,4 @@ alwaysApply: true
   - Update references to external docs
   - Maintain links between related rules
   - Document breaking changes
-Follow [cline_rules.md](.clinerules/cline_rules.md) for proper rule formatting and structure.
+Follow [.ruler.md](.ruler/rules.md) for proper rule formatting and structure.
