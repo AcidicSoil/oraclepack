@@ -25,6 +25,7 @@ const (
 	ViewRunning
 	ViewDone
 	ViewOverrides
+	ViewStepPreview
 )
 
 type item struct {
@@ -44,6 +45,7 @@ type Model struct {
 	spinner     spinner.Model
 	filterInput textinput.Model
 	urlInput    URLInputModel
+	urlPicker   URLPickerModel
 	pack        *pack.Pack
 	runner      *exec.Runner
 	state       *state.RunState
@@ -52,11 +54,14 @@ type Model struct {
 	width  int
 	height int
 
-	viewState  ViewState
-	running    bool
-	runAll     bool // State for sequential execution
-	currentIdx int
-	autoRun    bool // Config to auto-start on init
+	viewState     ViewState
+	running       bool
+	runAll        bool // State for sequential execution
+	currentIdx    int
+	autoRun       bool // Config to auto-start on init
+	previewID     string
+	previewWrap   bool
+	previewNotice string
 
 	// Filtering state
 	allSteps     []item // Store all items to support dynamic filtering
@@ -64,6 +69,7 @@ type Model struct {
 	roiMode      string
 	isFiltering  bool
 	isEditingURL bool
+	isPickingURL bool
 
 	overridesFlow    OverridesFlowModel
 	appliedOverrides *overrides.RuntimeOverrides
@@ -97,7 +103,10 @@ func NewModel(p *pack.Pack, r *exec.Runner, s *state.RunState, statePath string,
 	sp.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
 
 	vp := viewport.New(0, 0)
-	vp.SetContent("Press Enter to run selected, 'a' to run all filtered steps, 'f' to filter, 'o' to configure overrides, 'u' for ChatGPT URL.")
+	vp.SetContent("Press Enter to run selected, 'a' to run all filtered steps, 'f' to set ROI threshold, 'm' to toggle ROI mode, 'v' to view step, 'o' to configure overrides, 'u' for ChatGPT URL, 'U' to pick a saved URL.")
+
+	projectPath := ProjectURLStorePath(statePath, p.Source)
+	globalPath := GlobalURLStorePath()
 
 	m := Model{
 		list:          l,
@@ -105,6 +114,7 @@ func NewModel(p *pack.Pack, r *exec.Runner, s *state.RunState, statePath string,
 		spinner:       sp,
 		filterInput:   ti,
 		urlInput:      NewURLInputModel(),
+		urlPicker:     NewURLPickerModel(projectPath, globalPath),
 		pack:          p,
 		runner:        r,
 		state:         s,
@@ -117,6 +127,7 @@ func NewModel(p *pack.Pack, r *exec.Runner, s *state.RunState, statePath string,
 		viewState:     ViewSteps,
 		overridesFlow: NewOverridesFlowModel(p.Steps, r.OracleFlags, RunnerOptionsFromRunner(r)),
 		chatGPTURL:    r.ChatGPTURL,
+		previewWrap:   true,
 	}
 	m.urlInput.SetValue(r.ChatGPTURL)
 	m.urlInput.Blur()
@@ -209,10 +220,59 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.viewState = ViewSteps
 		return m, nil
 	}
+	if msg, ok := msg.(URLPickedMsg); ok {
+		m.chatGPTURL = msg.URL
+		if m.runner != nil {
+			m.runner.ChatGPTURL = m.chatGPTURL
+		}
+		m.urlInput.SetValue(m.chatGPTURL)
+		m.isPickingURL = false
+		return m, nil
+	}
+	if _, ok := msg.(URLPickerCancelledMsg); ok {
+		m.isPickingURL = false
+		return m, nil
+	}
 
 	if m.viewState == ViewOverrides {
 		var cmd tea.Cmd
 		m.overridesFlow, cmd = m.overridesFlow.Update(msg)
+		return m, cmd
+	}
+
+	if m.viewState == ViewStepPreview {
+		switch msg := msg.(type) {
+		case clearPreviewNoticeMsg:
+			m.previewNotice = ""
+			return m, nil
+		case tea.KeyMsg:
+			switch msg.String() {
+			case "q":
+				return m, tea.Quit
+			case "b", "esc":
+				m.previewID = ""
+				m.previewNotice = ""
+				m.viewState = ViewSteps
+				m.setLogContent()
+				return m, nil
+			case "t":
+				m.previewWrap = !m.previewWrap
+				m.viewport.SetContent(m.stepPreviewContent())
+				return m, nil
+			case "c":
+				content := m.stepPreviewContent()
+				if err := copyToClipboard(content); err != nil {
+					m.previewNotice = "Copy failed: " + err.Error()
+				} else {
+					m.previewNotice = "Copied to clipboard"
+				}
+				return m, tea.Tick(2*time.Second, func(time.Time) tea.Msg {
+					return clearPreviewNoticeMsg{}
+				})
+			}
+		}
+		var cmd tea.Cmd
+		m.viewport, cmd = m.viewport.Update(msg)
 		return m, cmd
 	}
 
@@ -308,6 +368,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Batch(cmds...)
 	}
 
+	// URL Picker Mode
+	if m.isPickingURL {
+		var cmd tea.Cmd
+		m.urlPicker, cmd = m.urlPicker.Update(msg)
+		return m, cmd
+	}
+
 	// Normal Steps View / Running
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -347,12 +414,38 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.filterInput.SetValue(fmt.Sprintf("%.1f", m.roiThreshold))
 				return m, textinput.Blink
 			}
+		case "m":
+			if !m.running {
+				if m.roiMode == "under" {
+					m.roiMode = "over"
+				} else {
+					m.roiMode = "under"
+				}
+				m = m.refreshList()
+				return m, nil
+			}
+		case "v":
+			if !m.running {
+				i, ok := m.list.SelectedItem().(item)
+				if ok {
+					m.previewID = i.id
+					m.viewState = ViewStepPreview
+					m.viewport.YOffset = 0
+					m.viewport.SetContent(m.stepPreviewContent())
+					return m, nil
+				}
+			}
 		case "u":
 			if !m.running {
 				m.isEditingURL = true
 				m.urlInput.SetValue(m.chatGPTURL)
 				m.urlInput.Focus()
 				return m, textinput.Blink
+			}
+		case "U":
+			if !m.running {
+				m.isPickingURL = true
+				return m, nil
 			}
 		case "o":
 			if !m.running {
@@ -462,6 +555,39 @@ func (m *Model) resetState() {
 	}
 }
 
+func (m *Model) setLogContent() {
+	if len(m.logLines) == 0 {
+		return
+	}
+	m.viewport.SetContent(strings.Join(m.logLines, "\n"))
+	m.viewport.GotoBottom()
+}
+
+func (m *Model) stepPreviewContent() string {
+	if m.previewID == "" {
+		return "No step selected."
+	}
+	var step *pack.Step
+	for i := range m.pack.Steps {
+		if m.pack.Steps[i].ID == m.previewID {
+			step = &m.pack.Steps[i]
+			break
+		}
+	}
+	if step == nil {
+		return "Step not found."
+	}
+
+	header := fmt.Sprintf("Step %s\n%s\n", step.ID, step.OriginalLine)
+	content := header + "\n" + step.Code
+	if m.previewWrap {
+		return lipgloss.NewStyle().Width(m.width - 6).Render(content)
+	}
+	return content
+}
+
+type clearPreviewNoticeMsg struct{}
+
 func (m Model) View() string {
 	if m.width == 0 {
 		return "Initializing..."
@@ -497,6 +623,33 @@ func (m Model) View() string {
 		)
 	}
 
+	if m.isPickingURL {
+		m.urlPicker.SetSize(m.width-4, m.height-4)
+		return lipgloss.Place(m.width, m.height,
+			lipgloss.Center, lipgloss.Center,
+			m.urlPicker.View(),
+		)
+	}
+
+	if m.viewState == ViewStepPreview {
+		m.viewport.Width = m.width - 4
+		m.viewport.Height = m.height - 6
+		title := lipgloss.NewStyle().Bold(true).Render("Step Preview")
+		help := "[b] Back  [q] Quit  [t] Wrap  [c] Copy  (scroll with ↑↓ / PgUp/PgDn)"
+		notice := ""
+		if m.previewNotice != "" {
+			notice = lipgloss.NewStyle().Foreground(lipgloss.Color("82")).Render(m.previewNotice)
+		}
+		content := lipgloss.JoinVertical(lipgloss.Left,
+			title,
+			help,
+			notice,
+			"",
+			m.viewport.View(),
+		)
+		return lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, content)
+	}
+
 	left := m.list.View()
 	right := m.viewport.View()
 
@@ -515,6 +668,13 @@ func (m Model) View() string {
 			}
 			filterStatus = fmt.Sprintf(" [Filter: ROI %s %.1f]", modeSym, m.roiThreshold)
 		}
+		if filterStatus == "" {
+			modeSym := ">="
+			if m.roiMode == "under" {
+				modeSym = "<"
+			}
+			filterStatus = fmt.Sprintf(" [Filter: ROI %s ∞]", modeSym)
+		}
 		overrideStatus := ""
 		if m.appliedOverrides != nil {
 			added := len(m.appliedOverrides.AddedFlags)
@@ -525,6 +685,8 @@ func (m Model) View() string {
 		urlStatus := ""
 		if m.chatGPTURL != "" {
 			urlStatus = " [ChatGPT URL: set]"
+		} else {
+			urlStatus = " [ChatGPT URL: none]"
 		}
 		statusLine := strings.TrimSpace(filterStatus + overrideStatus + urlStatus)
 		if statusLine != "" {
@@ -541,7 +703,7 @@ func (m Model) viewDone() string {
 		title = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("196")).Render("Execution Failed")
 	}
 
-	help := "[n] New Run  [r] Rerun  [b] Back to List  [q] Quit"
+	help := "[n] New Run  [r] Rerun  [b] Back to List  [q] Quit  [m] ROI Mode"
 
 	// Show the log viewport in the done screen too? Or just a summary?
 	// Requirement says "displays a summary".
