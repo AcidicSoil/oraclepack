@@ -1,40 +1,35 @@
 # oraclepack
 
 <p align="center">
-  <a href="https://github.com/&lt;OWNER&gt;/&lt;REPO&gt;/actions/workflows/ci.yml">
-    <img alt="CI" src="https://github.com/&lt;OWNER&gt;/&lt;REPO&gt;/actions/workflows/ci.yml/badge.svg" />
-  </a>
-
-  <a href="https://github.com/&lt;OWNER&gt;/&lt;REPO&gt;/actions/workflows/release.yml">
-    <img alt="Release" src="https://github.com/&lt;OWNER&gt;/&lt;REPO&gt;/actions/workflows/release.yml/badge.svg" />
-  </a>
-
-  <a href="https://github.com/&lt;OWNER&gt;/&lt;REPO&gt;/releases/latest">
-    <img alt="Release Version" src="https://img.shields.io/github/v/release/&lt;OWNER&gt;/&lt;REPO&gt;?sort=semver" />
-  </a>
-
-  <a href="https://github.com/&lt;OWNER&gt;/&lt;REPO&gt;/blob/main/LICENSE">
-    <img alt="License" src="https://img.shields.io/github/license/&lt;OWNER&gt;/&lt;REPO&gt;" />
-  </a>
-
-  <a href="https://github.com/&lt;OWNER&gt;/&lt;REPO&gt;/blob/main/go.mod">
-    <img alt="Go Version" src="https://img.shields.io/github/go-mod/go-version/&lt;OWNER&gt;/&lt;REPO&gt;" />
-  </a>
+  <a href="https://github.com/acidicsoil/oraclepack/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/acidicsoil/oraclepack/actions/workflows/ci.yml/badge.svg" /></a>
+  <a href="https://github.com/acidicsoil/oraclepack/actions/workflows/release.yml"><img alt="Release" src="https://github.com/acidicsoil/oraclepack/actions/workflows/release.yml/badge.svg" /></a>
+  <a href="https://github.com/acidicsoil/oraclepack/releases/latest"><img alt="Release Version" src="https://img.shields.io/github/v/release/acidicsoil/oraclepack?sort=semver" /></a>
+  <a href="https://github.com/acidicsoil/oraclepack/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/github/license/acidicsoil/oraclepack" /></a>
+  <a href="https://github.com/acidicsoil/oraclepack/blob/main/go.mod"><img alt="Go Version" src="https://img.shields.io/github/go-mod/go-version/acidicsoil/oraclepack" /></a>
 </p>
 
+`oraclepack` is a polished, TUI-driven runner for **Oracle Packs**—interactive bash workflows embedded in Markdown. It lets teams ship runbooks, audits, migrations, and LLM evaluation scripts as self-documenting `.md` files that can be validated, resumed, and executed with real-time feedback.
 
+## 🎯 Project Scope & Purpose
 
-`oraclepack` is a polished, TUI-driven runner for **Oracle Packs**—interactive bash scripts embedded within Markdown files. It's designed for developers who want to share, validate, and execute complex multi-step workflows with real-time feedback and state persistence.
+Oraclepack is built to make **multi-step operational workflows** reproducible and safe:
+
+- **Runbooks you can execute**: keep instructions and commands in one Markdown file.
+- **LLM evaluation flows**: wrap `oracle` CLI calls in steps and validate them with dry runs.
+- **Team-friendly automation**: share a pack as documentation, then execute it as a guided TUI.
+- **Repeatable ops**: state + report files make it easy to resume or audit past runs.
 
 ## 🚀 Features
 
-- **Interactive TUI:** A beautiful Terminal UI built with Bubble Tea for navigating and executing steps.
-- **Run All (Sequential):** Execute all steps one after another with a single command or keypress.
-- **State Persistence:** Automatically saves progress to `.state.json`, allowing you to `--resume` after failure or interruption.
-- **Real-time Streaming:** Watch command output live in a styled viewport.
-- **Flag Injection:** Safely injects extra flags into `oracle` command calls within your scripts.
-- **Machine Readable Reports:** Generates a detailed `.report.json` summary after every run.
-- **Markdown Native:** Keep your documentation and execution logic in a single `.md` file.
+- **Interactive TUI**: browse steps, view live output, and manage execution with keyboard shortcuts.
+- **Run All / Resume**: execute sequentially or continue from the last successful step.
+- **Overrides Wizard**: select which steps receive extra official `oracle` flags and validate via dry-run.
+- **Step Preview**: view a full step (no truncation), toggle wrap, and copy contents.
+- **ROI Filtering**: include/exclude steps by ROI with over/under mode.
+- **Project URL Management**: save ChatGPT project URLs globally or per project and pick quickly.
+- **State + Report Files**: persistent `.state.json` and `.report.json` outputs for traceability.
+- **Plain Mode**: run without TUI for CI or automated environments.
+- **Markdown Native**: packs live in a single `.md` file with a bash block.
 
 ## 📦 Installation
 
@@ -129,25 +124,17 @@ Follow the **Linux** instructions above.
 
 ### 1. Run a Pack (Interactive TUI)
 
-This is the default mode. It opens an interactive list where you can select steps and run them.
-
 ```bash
 oraclepack run examples/setup-project.md
 ```
 
 ### 2. Run All Steps Sequentially
 
-Automate the entire pack execution in the TUI:
-
 ```bash
 oraclepack run examples/setup-project.md --run-all
 ```
 
-*Note: You can also press `a` within the TUI to start running all steps from the current selection.*
-
 ### 3. Resume a Previous Run
-
-If a step failed, fix the issue and resume exactly where you left off:
 
 ```bash
 oraclepack run examples/setup-project.md --resume
@@ -155,39 +142,75 @@ oraclepack run examples/setup-project.md --resume
 
 ### 4. Plain Mode (Non-Interactive)
 
-Ideal for CI/CD or users who prefer standard terminal output:
-
 ```bash
 oraclepack run examples/setup-project.md --no-tui
 ```
 
-### 5. Inject Oracle Flags
-
-Pass extra flags down to every `oracle` command invocation inside the pack:
+### 5. List Steps
 
 ```bash
-oraclepack run my-pack.md --oracle-bin="/path/to/oracle" -- --verbose --debug
+oraclepack list examples/setup-project.md
 ```
 
 ### 6. Validate a Pack
 
-Check if your Markdown file follows the Oracle Pack specification:
-
 ```bash
-oraclepack validate my-pack.md
+oraclepack validate examples/setup-project.md
 ```
 
-### 7. List Steps
-
-Quickly view all steps defined in a pack without executing them:
+### CLI Flags (run)
 
 ```bash
-oraclepack list my-pack.md
+oraclepack run <pack.md> \
+  --roi-threshold 2.0 \
+  --roi-mode over \
+  --run-all \
+  --resume \
+  --stop-on-fail=true \
+  --no-tui \
+  --out-dir ./out
 ```
+
+`oraclepack` expects the `oracle` CLI to be available on your PATH. Overrides let you append official `oracle` flags at runtime.
+
+## ⌨️ TUI Controls (Core)
+
+- `enter`: run selected step
+- `a`: run all visible steps sequentially
+- `f`: set ROI threshold
+- `m`: toggle ROI mode (over/under)
+- `v`: step preview (full view)
+- `o`: overrides wizard (oracle flags + step targeting)
+- `u`: edit ChatGPT project URL
+- `U`: open saved URL picker (project/global)
+- `q`: quit
+
+### Step Preview Controls
+
+- `b` / `esc`: back to list
+- `t`: wrap/un-wrap preview
+- `c`: copy step contents (falls back to temp file if clipboard fails)
+
+## 🧭 Overrides Wizard
+
+The overrides flow lets you:
+
+- Select official `oracle` flags (e.g., `--files-report`, `--render`, `--render-plain`, `--copy`, `--wait`).
+- Target which steps receive those flags.
+- Validate the overridden commands with `oracle --dry-run summary` before running.
+
+## 🔗 Project URL Management
+
+Oraclepack can store ChatGPT project URLs in two scopes:
+
+- **Project scope**: `your-pack.chatgpt-urls.json`
+- **Global scope**: `~/.oraclepack/chatgpt-urls.json`
+
+Use `U` to pick, add, edit, delete, or set a default URL.
 
 ## 📝 Oracle Pack Format
 
-An Oracle Pack is a standard Markdown file containing exactly one `bash` code block. Steps are identified by a specific header pattern: `# NN)`.
+An Oracle Pack is a Markdown file containing exactly one `bash` code block. Steps are identified by a specific header pattern: `# NN)`.
 
 ````markdown
 # Project Setup Pack
@@ -204,7 +227,7 @@ npm install
 # 02) Build the project
 npm run build
 
-# 03) Run oracle query
+# 03) Run oracle query (ROI=4.5)
 oracle query "check-integrity"
 ```
 ````
@@ -215,11 +238,12 @@ oracle query "check-integrity"
 2. Step numbering must be sequential starting from `01`.
 3. The first bash code block in the file is the one executed.
 4. Everything before the first `# 01)` is the **prelude**, which runs once.
+5. Optional ROI tags (`ROI=2.5`) can be embedded in the step header for filtering.
 
 ## 📊 Reports and State
 
-- **State File:** `[pack-name].state.json` tracks which steps have succeeded.
-- **Report File:** `[pack-name].report.json` contains metadata, duration, and exit codes for every step.
+- **State File:** `[pack-name].state.json` tracks step statuses and filter settings.
+- **Report File:** `[pack-name].report.json` includes timing, exit codes, and metadata for each step.
 
 ## 🤝 Contributing
 

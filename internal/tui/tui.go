@@ -730,8 +730,13 @@ func (m Model) View() string {
 		}
 	}
 
+	help := m.stepsHelpBar(m.width)
+	rightWidth := m.viewport.Width
+	if rightWidth < 1 {
+		rightWidth = 1
+	}
+	right = lipgloss.NewStyle().Width(rightWidth).Render(right)
 	main := lipgloss.JoinHorizontal(lipgloss.Top, left, " | ", right)
-	help := m.stepsHelpBar()
 	return lipgloss.JoinVertical(lipgloss.Left, main, help)
 }
 
@@ -759,12 +764,16 @@ func (m Model) viewDone() string {
 	return lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, content)
 }
 
-func (m Model) stepsHelpBar() string {
+func (m Model) stepsHelpBar(width int) string {
 	help := "[enter] run  [a] run all  [f] filter ROI  [m] ROI mode  [v] view  [o] overrides  [u] url  [U] url picker  [q] quit"
 	if m.running {
 		help = "[q] quit  [running] wait for completion"
 	}
-	return lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render(help)
+	style := lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
+	if width > 0 {
+		style = style.Width(width)
+	}
+	return style.Render(help)
 }
 
 func (m Model) waitForLogs() tea.Cmd {
