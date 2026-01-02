@@ -1,0 +1,93 @@
+{
+	"meta": {
+		"generatedAt": "2026-01-02T01:31:41.307Z",
+		"tasksAnalyzed": 10,
+		"totalTasks": 10,
+		"analysisCount": 10,
+		"thresholdScore": 5,
+		"projectName": "Task Master",
+		"usedResearch": true
+	},
+	"complexityAnalysis": [
+		{
+			"taskId": 1,
+			"taskTitle": "Define Runtime Overrides Data Model & Step-Aware Merge Logic",
+			"complexityScore": 3,
+			"recommendedSubtasks": 0,
+			"expansionPrompt": "No expansion needed.",
+			"reasoning": "This is a foundational logic task. It requires creating a new struct and a pure function for merging slices based on a map lookup. There are no external dependencies or side effects to manage, making it a low-complexity task focused on clean data manipulation."
+		},
+		{
+			"taskId": 2,
+			"taskTitle": "Implement Oracle Invocation Extraction (Scanning)",
+			"complexityScore": 6,
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Break down the scanner implementation into: 1. A core line-parsing state machine that handles indentation, command detection, and line continuation logic (handling backslashes). 2. A higher-level extractor that processes whole scripts and returns structured `OracleInvocation` objects, including edge case handling for comments or quoting.",
+			"reasoning": "Parsing shell scripts with regex alone is error-prone. Handling multi-line continuations (`\\`) with varying whitespace and potential edge cases (comments, quotes) requires a state-machine approach, raising the complexity significantly above simple string matching."
+		},
+		{
+			"taskId": 3,
+			"taskTitle": "Upgrade Flag Injection to Support Multi-line Commands",
+			"complexityScore": 5,
+			"recommendedSubtasks": 0,
+			"expansionPrompt": "No expansion needed.",
+			"reasoning": "The complexity lies in correctly identifying the insertion point. If Task 2 is done well, this task is mostly about string manipulation at the identified index. It needs to be careful about shell syntax (spacing, escaping), but the logic is relatively contained."
+		},
+		{
+			"taskId": 4,
+			"taskTitle": "Implement Mode 2 Validation Runner",
+			"complexityScore": 5,
+			"recommendedSubtasks": 0,
+			"expansionPrompt": "No expansion needed.",
+			"reasoning": "This task glues together previous components (scanner, data model) and executes an external command. The main complexity involves setting up the execution context (mocking for tests) and parsing the stderr output from the dry-run command to provide meaningful user feedback."
+		},
+		{
+			"taskId": 5,
+			"taskTitle": "Implement TUI State Machine for Overrides Flow",
+			"complexityScore": 7,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Split this into: 1. Defining the message types and the top-level parent model for the overrides flow. 2. Implementing the navigation logic (Next/Back transitions) and state management between sub-screens. 3. Integrating this new flow into the existing `internal/tui/tui.go` main loop without regressing current functionality.",
+			"reasoning": "State management in Bubble Tea can get complex when dealing with nested models and multiple screens. Wiring this flow into the main application loop while maintaining clean separation of concerns and handling bi-directional communication (parent-child updates) requires careful architectural design."
+		},
+		{
+			"taskId": 6,
+			"taskTitle": "Develop Multi-select Flags Picker UI",
+			"complexityScore": 4,
+			"recommendedSubtasks": 0,
+			"expansionPrompt": "No expansion needed.",
+			"reasoning": "Using the standard `bubbles/list` component simplifies this greatly. The work is primarily configuring the list delegate to support multi-selection and binding the selection events to the data model. It's standard UI component work."
+		},
+		{
+			"taskId": 7,
+			"taskTitle": "Develop Step Targeting and URL Input UI",
+			"complexityScore": 4,
+			"recommendedSubtasks": 0,
+			"expansionPrompt": "No expansion needed.",
+			"reasoning": "Similar to Task 6, this involves standard Bubble Tea components (`textinput` and a custom list or checkbox view). The logic is straightforward data binding. Complexity is low unless custom styling requirements are heavy."
+		},
+		{
+			"taskId": 8,
+			"taskTitle": "Implement Confirmation Screen with Validation Trigger",
+			"complexityScore": 6,
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Divide into: 1. Building the read-only summary view (Diff UI) that renders the proposed changes clearly. 2. Implementing the async command triggering for validation, handling the loading state (spinner), and processing the success/failure messages to either block or allow the final apply action.",
+			"reasoning": "This view has to handle asynchronous side effects (validation) triggered by user input. Managing the loading states, error presentation, and the 'commit' logic adds complexity beyond just rendering a static view."
+		},
+		{
+			"taskId": 9,
+			"taskTitle": "Integrate Overrides into Execution Engine",
+			"complexityScore": 8,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down into: 1. Refactoring the Runner signature/struct to accept the `RuntimeOverrides` configuration. 2. Modifying the step execution loop to resolve `EffectiveFlags` dynamically for every step. 3. Integrating the injection logic (Task 3) safely into the command preparation phase, ensuring logging and error handling cover the modified commands.",
+			"reasoning": "This is the highest risk task as it touches the core execution path. Modifying `internal/runner` or `internal/app` requires handling the existing logic for standard runs while injecting new behavior. A mistake here breaks the main functionality of the tool. It requires careful integration testing."
+		},
+		{
+			"taskId": 10,
+			"taskTitle": "Add Main Screen Indicators and Final Polish",
+			"complexityScore": 2,
+			"recommendedSubtasks": 0,
+			"expansionPrompt": "No expansion needed.",
+			"reasoning": "This is purely cosmetic logic in the main `View` function. It involves conditional rendering based on a boolean or count in the model. Very low technical risk."
+		}
+	]
+}

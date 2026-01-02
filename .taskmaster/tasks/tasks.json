@@ -1285,11 +1285,182 @@
     }
   },
   "bugfix-tui": {
-    "tasks": [],
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Define Runtime Overrides Data Model & Step-Aware Merge Logic",
+        "description": "Create the core data structures to hold runtime overrides and implement the logic to merge them with baseline flags on a per-step basis.",
+        "details": "Create a new package `internal/overrides`. Define `RuntimeOverrides` struct containing `AddedFlags` ([]string), `RemovedFlags` ([]string), `ChatGPTURL` (string), and `ApplyToSteps` (map[string]bool). Implement `EffectiveFlags(stepID string, baseline []string) []string` which returns the final flag set for a given step. If the step is not in `ApplyToSteps`, return baseline. Otherwise, append added flags, remove removed flags, and inject `--chatgpt-url` if set. Add unit tests covering various combinations (add/remove intersection, empty sets).",
+        "testStrategy": "Unit tests in `internal/overrides/merge_test.go` verifying that `EffectiveFlags` correctly computes the final slice for targeted and non-targeted steps.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "in-progress",
+        "subtasks": [],
+        "complexity": 3,
+        "recommendedSubtasks": 0,
+        "expansionPrompt": "No expansion needed.",
+        "updatedAt": "2026-01-02T01:32:02.460Z"
+      },
+      {
+        "id": 2,
+        "title": "Implement Oracle Invocation Extraction (Scanning)",
+        "description": "Develop a robust scanner to identify and extract `oracle` command invocations from bash scripts, handling multi-line continuations.",
+        "details": "Create `internal/exec/oracle_scan.go`. Implement `ExtractOracleInvocations(script string) []OracleInvocation`. It must detect lines starting with `oracle` (allowing for indentation) and capture the full command including multi-line continuations (lines ending with `\\`). The struct `OracleInvocation` should hold the `Raw` command string and a `Display` version for UI. Use regex or a simple line-by-line state machine. Ensure it handles edge cases like trailing spaces before backslashes.",
+        "testStrategy": "Unit tests in `oracle_scan_test.go` with table-driven tests containing various shell script snippets (single line, multiline, indented) to assert correct extraction.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": [],
+        "complexity": 6,
+        "recommendedSubtasks": 2,
+        "expansionPrompt": "Break down the scanner implementation into: 1. A core line-parsing state machine that handles indentation, command detection, and line continuation logic (handling backslashes). 2. A higher-level extractor that processes whole scripts and returns structured `OracleInvocation` objects, including edge case handling for comments or quoting."
+      },
+      {
+        "id": 3,
+        "title": "Upgrade Flag Injection to Support Multi-line Commands",
+        "description": "Refactor the existing flag injection logic to safely insert flags into multi-line `oracle` commands without breaking shell syntax.",
+        "details": "Modify `internal/exec/inject.go` (or create a new version if preferred). The `InjectFlags` function should use the logic from the scanner to locate the insertion point. For multi-line commands (ending with `\\`), inject flags before the backslash on the first line or append to the argument list in a way that preserves valid shell syntax. Ensure it still handles single-line commands correctly. This replaces the naive line-replacement approach.",
+        "testStrategy": "Enhance `inject_test.go`. specific cases: `oracle \\` -> `oracle --flag \\`, `  oracle arg \\` -> `  oracle --flag arg \\`. Verify syntax validity.",
+        "priority": "high",
+        "dependencies": [
+          "2"
+        ],
+        "status": "pending",
+        "subtasks": [],
+        "complexity": 5,
+        "recommendedSubtasks": 0,
+        "expansionPrompt": "No expansion needed."
+      },
+      {
+        "id": 4,
+        "title": "Implement Mode 2 Validation Runner",
+        "description": "Create a validation routine that runs `oracle --dry-run summary` to verify that overrides result in valid commands.",
+        "details": "Create `internal/exec/oracle_validate.go`. Implement `ValidateOverrides(ctx, ...)` which iterates through targeted steps, extracts oracle invocations using the scanner from Task 2, applies overrides using the model from Task 1, and executes the resulting command with `--dry-run summary`. It should capture specific error output if the command fails. This ensures the user's configuration is valid before execution.",
+        "testStrategy": "Integration tests mocking the `oracle` binary (e.g., using a helper script in `testdata` that checks for `--dry-run` arg). Verify that it returns specific errors for invalid flags.",
+        "priority": "high",
+        "dependencies": [
+          "1",
+          "2"
+        ],
+        "status": "pending",
+        "subtasks": [],
+        "complexity": 5,
+        "recommendedSubtasks": 0,
+        "expansionPrompt": "No expansion needed."
+      },
+      {
+        "id": 5,
+        "title": "Implement TUI State Machine for Overrides Flow",
+        "description": "Scaffold the Bubble Tea model for the overrides wizard, managing transitions between main screen and overrides sub-screens.",
+        "details": "In `internal/tui/overrides_flow.go`, define a `Model` that wraps the specific sub-models (picker, url, confirm). Define messages `OverridesStartedMsg`, `OverridesAppliedMsg`, `OverridesCancelledMsg`. Implement the `Update` loop to handle switching between steps: Flags -> Steps -> URL -> Confirm. Integrate this as a new state in the main `internal/tui/tui.go` model.",
+        "testStrategy": "Unit/Model tests verifying state transitions (e.g., sending `NextMsg` moves from Flags to Steps).",
+        "priority": "medium",
+        "dependencies": [
+          "1"
+        ],
+        "status": "pending",
+        "subtasks": [],
+        "complexity": 7,
+        "recommendedSubtasks": 3,
+        "expansionPrompt": "Split this into: 1. Defining the message types and the top-level parent model for the overrides flow. 2. Implementing the navigation logic (Next/Back transitions) and state management between sub-screens. 3. Integrating this new flow into the existing `internal/tui/tui.go` main loop without regressing current functionality."
+      },
+      {
+        "id": 6,
+        "title": "Develop Multi-select Flags Picker UI",
+        "description": "Build a TUI component to allow users to select/deselect common oracle flags.",
+        "details": "Create `internal/tui/overrides_flags.go`. Use `github.com/charmbracelet/bubbles/list` or a custom component. It should display a curated list of flags (e.g., `--debug`, `--json`). Allow multi-selection. Visually distinguish between baseline flags (pre-selected/immutable context) and override flags. Store selection in the `RuntimeOverrides` model.",
+        "testStrategy": "Manual visual testing + Unit tests for the list selection logic (toggling items updates the model correctly).",
+        "priority": "medium",
+        "dependencies": [
+          "5"
+        ],
+        "status": "pending",
+        "subtasks": [],
+        "complexity": 4,
+        "recommendedSubtasks": 0,
+        "expansionPrompt": "No expansion needed."
+      },
+      {
+        "id": 7,
+        "title": "Develop Step Targeting and URL Input UI",
+        "description": "Build TUI components for selecting target steps and entering the ChatGPT Project URL.",
+        "details": "Create `internal/tui/overrides_steps.go` (list of steps from the pack, multi-select) and `internal/tui/overrides_url.go` (text input using `bubbles/textinput`). The step picker defaults to 'all selected'. The URL input validates simple URL format. Both update the shared `RuntimeOverrides` state.",
+        "testStrategy": "Unit tests for the component models. Verify text input validation and list selection state persistence.",
+        "priority": "medium",
+        "dependencies": [
+          "5"
+        ],
+        "status": "pending",
+        "subtasks": [],
+        "complexity": 4,
+        "recommendedSubtasks": 0,
+        "expansionPrompt": "No expansion needed."
+      },
+      {
+        "id": 8,
+        "title": "Implement Confirmation Screen with Validation Trigger",
+        "description": "Build the final summary screen that shows the diff and runs the validation logic before applying.",
+        "details": "Create `internal/tui/overrides_confirm.go`. Display a summary of Added/Removed flags, URL, and count of targeted steps. On confirm key press (e.g., 'Enter'), trigger the validation runner (Task 4) via a `Cmd`. If validation fails, display the error (Step ID + Output) and allow retry. If success, return `OverridesAppliedMsg`.",
+        "testStrategy": "Mock the validation runner in tests to simulate pass/fail scenarios and verify the UI response (error message vs state transition).",
+        "priority": "high",
+        "dependencies": [
+          "4",
+          "5",
+          "6",
+          "7"
+        ],
+        "status": "pending",
+        "subtasks": [],
+        "complexity": 6,
+        "recommendedSubtasks": 2,
+        "expansionPrompt": "Divide into: 1. Building the read-only summary view (Diff UI) that renders the proposed changes clearly. 2. Implementing the async command triggering for validation, handling the loading state (spinner), and processing the success/failure messages to either block or allow the final apply action."
+      },
+      {
+        "id": 9,
+        "title": "Integrate Overrides into Execution Engine",
+        "description": "Wire the runtime overrides into the actual step execution logic in the runner.",
+        "details": "Modify `internal/app/app.go` or `internal/runner/runner.go` (where `RunStep` is called). The runner needs access to the `RuntimeOverrides` object. Inside the execution loop, before running a step script, call `overrides.EffectiveFlags(step.ID, baseline)`. Pass these effective flags to `InjectFlags` (Task 3). Ensure non-targeted steps run as normal.",
+        "testStrategy": "E2E/Integration test: Run a dummy pack with overrides enabled. Verify via logs or output that the `oracle` command received the extra flags only on targeted steps.",
+        "priority": "high",
+        "dependencies": [
+          "3",
+          "8"
+        ],
+        "status": "pending",
+        "subtasks": [],
+        "complexity": 8,
+        "recommendedSubtasks": 3,
+        "expansionPrompt": "Break down into: 1. Refactoring the Runner signature/struct to accept the `RuntimeOverrides` configuration. 2. Modifying the step execution loop to resolve `EffectiveFlags` dynamically for every step. 3. Integrating the injection logic (Task 3) safely into the command preparation phase, ensuring logging and error handling cover the modified commands."
+      },
+      {
+        "id": 10,
+        "title": "Add Main Screen Indicators and Final Polish",
+        "description": "Update the main run screen to indicate when overrides are active to prevent user confusion.",
+        "details": "In `internal/tui/tui.go`, checking `OverridesAppliedMsg` to update the main model state. Render a small status bar or badge (e.g., \"Overrides Active: +2 flags\") on the main view. Ensure the keybinding to open the overrides flow is visible in the help footer.",
+        "testStrategy": "Visual verification. Ensure the indicator appears after applying overrides and disappears if they are cleared/reset.",
+        "priority": "low",
+        "dependencies": [
+          "5",
+          "9"
+        ],
+        "status": "pending",
+        "subtasks": [],
+        "complexity": 2,
+        "recommendedSubtasks": 0,
+        "expansionPrompt": "No expansion needed."
+      }
+    ],
     "metadata": {
-      "created": "2026-01-02T00:07:37.152Z",
-      "updated": "2026-01-02T00:07:37.152Z",
-      "description": "TUI Runtime Overrides Implementation"
+      "version": "1.0.0",
+      "lastModified": "2026-01-02T01:32:02.462Z",
+      "taskCount": 10,
+      "completedCount": 0,
+      "tags": [
+        "bugfix-tui"
+      ],
+      "created": "2026-01-02T02:31:21.233Z",
+      "description": "Tasks for bugfix-tui context",
+      "updated": "2026-01-02T02:31:21.233Z"
     }
   }
 }

@@ -1,91 +1,13 @@
 {
   "version": "0.1.0",
   "created": 1767230323,
-  "updated": 1767230325,
+  "updated": 1767318564,
   "files": {
-    "./report/report_test.go": {
-      "path": "./report/report_test.go",
-      "hash": "c4a94c72982f5c1d531df5514d70e2ec1e32cea300f69db3c83e887fefcd5378",
-      "last_modified": 1767130915,
-      "size": 718
-    },
-    "./cli/run.go": {
-      "path": "./cli/run.go",
-      "hash": "3118a9ed2947e16c439e9b73b0fe8be1439073c1887ff369cd8fb1663fbbb0f3",
-      "last_modified": 1767230206,
-      "size": 2036
-    },
-    "./app/run.go": {
-      "path": "./app/run.go",
-      "hash": "7bcb765060b1601c234053f8793c7acddd02ce5ad792f24b0a76bbf9160f4179",
-      "last_modified": 1767230222,
-      "size": 2784
-    },
-    "./report/generate.go": {
-      "path": "./report/generate.go",
-      "hash": "4bf40b80043b6f3393b9d0287995e4818bb02bc8af9f98224c8fc3e702033055",
-      "last_modified": 1767130907,
-      "size": 1292
-    },
-    "./app/app.go": {
-      "path": "./app/app.go",
-      "hash": "13bc2a93ec24e15091290217e4439b71deec24b7dc4dbca103a4a5e7412bc1ab",
-      "last_modified": 1767230172,
-      "size": 2240
-    },
-    "./render/render_test.go": {
-      "path": "./render/render_test.go",
-      "hash": "70748e840c42bf7f400fba531084b6d61d2c08fe47655b3348c1c6ed70bb746e",
-      "last_modified": 1767131178,
-      "size": 359
-    },
-    "./app/app_test.go": {
-      "path": "./app/app_test.go",
-      "hash": "2d5b9c8968bba9d7829405a687499988ca70a89374141a1c3f36ccb719bb250f",
-      "last_modified": 1767230251,
-      "size": 1339
-    },
-    "./report/types.go": {
-      "path": "./report/types.go",
-      "hash": "70546b4853f497a298c49c71abb642bcd0671fa17d29504953a5c0a899fdc081",
-      "last_modified": 1767130905,
-      "size": 983
-    },
-    "./cli/root.go": {
-      "path": "./cli/root.go",
-      "hash": "4a7118b32852c4a677e6c1c10f71dfb9fc1ed5d67a0592d3abeaf83b6879e7fd",
-      "last_modified": 1767230100,
-      "size": 885
-    },
-    "./exec/inject.go": {
-      "path": "./exec/inject.go",
-      "hash": "36949f031f1b45f9d17184501f13277f646203bbc8ddbacab93342473051b537",
-      "last_modified": 1767130960,
-      "size": 644
-    },
-    "./state/types.go": {
-      "path": "./state/types.go",
-      "hash": "75e38ebd1748ca61e517596e29074aef943bb0d1bbf73765738d64166c235478",
-      "last_modified": 1767130890,
-      "size": 846
-    },
-    "./render/render.go": {
-      "path": "./render/render.go",
-      "hash": "f20db345eb72f9347958b83030eeeb9c501c58681aaf394b3bc6c8607926a778",
-      "last_modified": 1767131195,
-      "size": 566
-    },
-    "./state/persist.go": {
-      "path": "./state/persist.go",
-      "hash": "976c199f7dbc0398c1a89d34788e5821ee85db40b5db05bf23f7af75e3f0de38",
-      "last_modified": 1767130929,
-      "size": 1008
-    },
-    "./tui/filter_test.go": {
-      "path": "./tui/filter_test.go",
-      "hash": "bb595cf82d1c0c85ff623d1081005fafc76a5a991a1539b8454fa73fdb236181",
-      "last_modified": 1767227324,
-      "size": 1538
+    "./state/state_test.go": {
+      "path": "./state/state_test.go",
+      "hash": "858f482fc1f85de82fe9cd29a7674e7b164538ffe2f031d050e4efbac0ae41ae",
+      "last_modified": 1767130911,
+      "size": 747
     },
     "./exec/stream.go": {
       "path": "./exec/stream.go",
@@ -93,11 +15,71 @@
       "last_modified": 1767130856,
       "size": 741
     },
+    "./cli/cmds.go": {
+      "path": "./cli/cmds.go",
+      "hash": "d566706134b8dba3566430d829d5703e5090fb82aad376c22f6d83385d0e7e19",
+      "last_modified": 1767131120,
+      "size": 932
+    },
+    "./pack/parser_test.go": {
+      "path": "./pack/parser_test.go",
+      "hash": "ec82a6f56c4086d1a2c591fac2c36d196f5ac074cb4a2814991c5deafbf8329c",
+      "last_modified": 1767213678,
+      "size": 3089
+    },
+    "./report/generate.go": {
+      "path": "./report/generate.go",
+      "hash": "4bf40b80043b6f3393b9d0287995e4818bb02bc8af9f98224c8fc3e702033055",
+      "last_modified": 1767130907,
+      "size": 1292
+    },
+    "./state/persist.go": {
+      "path": "./state/persist.go",
+      "hash": "976c199f7dbc0398c1a89d34788e5821ee85db40b5db05bf23f7af75e3f0de38",
+      "last_modified": 1767130929,
+      "size": 1008
+    },
+    "./tui/tui.go": {
+      "path": "./tui/tui.go",
+      "hash": "525a523ba7d1acb9b95122b49d7e3836a144c6eee0d8509bf227a3da49e84145",
+      "last_modified": 1767230428,
+      "size": 11628
+    },
+    "./cli/root.go": {
+      "path": "./cli/root.go",
+      "hash": "4a7118b32852c4a677e6c1c10f71dfb9fc1ed5d67a0592d3abeaf83b6879e7fd",
+      "last_modified": 1767230100,
+      "size": 885
+    },
+    "./cli/run.go": {
+      "path": "./cli/run.go",
+      "hash": "8b8c8e3d3e0354c67a9b754b762689499f73fa958b3b94ee7ccfeed5e4374d03",
+      "last_modified": 1767230447,
+      "size": 2050
+    },
+    "./tui/filter_test.go": {
+      "path": "./tui/filter_test.go",
+      "hash": "882e871ed4a71f981ff2f007a5c7449387817ec776552c5dd4682bcdb0c708cd",
+      "last_modified": 1767230484,
+      "size": 1541
+    },
+    "./report/types.go": {
+      "path": "./report/types.go",
+      "hash": "70546b4853f497a298c49c71abb642bcd0671fa17d29504953a5c0a899fdc081",
+      "last_modified": 1767130905,
+      "size": 983
+    },
     "./app/run_test.go": {
       "path": "./app/run_test.go",
       "hash": "b17a9cea503a5b5f3509f973493dbc2795c85f000a7eddf8c161576088b3f20b",
       "last_modified": 1767230243,
       "size": 2217
+    },
+    "./errors/errors_test.go": {
+      "path": "./errors/errors_test.go",
+      "hash": "eab8723004ef09acda89ec9059329a30eb355b1505a678199b94ed7073206ad3",
+      "last_modified": 1767130702,
+      "size": 633
     },
     "./exec/inject_test.go": {
       "path": "./exec/inject_test.go",
@@ -105,11 +87,23 @@
       "last_modified": 1767130973,
       "size": 995
     },
-    "./pack/parser_test.go": {
-      "path": "./pack/parser_test.go",
-      "hash": "ec82a6f56c4086d1a2c591fac2c36d196f5ac074cb4a2814991c5deafbf8329c",
-      "last_modified": 1767213678,
-      "size": 3089
+    "./render/render_test.go": {
+      "path": "./render/render_test.go",
+      "hash": "70748e840c42bf7f400fba531084b6d61d2c08fe47655b3348c1c6ed70bb746e",
+      "last_modified": 1767131178,
+      "size": 359
+    },
+    "./app/run.go": {
+      "path": "./app/run.go",
+      "hash": "7bcb765060b1601c234053f8793c7acddd02ce5ad792f24b0a76bbf9160f4179",
+      "last_modified": 1767230222,
+      "size": 2784
+    },
+    "./report/report_test.go": {
+      "path": "./report/report_test.go",
+      "hash": "c4a94c72982f5c1d531df5514d70e2ec1e32cea300f69db3c83e887fefcd5378",
+      "last_modified": 1767130915,
+      "size": 718
     },
     "./pack/types.go": {
       "path": "./pack/types.go",
@@ -119,21 +113,15 @@
     },
     "./tui/tui_test.go": {
       "path": "./tui/tui_test.go",
-      "hash": "10585c20a35aebba64dc541a74a975766e3a9dc11c7f35a26cacadb14af6813d",
-      "last_modified": 1767227417,
-      "size": 939
+      "hash": "57beee6169a56caa489bf95e5e5196e8579bd2e4be6d2107c0d8432298e3bea5",
+      "last_modified": 1767230466,
+      "size": 948
     },
-    "./cli/cmds.go": {
-      "path": "./cli/cmds.go",
-      "hash": "d566706134b8dba3566430d829d5703e5090fb82aad376c22f6d83385d0e7e19",
-      "last_modified": 1767131120,
-      "size": 932
-    },
-    "./exec/runner.go": {
-      "path": "./exec/runner.go",
-      "hash": "413741801cb1e3c78704e335fef18fca5bb5eeaffb900d06593eeac82ee94248",
-      "last_modified": 1767130966,
-      "size": 1684
+    "./render/render.go": {
+      "path": "./render/render.go",
+      "hash": "f20db345eb72f9347958b83030eeeb9c501c58681aaf394b3bc6c8607926a778",
+      "last_modified": 1767131195,
+      "size": 566
     },
     "./exec/runner_test.go": {
       "path": "./exec/runner_test.go",
@@ -141,35 +129,47 @@
       "last_modified": 1767130843,
       "size": 1014
     },
+    "./exec/runner.go": {
+      "path": "./exec/runner.go",
+      "hash": "413741801cb1e3c78704e335fef18fca5bb5eeaffb900d06593eeac82ee94248",
+      "last_modified": 1767130966,
+      "size": 1684
+    },
+    "./app/app.go": {
+      "path": "./app/app.go",
+      "hash": "ac49b470dc8b02687669fad60429f3af0a862acbf54ae0e0a37f2dd72d09d788",
+      "last_modified": 1767293375,
+      "size": 2435
+    },
+    "./state/types.go": {
+      "path": "./state/types.go",
+      "hash": "75e38ebd1748ca61e517596e29074aef943bb0d1bbf73765738d64166c235478",
+      "last_modified": 1767130890,
+      "size": 846
+    },
     "./errors/errors.go": {
       "path": "./errors/errors.go",
       "hash": "b509893d10628056c915b1d8634eb7c581e70c20f3ba8a6710e89796fe218da4",
       "last_modified": 1767130692,
       "size": 749
     },
-    "./state/state_test.go": {
-      "path": "./state/state_test.go",
-      "hash": "858f482fc1f85de82fe9cd29a7674e7b164538ffe2f031d050e4efbac0ae41ae",
-      "last_modified": 1767130911,
-      "size": 747
-    },
-    "./errors/errors_test.go": {
-      "path": "./errors/errors_test.go",
-      "hash": "eab8723004ef09acda89ec9059329a30eb355b1505a678199b94ed7073206ad3",
-      "last_modified": 1767130702,
-      "size": 633
-    },
-    "./tui/tui.go": {
-      "path": "./tui/tui.go",
-      "hash": "865f741e34b608891b7243cb90285872af604aec77611c8cfe39a8eff00202c7",
-      "last_modified": 1767227392,
-      "size": 8555
+    "./exec/inject.go": {
+      "path": "./exec/inject.go",
+      "hash": "36949f031f1b45f9d17184501f13277f646203bbc8ddbacab93342473051b537",
+      "last_modified": 1767130960,
+      "size": 644
     },
     "./pack/parser.go": {
       "path": "./pack/parser.go",
       "hash": "3c512549edcc33343aebb790e27b2101636380a6c42cc0a0fbc8d108f41cc14e",
       "last_modified": 1767213667,
       "size": 3923
+    },
+    "./app/app_test.go": {
+      "path": "./app/app_test.go",
+      "hash": "2d5b9c8968bba9d7829405a687499988ca70a89374141a1c3f36ccb719bb250f",
+      "last_modified": 1767230251,
+      "size": 1339
     }
   },
   "embedding_model": "BAAI/bge-small-en-v1.5",
