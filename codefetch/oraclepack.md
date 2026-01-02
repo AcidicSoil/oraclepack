@@ -42,6 +42,175 @@ Project Structure:
 </filetree>
 
 <source_code>
+internal/cli/cmds.go
+```
+package cli
+
+import (
+	"fmt"
+
+	"github.com/spf13/cobra"
+	"github.com/user/oraclepack/internal/app"
+)
+
+var validateCmd = &cobra.Command{
+	Use:   "validate [pack.md]",
+	Short: "Validate an oracle pack",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		cfg := app.Config{PackPath: args[0]}
+		a := app.New(cfg)
+		if err := a.LoadPack(); err != nil {
+			return err
+		}
+		fmt.Println("Pack is valid.")
+		return nil
+	},
+}
+
+var listCmd = &cobra.Command{
+	Use:   "list [pack.md]",
+	Short: "List steps in an oracle pack",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		cfg := app.Config{PackPath: args[0]}
+		a := app.New(cfg)
+		if err := a.LoadPack(); err != nil {
+			return err
+		}
+		for _, s := range a.Pack.Steps {
+			fmt.Printf("%s: %s\n", s.ID, s.OriginalLine)
+		}
+		return nil
+	},
+}
+
+func init() {
+	rootCmd.AddCommand(validateCmd)
+	rootCmd.AddCommand(listCmd)
+}
+```
+
+internal/cli/root.go
+```
+package cli
+
+import (
+	"fmt"
+	"os"
+
+	"github.com/spf13/cobra"
+	"github.com/user/oraclepack/internal/errors"
+)
+
+var (
+	noTUI     bool
+	oracleBin string
+	outDir    string
+)
+
+var rootCmd = &cobra.Command{
+	Use:   "oraclepack",
+	Short: "Oracle Pack Runner",
+	Long:  `A polished TUI-driven runner for oracle-based interactive bash steps.`,
+}
+
+// Execute adds all child commands to the root command and sets flags appropriately.
+func Execute() {
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(errors.ExitCode(err))
+	}
+}
+
+func init() {
+	rootCmd.PersistentFlags().BoolVar(&noTUI, "no-tui", false, "Disable the TUI and run in plain terminal mode")
+	rootCmd.PersistentFlags().StringVar(&oracleBin, "oracle-bin", "oracle", "Path to the oracle binary")
+	rootCmd.PersistentFlags().StringVarP(&outDir, "out-dir", "o", "", "Output directory for step execution")
+}
+```
+
+internal/cli/run.go
+```
+package cli
+
+import (
+	"context"
+	"os"
+	"path/filepath"
+	"strings"
+
+	"github.com/spf13/cobra"
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/user/oraclepack/internal/app"
+	"github.com/user/oraclepack/internal/tui"
+)
+
+var (
+	yes          bool
+	resume       bool
+	stopOnFail   bool
+	roiThreshold float64
+	roiMode      string
+	runAll       bool
+)
+
+var runCmd = &cobra.Command{
+	Use:   "run [pack.md]",
+	Short: "Run an oracle pack",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		packPath := args[0]
+		
+		// Setup paths
+		base := strings.TrimSuffix(filepath.Base(packPath), filepath.Ext(packPath))
+		statePath := base + ".state.json"
+		reportPath := base + ".report.json"
+
+		cfg := app.Config{
+			PackPath:     packPath,
+			StatePath:    statePath,
+			ReportPath:   reportPath,
+			Resume:       resume,
+			StopOnFail:   stopOnFail,
+			WorkDir:      ".",
+			OutDir:       outDir,
+			ROIThreshold: roiThreshold,
+			ROIMode:      roiMode,
+		}
+
+		a := app.New(cfg)
+		// Prepare the application (loads pack, resolves out_dir, provisions env)
+		if err := a.Prepare(); err != nil {
+			return err
+		}
+		
+		if err := a.LoadState(); err != nil {
+			return err
+		}
+
+		if noTUI {
+			return a.RunPlain(context.Background(), os.Stdout)
+		}
+
+		m := tui.NewModel(a.Pack, a.Runner, a.State, cfg.StatePath, cfg.ROIThreshold, cfg.ROIMode, runAll)
+		p := tea.NewProgram(m, tea.WithAltScreen())
+		_, err := p.Run()
+		return err
+	},
+}
+
+func init() {
+	runCmd.Flags().BoolVarP(&yes, "yes", "y", false, "Auto-approve all steps")
+	runCmd.Flags().BoolVar(&resume, "resume", false, "Resume from last successful step")
+	runCmd.Flags().BoolVar(&stopOnFail, "stop-on-fail", true, "Stop execution if a step fails")
+	runCmd.Flags().Float64Var(&roiThreshold, "roi-threshold", 0.0, "Filter steps by ROI threshold")
+	runCmd.Flags().StringVar(&roiMode, "roi-mode", "over", "ROI filter mode ('over' or 'under')")
+	runCmd.Flags().BoolVar(&runAll, "run-all", false, "Automatically run all steps sequentially on start")
+	rootCmd.AddCommand(runCmd)
+}
+```
+
 internal/app/app.go
 ```
 package app
@@ -440,175 +609,6 @@ echo "low"
 }
 ```
 
-internal/cli/cmds.go
-```
-package cli
-
-import (
-	"fmt"
-
-	"github.com/spf13/cobra"
-	"github.com/user/oraclepack/internal/app"
-)
-
-var validateCmd = &cobra.Command{
-	Use:   "validate [pack.md]",
-	Short: "Validate an oracle pack",
-	Args:  cobra.ExactArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg := app.Config{PackPath: args[0]}
-		a := app.New(cfg)
-		if err := a.LoadPack(); err != nil {
-			return err
-		}
-		fmt.Println("Pack is valid.")
-		return nil
-	},
-}
-
-var listCmd = &cobra.Command{
-	Use:   "list [pack.md]",
-	Short: "List steps in an oracle pack",
-	Args:  cobra.ExactArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg := app.Config{PackPath: args[0]}
-		a := app.New(cfg)
-		if err := a.LoadPack(); err != nil {
-			return err
-		}
-		for _, s := range a.Pack.Steps {
-			fmt.Printf("%s: %s\n", s.ID, s.OriginalLine)
-		}
-		return nil
-	},
-}
-
-func init() {
-	rootCmd.AddCommand(validateCmd)
-	rootCmd.AddCommand(listCmd)
-}
-```
-
-internal/cli/root.go
-```
-package cli
-
-import (
-	"fmt"
-	"os"
-
-	"github.com/spf13/cobra"
-	"github.com/user/oraclepack/internal/errors"
-)
-
-var (
-	noTUI     bool
-	oracleBin string
-	outDir    string
-)
-
-var rootCmd = &cobra.Command{
-	Use:   "oraclepack",
-	Short: "Oracle Pack Runner",
-	Long:  `A polished TUI-driven runner for oracle-based interactive bash steps.`,
-}
-
-// Execute adds all child commands to the root command and sets flags appropriately.
-func Execute() {
-	if err := rootCmd.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(errors.ExitCode(err))
-	}
-}
-
-func init() {
-	rootCmd.PersistentFlags().BoolVar(&noTUI, "no-tui", false, "Disable the TUI and run in plain terminal mode")
-	rootCmd.PersistentFlags().StringVar(&oracleBin, "oracle-bin", "oracle", "Path to the oracle binary")
-	rootCmd.PersistentFlags().StringVarP(&outDir, "out-dir", "o", "", "Output directory for step execution")
-}
-```
-
-internal/cli/run.go
-```
-package cli
-
-import (
-	"context"
-	"os"
-	"path/filepath"
-	"strings"
-
-	"github.com/spf13/cobra"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/user/oraclepack/internal/app"
-	"github.com/user/oraclepack/internal/tui"
-)
-
-var (
-	yes          bool
-	resume       bool
-	stopOnFail   bool
-	roiThreshold float64
-	roiMode      string
-	runAll       bool
-)
-
-var runCmd = &cobra.Command{
-	Use:   "run [pack.md]",
-	Short: "Run an oracle pack",
-	Args:  cobra.ExactArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		packPath := args[0]
-		
-		// Setup paths
-		base := strings.TrimSuffix(filepath.Base(packPath), filepath.Ext(packPath))
-		statePath := base + ".state.json"
-		reportPath := base + ".report.json"
-
-		cfg := app.Config{
-			PackPath:     packPath,
-			StatePath:    statePath,
-			ReportPath:   reportPath,
-			Resume:       resume,
-			StopOnFail:   stopOnFail,
-			WorkDir:      ".",
-			OutDir:       outDir,
-			ROIThreshold: roiThreshold,
-			ROIMode:      roiMode,
-		}
-
-		a := app.New(cfg)
-		// Prepare the application (loads pack, resolves out_dir, provisions env)
-		if err := a.Prepare(); err != nil {
-			return err
-		}
-		
-		if err := a.LoadState(); err != nil {
-			return err
-		}
-
-		if noTUI {
-			return a.RunPlain(context.Background(), os.Stdout)
-		}
-
-		m := tui.NewModel(a.Pack, a.Runner, a.State, cfg.StatePath, cfg.ROIThreshold, cfg.ROIMode, runAll)
-		p := tea.NewProgram(m, tea.WithAltScreen())
-		_, err := p.Run()
-		return err
-	},
-}
-
-func init() {
-	runCmd.Flags().BoolVarP(&yes, "yes", "y", false, "Auto-approve all steps")
-	runCmd.Flags().BoolVar(&resume, "resume", false, "Resume from last successful step")
-	runCmd.Flags().BoolVar(&stopOnFail, "stop-on-fail", true, "Stop execution if a step fails")
-	runCmd.Flags().Float64Var(&roiThreshold, "roi-threshold", 0.0, "Filter steps by ROI threshold")
-	runCmd.Flags().StringVar(&roiMode, "roi-mode", "over", "ROI filter mode ('over' or 'under')")
-	runCmd.Flags().BoolVar(&runAll, "run-all", false, "Automatically run all steps sequentially on start")
-	rootCmd.AddCommand(runCmd)
-}
-```
-
 internal/errors/errors.go
 ```
 package errors
@@ -679,283 +679,6 @@ func TestExitCode(t *testing.T) {
 			}
 		})
 	}
-}
-```
-
-internal/exec/inject.go
-```
-package exec
-
-import (
-	"bufio"
-	"regexp"
-	"strings"
-)
-
-var (
-	oracleCmdRegex = regexp.MustCompile(`^(\s*)oracle(\s+|$)`)
-)
-
-// InjectFlags scans a script and appends flags to any 'oracle' command invocation.
-func InjectFlags(script string, flags []string) string {
-	if len(flags) == 0 {
-		return script
-	}
-
-	flagStr := " " + strings.Join(flags, " ")
-	
-	var result []string
-	scanner := bufio.NewScanner(strings.NewReader(script))
-	for scanner.Scan() {
-		line := scanner.Text()
-		if oracleCmdRegex.MatchString(line) {
-			// Append flags to the line
-			line += flagStr
-		}
-		result = append(result, line)
-	}
-
-	return strings.Join(result, "\n")
-}
-```
-
-internal/exec/inject_test.go
-```
-package exec
-
-import (
-	"testing"
-)
-
-func TestInjectFlags(t *testing.T) {
-	tests := []struct {
-		name     string
-		script   string
-		flags    []string
-		expected string
-	}{
-		{
-			"simple injection",
-			"oracle query 'hello'",
-			[]string{"--verbose"},
-			"oracle query 'hello' --verbose",
-		},
-		{
-			"indented injection",
-			"  oracle query 'hello'",
-			[]string{"--verbose"},
-			"  oracle query 'hello' --verbose",
-		},
-		{
-			"no injection needed",
-			"echo 'hello'",
-			[]string{"--verbose"},
-			"echo 'hello'",
-		},
-		{
-			"multiple lines",
-			"echo 'start'\noracle query\necho 'end'",
-			[]string{"--debug"},
-			"echo 'start'\noracle query --debug\necho 'end'",
-		},
-		{
-			"oracle as part of word",
-			"coracle query",
-			[]string{"--verbose"},
-			"coracle query",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := InjectFlags(tt.script, tt.flags)
-			if got != tt.expected {
-				t.Errorf("InjectFlags() = %q, want %q", got, tt.expected)
-			}
-		})
-	}
-}
-```
-
-internal/exec/runner.go
-```
-package exec
-
-import (
-	"context"
-	"fmt"
-	"io"
-	"os"
-	"os/exec"
-
-	"github.com/user/oraclepack/internal/errors"
-	"github.com/user/oraclepack/internal/pack"
-)
-
-// Runner handles the execution of shell scripts.
-type Runner struct {
-	Shell       string
-	WorkDir     string
-	Env         []string
-	OracleFlags []string
-}
-
-// RunnerOptions configures a Runner.
-type RunnerOptions struct {
-	Shell       string
-	WorkDir     string
-	Env         []string
-	OracleFlags []string
-}
-
-// NewRunner creates a new Runner with options.
-func NewRunner(opts RunnerOptions) *Runner {
-	shell := opts.Shell
-	if shell == "" {
-		shell = "/bin/bash"
-	}
-
-	return &Runner{
-		Shell:       shell,
-		WorkDir:     opts.WorkDir,
-		Env:         append(os.Environ(), opts.Env...),
-		OracleFlags: opts.OracleFlags,
-	}
-}
-
-// RunPrelude executes the prelude code.
-func (r *Runner) RunPrelude(ctx context.Context, p *pack.Prelude, logWriter io.Writer) error {
-	return r.run(ctx, p.Code, logWriter)
-}
-
-// RunStep executes a single step's code.
-func (r *Runner) RunStep(ctx context.Context, s *pack.Step, logWriter io.Writer) error {
-	code := InjectFlags(s.Code, r.OracleFlags)
-	return r.run(ctx, code, logWriter)
-}
-
-func (r *Runner) run(ctx context.Context, script string, logWriter io.Writer) error {
-	// We use bash -lc to ensure login shell (paths, aliases, etc)
-	cmd := exec.CommandContext(ctx, r.Shell, "-lc", script)
-	cmd.Dir = r.WorkDir
-	cmd.Env = r.Env
-	
-	// Standardize stdout and stderr to the logWriter
-	cmd.Stdout = logWriter
-	cmd.Stderr = logWriter
-
-	err := cmd.Run()
-	if err != nil {
-		if ctx.Err() != nil {
-			return ctx.Err()
-		}
-		return fmt.Errorf("%w: %v", errors.ErrExecutionFailed, err)
-	}
-
-	return nil
-}
-```
-
-internal/exec/runner_test.go
-```
-package exec
-
-import (
-	"context"
-	"strings"
-	"testing"
-
-	"github.com/user/oraclepack/internal/pack"
-)
-
-func TestRunner_RunStep(t *testing.T) {
-	r := NewRunner(RunnerOptions{})
-	
-	var lines []string
-	lw := &LineWriter{
-		Callback: func(line string) {
-			lines = append(lines, line)
-		},
-	}
-
-	step := &pack.Step{
-		Code: "echo 'hello world'",
-	}
-
-	err := r.RunStep(context.Background(), step, lw)
-	if err != nil {
-		t.Fatalf("RunStep failed: %v", err)
-	}
-	lw.Close()
-
-	found := false
-	for _, l := range lines {
-		if strings.TrimSpace(l) == "hello world" {
-			found = true
-			break
-		}
-	}
-
-	if !found {
-		t.Errorf("expected 'hello world' in output, got: %v", lines)
-	}
-}
-
-func TestRunner_ContextCancellation(t *testing.T) {
-	r := NewRunner(RunnerOptions{})
-	
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel() // Cancel immediately
-
-	step := &pack.Step{
-		Code: "sleep 10",
-	}
-
-	err := r.RunStep(ctx, step, nil)
-	if err != context.Canceled {
-		t.Errorf("expected context.Canceled, got %v", err)
-	}
-}
-```
-
-internal/exec/stream.go
-```
-package exec
-
-import (
-	"io"
-)
-
-// LineWriter is an io.Writer that splits output into lines and calls a callback.
-type LineWriter struct {
-	Callback func(string)
-	buffer   []byte
-}
-
-func (w *LineWriter) Write(p []byte) (n int, err error) {
-	for _, b := range p {
-		if b == '\n' {
-			w.Callback(string(w.buffer))
-			w.buffer = w.buffer[:0]
-		} else {
-			w.buffer = append(w.buffer, b)
-		}
-	}
-	return len(p), nil
-}
-
-// Close flushes any remaining data in the buffer.
-func (w *LineWriter) Close() error {
-	if len(w.buffer) > 0 {
-		w.Callback(string(w.buffer))
-		w.buffer = w.buffer[:0]
-	}
-	return nil
-}
-
-// MultiWriter handles multiple writers efficiently.
-func MultiWriter(writers ...io.Writer) io.Writer {
-	return io.MultiWriter(writers...)
 }
 ```
 
@@ -1302,56 +1025,280 @@ type Step struct {
 }
 ```
 
-internal/render/render.go
+internal/exec/inject.go
 ```
-package render
+package exec
 
 import (
-	"github.com/charmbracelet/glamour"
-	"github.com/user/oraclepack/internal/pack"
+	"bufio"
+	"regexp"
+	"strings"
 )
 
-// RenderMarkdown renders markdown text as ANSI-styled text.
-func RenderMarkdown(text string) (string, error) {
-	r, err := glamour.NewTermRenderer(
-		glamour.WithStandardStyle("dark"),
-		glamour.WithWordWrap(80),
-	)
-	if err != nil {
-		return "", err
+var (
+	oracleCmdRegex = regexp.MustCompile(`^(\s*)oracle(\s+|$)`)
+)
+
+// InjectFlags scans a script and appends flags to any 'oracle' command invocation.
+func InjectFlags(script string, flags []string) string {
+	if len(flags) == 0 {
+		return script
 	}
 
-	return r.Render(text)
-}
+	flagStr := " " + strings.Join(flags, " ")
+	
+	var result []string
+	scanner := bufio.NewScanner(strings.NewReader(script))
+	for scanner.Scan() {
+		line := scanner.Text()
+		if oracleCmdRegex.MatchString(line) {
+			// Append flags to the line
+			line += flagStr
+		}
+		result = append(result, line)
+	}
 
-// RenderStepCode renders a step's code block for preview.
-func RenderStepCode(s pack.Step) (string, error) {
-	md := "```bash\n" + s.Code + "\n```"
-	return RenderMarkdown(md)
+	return strings.Join(result, "\n")
 }
-
 ```
 
-internal/render/render_test.go
+internal/exec/inject_test.go
 ```
-package render
+package exec
 
 import (
-	"strings"
 	"testing"
 )
 
-func TestRenderMarkdown(t *testing.T) {
-	text := "# Hello\n**bold**"
-	got, err := RenderMarkdown(text)
-	if err != nil {
-		t.Fatalf("RenderMarkdown failed: %v", err)
+func TestInjectFlags(t *testing.T) {
+	tests := []struct {
+		name     string
+		script   string
+		flags    []string
+		expected string
+	}{
+		{
+			"simple injection",
+			"oracle query 'hello'",
+			[]string{"--verbose"},
+			"oracle query 'hello' --verbose",
+		},
+		{
+			"indented injection",
+			"  oracle query 'hello'",
+			[]string{"--verbose"},
+			"  oracle query 'hello' --verbose",
+		},
+		{
+			"no injection needed",
+			"echo 'hello'",
+			[]string{"--verbose"},
+			"echo 'hello'",
+		},
+		{
+			"multiple lines",
+			"echo 'start'\noracle query\necho 'end'",
+			[]string{"--debug"},
+			"echo 'start'\noracle query --debug\necho 'end'",
+		},
+		{
+			"oracle as part of word",
+			"coracle query",
+			[]string{"--verbose"},
+			"coracle query",
+		},
 	}
 
-	// ANSI escape codes start with \x1b[
-	if !strings.Contains(got, "\x1b[") {
-		t.Errorf("expected ANSI codes in output, got: %q", got)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := InjectFlags(tt.script, tt.flags)
+			if got != tt.expected {
+				t.Errorf("InjectFlags() = %q, want %q", got, tt.expected)
+			}
+		})
 	}
+}
+```
+
+internal/exec/runner.go
+```
+package exec
+
+import (
+	"context"
+	"fmt"
+	"io"
+	"os"
+	"os/exec"
+
+	"github.com/user/oraclepack/internal/errors"
+	"github.com/user/oraclepack/internal/pack"
+)
+
+// Runner handles the execution of shell scripts.
+type Runner struct {
+	Shell       string
+	WorkDir     string
+	Env         []string
+	OracleFlags []string
+}
+
+// RunnerOptions configures a Runner.
+type RunnerOptions struct {
+	Shell       string
+	WorkDir     string
+	Env         []string
+	OracleFlags []string
+}
+
+// NewRunner creates a new Runner with options.
+func NewRunner(opts RunnerOptions) *Runner {
+	shell := opts.Shell
+	if shell == "" {
+		shell = "/bin/bash"
+	}
+
+	return &Runner{
+		Shell:       shell,
+		WorkDir:     opts.WorkDir,
+		Env:         append(os.Environ(), opts.Env...),
+		OracleFlags: opts.OracleFlags,
+	}
+}
+
+// RunPrelude executes the prelude code.
+func (r *Runner) RunPrelude(ctx context.Context, p *pack.Prelude, logWriter io.Writer) error {
+	return r.run(ctx, p.Code, logWriter)
+}
+
+// RunStep executes a single step's code.
+func (r *Runner) RunStep(ctx context.Context, s *pack.Step, logWriter io.Writer) error {
+	code := InjectFlags(s.Code, r.OracleFlags)
+	return r.run(ctx, code, logWriter)
+}
+
+func (r *Runner) run(ctx context.Context, script string, logWriter io.Writer) error {
+	// We use bash -lc to ensure login shell (paths, aliases, etc)
+	cmd := exec.CommandContext(ctx, r.Shell, "-lc", script)
+	cmd.Dir = r.WorkDir
+	cmd.Env = r.Env
+	
+	// Standardize stdout and stderr to the logWriter
+	cmd.Stdout = logWriter
+	cmd.Stderr = logWriter
+
+	err := cmd.Run()
+	if err != nil {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+		return fmt.Errorf("%w: %v", errors.ErrExecutionFailed, err)
+	}
+
+	return nil
+}
+```
+
+internal/exec/runner_test.go
+```
+package exec
+
+import (
+	"context"
+	"strings"
+	"testing"
+
+	"github.com/user/oraclepack/internal/pack"
+)
+
+func TestRunner_RunStep(t *testing.T) {
+	r := NewRunner(RunnerOptions{})
+	
+	var lines []string
+	lw := &LineWriter{
+		Callback: func(line string) {
+			lines = append(lines, line)
+		},
+	}
+
+	step := &pack.Step{
+		Code: "echo 'hello world'",
+	}
+
+	err := r.RunStep(context.Background(), step, lw)
+	if err != nil {
+		t.Fatalf("RunStep failed: %v", err)
+	}
+	lw.Close()
+
+	found := false
+	for _, l := range lines {
+		if strings.TrimSpace(l) == "hello world" {
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		t.Errorf("expected 'hello world' in output, got: %v", lines)
+	}
+}
+
+func TestRunner_ContextCancellation(t *testing.T) {
+	r := NewRunner(RunnerOptions{})
+	
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // Cancel immediately
+
+	step := &pack.Step{
+		Code: "sleep 10",
+	}
+
+	err := r.RunStep(ctx, step, nil)
+	if err != context.Canceled {
+		t.Errorf("expected context.Canceled, got %v", err)
+	}
+}
+```
+
+internal/exec/stream.go
+```
+package exec
+
+import (
+	"io"
+)
+
+// LineWriter is an io.Writer that splits output into lines and calls a callback.
+type LineWriter struct {
+	Callback func(string)
+	buffer   []byte
+}
+
+func (w *LineWriter) Write(p []byte) (n int, err error) {
+	for _, b := range p {
+		if b == '\n' {
+			w.Callback(string(w.buffer))
+			w.buffer = w.buffer[:0]
+		} else {
+			w.buffer = append(w.buffer, b)
+		}
+	}
+	return len(p), nil
+}
+
+// Close flushes any remaining data in the buffer.
+func (w *LineWriter) Close() error {
+	if len(w.buffer) > 0 {
+		w.Callback(string(w.buffer))
+		w.buffer = w.buffer[:0]
+	}
+	return nil
+}
+
+// MultiWriter handles multiple writers efficiently.
+func MultiWriter(writers ...io.Writer) io.Writer {
+	return io.MultiWriter(writers...)
 }
 ```
 
@@ -1496,6 +1443,59 @@ type StepReport struct {
 	Duration  time.Duration `json:"duration"`
 	DurationMs int64         `json:"duration_ms"`
 	Error     string `json:"error,omitempty"`
+}
+```
+
+internal/render/render.go
+```
+package render
+
+import (
+	"github.com/charmbracelet/glamour"
+	"github.com/user/oraclepack/internal/pack"
+)
+
+// RenderMarkdown renders markdown text as ANSI-styled text.
+func RenderMarkdown(text string) (string, error) {
+	r, err := glamour.NewTermRenderer(
+		glamour.WithStandardStyle("dark"),
+		glamour.WithWordWrap(80),
+	)
+	if err != nil {
+		return "", err
+	}
+
+	return r.Render(text)
+}
+
+// RenderStepCode renders a step's code block for preview.
+func RenderStepCode(s pack.Step) (string, error) {
+	md := "```bash\n" + s.Code + "\n```"
+	return RenderMarkdown(md)
+}
+
+```
+
+internal/render/render_test.go
+```
+package render
+
+import (
+	"strings"
+	"testing"
+)
+
+func TestRenderMarkdown(t *testing.T) {
+	text := "# Hello\n**bold**"
+	got, err := RenderMarkdown(text)
+	if err != nil {
+		t.Fatalf("RenderMarkdown failed: %v", err)
+	}
+
+	// ANSI escape codes start with \x1b[
+	if !strings.Contains(got, "\x1b[") {
+		t.Errorf("expected ANSI codes in output, got: %q", got)
+	}
 }
 ```
 
