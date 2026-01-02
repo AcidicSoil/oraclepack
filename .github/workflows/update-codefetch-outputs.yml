@@ -3,7 +3,8 @@ name: Update codefetch outputs
 
 on:
   push:
-    # Run on every push, but ignore pushes that only update the generated docs
+    # Prevent an infinite loop when the workflow commits regenerated outputs.
+    # Covers both possible output locations (repo root or codefetch/).
     paths-ignore:
       - "codefetch/oraclepack.md"
       - "codefetch/oraclepack-all.md"
@@ -19,9 +20,7 @@ concurrency:
 jobs:
   generate-and-commit:
     runs-on: ubuntu-latest
-
-    # Avoid running on the bot's own commit if you ever change paths-ignore later
-    if: github.actor != 'github-actions[bot]'
+    if: github.actor != 'github-actions[bot]' && !contains(github.event.head_commit.message, '[skip ci]')
 
     steps:
       - name: Checkout
@@ -34,35 +33,69 @@ jobs:
         with:
           node-version: "22"
           cache: "pnpm"
+          cache-dependency-path: |
+            pnpm-lock.yaml
+            codefetch/pnpm-lock.yaml
+
+      - name: Enable pnpm (corepack)
+        shell: bash
+        run: |
+          set -euo pipefail
+          corepack enable
+          pnpm --version
 
       - name: Install dependencies
         shell: bash
         run: |
           set -euo pipefail
-          if [[ -f pnpm-lock.json ]]; then
-            pnpm ci
+          # Standard pnpm install (pnpm has no "ci" command like npm).
+          if [[ -f pnpm-lock.yaml ]]; then
+            pnpm install --frozen-lockfile
           else
             pnpm install
           fi
 
-      - name: Run code generation
+      - name: Run codefetch scripts
+        shell: bash
         run: |
-          pnpm code
-          pnpm codea
+          set -euo pipefail
+          # Your scripts are defined in package.json ("code" and "codea"). :contentReference[oaicite:1]{index=1}
+          pnpm run code
+          pnpm run codea
 
-      - name: Commit and push changes (if any)
+      - name: Commit and push regenerated outputs (if changed)
         shell: bash
         run: |
           set -euo pipefail
 
-          if [[ -z "$(git status --porcelain)" ]]; then
-            echo "No changes to commit."
-            exit 0
+          # Prefer codefetch/ outputs if present; otherwise fall back to repo root.
+          candidates=(
+            "codefetch/oraclepack.md"
+            "codefetch/oraclepack-all.md"
+            "oraclepack.md"
+            "oraclepack-all.md"
+          )
+
+          targets=()
+          for f in "${candidates[@]}"; do
+            [[ -f "$f" ]] && targets+=("$f")
+          done
+
+          if [[ ${#targets[@]} -eq 0 ]]; then
+            echo "No expected output files found (oraclepack*.md)."
+            exit 1
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git add oraclepack.md oraclepack-all.md
+          # -f allows adding files even if they are in .gitignore.
+          git add -f "${targets[@]}"
+
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+
           git commit -m "chore(codefetch): update generated outputs [skip ci]"
           git push
