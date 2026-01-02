@@ -1,6 +1,8 @@
 package tui
 
 import (
+	"fmt"
+	"os"
 	"os/exec"
 	"runtime"
 	"strings"
@@ -29,4 +31,16 @@ func copyToClipboard(content string) error {
 
 	cmd.Stdin = strings.NewReader(content)
 	return cmd.Run()
+}
+
+func writeClipboardFallback(content string) (string, error) {
+	file, err := os.CreateTemp("", "oraclepack-step-*.txt")
+	if err != nil {
+		return "", fmt.Errorf("create temp file: %w", err)
+	}
+	defer file.Close()
+	if _, err := file.WriteString(content); err != nil {
+		return "", fmt.Errorf("write temp file: %w", err)
+	}
+	return file.Name(), nil
 }

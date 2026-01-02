@@ -20,6 +20,8 @@ type RunState struct {
 	PackHash      string                `json:"pack_hash"`
 	StartTime     time.Time             `json:"start_time"`
 	StepStatuses  map[string]StepStatus `json:"step_statuses"`
+	ROIThreshold  float64               `json:"roi_threshold,omitempty"`
+	ROIMode       string                `json:"roi_mode,omitempty"`
 }
 
 // StepStatus holds the outcome of an individual step.

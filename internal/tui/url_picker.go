@@ -52,6 +52,7 @@ func NewURLPickerModel(projectPath, globalPath string) URLPickerModel {
 	l := list.New(items, list.NewDefaultDelegate(), 0, 0)
 	l.Title = "ChatGPT Project URLs"
 	l.SetFilteringEnabled(true)
+	selectDefault(&l, project, global)
 
 	name := textinput.New()
 	name.Placeholder = "Name (e.g., Core Project)"
@@ -151,8 +152,52 @@ func makeURLItems(project URLStore, global URLStore) []list.Item {
 	return items
 }
 
+func selectDefault(l *list.Model, project URLStore, global URLStore) {
+	if l == nil {
+		return
+	}
+	name, scope := defaultNameScope(project, global)
+	if name == "" {
+		return
+	}
+	for idx, item := range l.Items() {
+		if it, ok := item.(urlItem); ok && it.name == name && it.scope == scope {
+			l.Select(idx)
+			return
+		}
+	}
+}
+
+func defaultNameScope(project URLStore, global URLStore) (string, string) {
+	if project.Default != "" {
+		return project.Default, urlScopeProject
+	}
+	if global.Default != "" {
+		return global.Default, urlScopeGlobal
+	}
+	return "", ""
+}
+
+func (m URLPickerModel) DefaultURL() string {
+	name, scope := defaultNameScope(m.project, m.global)
+	if name == "" {
+		return ""
+	}
+	store := m.storeFor(scope)
+	if store == nil {
+		return ""
+	}
+	for _, it := range store.Items {
+		if it.Name == name {
+			return it.URL
+		}
+	}
+	return ""
+}
+
 func (m *URLPickerModel) refresh() {
 	m.list.SetItems(makeURLItems(m.project, m.global))
+	selectDefault(&m.list, m.project, m.global)
 }
 
 func (m *URLPickerModel) touch(item urlItem) {

@@ -1,8 +1,11 @@
 package tui
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/user/oraclepack/internal/exec"
 	"github.com/user/oraclepack/internal/pack"
 	"github.com/user/oraclepack/internal/state"
@@ -55,5 +58,37 @@ func TestFilterLogic(t *testing.T) {
 	}
 	if m.list.Items()[0].(item).id != "01" {
 		t.Errorf("expected item to be 01, got %s", m.list.Items()[0].(item).id)
+	}
+}
+
+func TestROIModeTogglePersists(t *testing.T) {
+	dir := t.TempDir()
+	statePath := filepath.Join(dir, "state.json")
+	p := &pack.Pack{
+		Steps: []pack.Step{
+			{ID: "01", ROI: 1.0, OriginalLine: "Step 1"},
+		},
+	}
+	r := exec.NewRunner(exec.RunnerOptions{})
+	s := &state.RunState{SchemaVersion: 1}
+
+	m := NewModel(p, r, s, statePath, 0, "over", false)
+
+	updated, _ := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("m")})
+	m2 := updated.(Model)
+	if m2.roiMode != "under" {
+		t.Fatalf("expected roiMode to toggle to under, got %s", m2.roiMode)
+	}
+
+	loaded, err := state.LoadState(statePath)
+	if err != nil {
+		t.Fatalf("failed to load state: %v", err)
+	}
+	if loaded.ROIMode != "under" {
+		t.Fatalf("expected persisted roiMode under, got %s", loaded.ROIMode)
+	}
+
+	if err := os.Remove(statePath); err != nil {
+		t.Fatalf("failed to cleanup state file: %v", err)
 	}
 }

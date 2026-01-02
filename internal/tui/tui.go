@@ -81,6 +81,14 @@ type Model struct {
 }
 
 func NewModel(p *pack.Pack, r *exec.Runner, s *state.RunState, statePath string, roiThreshold float64, roiMode string, autoRun bool) Model {
+	if s != nil {
+		if s.ROIThreshold > 0 {
+			roiThreshold = s.ROIThreshold
+		}
+		if s.ROIMode != "" {
+			roiMode = s.ROIMode
+		}
+	}
 	var allItems []item
 	for _, step := range p.Steps {
 		allItems = append(allItems, item{
@@ -107,6 +115,14 @@ func NewModel(p *pack.Pack, r *exec.Runner, s *state.RunState, statePath string,
 
 	projectPath := ProjectURLStorePath(statePath, p.Source)
 	globalPath := GlobalURLStorePath()
+	urlPicker := NewURLPickerModel(projectPath, globalPath)
+	resolvedURL := r.ChatGPTURL
+	if resolvedURL == "" {
+		resolvedURL = urlPicker.DefaultURL()
+	}
+	if resolvedURL != "" {
+		r.ChatGPTURL = resolvedURL
+	}
 
 	m := Model{
 		list:          l,
@@ -114,7 +130,7 @@ func NewModel(p *pack.Pack, r *exec.Runner, s *state.RunState, statePath string,
 		spinner:       sp,
 		filterInput:   ti,
 		urlInput:      NewURLInputModel(),
-		urlPicker:     NewURLPickerModel(projectPath, globalPath),
+		urlPicker:     urlPicker,
 		pack:          p,
 		runner:        r,
 		state:         s,
@@ -126,10 +142,10 @@ func NewModel(p *pack.Pack, r *exec.Runner, s *state.RunState, statePath string,
 		logChan:       make(chan string, 100),
 		viewState:     ViewSteps,
 		overridesFlow: NewOverridesFlowModel(p.Steps, r.OracleFlags, RunnerOptionsFromRunner(r)),
-		chatGPTURL:    r.ChatGPTURL,
+		chatGPTURL:    resolvedURL,
 		previewWrap:   true,
 	}
-	m.urlInput.SetValue(r.ChatGPTURL)
+	m.urlInput.SetValue(resolvedURL)
 	m.urlInput.Blur()
 
 	// Apply initial filter
@@ -262,7 +278,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "c":
 				content := m.stepPreviewContent()
 				if err := copyToClipboard(content); err != nil {
-					m.previewNotice = "Copy failed: " + err.Error()
+					path, fallbackErr := writeClipboardFallback(content)
+					if fallbackErr != nil {
+						m.previewNotice = "Copy failed: " + err.Error()
+					} else {
+						m.previewNotice = "Copy failed; saved to " + path
+					}
 				} else {
 					m.previewNotice = "Copied to clipboard"
 				}
@@ -325,6 +346,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if err == nil {
 					m.roiThreshold = val
 					m = m.refreshList()
+					m.persistFilterState()
 				}
 				m.isFiltering = false
 				m.filterInput.Blur()
@@ -422,6 +444,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.roiMode = "under"
 				}
 				m = m.refreshList()
+				m.persistFilterState()
 				return m, nil
 			}
 		case "v":
@@ -527,9 +550,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m *Model) handleWindowSize(msg tea.WindowSizeMsg) {
 	m.width = msg.Width
 	m.height = msg.Height
-	m.list.SetSize(msg.Width/3, msg.Height-4)
+	contentHeight := msg.Height - 5
+	if contentHeight < 1 {
+		contentHeight = 1
+	}
+	m.list.SetSize(msg.Width/3, contentHeight)
 	m.viewport.Width = msg.Width - (msg.Width / 3) - 6
-	m.viewport.Height = msg.Height - 4
+	m.viewport.Height = contentHeight
 }
 
 func (m *Model) resetState() {
@@ -553,6 +580,15 @@ func (m *Model) resetState() {
 	if m.runner != nil {
 		m.runner.Overrides = nil
 	}
+}
+
+func (m *Model) persistFilterState() {
+	if m.state == nil || m.statePath == "" {
+		return
+	}
+	m.state.ROIThreshold = m.roiThreshold
+	m.state.ROIMode = m.roiMode
+	_ = state.SaveStateAtomic(m.statePath, m.state)
 }
 
 func (m *Model) setLogContent() {
@@ -694,7 +730,9 @@ func (m Model) View() string {
 		}
 	}
 
-	return lipgloss.JoinHorizontal(lipgloss.Top, left, " | ", right)
+	main := lipgloss.JoinHorizontal(lipgloss.Top, left, " | ", right)
+	help := m.stepsHelpBar()
+	return lipgloss.JoinVertical(lipgloss.Left, main, help)
 }
 
 func (m Model) viewDone() string {
@@ -719,6 +757,14 @@ func (m Model) viewDone() string {
 	)
 
 	return lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, content)
+}
+
+func (m Model) stepsHelpBar() string {
+	help := "[enter] run  [a] run all  [f] filter ROI  [m] ROI mode  [v] view  [o] overrides  [u] url  [U] url picker  [q] quit"
+	if m.running {
+		help = "[q] quit  [running] wait for completion"
+	}
+	return lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render(help)
 }
 
 func (m Model) waitForLogs() tea.Cmd {

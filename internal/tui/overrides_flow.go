@@ -73,7 +73,7 @@ func (m OverridesFlowModel) Update(msg tea.Msg) (OverridesFlowModel, tea.Cmd) {
 				return m, nil
 			}
 			if len(v.Errors) > 0 {
-				m.confirm.errMsg = v.Errors[0].ErrorMessage
+				m.confirm.errMsg = fmt.Sprintf("%d validation errors detected.", len(v.Errors))
 				return m, nil
 			}
 			return m, func() tea.Msg { return OverridesAppliedMsg{Overrides: m.pendingOverrides} }
@@ -97,6 +97,7 @@ func (m OverridesFlowModel) Update(msg tea.Msg) (OverridesFlowModel, tea.Cmd) {
 				m.pendingOverrides = m.currentOverrides()
 				m.confirm.validating = true
 				m.confirm.errMsg = ""
+				m.confirm.errors = nil
 				return m, m.validateCmd(m.pendingOverrides)
 			}
 			m.step++
@@ -137,7 +138,7 @@ func (m OverridesFlowModel) View(width, height int) string {
 			title,
 			step,
 			"",
-			m.confirm.View(m.currentOverrides()),
+			m.confirm.View(m.currentOverrides(), m.baseline),
 		)
 	} else {
 		content = lipgloss.JoinVertical(lipgloss.Left,
