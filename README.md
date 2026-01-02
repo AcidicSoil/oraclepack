@@ -1,5 +1,10 @@
 # oraclepack
 
+<p align="center">
+  <a [![Update codefetch outputs](https://github.com/AcidicSoil/oraclepack/actions/workflows/update-codefetch-outputs.yml/badge.svg)](https://github.com/AcidicSoil/oraclepack/actions/workflows/update-codefetch-outputs.yml)</a>
+</p>
+
+
 `oraclepack` is a polished, TUI-driven runner for **Oracle Packs**—interactive bash scripts embedded within Markdown files. It's designed for developers who want to share, validate, and execute complex multi-step workflows with real-time feedback and state persistence.
 
 ## 🚀 Features
