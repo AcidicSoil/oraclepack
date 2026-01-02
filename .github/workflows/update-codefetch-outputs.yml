@@ -54,8 +54,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          pnpm run code
-          pnpm run codea
+          pnpm code
+          pnpm code:temp
 
       - name: Commit and push regenerated outputs (if changed)
         shell: bash
