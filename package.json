@@ -6,6 +6,7 @@
     "code:tui": "codefetch -t 5 --include-dir cmd,internal -o oraclepack.md --max-tokens 50000 --token-limiter truncated",
     "code:all": "codefetch -t 5 -o oraclepack-all.md",
     "code": "pnpm code:tui && pnpm code:all",
-    "code:temp": "codefetch -t 5 --include-dir .rules -o rules.md --max-tokens 50000"
+    "code:temp": "codefetch -t 5 --include-dir .rules -o rules.md --max-tokens 50000",
+    "config": "bash .config/scripts/build_install_oraclepack.sh"
   }
 }

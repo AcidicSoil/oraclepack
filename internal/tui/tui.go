@@ -43,6 +43,7 @@ type Model struct {
 	viewport    viewport.Model
 	spinner     spinner.Model
 	filterInput textinput.Model
+	urlInput    URLInputModel
 	pack        *pack.Pack
 	runner      *exec.Runner
 	state       *state.RunState
@@ -62,9 +63,11 @@ type Model struct {
 	roiThreshold float64
 	roiMode      string
 	isFiltering  bool
+	isEditingURL bool
 
 	overridesFlow    OverridesFlowModel
 	appliedOverrides *overrides.RuntimeOverrides
+	chatGPTURL       string
 
 	err      error
 	logLines []string
@@ -94,13 +97,14 @@ func NewModel(p *pack.Pack, r *exec.Runner, s *state.RunState, statePath string,
 	sp.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
 
 	vp := viewport.New(0, 0)
-	vp.SetContent("Press Enter to run selected, 'a' to run all filtered steps, 'f' to filter, 'o' to configure overrides.")
+	vp.SetContent("Press Enter to run selected, 'a' to run all filtered steps, 'f' to filter, 'o' to configure overrides, 'u' for ChatGPT URL.")
 
 	m := Model{
 		list:          l,
 		viewport:      vp,
 		spinner:       sp,
 		filterInput:   ti,
+		urlInput:      NewURLInputModel(),
 		pack:          p,
 		runner:        r,
 		state:         s,
@@ -112,7 +116,10 @@ func NewModel(p *pack.Pack, r *exec.Runner, s *state.RunState, statePath string,
 		logChan:       make(chan string, 100),
 		viewState:     ViewSteps,
 		overridesFlow: NewOverridesFlowModel(p.Steps, r.OracleFlags, RunnerOptionsFromRunner(r)),
+		chatGPTURL:    r.ChatGPTURL,
 	}
+	m.urlInput.SetValue(r.ChatGPTURL)
+	m.urlInput.Blur()
 
 	// Apply initial filter
 	return m.refreshList()
@@ -274,6 +281,33 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Batch(cmds...)
 	}
 
+	// ChatGPT URL Input Mode
+	if m.isEditingURL {
+		switch msg := msg.(type) {
+		case tea.KeyMsg:
+			switch msg.String() {
+			case "enter":
+				if m.urlInput.IsValid() {
+					m.chatGPTURL = m.urlInput.Value()
+					if m.runner != nil {
+						m.runner.ChatGPTURL = m.chatGPTURL
+					}
+					m.isEditingURL = false
+					m.urlInput.Blur()
+					return m, nil
+				}
+			case "esc":
+				m.isEditingURL = false
+				m.urlInput.Blur()
+				return m, nil
+			}
+		}
+		var cmd tea.Cmd
+		m.urlInput, cmd = m.urlInput.Update(msg)
+		cmds = append(cmds, cmd)
+		return m, tea.Batch(cmds...)
+	}
+
 	// Normal Steps View / Running
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -311,6 +345,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.isFiltering = true
 				m.filterInput.Focus()
 				m.filterInput.SetValue(fmt.Sprintf("%.1f", m.roiThreshold))
+				return m, textinput.Blink
+			}
+		case "u":
+			if !m.running {
+				m.isEditingURL = true
+				m.urlInput.SetValue(m.chatGPTURL)
+				m.urlInput.Focus()
 				return m, textinput.Blink
 			}
 		case "o":
@@ -445,6 +486,17 @@ func (m Model) View() string {
 		)
 	}
 
+	if m.isEditingURL {
+		return lipgloss.Place(m.width, m.height,
+			lipgloss.Center, lipgloss.Center,
+			lipgloss.JoinVertical(lipgloss.Center,
+				"ChatGPT URL (browser mode):",
+				m.urlInput.View(),
+				"(Enter to apply, Esc to cancel)",
+			),
+		)
+	}
+
 	left := m.list.View()
 	right := m.viewport.View()
 
@@ -470,7 +522,11 @@ func (m Model) View() string {
 			targeted := len(m.appliedOverrides.ApplyToSteps)
 			overrideStatus = fmt.Sprintf(" [Overrides: +%d -%d steps:%d]", added, removed, targeted)
 		}
-		statusLine := strings.TrimSpace(filterStatus + overrideStatus)
+		urlStatus := ""
+		if m.chatGPTURL != "" {
+			urlStatus = " [ChatGPT URL: set]"
+		}
+		statusLine := strings.TrimSpace(filterStatus + overrideStatus + urlStatus)
 		if statusLine != "" {
 			right = lipgloss.NewStyle().Foreground(lipgloss.Color("63")).Render(statusLine) + "\n" + right
 		}
@@ -549,5 +605,6 @@ func RunnerOptionsFromRunner(r *exec.Runner) exec.RunnerOptions {
 		Env:         r.Env,
 		OracleFlags: r.OracleFlags,
 		Overrides:   r.Overrides,
+		ChatGPTURL:  r.ChatGPTURL,
 	}
 }

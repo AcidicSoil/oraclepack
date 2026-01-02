@@ -16,7 +16,6 @@ type OverridesStep int
 const (
 	OverridesFlags OverridesStep = iota
 	OverridesSteps
-	OverridesURL
 	OverridesConfirm
 )
 
@@ -32,7 +31,6 @@ type OverridesFlowModel struct {
 	step    OverridesStep
 	flags   FlagsPickerModel
 	steps   StepsPickerModel
-	url     URLInputModel
 	confirm OverridesConfirmModel
 
 	packSteps        []pack.Step
@@ -46,10 +44,9 @@ func NewOverridesFlowModel(steps []pack.Step, baseline []string, opts exec.Runne
 		step:       OverridesFlags,
 		flags:      NewFlagsPickerModel(nil),
 		steps:      NewStepsPickerModel(steps),
-		url:        NewURLInputModel(),
 		confirm:    OverridesConfirmModel{},
 		packSteps:  steps,
-		baseline:   baseline,
+		baseline:   exec.ApplyChatGPTURL(baseline, opts.ChatGPTURL),
 		runnerOpts: opts,
 	}
 }
@@ -65,9 +62,6 @@ func (m OverridesFlowModel) Update(msg tea.Msg) (OverridesFlowModel, tea.Cmd) {
 	}
 	if m.step == OverridesSteps {
 		m.steps, cmd = m.steps.Update(msg)
-	}
-	if m.step == OverridesURL {
-		m.url, cmd = m.url.Update(msg)
 	}
 	if m.step == OverridesConfirm {
 		switch v := msg.(type) {
@@ -96,9 +90,6 @@ func (m OverridesFlowModel) Update(msg tea.Msg) (OverridesFlowModel, tea.Cmd) {
 				m.step--
 			}
 		case "enter", "tab":
-			if m.step == OverridesURL && !m.url.IsValid() {
-				return m, cmd
-			}
 			if m.step == OverridesConfirm {
 				if m.confirm.validating {
 					return m, nil
@@ -117,7 +108,7 @@ func (m OverridesFlowModel) Update(msg tea.Msg) (OverridesFlowModel, tea.Cmd) {
 
 func (m OverridesFlowModel) View(width, height int) string {
 	title := lipgloss.NewStyle().Bold(true).Render("Overrides Wizard")
-	step := fmt.Sprintf("Step %d/4", int(m.step)+1)
+	step := fmt.Sprintf("Step %d/3", int(m.step)+1)
 	body := fmt.Sprintf("Current step: %s\n\n[Enter] Next  [Esc] Cancel", overridesStepName(m.step))
 
 	var content string
@@ -138,15 +129,6 @@ func (m OverridesFlowModel) View(width, height int) string {
 			step,
 			"",
 			m.steps.View(),
-			"",
-			body,
-		)
-	} else if m.step == OverridesURL {
-		content = lipgloss.JoinVertical(lipgloss.Left,
-			title,
-			step,
-			"",
-			m.url.View(),
 			"",
 			body,
 		)
@@ -173,7 +155,6 @@ func (m OverridesFlowModel) currentOverrides() overrides.RuntimeOverrides {
 	return overrides.RuntimeOverrides{
 		AddedFlags:   m.flags.SelectedFlags(),
 		RemovedFlags: nil,
-		ChatGPTURL:   m.url.Value(),
 		ApplyToSteps: m.steps.SelectedSteps(),
 	}
 }
@@ -191,8 +172,6 @@ func overridesStepName(step OverridesStep) string {
 		return "Flags"
 	case OverridesSteps:
 		return "Target Steps"
-	case OverridesURL:
-		return "ChatGPT URL"
 	case OverridesConfirm:
 		return "Confirm"
 	default:

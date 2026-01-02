@@ -18,7 +18,6 @@ func NewURLInputModel() URLInputModel {
 	ti.Placeholder = "https://chat.openai.com/project/..."
 	ti.CharLimit = 200
 	ti.Width = 50
-	ti.Focus()
 
 	return URLInputModel{input: ti}
 }
@@ -55,4 +54,16 @@ func (m URLInputModel) View() string {
 		body = body + "\n" + lipgloss.NewStyle().Foreground(lipgloss.Color("196")).Render(m.err)
 	}
 	return body
+}
+
+func (m *URLInputModel) SetValue(v string) {
+	m.input.SetValue(v)
+}
+
+func (m *URLInputModel) Focus() {
+	m.input.Focus()
+}
+
+func (m *URLInputModel) Blur() {
+	m.input.Blur()
 }

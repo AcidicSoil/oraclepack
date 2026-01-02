@@ -6,6 +6,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/user/oraclepack/internal/pack"
 )
 
@@ -50,7 +51,17 @@ func (m StepsPickerModel) Init() tea.Cmd {
 func (m StepsPickerModel) Update(msg tea.Msg) (StepsPickerModel, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		if msg.String() == " " {
+		switch msg.String() {
+		case "a", "A":
+			m = m.setAll(true)
+			return m, nil
+		case "i":
+			m = m.invert()
+			return m, nil
+		case "n":
+			m = m.setAll(false)
+			return m, nil
+		case " ":
 			idx := m.list.Index()
 			item, ok := m.list.SelectedItem().(StepItem)
 			if ok {
@@ -70,7 +81,8 @@ func (m *StepsPickerModel) SetSize(width, height int) {
 }
 
 func (m StepsPickerModel) View() string {
-	return m.list.View()
+	help := lipgloss.NewStyle().Faint(true).Render("[space] toggle  [a] all  [i] invert  [n] none")
+	return m.list.View() + "\n" + help
 }
 
 func (m StepsPickerModel) SelectedSteps() map[string]bool {
@@ -81,6 +93,30 @@ func (m StepsPickerModel) SelectedSteps() map[string]bool {
 		}
 	}
 	return selected
+}
+
+func (m StepsPickerModel) setAll(value bool) StepsPickerModel {
+	for idx, item := range m.list.Items() {
+		si, ok := item.(StepItem)
+		if !ok {
+			continue
+		}
+		si.Selected = value
+		_ = m.list.SetItem(idx, si)
+	}
+	return m
+}
+
+func (m StepsPickerModel) invert() StepsPickerModel {
+	for idx, item := range m.list.Items() {
+		si, ok := item.(StepItem)
+		if !ok {
+			continue
+		}
+		si.Selected = !si.Selected
+		_ = m.list.SetItem(idx, si)
+	}
+	return m
 }
 
 type stepsDelegate struct {

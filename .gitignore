@@ -30,7 +30,7 @@ codefetch/
 public/
 .todo/
 .cursor/
-
+oracle-out/
 # START Ruler Generated Files
 /.codex/config.toml
 /.codex/config.toml.bak

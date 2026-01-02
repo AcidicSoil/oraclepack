@@ -29,16 +29,10 @@ func (m OverridesConfirmModel) View(over overrides.RuntimeOverrides) string {
 		removed = "(none)"
 	}
 	targeted := len(over.ApplyToSteps)
-	url := over.ChatGPTURL
-	if url == "" {
-		url = "(none)"
-	}
-
 	lines := []string{
 		"Summary:",
 		fmt.Sprintf("Added flags: %s", added),
 		fmt.Sprintf("Removed flags: %s", removed),
-		fmt.Sprintf("ChatGPT URL: %s", url),
 		fmt.Sprintf("Targeted steps: %d", targeted),
 		"",
 		"[Enter] Validate  [Esc] Cancel",

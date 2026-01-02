@@ -31,10 +31,11 @@ func NewFlagsPickerModel(baseline []string) FlagsPickerModel {
 	}
 
 	curated := []FlagItem{
-		{Flag: "--debug", Desc: "Verbose logging"},
-		{Flag: "--json", Desc: "JSON output"},
-		{Flag: "--no-color", Desc: "Disable ANSI colors"},
-		{Flag: "--stream", Desc: "Stream output"},
+		{Flag: "--files-report", Desc: "Show per-file token usage"},
+		{Flag: "--render", Desc: "Print assembled markdown bundle"},
+		{Flag: "--render-plain", Desc: "Render markdown without ANSI"},
+		{Flag: "--copy", Desc: "Copy assembled markdown bundle"},
+		{Flag: "--wait", Desc: "Wait for background API runs"},
 	}
 
 	items := make([]list.Item, 0, len(curated))

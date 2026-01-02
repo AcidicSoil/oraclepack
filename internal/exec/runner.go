@@ -19,6 +19,7 @@ type Runner struct {
 	Env         []string
 	OracleFlags []string
 	Overrides   *overrides.RuntimeOverrides
+	ChatGPTURL  string
 }
 
 // RunnerOptions configures a Runner.
@@ -28,6 +29,7 @@ type RunnerOptions struct {
 	Env         []string
 	OracleFlags []string
 	Overrides   *overrides.RuntimeOverrides
+	ChatGPTURL  string
 }
 
 // NewRunner creates a new Runner with options.
@@ -43,6 +45,7 @@ func NewRunner(opts RunnerOptions) *Runner {
 		Env:         append(os.Environ(), opts.Env...),
 		OracleFlags: opts.OracleFlags,
 		Overrides:   opts.Overrides,
+		ChatGPTURL:  opts.ChatGPTURL,
 	}
 }
 
@@ -53,9 +56,10 @@ func (r *Runner) RunPrelude(ctx context.Context, p *pack.Prelude, logWriter io.W
 
 // RunStep executes a single step's code.
 func (r *Runner) RunStep(ctx context.Context, s *pack.Step, logWriter io.Writer) error {
-	flags := r.OracleFlags
+	flags := ApplyChatGPTURL(r.OracleFlags, r.ChatGPTURL)
 	if r.Overrides != nil {
 		flags = r.Overrides.EffectiveFlags(s.ID, r.OracleFlags)
+		flags = ApplyChatGPTURL(flags, r.ChatGPTURL)
 	}
 	code := InjectFlags(s.Code, flags)
 	return r.run(ctx, code, logWriter)
@@ -66,7 +70,7 @@ func (r *Runner) run(ctx context.Context, script string, logWriter io.Writer) er
 	cmd := exec.CommandContext(ctx, r.Shell, "-lc", script)
 	cmd.Dir = r.WorkDir
 	cmd.Env = r.Env
-	
+
 	// Standardize stdout and stderr to the logWriter
 	cmd.Stdout = logWriter
 	cmd.Stderr = logWriter
