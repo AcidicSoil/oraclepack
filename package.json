@@ -7,6 +7,7 @@
     "code:all": "codefetch -t 5 -o oraclepack-all.md",
     "code": "pnpm code:tui && pnpm code:all",
     "code:temp": "codefetch -t 5 --include-dir .rules -o rules.md --max-tokens 50000",
-    "build": "bash .config/scripts/build_install_oraclepack.sh"
+    "build": "bash .config/scripts/build_install_oraclepack.sh",
+    "tag": "bash .config/scripts/tag-release.sh"
   }
 }

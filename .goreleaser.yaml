@@ -1,12 +1,17 @@
-# .goreleaser.yaml
+# path: .goreleaser.yaml
+version: 2
+
 project_name: oraclepack
 
 before:
   hooks:
-    - go mod tidy
+    - go mod download
 
 builds:
-  - env:
+  - id: oraclepack
+    main: ./cmd/oraclepack
+    binary: oraclepack
+    env:
       - CGO_ENABLED=0
     goos:
       - linux
@@ -15,25 +20,26 @@ builds:
     goarch:
       - amd64
       - arm64
-    main: ./cmd/oraclepack
-    ldflags:
-      - -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
+    flags:
+      - -trimpath
 
 archives:
-  - name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+  - id: default
+    builds:
+      - oraclepack
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    format: tar.gz
     format_overrides:
       - goos: windows
         format: zip
 
 checksum:
-  name_template: 'checksums.txt'
-
-snapshot:
-  name_template: "{{ .Tag }}-next"
+  name_template: "checksums.txt"
 
 changelog:
   sort: asc
   filters:
     exclude:
-      - '^docs:'
-      - '^test:'
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
