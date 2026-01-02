@@ -1,8 +1,25 @@
+# path: command-pipeline.toml
 description="Command Pipeline"
 prompt = """
 Execute a pipeline of commands based on a specification.
 
 Arguments: $ARGUMENTS
+
+## Zero-Argument Fallback (Use Existing Artifact Pipeline)
+
+If the user invoked this command with **no additional arguments** (i.e., $ARGUMENTS is empty/blank):
+
+1) Check whether `.taskmaster/artifacts/` exists.
+2) Check whether `.taskmaster/artifacts/tm-command-pipeline.md` exists.
+3) If it exists:
+   - Treat `tm-command-pipeline.md` as the pipeline specification input for this command.
+   - Read the file contents.
+   - Extract pipeline specs from the file using this priority:
+     a) All fenced code blocks whose content includes `→` or `->` (treat each as a pipeline, in file order).
+     b) Otherwise, any non-empty lines that contain `→` or `->` (treat each line as a pipeline, in file order).
+     c) Otherwise, treat the entire file as a single pipeline spec.
+   - Begin executing the pipeline(s) found within, in the order they appear.
+4) If it does not exist (or `.taskmaster/artifacts/` is missing), proceed with normal argument-based parsing below.
 
 ## Command Pipeline Execution
 
@@ -21,33 +38,41 @@ Parse pipeline specification from arguments. Supported formats:
 
 **1. Project Setup Pipeline**
 ```
+
 init [prd] →
 expand-all →
 complexity-report →
 sprint-plan →
 show first-sprint
+
 ```
 
 **2. Daily Work Pipeline**
 ```
+
 standup →
 if:in-progress → continue →
 else → next → start
+
 ```
 
 **3. Task Completion Pipeline**
 ```
+
 complete [id] →
 git-commit →
 if:blocked-tasks-freed → show-freed →
 next
+
 ```
 
 **4. Quality Check Pipeline**
 ```
+
 list in-progress →
 for:each → check-idle-time →
 if:idle>1day → prompt-update
+
 ```
 
 ### Pipeline Features
@@ -68,7 +93,9 @@ if:idle>1day → prompt-update
 
 ### Execution Flow
 
-1. Parse pipeline specification
+1. Determine pipeline specification:
+   - If $ARGUMENTS is empty/blank, attempt the Zero-Argument Fallback above.
+   - Otherwise parse pipeline specification from $ARGUMENTS.
 2. Validate command sequence
 3. Execute with state passing
 4. Handle conditions and loops
