@@ -15,13 +15,13 @@ func TestInjectFlags(t *testing.T) {
 			"simple injection",
 			"oracle query 'hello'",
 			[]string{"--verbose"},
-			"oracle query 'hello' --verbose",
+			"oracle --verbose query 'hello'",
 		},
 		{
 			"indented injection",
 			"  oracle query 'hello'",
 			[]string{"--verbose"},
-			"  oracle query 'hello' --verbose",
+			"  oracle --verbose query 'hello'",
 		},
 		{
 			"no injection needed",
@@ -33,7 +33,25 @@ func TestInjectFlags(t *testing.T) {
 			"multiple lines",
 			"echo 'start'\noracle query\necho 'end'",
 			[]string{"--debug"},
-			"echo 'start'\noracle query --debug\necho 'end'",
+			"echo 'start'\noracle --debug query\necho 'end'",
+		},
+		{
+			"multiline with continuation",
+			"oracle \\\n  --json \\\n  --files",
+			[]string{"--flag"},
+			"oracle --flag \\\n  --json \\\n  --files",
+		},
+		{
+			"multiline with args and continuation",
+			"  oracle arg \\\n  --json",
+			[]string{"--flag"},
+			"  oracle --flag arg \\\n  --json",
+		},
+		{
+			"commented command",
+			"# oracle --json",
+			[]string{"--verbose"},
+			"# oracle --json",
 		},
 		{
 			"oracle as part of word",

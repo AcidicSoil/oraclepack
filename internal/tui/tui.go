@@ -13,6 +13,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/user/oraclepack/internal/exec"
+	"github.com/user/oraclepack/internal/overrides"
 	"github.com/user/oraclepack/internal/pack"
 	"github.com/user/oraclepack/internal/state"
 )
@@ -23,6 +24,7 @@ const (
 	ViewSteps ViewState = iota
 	ViewRunning
 	ViewDone
+	ViewOverrides
 )
 
 type item struct {
@@ -45,21 +47,24 @@ type Model struct {
 	runner      *exec.Runner
 	state       *state.RunState
 	statePath   string
-	
-	width    int
-	height   int
-	
-	viewState ViewState
-	running   bool
-	runAll    bool // State for sequential execution
+
+	width  int
+	height int
+
+	viewState  ViewState
+	running    bool
+	runAll     bool // State for sequential execution
 	currentIdx int
-	autoRun   bool // Config to auto-start on init
-	
+	autoRun    bool // Config to auto-start on init
+
 	// Filtering state
 	allSteps     []item // Store all items to support dynamic filtering
 	roiThreshold float64
 	roiMode      string
 	isFiltering  bool
+
+	overridesFlow    OverridesFlowModel
+	appliedOverrides *overrides.RuntimeOverrides
 
 	err      error
 	logLines []string
@@ -89,23 +94,24 @@ func NewModel(p *pack.Pack, r *exec.Runner, s *state.RunState, statePath string,
 	sp.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
 
 	vp := viewport.New(0, 0)
-	vp.SetContent("Press Enter to run selected, 'a' to run all filtered steps, 'f' to filter.")
+	vp.SetContent("Press Enter to run selected, 'a' to run all filtered steps, 'f' to filter, 'o' to configure overrides.")
 
 	m := Model{
-		list:         l,
-		viewport:     vp,
-		spinner:      sp,
-		filterInput:  ti,
-		pack:         p,
-		runner:       r,
-		state:        s,
-		statePath:    statePath,
-		autoRun:      autoRun,
-		allSteps:     allItems,
-		roiThreshold: roiThreshold,
-		roiMode:      roiMode,
-		logChan:      make(chan string, 100),
-		viewState:    ViewSteps,
+		list:          l,
+		viewport:      vp,
+		spinner:       sp,
+		filterInput:   ti,
+		pack:          p,
+		runner:        r,
+		state:         s,
+		statePath:     statePath,
+		autoRun:       autoRun,
+		allSteps:      allItems,
+		roiThreshold:  roiThreshold,
+		roiMode:       roiMode,
+		logChan:       make(chan string, 100),
+		viewState:     ViewSteps,
+		overridesFlow: NewOverridesFlowModel(p.Steps, r.OracleFlags, RunnerOptionsFromRunner(r)),
 	}
 
 	// Apply initial filter
@@ -156,7 +162,10 @@ func (m Model) Init() tea.Cmd {
 }
 
 type LogMsg string
-type FinishedMsg struct{ Err error; ID string }
+type FinishedMsg struct {
+	Err error
+	ID  string
+}
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
@@ -167,6 +176,37 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+c":
 			return m, tea.Quit
 		}
+	}
+
+	if msg, ok := msg.(OverridesStartedMsg); ok {
+		_ = msg
+		m.viewState = ViewOverrides
+		m.overridesFlow = NewOverridesFlowModel(m.pack.Steps, m.runner.OracleFlags, RunnerOptionsFromRunner(m.runner))
+		return m, nil
+	}
+	if msg, ok := msg.(OverridesAppliedMsg); ok {
+		over := msg.Overrides
+		m.appliedOverrides = &over
+		if m.runner != nil {
+			m.runner.Overrides = &over
+		}
+		m.viewState = ViewSteps
+		return m, nil
+	}
+	if msg, ok := msg.(OverridesCancelledMsg); ok {
+		_ = msg
+		m.appliedOverrides = nil
+		if m.runner != nil {
+			m.runner.Overrides = nil
+		}
+		m.viewState = ViewSteps
+		return m, nil
+	}
+
+	if m.viewState == ViewOverrides {
+		var cmd tea.Cmd
+		m.overridesFlow, cmd = m.overridesFlow.Update(msg)
+		return m, cmd
 	}
 
 	switch m.viewState {
@@ -273,6 +313,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.filterInput.SetValue(fmt.Sprintf("%.1f", m.roiThreshold))
 				return m, textinput.Blink
 			}
+		case "o":
+			if !m.running {
+				return m, func() tea.Msg { return OverridesStartedMsg{} }
+			}
 		}
 
 	case StartAutoRunMsg:
@@ -309,7 +353,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.viewState = ViewDone
 		} else {
 			m.logLines = append(m.logLines, "\n✅ SUCCESS")
-			
+
 			if m.runAll {
 				m.currentIdx++
 				if m.currentIdx < len(m.list.Items()) {
@@ -330,7 +374,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.viewport.SetContent(strings.Join(m.logLines, "\n"))
 		m.viewport.GotoBottom()
-		
+
 	case spinner.TickMsg:
 		var cmd tea.Cmd
 		m.spinner, cmd = m.spinner.Update(msg)
@@ -358,7 +402,7 @@ func (m *Model) resetState() {
 	// Reset RunState
 	m.state.StartTime = time.Now()
 	m.state.StepStatuses = make(map[string]state.StepStatus)
-	
+
 	// Save cleared state to disk
 	if m.statePath != "" {
 		_ = state.SaveStateAtomic(m.statePath, m.state)
@@ -371,6 +415,10 @@ func (m *Model) resetState() {
 	m.viewState = ViewSteps
 	m.running = false
 	m.runAll = false
+	m.appliedOverrides = nil
+	if m.runner != nil {
+		m.runner.Overrides = nil
+	}
 }
 
 func (m Model) View() string {
@@ -382,8 +430,12 @@ func (m Model) View() string {
 		return m.viewDone()
 	}
 
+	if m.viewState == ViewOverrides {
+		return m.overridesFlow.View(m.width, m.height)
+	}
+
 	if m.isFiltering {
-		return lipgloss.Place(m.width, m.height, 
+		return lipgloss.Place(m.width, m.height,
 			lipgloss.Center, lipgloss.Center,
 			lipgloss.JoinVertical(lipgloss.Center,
 				"Enter ROI Threshold:",
@@ -411,8 +463,16 @@ func (m Model) View() string {
 			}
 			filterStatus = fmt.Sprintf(" [Filter: ROI %s %.1f]", modeSym, m.roiThreshold)
 		}
-		if filterStatus != "" {
-			right = lipgloss.NewStyle().Foreground(lipgloss.Color("63")).Render(filterStatus) + "\n" + right
+		overrideStatus := ""
+		if m.appliedOverrides != nil {
+			added := len(m.appliedOverrides.AddedFlags)
+			removed := len(m.appliedOverrides.RemovedFlags)
+			targeted := len(m.appliedOverrides.ApplyToSteps)
+			overrideStatus = fmt.Sprintf(" [Overrides: +%d -%d steps:%d]", added, removed, targeted)
+		}
+		statusLine := strings.TrimSpace(filterStatus + overrideStatus)
+		if statusLine != "" {
+			right = lipgloss.NewStyle().Foreground(lipgloss.Color("63")).Render(statusLine) + "\n" + right
 		}
 	}
 
@@ -426,12 +486,12 @@ func (m Model) viewDone() string {
 	}
 
 	help := "[n] New Run  [r] Rerun  [b] Back to List  [q] Quit"
-	
+
 	// Show the log viewport in the done screen too? Or just a summary?
 	// Requirement says "displays a summary".
 	// But viewing the logs is useful.
 	// I'll show the viewport in the center/bottom.
-	
+
 	content := lipgloss.JoinVertical(lipgloss.Center,
 		title,
 		"",
@@ -439,7 +499,7 @@ func (m Model) viewDone() string {
 		"",
 		help,
 	)
-	
+
 	return lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, content)
 }
 
@@ -472,9 +532,22 @@ func (m Model) runStep(id string) tea.Cmd {
 				m.logChan <- line
 			},
 		}
-		
+
 		err := m.runner.RunStep(context.Background(), step, lw)
 		lw.Close()
 		return FinishedMsg{Err: err, ID: id}
+	}
+}
+
+func RunnerOptionsFromRunner(r *exec.Runner) exec.RunnerOptions {
+	if r == nil {
+		return exec.RunnerOptions{}
+	}
+	return exec.RunnerOptions{
+		Shell:       r.Shell,
+		WorkDir:     r.WorkDir,
+		Env:         r.Env,
+		OracleFlags: r.OracleFlags,
+		Overrides:   r.Overrides,
 	}
 }

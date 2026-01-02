@@ -8,6 +8,7 @@ import (
 	"os/exec"
 
 	"github.com/user/oraclepack/internal/errors"
+	"github.com/user/oraclepack/internal/overrides"
 	"github.com/user/oraclepack/internal/pack"
 )
 
@@ -17,6 +18,7 @@ type Runner struct {
 	WorkDir     string
 	Env         []string
 	OracleFlags []string
+	Overrides   *overrides.RuntimeOverrides
 }
 
 // RunnerOptions configures a Runner.
@@ -25,6 +27,7 @@ type RunnerOptions struct {
 	WorkDir     string
 	Env         []string
 	OracleFlags []string
+	Overrides   *overrides.RuntimeOverrides
 }
 
 // NewRunner creates a new Runner with options.
@@ -39,6 +42,7 @@ func NewRunner(opts RunnerOptions) *Runner {
 		WorkDir:     opts.WorkDir,
 		Env:         append(os.Environ(), opts.Env...),
 		OracleFlags: opts.OracleFlags,
+		Overrides:   opts.Overrides,
 	}
 }
 
@@ -49,7 +53,11 @@ func (r *Runner) RunPrelude(ctx context.Context, p *pack.Prelude, logWriter io.W
 
 // RunStep executes a single step's code.
 func (r *Runner) RunStep(ctx context.Context, s *pack.Step, logWriter io.Writer) error {
-	code := InjectFlags(s.Code, r.OracleFlags)
+	flags := r.OracleFlags
+	if r.Overrides != nil {
+		flags = r.Overrides.EffectiveFlags(s.ID, r.OracleFlags)
+	}
+	code := InjectFlags(s.Code, flags)
 	return r.run(ctx, code, logWriter)
 }
 

@@ -1,14 +1,6 @@
 package exec
 
-import (
-	"bufio"
-	"regexp"
-	"strings"
-)
-
-var (
-	oracleCmdRegex = regexp.MustCompile(`^(\s*)oracle(\s+|$)`)
-)
+import "strings"
 
 // InjectFlags scans a script and appends flags to any 'oracle' command invocation.
 func InjectFlags(script string, flags []string) string {
@@ -16,18 +8,55 @@ func InjectFlags(script string, flags []string) string {
 		return script
 	}
 
-	flagStr := " " + strings.Join(flags, " ")
-	
-	var result []string
-	scanner := bufio.NewScanner(strings.NewReader(script))
-	for scanner.Scan() {
-		line := scanner.Text()
-		if oracleCmdRegex.MatchString(line) {
-			// Append flags to the line
-			line += flagStr
+	flagStr := strings.Join(flags, " ")
+
+	lines := strings.Split(script, "\n")
+	for i, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmed, "#") {
+			continue
 		}
-		result = append(result, line)
+
+		insertIdx := oracleInsertIndex(line)
+		if insertIdx == -1 {
+			continue
+		}
+
+		lines[i] = insertFlagsInLine(line, insertIdx, flagStr)
 	}
 
-	return strings.Join(result, "\n")
+	return strings.Join(lines, "\n")
+}
+
+func oracleInsertIndex(line string) int {
+	i := 0
+	for i < len(line) && (line[i] == ' ' || line[i] == '\t') {
+		i++
+	}
+
+	if !strings.HasPrefix(line[i:], "oracle") {
+		return -1
+	}
+
+	end := i + len("oracle")
+	if end < len(line) {
+		next := line[end]
+		if next != ' ' && next != '\t' {
+			return -1
+		}
+	}
+
+	return end
+}
+
+func insertFlagsInLine(line string, insertIdx int, flags string) string {
+	prefix := line[:insertIdx]
+	rest := line[insertIdx:]
+	if rest == "" {
+		return prefix + " " + flags
+	}
+	if rest[0] == ' ' || rest[0] == '\t' {
+		return prefix + " " + flags + rest
+	}
+	return prefix + " " + flags + " " + rest
 }
