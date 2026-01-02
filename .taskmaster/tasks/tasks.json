@@ -1287,36 +1287,60 @@
   "bugfix-tui": {
     "tasks": [
       {
-        "id": 1,
+        "id": "1",
         "title": "Define Runtime Overrides Data Model & Step-Aware Merge Logic",
         "description": "Create the core data structures to hold runtime overrides and implement the logic to merge them with baseline flags on a per-step basis.",
         "details": "Create a new package `internal/overrides`. Define `RuntimeOverrides` struct containing `AddedFlags` ([]string), `RemovedFlags` ([]string), `ChatGPTURL` (string), and `ApplyToSteps` (map[string]bool). Implement `EffectiveFlags(stepID string, baseline []string) []string` which returns the final flag set for a given step. If the step is not in `ApplyToSteps`, return baseline. Otherwise, append added flags, remove removed flags, and inject `--chatgpt-url` if set. Add unit tests covering various combinations (add/remove intersection, empty sets).",
         "testStrategy": "Unit tests in `internal/overrides/merge_test.go` verifying that `EffectiveFlags` correctly computes the final slice for targeted and non-targeted steps.",
         "priority": "high",
         "dependencies": [],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [],
         "complexity": 3,
         "recommendedSubtasks": 0,
         "expansionPrompt": "No expansion needed.",
-        "updatedAt": "2026-01-02T01:32:02.460Z"
+        "updatedAt": "2026-01-02T16:21:30.521Z"
       },
       {
-        "id": 2,
+        "id": "2",
         "title": "Implement Oracle Invocation Extraction (Scanning)",
         "description": "Develop a robust scanner to identify and extract `oracle` command invocations from bash scripts, handling multi-line continuations.",
         "details": "Create `internal/exec/oracle_scan.go`. Implement `ExtractOracleInvocations(script string) []OracleInvocation`. It must detect lines starting with `oracle` (allowing for indentation) and capture the full command including multi-line continuations (lines ending with `\\`). The struct `OracleInvocation` should hold the `Raw` command string and a `Display` version for UI. Use regex or a simple line-by-line state machine. Ensure it handles edge cases like trailing spaces before backslashes.",
         "testStrategy": "Unit tests in `oracle_scan_test.go` with table-driven tests containing various shell script snippets (single line, multiline, indented) to assert correct extraction.",
         "priority": "high",
         "dependencies": [],
-        "status": "pending",
-        "subtasks": [],
+        "status": "in-progress",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement Core State Machine for Line Parsing",
+            "description": "Develop the low-level state machine logic to identify the start of 'oracle' commands and track multi-line continuations.",
+            "dependencies": [],
+            "details": "Implement a state tracker (e.g., boolean flag `inCommand`) in `internal/exec/oracle_scan.go`. The logic must handle indentation (leading whitespace), identify lines starting with the token `oracle`, and detect the line continuation character `\\` at the end of the line (ignoring trailing whitespace) to determine if the next line belongs to the same command.",
+            "status": "pending",
+            "testStrategy": "Unit tests verifying state transitions on specific string inputs, ensuring indentation and trailing backslashes trigger the correct state changes.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Implement ExtractOracleInvocations Function",
+            "description": "Develop the public extractor function that processes full scripts to return structured OracleInvocation objects.",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement `ExtractOracleInvocations(script string) []OracleInvocation` in `internal/exec/oracle_scan.go`. This function should split the script by lines, utilize the core state machine to aggregate lines into full commands, filter out comments (lines starting with `#`), and populate the `Raw` and `Display` fields of the `OracleInvocation` struct.",
+            "status": "pending",
+            "testStrategy": "Table-driven tests in `oracle_scan_test.go` using realistic bash script fixtures containing mixed commands, comments, and multi-line oracle invocations.",
+            "parentId": "undefined"
+          }
+        ],
         "complexity": 6,
         "recommendedSubtasks": 2,
-        "expansionPrompt": "Break down the scanner implementation into: 1. A core line-parsing state machine that handles indentation, command detection, and line continuation logic (handling backslashes). 2. A higher-level extractor that processes whole scripts and returns structured `OracleInvocation` objects, including edge case handling for comments or quoting."
+        "expansionPrompt": "Break down the scanner implementation into: 1. A core line-parsing state machine that handles indentation, command detection, and line continuation logic (handling backslashes). 2. A higher-level extractor that processes whole scripts and returns structured `OracleInvocation` objects, including edge case handling for comments or quoting.",
+        "updatedAt": "2026-01-02T16:27:29.455Z"
       },
       {
-        "id": 3,
+        "id": "3",
         "title": "Upgrade Flag Injection to Support Multi-line Commands",
         "description": "Refactor the existing flag injection logic to safely insert flags into multi-line `oracle` commands without breaking shell syntax.",
         "details": "Modify `internal/exec/inject.go` (or create a new version if preferred). The `InjectFlags` function should use the logic from the scanner to locate the insertion point. For multi-line commands (ending with `\\`), inject flags before the backslash on the first line or append to the argument list in a way that preserves valid shell syntax. Ensure it still handles single-line commands correctly. This replaces the naive line-replacement approach.",
@@ -1326,13 +1350,72 @@
           "2"
         ],
         "status": "pending",
-        "subtasks": [],
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Establish Injection Test Suite",
+            "description": "Create a comprehensive test suite in `inject_test.go` covering target scenarios.",
+            "dependencies": [],
+            "details": "Define a table-driven test structure with cases for: simple single-line commands, multi-line commands with backslash continuations, indented commands, and commands with existing arguments. These tests should currently fail or define the expected behavior for the TDD process.",
+            "status": "pending",
+            "testStrategy": "Create `inject_test.go` ensuring it compiles and fails on the new logic requirements.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Implement Insertion Point Logic",
+            "description": "Develop the logic to locate the precise insertion index within the command string.",
+            "dependencies": [
+              1
+            ],
+            "details": "Modify `internal/exec/inject.go` to analyze the command string. It must identify the end of the `oracle` binary token while skipping leading whitespace. It should distinguish between immediate arguments and line continuation characters (\\) to determine where flags can be safely added.",
+            "status": "pending",
+            "testStrategy": "Unit tests verifying that the correct index is returned for various command string formats.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Implement Single-Line Injection",
+            "description": "Refactor `InjectFlags` to handle standard single-line command strings safely.",
+            "dependencies": [
+              2
+            ],
+            "details": "Implement the string manipulation logic for cases without newlines. Ensure that the generated string inserts the provided flags at the determined index with exactly one space of padding on either side, preventing double-spacing issues or concatenated words.",
+            "status": "pending",
+            "testStrategy": "Run `inject_test.go` focusing on single-line cases like `oracle arg` -> `oracle --flag arg`.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Implement Multi-Line Injection",
+            "description": "Extend `InjectFlags` to safely handle commands using backslash line continuations.",
+            "dependencies": [
+              3
+            ],
+            "details": "Add logic to detect if the command line ends with a backslash `\\`. The injection routine must insert the flags *before* the backslash on that specific line, ensuring the shell interprets the flags as part of the initial command call without breaking the continuation syntax.",
+            "status": "pending",
+            "testStrategy": "Run `inject_test.go` focusing on multi-line cases like `oracle \\` -> `oracle --flag \\`.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 5,
+            "title": "Finalize Formatting and Edge Cases",
+            "description": "Polish the injection logic to handle indentation and irregular whitespace.",
+            "dependencies": [
+              4
+            ],
+            "details": "Ensure that if the original command was indented (e.g., inside a shell function), the injection process preserves this indentation. Handle edge cases where multiple spaces exist between `oracle` and the backslash, ensuring the resulting command is syntactically valid bash.",
+            "status": "pending",
+            "testStrategy": "Pass all tests in `inject_test.go` including indentation and whitespace variation cases.",
+            "parentId": "undefined"
+          }
+        ],
         "complexity": 5,
         "recommendedSubtasks": 0,
         "expansionPrompt": "No expansion needed."
       },
       {
-        "id": 4,
+        "id": "4",
         "title": "Implement Mode 2 Validation Runner",
         "description": "Create a validation routine that runs `oracle --dry-run summary` to verify that overrides result in valid commands.",
         "details": "Create `internal/exec/oracle_validate.go`. Implement `ValidateOverrides(ctx, ...)` which iterates through targeted steps, extracts oracle invocations using the scanner from Task 2, applies overrides using the model from Task 1, and executes the resulting command with `--dry-run summary`. It should capture specific error output if the command fails. This ensures the user's configuration is valid before execution.",
@@ -1343,13 +1426,73 @@
           "2"
         ],
         "status": "pending",
-        "subtasks": [],
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Scaffold Validation Interface and Types",
+            "description": "Define the function signature and result structures for the validation runner in a new file.",
+            "dependencies": [],
+            "details": "Create `internal/exec/oracle_validate.go`. Define the public function `ValidateOverrides(ctx context.Context, steps []model.Step, overrides model.Overrides) ([]ValidationError, error)`. Define the `ValidationError` struct to hold StepID, Command, and ErrorMessage. This establishes the contract for the validation logic.",
+            "status": "pending",
+            "testStrategy": "None (structural setup only)",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Implement Step Iteration and Command Preparation",
+            "description": "Implement the logic to loop through targeted steps and prepare the oracle commands for validation.",
+            "dependencies": [
+              1
+            ],
+            "details": "In `ValidateOverrides`, iterate through the provided steps. call `oracle_scan.ExtractOracleInvocations` (from Task 2) to get the raw command. Apply the overrides (from the model) to construct the temporary command string that includes the new flags. This step ensures we have the exact string that needs testing.",
+            "status": "pending",
+            "testStrategy": "Unit test verifying that the correct number of commands are prepared from a given set of steps and overrides.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Implement Dry-Run Execution Logic",
+            "description": "Create the helper function to execute the constructed command with the dry-run flag.",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement a private function, e.g., `execDryRun(ctx, command string) (string, error)`. This should parse the command string, append the `--dry-run summary` argument, and execute it using `os/exec`. It must capture both Stdout and Stderr to return distinct failure reasons if the process exits with a non-zero code.",
+            "status": "pending",
+            "testStrategy": "Unit test with a simple echo command to verify arguments are appended and output is captured.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Implement Error Parsing and Result Aggregation",
+            "description": "Connect the execution logic to the iteration loop and handle failure scenarios.",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "Call `execDryRun` within the iteration loop from Subtask 2. If the command fails, extract the relevant error message from Stderr, populate a `ValidationError` struct with the Step ID, and append it to the results slice. Ensure the loop continues to validate remaining steps even if one fails.",
+            "status": "pending",
+            "testStrategy": "Unit test simulating mixed results (some pass, some fail) to ensure aggregation works correctly.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 5,
+            "title": "Create Integration Tests with Mock Oracle",
+            "description": "Verify the full validation flow using a mock script to simulate the oracle binary.",
+            "dependencies": [
+              4
+            ],
+            "details": "Create `internal/exec/oracle_validate_test.go`. Use `GO_EXEC_TEST` pattern or a shell script in `testdata` that acts as the `oracle` binary. It should return exit code 0 when `--dry-run` is present and valid flags are used, and exit code 1 with an error message for specific 'invalid' flags. Verify `ValidateOverrides` correctly identifies these failures.",
+            "status": "pending",
+            "testStrategy": "Integration test using a mock executable to simulate external process behavior.",
+            "parentId": "undefined"
+          }
+        ],
         "complexity": 5,
         "recommendedSubtasks": 0,
         "expansionPrompt": "No expansion needed."
       },
       {
-        "id": 5,
+        "id": "5",
         "title": "Implement TUI State Machine for Overrides Flow",
         "description": "Scaffold the Bubble Tea model for the overrides wizard, managing transitions between main screen and overrides sub-screens.",
         "details": "In `internal/tui/overrides_flow.go`, define a `Model` that wraps the specific sub-models (picker, url, confirm). Define messages `OverridesStartedMsg`, `OverridesAppliedMsg`, `OverridesCancelledMsg`. Implement the `Update` loop to handle switching between steps: Flags -> Steps -> URL -> Confirm. Integrate this as a new state in the main `internal/tui/tui.go` model.",
@@ -1359,13 +1502,48 @@
           "1"
         ],
         "status": "pending",
-        "subtasks": [],
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Define Overrides Flow Model and Message Types",
+            "description": "Scaffold the basic structures and message types required for the overrides wizard in the TUI.",
+            "dependencies": [],
+            "details": "Create `internal/tui/overrides_flow.go`. Define a `Model` struct that includes fields to track the current wizard step (e.g., Flags, Steps, URL, Confirm) and placeholders for sub-models. Define the Bubble Tea messages: `OverridesStartedMsg`, `OverridesAppliedMsg` (which should include the final configuration), and `OverridesCancelledMsg`.",
+            "status": "pending",
+            "testStrategy": "Unit tests ensuring the Model initializes correctly and messages are defined with appropriate payloads.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Implement Navigation Logic and Update Loop",
+            "description": "Develop the state machine logic to handle transitions between the different steps of the overrides wizard.",
+            "dependencies": [
+              1
+            ],
+            "details": "In `internal/tui/overrides_flow.go`, implement the `Update` method. Handle specific key bindings (e.g., Enter/Tab for Next, Esc for Back) to modify the state variable. Ensure the `View` method switches rendering based on the active step (Flags -> Steps -> URL -> Confirm).",
+            "status": "pending",
+            "testStrategy": "Write model tests that simulate key presses and assert that the model state transitions from one step to the next correctly.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Integrate Overrides Flow into Main Application",
+            "description": "Connect the independent overrides flow into the main application loop to enable user access.",
+            "dependencies": [
+              2
+            ],
+            "details": "Update `internal/tui/tui.go` to include the `OverridesFlow` model. Modify the root `Update` function to listen for `OverridesStartedMsg` to switch the view to the wizard, and handle `OverridesAppliedMsg` or `OverridesCancelledMsg` to return focus to the main dashboard.",
+            "status": "pending",
+            "testStrategy": "Manual verification or integration tests to confirm that triggering the flow switches the UI context and completing it returns to the main screen.",
+            "parentId": "undefined"
+          }
+        ],
         "complexity": 7,
         "recommendedSubtasks": 3,
         "expansionPrompt": "Split this into: 1. Defining the message types and the top-level parent model for the overrides flow. 2. Implementing the navigation logic (Next/Back transitions) and state management between sub-screens. 3. Integrating this new flow into the existing `internal/tui/tui.go` main loop without regressing current functionality."
       },
       {
-        "id": 6,
+        "id": "6",
         "title": "Develop Multi-select Flags Picker UI",
         "description": "Build a TUI component to allow users to select/deselect common oracle flags.",
         "details": "Create `internal/tui/overrides_flags.go`. Use `github.com/charmbracelet/bubbles/list` or a custom component. It should display a curated list of flags (e.g., `--debug`, `--json`). Allow multi-selection. Visually distinguish between baseline flags (pre-selected/immutable context) and override flags. Store selection in the `RuntimeOverrides` model.",
@@ -1375,13 +1553,72 @@
           "5"
         ],
         "status": "pending",
-        "subtasks": [],
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Scaffold Flags Picker Component",
+            "description": "Initialize the Bubble Tea component for the flags picker using the bubbles/list library.",
+            "dependencies": [],
+            "details": "Create `internal/tui/overrides_flags.go`. Define a `FlagsPickerModel` struct that embeds `list.Model`. Implement the standard `Init`, `Update`, and `View` methods. Initialize the list with a default width and height in a constructor function `NewFlagsPicker`. Ensure imports for `github.com/charmbracelet/bubbles/list` are correct.",
+            "status": "pending",
+            "testStrategy": "Verify the component compiles and renders an empty list in a standalone main harness.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Define Flag Items and Data Source",
+            "description": "Create the data structures for list items and populate the curated list of oracle flags.",
+            "dependencies": [
+              1
+            ],
+            "details": "Define a `FlagItem` struct that implements `list.Item` (FilterValue, Title, Description). Include fields for `Flag` (string), `Description` (string), and `IsBaseline` (bool). Populate a slice of these items with common flags like `--debug`, `--json`, `--no-color`. The constructor should accept a `baseline []string` argument to mark matching flags as `IsBaseline = true`.",
+            "status": "pending",
+            "testStrategy": "Unit test to ensure baseline flags passed to the constructor are correctly marked as `IsBaseline` in the generated items list.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Implement Multi-selection Toggling Logic",
+            "description": "Add logic to handle key events for selecting and deselecting flags within the list.",
+            "dependencies": [
+              2
+            ],
+            "details": "In the `Update` method, intercept the `Space` key event. If the currently selected item is NOT a baseline flag (immutable), toggle a boolean state indicating selection. Maintain a map or slice within the model to track which non-baseline flags are currently active.",
+            "status": "pending",
+            "testStrategy": "Unit test the Update loop: send a KeyMsg(Space) and assert the item's selection state changes appropriately.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Customize Delegate for Visual Status",
+            "description": "Create a custom list delegate to visually distinguish selected, unselected, and baseline flags.",
+            "dependencies": [
+              3
+            ],
+            "details": "Implement a custom `list.ItemDelegate`. The `Render` method should display a checkbox `[x]` for selected items and `[ ]` for unselected ones. For baseline flags, use a distinct visual indicator (e.g., a lock icon or dimmed color) to show they are active but immutable.",
+            "status": "pending",
+            "testStrategy": "Manual visual verification to ensure selected items and locked baseline items are rendered with distinct styles.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 5,
+            "title": "Connect to RuntimeOverrides Model",
+            "description": "Implement the state export logic to update the shared RuntimeOverrides struct.",
+            "dependencies": [
+              3
+            ],
+            "details": "Add a method `GetSelectedFlags() []string` or a message handler that triggers on confirmation (Enter key). This logic should filter the list for all selected override flags (excluding baseline ones, or managing them based on the `RuntimeOverrides` requirements) and prepare them for the shared state model.",
+            "status": "pending",
+            "testStrategy": "Unit test calling the export method after modifying selection state to verify it returns the correct list of strings.",
+            "parentId": "undefined"
+          }
+        ],
         "complexity": 4,
         "recommendedSubtasks": 0,
         "expansionPrompt": "No expansion needed."
       },
       {
-        "id": 7,
+        "id": "7",
         "title": "Develop Step Targeting and URL Input UI",
         "description": "Build TUI components for selecting target steps and entering the ChatGPT Project URL.",
         "details": "Create `internal/tui/overrides_steps.go` (list of steps from the pack, multi-select) and `internal/tui/overrides_url.go` (text input using `bubbles/textinput`). The step picker defaults to 'all selected'. The URL input validates simple URL format. Both update the shared `RuntimeOverrides` state.",
@@ -1391,13 +1628,73 @@
           "5"
         ],
         "status": "pending",
-        "subtasks": [],
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Define TUI Model State for URL and Step Inputs",
+            "description": "Extend the main TUI model to include state fields for the URL input and step selection components.",
+            "dependencies": [],
+            "details": "Modify the TUI model struct (likely in `internal/tui/model.go`) to hold a `bubbles/textinput` model for the URL and a list model for steps. Ensure there are methods or fields to pass the available steps from the execution pack into the TUI initialization phase.",
+            "status": "pending",
+            "testStrategy": null,
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Implement URL Input Component with Validation",
+            "description": "Create the text input component for entering the ChatGPT Project URL, including basic format validation.",
+            "dependencies": [
+              1
+            ],
+            "details": "Create `internal/tui/overrides_url.go`. Initialize a `textinput.Model` with appropriate placeholder text. Implement a validation function that ensures the input starts with 'http://' or 'https://'. Expose an Update/View method compatible with the Bubble Tea runtime.",
+            "status": "pending",
+            "testStrategy": "Unit test the validation logic in `overrides_url_test.go` to ensure malformed URLs are flagged.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Implement Step Selection List Component",
+            "description": "Build the multi-select list component to toggle which steps the overrides apply to.",
+            "dependencies": [
+              1
+            ],
+            "details": "Create `internal/tui/overrides_steps.go`. Use a custom model or `bubbles/list` to display steps. Maintain a `map[string]bool` or slice for selection state. Implement logic to default all steps to 'selected' upon initialization. Include visual indicators (e.g., [x] vs [ ]) for selection status.",
+            "status": "pending",
+            "testStrategy": "Unit test the toggle logic ensuring the underlying selection map updates correctly when items are selected/deselected.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Integrate Components into Main TUI Update Loop",
+            "description": "Wire the new components into the main application loop to handle focus and state updates.",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "Update the main `Update` function to route key messages to the URL input or Step list when they are focused. Implement navigation logic (e.g., Tab to switch between inputs). Ensure that changes in these components propagate to the shared `RuntimeOverrides` data structure defined in Task 1.",
+            "status": "pending",
+            "testStrategy": null,
+            "parentId": "undefined"
+          },
+          {
+            "id": 5,
+            "title": "Finalize View Rendering and Visual Testing",
+            "description": "Combine the component views into the main UI layout and verify visual correctness.",
+            "dependencies": [
+              4
+            ],
+            "details": "Update the main `View` function to render the URL input and Step list alongside existing components. Apply styles to indicate focus. Perform manual verification to ensure the URL input accepts text and the step list toggles visually respond to user input.",
+            "status": "pending",
+            "testStrategy": "Manual verification by running the TUI and cycling through inputs.",
+            "parentId": "undefined"
+          }
+        ],
         "complexity": 4,
         "recommendedSubtasks": 0,
         "expansionPrompt": "No expansion needed."
       },
       {
-        "id": 8,
+        "id": "8",
         "title": "Implement Confirmation Screen with Validation Trigger",
         "description": "Build the final summary screen that shows the diff and runs the validation logic before applying.",
         "details": "Create `internal/tui/overrides_confirm.go`. Display a summary of Added/Removed flags, URL, and count of targeted steps. On confirm key press (e.g., 'Enter'), trigger the validation runner (Task 4) via a `Cmd`. If validation fails, display the error (Step ID + Output) and allow retry. If success, return `OverridesAppliedMsg`.",
@@ -1410,13 +1707,36 @@
           "7"
         ],
         "status": "pending",
-        "subtasks": [],
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create Overrides Confirmation View",
+            "description": "Implement the read-only UI component that summarizes the proposed changes before execution.",
+            "dependencies": [],
+            "details": "Create `internal/tui/overrides_confirm.go` and define the model struct. Implement the `View()` method to render a clear summary of the overrides: list added/removed flags (using color coding for diffs), show the target URL, and display the count of targeted steps. Ensure the layout clearly separates configuration data from the 'Press Enter to Confirm' prompt.",
+            "status": "pending",
+            "testStrategy": "Visual verification or snapshot testing of the View output using a Bubble Tea test harness with mock override data.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Implement Validation Command and State Management",
+            "description": "Add the asynchronous logic to trigger validation on confirmation and handle the resulting states.",
+            "dependencies": [
+              1
+            ],
+            "details": "Update `internal/tui/overrides_confirm.go` to handle the 'Enter' key event. Return a `tea.Cmd` that executes the validation runner (Task 4). Implement a loading state (e.g., a spinner) in the view while validation is pending. Process the resulting message: if validation fails, display the specific error (Step ID + Output) and allow the user to retry; if successful, return `OverridesAppliedMsg` to proceed.",
+            "status": "pending",
+            "testStrategy": "Unit tests for the `Update` function, mocking the validation command response to verify transitions between loading, error, and success states.",
+            "parentId": "undefined"
+          }
+        ],
         "complexity": 6,
         "recommendedSubtasks": 2,
         "expansionPrompt": "Divide into: 1. Building the read-only summary view (Diff UI) that renders the proposed changes clearly. 2. Implementing the async command triggering for validation, handling the loading state (spinner), and processing the success/failure messages to either block or allow the final apply action."
       },
       {
-        "id": 9,
+        "id": "9",
         "title": "Integrate Overrides into Execution Engine",
         "description": "Wire the runtime overrides into the actual step execution logic in the runner.",
         "details": "Modify `internal/app/app.go` or `internal/runner/runner.go` (where `RunStep` is called). The runner needs access to the `RuntimeOverrides` object. Inside the execution loop, before running a step script, call `overrides.EffectiveFlags(step.ID, baseline)`. Pass these effective flags to `InjectFlags` (Task 3). Ensure non-targeted steps run as normal.",
@@ -1427,13 +1747,48 @@
           "8"
         ],
         "status": "pending",
-        "subtasks": [],
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Update Runner Configuration to Support Runtime Overrides",
+            "description": "Refactor the runner struct and initialization functions to accept and store the RuntimeOverrides configuration object.",
+            "dependencies": [],
+            "details": "Modify `internal/runner/runner.go` to add a field `Overrides *overrides.RuntimeOverrides` to the Runner struct. Update the `NewRunner` constructor and the call site in `internal/app/app.go` to pass this configuration object down from the application context. Ensure the runner handles nil overrides gracefully.",
+            "status": "pending",
+            "testStrategy": "Unit test ensuring the runner initializes correctly with and without overrides provided.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Implement Effective Flag Resolution in Execution Loop",
+            "description": "Update the step iteration loop to calculate effective flags for the current step based on the overrides configuration.",
+            "dependencies": [
+              1
+            ],
+            "details": "Inside the main execution loop in `internal/runner/runner.go`, locate the point before a step is executed. Insert logic to call `r.Overrides.EffectiveFlags(step.ID, baselineFlags)` using the logic from Task 1. This prepares the specific flags needed for the current step ID.",
+            "status": "pending",
+            "testStrategy": "Unit test mocking the Overrides object to verify `EffectiveFlags` is called with the correct Step ID during iteration.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Apply Flag Injection and Execute Modified Command",
+            "description": "Integrate the flag injection utility to modify the command string with the resolved effective flags and ensure correct execution.",
+            "dependencies": [
+              2
+            ],
+            "details": "Take the resolved flags from the previous subtask and pass them to `exec.InjectFlags` (from Task 3) along with the original step script. Replace the command execution payload with this modified string. Add logging to indicate when a command has been altered by overrides.",
+            "status": "pending",
+            "testStrategy": "Integration test using a mock executor to verify that the final command string passed to the shell contains the injected flags.",
+            "parentId": "undefined"
+          }
+        ],
         "complexity": 8,
         "recommendedSubtasks": 3,
         "expansionPrompt": "Break down into: 1. Refactoring the Runner signature/struct to accept the `RuntimeOverrides` configuration. 2. Modifying the step execution loop to resolve `EffectiveFlags` dynamically for every step. 3. Integrating the injection logic (Task 3) safely into the command preparation phase, ensuring logging and error handling cover the modified commands."
       },
       {
-        "id": 10,
+        "id": "10",
         "title": "Add Main Screen Indicators and Final Polish",
         "description": "Update the main run screen to indicate when overrides are active to prevent user confusion.",
         "details": "In `internal/tui/tui.go`, checking `OverridesAppliedMsg` to update the main model state. Render a small status bar or badge (e.g., \"Overrides Active: +2 flags\") on the main view. Ensure the keybinding to open the overrides flow is visible in the help footer.",
@@ -1444,7 +1799,65 @@
           "9"
         ],
         "status": "pending",
-        "subtasks": [],
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Update Main Model to Store Override State",
+            "description": "Modify the main application model to persist the configuration of applied overrides received from the wizard flow.",
+            "dependencies": [],
+            "details": "In `internal/tui/tui.go`, update the main `Model` struct to include fields for active overrides (e.g., `overrideSummary string` or `activeOverrideCount int`). Implement the `Update` method case for `OverridesAppliedMsg` to populate these fields based on the message payload.",
+            "status": "pending",
+            "testStrategy": "Unit test the `Update` function to ensure state changes correctly upon receiving `OverridesAppliedMsg`.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Implement Overrides Active Badge Component",
+            "description": "Create a styled UI component that renders a visual indicator when overrides are active to alert the user.",
+            "dependencies": [
+              1
+            ],
+            "details": "Define a `lipgloss` style for a status badge (e.g., yellow text or background). In the main `View` function, conditionally render this badge (e.g., \"Overrides Active: +2 flags\") only if the model's override state is non-empty/non-zero.",
+            "status": "pending",
+            "testStrategy": "Visual verification using a Golden file test or manual inspection to ensure the badge appears only when state is set.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Update Keybindings and Help Footer",
+            "description": "Ensure the keybinding to open the overrides configuration is registered and visible in the help bubble.",
+            "dependencies": [],
+            "details": "Update the `KeyMap` in `internal/tui/keys.go` (or equivalent) to include the Overrides trigger (e.g., 'o'). Add this key to the `ShortHelp` and `FullHelp` return values so the Bubble Tea help component renders it in the footer.",
+            "status": "pending",
+            "testStrategy": null,
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Handle Overrides Reset and Cancellation",
+            "description": "Implement logic to clear the visual indicator if the user cancels or resets the overrides during the session.",
+            "dependencies": [
+              1
+            ],
+            "details": "In `internal/tui/tui.go`, handle `OverridesCancelledMsg` or a specific clear signal. Ensure the model resets the override summary/count fields to zero/nil, causing the UI badge to disappear in the next render cycle.",
+            "status": "pending",
+            "testStrategy": "Unit test sending a cancellation/reset message and asserting the model state returns to empty.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 5,
+            "title": "Apply Final Visual Polish and Layout Integration",
+            "description": "Fine-tune the layout and colors of the indicator to ensure it fits the theme and does not break existing UI elements.",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "Adjust margins and padding for the new badge component. Ensure it displays correctly in the header or status bar area without overlapping with the progress bar or log output view. Apply theme-consistent colors.",
+            "status": "pending",
+            "testStrategy": "Manual visual regression testing with various window sizes.",
+            "parentId": "undefined"
+          }
+        ],
         "complexity": 2,
         "recommendedSubtasks": 0,
         "expansionPrompt": "No expansion needed."
@@ -1452,15 +1865,12 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-01-02T01:32:02.462Z",
+      "lastModified": "2026-01-02T16:27:29.456Z",
       "taskCount": 10,
-      "completedCount": 0,
+      "completedCount": 1,
       "tags": [
         "bugfix-tui"
-      ],
-      "created": "2026-01-02T02:31:21.233Z",
-      "description": "Tasks for bugfix-tui context",
-      "updated": "2026-01-02T02:31:21.233Z"
+      ]
     }
   }
 }
