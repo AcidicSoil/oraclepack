@@ -499,6 +499,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, m.waitForLogs()
 
 	case FinishedMsg:
+		m.recordWarnings()
 		if msg.Err != nil {
 			m.err = msg.Err
 			m.logLines = append(m.logLines, fmt.Sprintf("\n❌ ERROR: %v", msg.Err))
@@ -588,6 +589,26 @@ func (m *Model) persistFilterState() {
 	}
 	m.state.ROIThreshold = m.roiThreshold
 	m.state.ROIMode = m.roiMode
+	_ = state.SaveStateAtomic(m.statePath, m.state)
+}
+
+func (m *Model) recordWarnings() {
+	if m.state == nil || m.statePath == "" || m.runner == nil {
+		return
+	}
+	warnings := m.runner.DrainWarnings()
+	if len(warnings) == 0 {
+		return
+	}
+	for _, w := range warnings {
+		m.state.Warnings = append(m.state.Warnings, state.Warning{
+			Scope:   w.Scope,
+			StepID:  w.StepID,
+			Line:    w.Line,
+			Token:   w.Token,
+			Message: w.Message,
+		})
+	}
 	_ = state.SaveStateAtomic(m.statePath, m.state)
 }
 

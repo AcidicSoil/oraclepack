@@ -25,7 +25,7 @@ func GenerateReport(s *state.RunState, packName string) *ReportV1 {
 		if status.EndedAt.IsZero() || status.StartedAt.IsZero() {
 			duration = 0
 		}
-		
+
 		totalDuration += duration
 
 		sr := StepReport{
@@ -55,6 +55,19 @@ func GenerateReport(s *state.RunState, packName string) *ReportV1 {
 		SkippedCount:    skipped,
 		TotalDuration:   totalDuration,
 		TotalDurationMs: totalDuration.Milliseconds(),
+	}
+
+	if len(s.Warnings) > 0 {
+		report.Warnings = make([]Warning, 0, len(s.Warnings))
+		for _, w := range s.Warnings {
+			report.Warnings = append(report.Warnings, Warning{
+				Scope:   w.Scope,
+				StepID:  w.StepID,
+				Line:    w.Line,
+				Token:   w.Token,
+				Message: w.Message,
+			})
+		}
 	}
 
 	return report

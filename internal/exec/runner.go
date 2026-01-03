@@ -20,6 +20,7 @@ type Runner struct {
 	OracleFlags []string
 	Overrides   *overrides.RuntimeOverrides
 	ChatGPTURL  string
+	warnings    []SanitizeWarning
 }
 
 // RunnerOptions configures a Runner.
@@ -51,7 +52,9 @@ func NewRunner(opts RunnerOptions) *Runner {
 
 // RunPrelude executes the prelude code.
 func (r *Runner) RunPrelude(ctx context.Context, p *pack.Prelude, logWriter io.Writer) error {
-	return r.run(ctx, p.Code, logWriter)
+	script, warnings := SanitizeScript(p.Code, "prelude", "")
+	r.recordWarnings(warnings, logWriter)
+	return r.run(ctx, script, logWriter)
 }
 
 // RunStep executes a single step's code.
@@ -62,7 +65,40 @@ func (r *Runner) RunStep(ctx context.Context, s *pack.Step, logWriter io.Writer)
 		flags = ApplyChatGPTURL(flags, r.ChatGPTURL)
 	}
 	code := InjectFlags(s.Code, flags)
-	return r.run(ctx, code, logWriter)
+	script, warnings := SanitizeScript(code, "step", s.ID)
+	r.recordWarnings(warnings, logWriter)
+	return r.run(ctx, script, logWriter)
+}
+
+func (r *Runner) recordWarnings(warnings []SanitizeWarning, logWriter io.Writer) {
+	if len(warnings) == 0 {
+		return
+	}
+	for _, w := range warnings {
+		r.warnings = append(r.warnings, w)
+		if logWriter != nil {
+			scope := w.Scope
+			if scope == "" {
+				scope = "script"
+			}
+			step := ""
+			if w.StepID != "" {
+				step = " step " + w.StepID
+			}
+			_, _ = fmt.Fprintf(logWriter, "⚠ oraclepack: sanitized label in %s%s line %d: %s\n", scope, step, w.Line, w.Token)
+		}
+	}
+}
+
+// DrainWarnings returns any sanitizer warnings collected since the last call.
+func (r *Runner) DrainWarnings() []SanitizeWarning {
+	if len(r.warnings) == 0 {
+		return nil
+	}
+	out := make([]SanitizeWarning, len(r.warnings))
+	copy(out, r.warnings)
+	r.warnings = nil
+	return out
 }
 
 func (r *Runner) run(ctx context.Context, script string, logWriter io.Writer) error {

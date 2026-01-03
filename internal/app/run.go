@@ -28,11 +28,12 @@ func (a *App) RunPlain(ctx context.Context, out io.Writer) error {
 
 	fmt.Fprintf(out, "Running pack: %s\n", a.Config.PackPath)
 	fmt.Fprintf(out, "Output directory: %s\n", a.Runner.WorkDir)
-	
+
 	// Prelude
 	if a.Pack.Prelude.Code != "" {
 		fmt.Fprintln(out, "Executing prelude...")
 		err := a.Runner.RunPrelude(ctx, &a.Pack.Prelude, out)
+		a.recordWarnings()
 		if err != nil {
 			return fmt.Errorf("prelude failed: %w", err)
 		}
@@ -63,7 +64,7 @@ func (a *App) RunPlain(ctx context.Context, out io.Writer) error {
 		}
 
 		fmt.Fprintf(out, "\n>>> Step %s: %s\n", step.ID, step.OriginalLine)
-		
+
 		status := state.StepStatus{
 			Status:    state.StatusRunning,
 			StartedAt: time.Now(),
@@ -73,14 +74,15 @@ func (a *App) RunPlain(ctx context.Context, out io.Writer) error {
 
 		// Execute
 		err := a.Runner.RunStep(ctx, &step, out)
-		
+		a.recordWarnings()
+
 		status.EndedAt = time.Now()
 		if err != nil {
 			status.Status = state.StatusFailed
 			status.Error = err.Error()
 			a.State.StepStatuses[step.ID] = status
 			a.saveState()
-			
+
 			if a.Config.StopOnFail {
 				a.finalize(out)
 				return err
@@ -96,6 +98,26 @@ func (a *App) RunPlain(ctx context.Context, out io.Writer) error {
 
 	a.finalize(out)
 	return nil
+}
+
+func (a *App) recordWarnings() {
+	if a.State == nil || a.Runner == nil {
+		return
+	}
+	warnings := a.Runner.DrainWarnings()
+	if len(warnings) == 0 {
+		return
+	}
+	for _, w := range warnings {
+		a.State.Warnings = append(a.State.Warnings, state.Warning{
+			Scope:   w.Scope,
+			StepID:  w.StepID,
+			Line:    w.Line,
+			Token:   w.Token,
+			Message: w.Message,
+		})
+	}
+	a.saveState()
 }
 
 func (a *App) saveState() {
