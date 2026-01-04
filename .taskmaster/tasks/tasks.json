@@ -1881,13 +1881,29 @@
         "priority": "medium",
         "subtasks": [],
         "updatedAt": "2026-01-02T22:30:18.523Z"
+      },
+      {
+        "id": "12",
+        "title": "Integrate Glow Markdown Rendering for TUI Viewport",
+        "description": "Implement a width-aware Markdown rendering utility using Glamour and integrate it into the Bubble Tea viewport to display formatted content.",
+        "details": "1. Create a new package `internal/render` and implement `RenderMarkdown(text string, width int, style string) (string, error)`. Use `github.com/charmbracelet/glamour` as the underlying engine. \n2. Configure Glamour to use a standard terminal style (e.g., 'dark' or 'light' based on TUI defaults) while ensuring the `glamour.WithWordWrap(width)` option is utilized to handle the viewport's dynamic sizing. \n3. In `internal/tui/tui.go`, modify the `Update` function to trigger a re-render of the current selection's description whenever a `tea.WindowSizeMsg` is received or the cursor selection changes. \n4. Update the viewport content using `viewport.SetContent()` with the output from the `render` package. \n5. Ensure the renderer is strictly a library call; do not invoke the Glow binary or TUI program directly. \n6. Handle potential rendering errors by falling back to raw text display to ensure the TUI remains functional.",
+        "testStrategy": "1. Unit Tests: Create `internal/render/markdown_test.go` to verify that `RenderMarkdown` correctly wraps text at specific widths and handles various Markdown elements (headers, lists, code blocks). \n2. Manual TUI Verification: Run the application and navigate between steps. Verify that Markdown styling is applied. \n3. Resize Testing: Drag the terminal window to different sizes and ensure the text in the viewport re-wraps and re-renders correctly without clipping. \n4. Edge Case: Provide empty strings or malformed Markdown to the renderer and verify the system handles it gracefully.",
+        "status": "done",
+        "dependencies": [
+          "5",
+          "10",
+          "11"
+        ],
+        "priority": "medium",
+        "subtasks": [],
+        "updatedAt": "2026-01-04T09:14:17.791Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-01-02T22:30:18.524Z",
-      "taskCount": 11,
-      "completedCount": 11,
+      "lastModified": "2026-01-04T09:14:17.792Z",
+      "taskCount": 12,
+      "completedCount": 12,
       "tags": [
         "bugfix-tui"
       ]

@@ -15,6 +15,7 @@ import (
 	"github.com/user/oraclepack/internal/exec"
 	"github.com/user/oraclepack/internal/overrides"
 	"github.com/user/oraclepack/internal/pack"
+	"github.com/user/oraclepack/internal/render"
 	"github.com/user/oraclepack/internal/state"
 )
 
@@ -269,14 +270,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.previewID = ""
 				m.previewNotice = ""
 				m.viewState = ViewSteps
-				m.setLogContent()
+				m.setListPreviewContent(m.selectedItemID())
 				return m, nil
 			case "t":
 				m.previewWrap = !m.previewWrap
 				m.viewport.SetContent(m.stepPreviewContent())
 				return m, nil
 			case "c":
-				content := m.stepPreviewContent()
+				content := m.stepPlainTextFor(m.previewID)
 				if err := copyToClipboard(content); err != nil {
 					path, fallbackErr := writeClipboardFallback(content)
 					if fallbackErr != nil {
@@ -305,6 +306,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, tea.Quit
 			case "b":
 				m.viewState = ViewSteps
+				m.setListPreviewContent(m.selectedItemID())
 				return m, nil
 			case "n":
 				m.resetState()
@@ -540,9 +542,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	if !m.running && !m.isFiltering && m.viewState == ViewSteps {
+		prevID := m.selectedItemID()
 		var cmd tea.Cmd
 		m.list, cmd = m.list.Update(msg)
 		cmds = append(cmds, cmd)
+		newID := m.selectedItemID()
+		if newID != "" && newID != prevID {
+			m.viewport.YOffset = 0
+			m.setListPreviewContent(newID)
+		}
 	}
 
 	return m, tea.Batch(cmds...)
@@ -551,6 +559,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m *Model) handleWindowSize(msg tea.WindowSizeMsg) {
 	m.width = msg.Width
 	m.height = msg.Height
+	if m.viewState == ViewStepPreview {
+		m.viewport.Width = msg.Width - 4
+		m.viewport.Height = msg.Height - 6
+		if m.viewport.Height < 1 {
+			m.viewport.Height = 1
+		}
+		m.viewport.SetContent(m.stepPreviewContent())
+		m.viewport.GotoTop()
+		return
+	}
 	contentHeight := msg.Height - 5
 	if contentHeight < 1 {
 		contentHeight = 1
@@ -558,6 +576,9 @@ func (m *Model) handleWindowSize(msg tea.WindowSizeMsg) {
 	m.list.SetSize(msg.Width/3, contentHeight)
 	m.viewport.Width = msg.Width - (msg.Width / 3) - 6
 	m.viewport.Height = contentHeight
+	if !m.running && m.viewState == ViewSteps {
+		m.setListPreviewContent(m.selectedItemID())
+	}
 }
 
 func (m *Model) resetState() {
@@ -621,26 +642,85 @@ func (m *Model) setLogContent() {
 }
 
 func (m *Model) stepPreviewContent() string {
-	if m.previewID == "" {
+	return m.stepPreviewContentFor(m.previewID)
+}
+
+func (m *Model) stepPreviewContentFor(id string) string {
+	md, ok := m.stepMarkdownFor(id)
+	if !ok {
+		return md
+	}
+	width := m.previewRenderWidth()
+	rendered, err := render.RenderMarkdown(md, width, "auto")
+	if err != nil {
+		return m.stepPlainTextFor(id)
+	}
+	return rendered
+}
+
+func (m *Model) stepMarkdownFor(id string) (string, bool) {
+	if id == "" {
+		return "No step selected.", false
+	}
+	step := m.stepForID(id)
+	if step == nil {
+		return "Step not found.", false
+	}
+	header := fmt.Sprintf("## Step %s\n%s\n\n", step.ID, step.OriginalLine)
+	md := header + "```bash\n" + step.Code + "\n```\n"
+	return md, true
+}
+
+func (m *Model) stepPlainTextFor(id string) string {
+	if id == "" {
 		return "No step selected."
 	}
-	var step *pack.Step
-	for i := range m.pack.Steps {
-		if m.pack.Steps[i].ID == m.previewID {
-			step = &m.pack.Steps[i]
-			break
-		}
-	}
+	step := m.stepForID(id)
 	if step == nil {
 		return "Step not found."
 	}
-
 	header := fmt.Sprintf("Step %s\n%s\n", step.ID, step.OriginalLine)
-	content := header + "\n" + step.Code
-	if m.previewWrap {
-		return lipgloss.NewStyle().Width(m.width - 6).Render(content)
+	return header + "\n" + step.Code
+}
+
+func (m *Model) stepForID(id string) *pack.Step {
+	for i := range m.pack.Steps {
+		if m.pack.Steps[i].ID == id {
+			return &m.pack.Steps[i]
+		}
 	}
-	return content
+	return nil
+}
+
+func (m *Model) previewRenderWidth() int {
+	width := m.viewport.Width
+	if width <= 0 {
+		width = render.DefaultWidth
+	}
+	if !m.previewWrap {
+		if width < render.DefaultWidth {
+			width = render.DefaultWidth
+		}
+		width = width * 4
+	}
+	return width
+}
+
+func (m *Model) selectedItemID() string {
+	it, ok := m.list.SelectedItem().(item)
+	if !ok {
+		return ""
+	}
+	return it.id
+}
+
+func (m *Model) setListPreviewContent(id string) {
+	if id == "" {
+		m.viewport.SetContent("No step selected.")
+		return
+	}
+	m.viewport.SetContent(m.stepPreviewContentFor(id))
+	m.viewport.GotoTop()
 }
 
 type clearPreviewNoticeMsg struct{}
