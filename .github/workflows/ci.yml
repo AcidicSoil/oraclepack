@@ -20,6 +20,19 @@ jobs:
           go-version-file: go.mod
           cache: true
 
+      # oraclepack tests expect `oracle` to be available on PATH
+      - name: Set up Node (for oracle CLI)
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install oracle CLI
+        run: npm install -g @steipete/oracle
+
+      - name: Smoke test oracle CLI
+        run: oracle --help
+
       - name: Test
         run: go test ./...
 
