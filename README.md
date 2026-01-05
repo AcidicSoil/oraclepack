@@ -8,7 +8,7 @@
   <a href="https://github.com/acidicsoil/oraclepack/blob/main/go.mod"><img alt="Go Version" src="https://img.shields.io/github/go-mod/go-version/acidicsoil/oraclepack" /></a>
 </p>
 
-`oraclepack` is a polished, TUI-driven runner for **Oracle Packs**—interactive bash workflows embedded in Markdown. It lets teams ship runbooks, audits, migrations, and LLM evaluation scripts as self-documenting `.md` files that can be validated, resumed, and executed with real-time feedback.
+`oraclepack` is a polished, TUI-driven wrapper/runner for **Oracle Packs**—interactive bash workflows embedded in Markdown utilizing [oracle](https://github.com/steipete/oracle). It lets teams ship runbooks, audits, migrations, and LLM evaluation scripts as self-documenting `.md` files that can be validated, resumed, and executed with real-time feedback.
 
 ## 🎯 Project Scope & Purpose
 
@@ -32,6 +32,12 @@ Oraclepack is built to make **multi-step operational workflows** reproducible an
 - **Markdown Native**: packs live in a single `.md` file with a bash block.
 
 ## 📦 Installation
+
+### Install oracle
+
+Install oracle and setup/configure. Get it [here!](https://github.com/steipete/oracle)
+
+### Setting up for creating oracle-packs
 
 ### From Source
 
