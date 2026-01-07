@@ -29,7 +29,6 @@ oraclepack.exe
 #.tickets/
 #
 .archived/
-codefetch/
 public/
 .todo/
 .cursor/
