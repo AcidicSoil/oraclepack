@@ -100,3 +100,11 @@ Add this to your `.mcp.json`:
 - `oraclepack_taskify_artifacts_summary`: Summarize Stage-3 artifacts.
 - `oraclepack_taskify_run_action_pack`: Run a Stage-3 action pack (requires `ORACLEPACK_ENABLE_EXEC=1`).
 - `oraclepack_taskify_generate_prompt`: Generate instructions for an agent to run an action pack.
+
+### MCP Inspector
+
+```bash
+npx @modelcontextprotocol/inspector --config ./inspector.config.json --server oraclepack
+```
+
+Use the payloads in `docs/mcp-inspector-payloads.md` to verify specific tool behaviors.

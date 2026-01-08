@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "oraclepack": {
+      "command": "/home/user/projects/temp/oraclepack/oraclepack-mcp-server/venv/bin/python",
+      "args": ["-m", "oraclepack_mcp_server", "--transport", "stdio"],
+      "env": {
+        "ORACLEPACK_BIN": "oraclepack",
+        "ORACLEPACK_ALLOWED_ROOTS": "/home/user/projects/temp/oraclepack",
+        "ORACLEPACK_ENABLE_EXEC": "1"
+      }
+    }
+  }
+}

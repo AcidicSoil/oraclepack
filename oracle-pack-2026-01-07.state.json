@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "pack_hash": "",
+  "start_time": "2026-01-07T20:35:28.45875924-06:00",
+  "step_statuses": {
+    "01": {
+      "status": "failed",
+      "exit_code": 0,
+      "started_at": "2026-01-07T20:35:28.467108546-06:00",
+      "ended_at": "2026-01-07T20:36:07.852649398-06:00",
+      "error": "execution failed: exit status 1"
+    }
+  }
+}

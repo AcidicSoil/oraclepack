@@ -1915,7 +1915,7 @@
   "feat-mcp": {
     "tasks": [
       {
-        "id": "1",
+        "id": 1,
         "title": "Initialize Project Structure and Environment Configuration",
         "description": "Set up the oraclepack-mcp-server directory structure and implement the configuration loader for environment variables.",
         "details": "Create the project structure: `oraclepack_mcp_server/` package, `requirements.txt`, and `README.md`. Implement `config.py` using `pydantic-settings` or a similar pattern to load: `ORACLEPACK_BIN`, `ORACLEPACK_ALLOWED_ROOTS` (comma-separated list), `ORACLEPACK_ENABLE_EXEC` (bool), `ORACLEPACK_MAX_READ_BYTES` (default 64KB), and `ORACLEPACK_MAX_OUTPUT_CHARS` (default 32000). Ensure the config loader handles defaults according to the PRD.",
@@ -1991,7 +1991,7 @@
         "updatedAt": "2026-01-08T01:26:18.788Z"
       },
       {
-        "id": "2",
+        "id": 2,
         "title": "Implement Security and Path Resolution Service",
         "description": "Develop the security module to handle path validation and execution gating.",
         "details": "Implement `security.py`. Create a `validate_path` function that resolves paths and ensures they reside within `ORACLEPACK_ALLOWED_ROOTS` using `pathlib.Path.resolve()` and `os.path.commonpath`. Implement an `is_exec_enabled` check that strictly evaluates `ORACLEPACK_ENABLE_EXEC`. Logic must reject any path escaping the allowed roots with a clear error.",
@@ -2071,7 +2071,7 @@
         "updatedAt": "2026-01-08T01:27:27.816Z"
       },
       {
-        "id": "3",
+        "id": 3,
         "title": "Develop Oraclepack CLI Async Subprocess Wrapper",
         "description": "Create a robust wrapper for calling the oraclepack CLI with timeout and truncation handling.",
         "details": "Implement `oraclepack_cli.py`. Use `asyncio.create_subprocess_exec` to run the `oraclepack` binary. Capture stdout/stderr. Implement character-based truncation logic for tool outputs based on `ORACLEPACK_MAX_OUTPUT_CHARS`. Handle timeouts by returning exit code 124. The runner should return a structured object: `{ok, exit_code, duration_s, stdout, stderr, stdout_truncated, stderr_truncated}`.",
@@ -2151,7 +2151,7 @@
         "updatedAt": "2026-01-08T01:28:32.459Z"
       },
       {
-        "id": "4",
+        "id": 4,
         "title": "Implement Action Pack Validation and Detection Logic",
         "description": "Implement the logic for Stage-2 validation and directory/file detection for Action Packs.",
         "details": "Develop validation logic to enforce exactly one file per prefix `01..20`. Implement detection for 'auto', explicit directory, and explicit file modes. Validation must check for the 'single bash fence' constraint and valid step headers in markdown files. If invalid, return a dictionary containing `missing` and `ambiguous` sets for the prefixes.",
@@ -2229,7 +2229,7 @@
         "updatedAt": "2026-01-08T01:29:43.291Z"
       },
       {
-        "id": "5",
+        "id": 5,
         "title": "Implement MCP Server Core and Transports",
         "description": "Set up the MCP server using the Python SDK, supporting both stdio and streamable-http transports.",
         "details": "Implement `server.py` and `__main__.py` using the `mcp` Python library (Anthropic). Support `--transport stdio` and `--transport streamable-http`. For HTTP, implement Origin validation and localhost binding with basic authentication as specified. Ensure `stdio` mode does not interleave logs on stdout by redirecting application logs to stderr.",
@@ -2312,7 +2312,7 @@
         "updatedAt": "2026-01-08T01:31:52.694Z"
       },
       {
-        "id": "6",
+        "id": 6,
         "title": "Expose Read-Only MCP Tools",
         "description": "Register and implement the read-only tools: oraclepack_list_packs, oraclepack_read_file, and oraclepack_validate.",
         "details": "Annotate tools as 'read-only' in MCP metadata. `oraclepack_read_file` must enforce `ORACLEPACK_MAX_READ_BYTES` and `ORACLEPACK_ALLOWED_ROOTS`. `oraclepack_validate` uses logic from Task 4. Implement response formatters that support Markdown and JSON output with truncation indicators.",
@@ -2327,7 +2327,7 @@
         "updatedAt": "2026-01-08T01:32:32.688Z"
       },
       {
-        "id": "7",
+        "id": 7,
         "title": "Expose Execution and Taskify MCP Tools",
         "description": "Register and implement destructive tools: oraclepack_run_pack and oraclepack_taskify_run_action_pack.",
         "details": "Annotate tools as destructive/open-world. These tools MUST check `ORACLEPACK_ENABLE_EXEC` before proceeding. Implement `taskify.py` helpers to facilitate action pack execution. The tools should map CLI flags like `--no-tui`, `--out-dir`, and `--oracle-bin` from MCP arguments to the subprocess call.",
@@ -2342,7 +2342,7 @@
         "updatedAt": "2026-01-08T01:32:32.692Z"
       },
       {
-        "id": "8",
+        "id": 8,
         "title": "Implement Oraclepack Prompt Generator",
         "description": "Develop a utility to generate prompts for agents based on action pack structures.",
         "details": "Implement a helper within `taskify.py` or a new module that generates a system prompt or instruction block. This should describe how the agent should interact with the validated action pack and what artifacts to expect. Integrate this into the tool outputs where relevant.",
@@ -2420,7 +2420,7 @@
         "updatedAt": "2026-01-08T01:33:40.970Z"
       },
       {
-        "id": "9",
+        "id": 9,
         "title": "Verbose Payload Rendering and Artifact Summarizer",
         "description": "Implement the Verbose Payload Rendering TUI and the artifact summarizer.",
         "details": "Create a summarizer that reports the presence/absence of expected artifacts (e.g., reports, logs). For the TUI aspect (if consumed via MCP), ensure the JSON response includes a 'verbose_rendering' field containing a Markdown-formatted summary of the execution payload for easier reading by the agent/user.",
@@ -2500,7 +2500,7 @@
         "updatedAt": "2026-01-08T01:34:30.671Z"
       },
       {
-        "id": "10",
+        "id": 10,
         "title": "Final Integration and MCP Compliance Testing",
         "description": "Perform end-to-end testing of the MCP server to ensure all derived actions (A01-A26) are satisfied.",
         "details": "Conduct a full pass of the derived actions. Verify deterministic outputs, truncation flags, timeout exit codes, and prefix validation logic. Ensure the repository includes final documentation in README.md explaining how to connect an agent (like Claude Desktop) to the MCP server.",
@@ -2596,7 +2596,10 @@
       "completedCount": 10,
       "tags": [
         "feat-mcp"
-      ]
+      ],
+      "created": "2026-01-08T02:22:47.922Z",
+      "description": "Tasks for feat-mcp context",
+      "updated": "2026-01-08T02:22:47.922Z"
     }
   }
 }
