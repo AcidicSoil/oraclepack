@@ -30,6 +30,23 @@ The server is configured via environment variables:
 
 ## Connecting to Agents
 
+### Codex (config.toml)
+
+Add this to your `~/.codex/config.toml`:
+
+```toml
+[mcp_servers.oraclepack]
+command = "python"
+args = ["-m", "oraclepack_mcp_server", "--transport", "stdio"]
+cwd = "/path/to/oraclepack-mcp-server"
+startup_timeout_sec = 60.0
+
+[mcp_servers.oraclepack.env]
+ORACLEPACK_BIN = "oraclepack"
+ORACLEPACK_ALLOWED_ROOTS = "."
+ORACLEPACK_ENABLE_EXEC = "1"
+```
+
 ### Claude Desktop
 
 Add this to your `claude_desktop_config.json`:
