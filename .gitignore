@@ -11,7 +11,7 @@ node_modules/
 .venv
 # Environment variables
 .env
-
+venv
 # Editor directories and files
 .idea
 .vscode
@@ -33,6 +33,8 @@ public/
 .todo/
 .cursor/
 oracle-out/
+.gemini
+
 # START Ruler Generated Files
 /.codex/config.toml
 /.codex/config.toml.bak

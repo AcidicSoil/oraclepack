@@ -3,13 +3,13 @@
     "codefetch": "^2.2.0"
   },
   "scripts": {
-    "code": "pnpm code:tui && pnpm code:all && pnpm code:t && pnpm code:op && pnpm code:opt",
+    "code": "pnpm code:tui && pnpm code:all && pnpm code:t && pnpm code:op && pnpm code:opt && pnpm code:mcp",
     "code:tui": "codefetch -t 5 --include-dir cmd,internal -o oraclepack-tui.md --max-tokens 50000 --token-limiter truncated",
     "code:all": "codefetch -t 5 -o oraclepack-all.md",
     "code:temp": "codefetch -t 5 --include-dir .rules -o rules.md --max-tokens 50000",
     "build": "bash .config/scripts/build_install_oraclepack.sh && exec bash",
     "tag": "bash .config/scripts/tag-release.sh",
-    "code:op": "codefetch -t 5 --include-files \"**/oracle*\",\"**/oracle*/**/*\" -o oracle_SKILL_and_PROMPTS.md --max-tokens 75000",
+    "code:op": "codefetch -t 5 --include-files \".config/skills/**/oracle*\",\".config/skills/**/oracle*/**/*\" -o oracle_SKILLS_and_PROMPTS.md --max-tokens 75000",
     "code:t": "codefetch -t 5 --include-dir .tickets -o oraclepack-tickets.md --max-tokens 50000 --token-limiter truncated",
     "code:mcp": "codefetch -t 5 --include-dir oraclepack-mcp-server -o oraclepack-mcp.md --max-tokens 50000 --token-limiter truncated",
     "code:tm": "codefetch -t 5 --include-files \"**/tm-*\",\"**/tm-*/**/*\" -o tm_SKILL_and_PROMPTS.md --max-tokens 75000",
