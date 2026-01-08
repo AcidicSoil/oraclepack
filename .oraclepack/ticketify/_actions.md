@@ -1,0 +1,36 @@
+# Actions (canonical, deterministic)
+
+- [Expose Oraclepack as MCP-A01] (Expose Oraclepack as MCP) Repository includes README.md, requirements.txt, and `oraclepack_mcp_server` package directory.
+- [Expose Oraclepack as MCP-A02] (Expose Oraclepack as MCP) Running `python -m oraclepack_mcp_server --transport stdio` is supported (starts server process).
+- [Expose Oraclepack as MCP-A03] (Expose Oraclepack as MCP) Running `python -m oraclepack_mcp_server --transport streamable-http` is supported (starts server process).
+- [Expose Oraclepack as MCP-A04] (Expose Oraclepack as MCP) Config loader reads the listed env vars and applies defaults as documented.
+- [Expose Oraclepack as MCP-A05] (Expose Oraclepack as MCP) Path resolution rejects paths outside allowed roots.
+- [Expose Oraclepack as MCP-A06] (Expose Oraclepack as MCP) File reads enforce max bytes and indicate truncation.
+- [Expose Oraclepack as MCP-A07] (Expose Oraclepack as MCP) Exec gating flag is available for run tools to check.
+- [Expose Oraclepack as MCP-A08] (Expose Oraclepack as MCP) Runner returns: ok, exit_code, duration_s, stdout, stderr, stdout_truncated, stderr_truncated.
+- [Expose Oraclepack as MCP-A09] (Expose Oraclepack as MCP) Timeout produces exit_code=124 (or equivalent) and includes a timeout message.
+- [Expose Oraclepack as MCP-A10] (Expose Oraclepack as MCP) Outputs are truncated to configured character limit and flags are set accordingly.
+- [Expose Oraclepack as MCP-A11] (Expose Oraclepack as MCP) Validation returns ok=false with `missing` when any prefix has no matches.
+- [Expose Oraclepack as MCP-A12] (Expose Oraclepack as MCP) Validation returns ok=false with `ambiguous` when any prefix has >1 match.
+- [Expose Oraclepack as MCP-A13] (Expose Oraclepack as MCP) Validation returns ok=true only when exactly one match exists for every prefix 01..20.
+- [Expose Oraclepack as MCP-A14] (Expose Oraclepack as MCP) Detection supports explicit dir and explicit file resolution and produces an `out_dir`.
+- [Expose Oraclepack as MCP-A15] (Expose Oraclepack as MCP) Detection supports “auto” and returns deterministic results for the same filesystem state.
+- [Expose Oraclepack as MCP-A16] (Expose Oraclepack as MCP) All tools listed in the parent ticket are registered and callable.
+- [Expose Oraclepack as MCP-A17] (Expose Oraclepack as MCP) `oraclepack_read_file` enforces allowed roots and max read bytes.
+- [Expose Oraclepack as MCP-A18] (Expose Oraclepack as MCP) `oraclepack_run_pack` and `oraclepack_taskify_run_action_pack` refuse execution unless `ORACLEPACK_ENABLE_EXEC=1`.
+- [Expose Oraclepack as MCP-A19] (Expose Oraclepack as MCP) Response formatter supports markdown and json outputs and includes truncation indicators.
+- [Expose Oraclepack as MCP-A20] (Expose Oraclepack as MCP) Running with `--transport stdio` is supported and does not interleave logs on stdout.
+- [Expose Oraclepack as MCP-A21] (Expose Oraclepack as MCP) Running with `--transport streamable-http` includes Origin validation and uses localhost binding + authentication (mechanism documented/implemented).
+- [Expose Oraclepack as MCP-A22] (Expose Oraclepack as MCP) Validate/list/read tools are annotated as read-only; run tools are annotated as destructive/open-world.
+- [Expose Oraclepack as MCP-A23] (Expose Oraclepack as MCP) Validation fails with a clear error when the action pack violates the “single bash fence” constraint.
+- [Expose Oraclepack as MCP-A24] (Expose Oraclepack as MCP) Validation fails with a clear error when step headers do not meet the stated expectations.
+- [Expose Oraclepack as MCP-A25] (Expose Oraclepack as MCP) Artifact summarizer reports presence/absence of the example artifacts and returns a readable summary.
+- [Expose Oraclepack as MCP-A26] (Expose Oraclepack as MCP) Tool outputs are deterministic for the same filesystem state.
+- [MCP Server for Oraclepack-A01] (MCP Server for Oraclepack) MCP server starts successfully in both `stdio` and `streamable-http` modes.
+- [MCP Server for Oraclepack-A02] (MCP Server for Oraclepack) All listed tools are exposed with the documented names.
+- [MCP Server for Oraclepack-A03] (MCP Server for Oraclepack) When `ORACLEPACK_ENABLE_EXEC!=1`, run tools refuse to execute and return a clear error; validate/list/read tools still work.
+- [MCP Server for Oraclepack-A04] (MCP Server for Oraclepack) `oraclepack_read_file` rejects paths outside `ORACLEPACK_ALLOWED_ROOTS`.
+- [MCP Server for Oraclepack-A05] (MCP Server for Oraclepack) Stage-2 validation enforces exactly one file per prefix `01`..`20` and returns `missing` and `ambiguous` sets when invalid.
+- [MCP Server for Oraclepack-A06] (MCP Server for Oraclepack) Stage-2 detection resolves out-dir correctly for both:
+- [MCP Server for Oraclepack-A07] (MCP Server for Oraclepack) stdout/stderr truncation and timeouts are enforced on CLI subprocess execution.
+- [MCP Server for Oraclepack-A08] (MCP Server for Oraclepack) Tool annotations are applied as specified for read-only vs destructive tools.

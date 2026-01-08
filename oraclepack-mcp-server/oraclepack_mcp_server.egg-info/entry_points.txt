@@ -1,0 +1,2 @@
+[console_scripts]
+oraclepack-mcp = oraclepack_mcp_server.__main__:main

@@ -11,8 +11,10 @@ Project Structure:
     ├── Oraclepack Action Pack Integration.md
     ├── Oraclepack Action Pack Issue.md
     ├── Oraclepack Action Packs.md
+    ├── Oraclepack Compatibility Issues.md
     ├── Oraclepack Pipeline Improvements.md
     ├── Oraclepack Prompt Generator.md
+    ├── Oraclepack TUI Integration.md
     ├── Oraclepack Workflow Enhancement.md
     └── Verbose Payload Rendering TUI.md
 
@@ -409,185 +411,376 @@ Labels (optional):
 
 .tickets/Oraclepack Action Pack Integration.md
 ```
-## You asked
+Parent Ticket:
+
+* Title: Oraclepack Action Pack Integration: dispatch Action Packs to external agents/tools (Codex/Gemini/Task Master)
+* Summary:
 
-oracle\_pack\_and\_taskify-skills.md
+  * Current concern: oraclepack is perceived as “oracle-only,” and adding more `oracle` calls won’t implement tasks.
+  * Desired outcome: Action Packs should run the correct agent/tool commands (e.g., `codex exec …`, `tm …`, `gemini …`) and be tool-agnostic in how they dispatch work.
+  * Optional scope: extend oraclepack’s oracle-specific UX (flag injection / validation) to support non-`oracle` commands.
+* Source:
+
+  * Link/ID (if present) or “Not provided”: Not provided
+  * Original ticket excerpt (≤25 words) capturing the overall theme: “make it so our actionpacks will perform the correct calls to the agents… Example ‘codex exec …’, ‘tm …’, ‘gemini …’”
+* Global Constraints:
+
+  * Not provided
+* Global Environment:
 
-File
+  * Tools referenced as available/on PATH in discussion: `oracle`, `codex`, `gemini`, `task-master`, `tm`
+  * Action Pack modes referenced: `backlog|pipelines|autopilot` (and proposed `implement`)
+  * Runner behavior referenced: steps execute as `bash`; stdin/TTY not attached (impacting interactive CLIs)
+* Global Evidence:
+
+  * Referenced files: `oracle_pack_and_taskify-skills.md`, `oraclepack-tui.md`
+  * Referenced tool repos: `https://github.com/google-gemini/gemini-cli`, `https://github.com/eyaltoledano/claude-task-master`, `https://github.com/openai/codex`, `https://github.com/steipete/oracle`
+  * Mentioned artifacts/screens: “screenshot of oraclepack consuming oraclepack-taskify artifacts”; “oracle-actions-pack-2026-01-07.md”
+
+Split Plan:
+
+* Coverage Map:
+
+  * “oraclepack is a wrapper around `oracle`… can not see how… more oracle calls will help us implement” → Info-only
+  * “make it so our actionpacks will perform the correct calls… ‘codex exec …’, ‘tm …’, ‘gemini …’” → T3
+  * “oraclepack… special logic only for lines that start with `oracle`… detect… inject flags… overrides validation” → T5
+  * “Stage-3 skill already supports… `oracle_cmd`, `task_master_cmd`, `tm_cmd`… Extend… `codex_cmd`, `gemini_cmd`, optionally `autopilot_cmd`” → T1
+  * “Extend `_actions.json`… include… `tooling`… per item `executor`, `exec_prompt`, `inputs`” → T2
+  * “Add an ‘implement’ mode (or a Step 09)… reads… `_actions.json`… selects top N… dispatches… `codex exec…` / `gemini -p…`” → T3
+  * “Keep safety defaults strict (do not ‘yolo’ by default)” → T4
+  * “interactive CLIs… may fail/hang because oraclepack doesn’t provide stdin/TTY” → T4
+  * “This particular Action Pack does not call `codex`, `gemini`…” → Info-only
+  * “Optional: improve oraclepack UX to ‘understand’ non-oracle commands… registry of prefixes… per-tool override sets” → T5
+* Dependencies:
+
+  * T3 depends on T2 because the proposed dispatcher reads `_actions.json` fields like `executor` / `exec_prompt`.
+  * T2 depends on T1 because the proposed `_actions.json.tooling` includes `codex_cmd` / `gemini_cmd` command strings.
+* Split Tickets:
+
+```ticket T1
+T# Title:
+- Add Codex/Gemini command configuration to Stage-3 generator (alongside oracle/task-master/tm)
+
+Type:
+- enhancement
 
-oraclepack-tui.md
+Target Area:
+- Stage-3 generator / skill template that currently supports `oracle_cmd`, `task_master_cmd`, `tm_cmd`
 
-File
+Summary:
+- Extend the Stage-3 generation inputs to support additional tool command strings so Action Packs can invoke Codex and Gemini explicitly.
+- This is intended to mirror the existing configurable command pattern already used for `oracle` and Task Master tools.
 
-Our question is since oraclepack is a wrapper around `oracle`, we can not see how running it as is with more oracle calls will help us implement the tasks we created. I provided a list of links of the tools and agents we use, so what we need is to make it so our actionpacks will perform the correct calls to the agents i.e., codex and/or tools i.e., task-master-ai. Basically making it so our oraclepack can run action packs that contain the correct commands to command the agents and/or tools we will be using here. Example 'codex exec ...', 'tm ...', 'gemini ...' etc... A screenshot of the oraclepack consuming oraclepack-taskify artifacts. oraclepack source code is in `oraclepack-tui.md` `https://github.com/google-gemini/gemini-cli` `https://github.com/eyaltoledano/claude-task-master` `https://github.com/openai/codex` `https://github.com/steipete/oracle`
+In Scope:
+- Add `codex_cmd` (default `codex`) to the generator inputs.
+- Add `gemini_cmd` (default `gemini`) to the generator inputs.
+- Add optional `autopilot_cmd` (default `${tm_cmd} autopilot`) to the generator inputs.
+- Ensure generated Action Pack uses these command variables where relevant.
+
+Out of Scope:
+- Not provided
 
----
-
-## ChatGPT Replied
-
-Thought for 4m 14s
-
-You’re right that **adding more `oracle` calls doesn’t implement tasks**—it only produces more analysis/synthesis. In your current system, implementation only happens when the **Action Pack runs real tool commands** (e.g., `task-master …`, `tm autopilot`, etc.). The key is to make the Action Pack (and optionally oraclepack’s runner UX) **tool-agnostic**, so it can dispatch to `codex`, `gemini`, `tm`, etc.
-
-What oraclepack does today (why it “feels like oracle-only”)
-------------------------------------------------------------
-
-* Oraclepack executes each step as shell, but it has **special logic only for lines that start with `oracle`**:
-
-  * It detects invocations using a regex anchored to the literal `oracle` command.
-
-        oraclepack-tui
-
-  * It injects selected flags only into `oracle …` lines.
-
-        oraclepack-tui
-
-  * Its overrides validation runs `oracle --dry-run summary` only for detected oracle invocations.
-
-        oraclepack-tui
-
-* Your Stage-3 Action Pack template already runs non-oracle tools (`task-master …` and `tm autopilot`) and does guarded branch checks for autopilot.
-
-So: **oraclepack can run any command**, but its “nice UX features” (flag overrides + validation) are currently **oracle-specific**.
-
-The practical solution: make Stage-3 Action Packs dispatch to your real agents/tools
-------------------------------------------------------------------------------------
-
-Your Stage-3 skill already supports configurable tool command strings:
-
-* `oracle_cmd`, `task_master_cmd`, `tm_cmd`
-
-    oracle\_pack\_and\_taskify-skills
-
-Extend that same pattern for:
-
-* `codex_cmd` (default `codex`)
-
-* `gemini_cmd` (default `gemini`)
-
-* optionally `autopilot_cmd` (default `${tm_cmd} autopilot`)
-
-### Why this works
-
-* **Codex** has an explicit non-interactive execution entrypoint: `codex exec` (alias `codex e`). [OpenAI Developers+1](https://developers.openai.com/codex/cli/reference/?utm_source=chatgpt.com)
-
-* **Gemini CLI** supports headless prompting via `--prompt` / `-p`, and has explicit controls for approval/tooling. [Google Gemini+2Gemini CLI+2](https://google-gemini.github.io/gemini-cli/docs/cli/?utm_source=chatgpt.com)
-
-* **Task Master** provides deterministic CLI flows (`parse-prd`, `analyze-complexity`, `expand`). [Medium+1](https://medium.com/google-cloud/gemini-cli-tutorial-series-part-2-gemini-cli-command-line-parameters-e64e21b157be?utm_source=chatgpt.com)
-
-Recommended architecture: keep oracle as “planner”, make actionpacks do “executor dispatch”
--------------------------------------------------------------------------------------------
-
-### 1) Extend `_actions.json` to include an executor plan per item
-
-Your canonical actions schema today has `tooling` (oracle/task-master) and per-item fields like `recommended_next_action`, `acceptance_criteria`, etc.
-
-oracle\_pack\_and\_taskify-skills
-
-Add fields like:
-
-* `tooling`: `{ oracle_cmd, task_master_cmd, codex_cmd, gemini_cmd }`
-
-* per item:
-
-  * `executor`: `"codex" | "gemini" | "tm" | "manual"`
-
-  * `exec_prompt`: a short instruction string (no code fences; deterministic)
-
-  * `inputs`: optional list of paths/globs (from `missing_artifacts` / repo anchors)
-
-This lets you generate a fully deterministic “what to run” plan without guessing repo specifics.
-
-### 2) Add an “implement” mode (or a Step 09) to the Action Pack template
-
-Your Action Pack already has modes `backlog|pipelines|autopilot`.
-
-oracle\_pack\_and\_taskify-skills
-
-Add either:
-
-* `mode=implement` (clean separation), or
-
-* a new **Step 09** guarded by `if MODE == implement`.
-
-That step:
-
-* reads `<out_dir>/_actions.json`
-
-* selects the top N items (you already have `top_n`)
-
-    oracle\_pack\_and\_taskify-skills
-
-* dispatches deterministically:
-
-  * `codex exec …` for items with executor `codex`
-
-  * `gemini -p …` for items with executor `gemini`
-
-### 3) Keep safety defaults strict (do not “yolo” by default)
-
-Gemini CLI explicitly supports different approval modes; keep defaults conservative unless a user opts in. [Gemini CLI+1](https://geminicli.com/docs/get-started/configuration-v1/?utm_source=chatgpt.com)
-Also be aware Gemini CLI has had real-world safety footguns around command/tool execution; sandboxing and explicit approvals matter. [IT Pro](https://www.itpro.com/security/a-flaw-in-googles-new-gemini-cli-tool-couldve-allowed-hackers-to-exfiltrate-data?utm_source=chatgpt.com)
-Codex similarly has concepts like exec policies and JSON event streaming (`--json`) that are useful for controlled automation. [OpenAI Developers+1](https://developers.openai.com/codex/cli/reference/?utm_source=chatgpt.com)
-
-Minimal changes you should make (best ROI)
-------------------------------------------
-
-### A) Update **oraclepack-taskify** (Stage 3 generator), not oraclepack core
-
-1. **Add args**: `codex_cmd`, `gemini_cmd`, `autopilot_cmd` (optional) alongside existing tool cmd args.
-
-    oracle\_pack\_and\_taskify-skills
-
-2. **Update Prompt A** (canonical actions synthesis) to emit `executor` + `exec_prompt` per action item.
-
-    oracle\_pack\_and\_taskify-skills
-
-3. **Update Action Pack template** to include the dispatch step that runs the chosen CLI tools.
-
-This gives you an Action Pack that actually runs:
-
-* `codex exec …` (non-interactive) [OpenAI Developers+1](https://developers.openai.com/codex/cli/reference/?utm_source=chatgpt.com)
-
-* `gemini -p …` (headless prompt) [Google Gemini](https://google-gemini.github.io/gemini-cli/docs/cli/?utm_source=chatgpt.com)
-
-* `task-master …` for task ingestion/expansion [Medium+1](https://medium.com/google-cloud/gemini-cli-tutorial-series-part-2-gemini-cli-command-line-parameters-e64e21b157be?utm_source=chatgpt.com)
-
-### B) Optional: improve oraclepack UX to “understand” non-oracle commands
-
-If you want oraclepack’s TUI/overrides to apply to other tools:
-
-* Generalize `ExtractOracleInvocations` / `InjectFlags` to a small registry of command prefixes (`oracle`, `codex`, `gemini`, `task-master`, `tm`). Right now it is hard-coded to `oracle` only.
-
-* Add per-tool override sets (otherwise “Oracle Flags” won’t make sense for codex/gemini).
-
-This is **nice-to-have**; it’s not required to make actionpacks actually execute your agents.
-
-Concrete command patterns you can standardize on
-------------------------------------------------
-
-* Codex implementation call (headless): `codex exec …` [OpenAI Developers+1](https://developers.openai.com/codex/cli/reference/?utm_source=chatgpt.com)
-
-* Gemini implementation call (headless): `gemini -p "…"`, plus optional `--approval-mode …` / `--allowed-tools …` controls [Google Gemini+1](https://google-gemini.github.io/gemini-cli/docs/cli/?utm_source=chatgpt.com)
-
-* Task Master pipeline:
-
-  * `task-master parse-prd <prd>`
-
-  * `task-master analyze-complexity --output <out_dir>/tm-complexity.json`
-
-  * `task-master expand --all` [Medium+1](https://medium.com/google-cloud/gemini-cli-tutorial-series-part-2-gemini-cli-command-line-parameters-e64e21b157be?utm_source=chatgpt.com)
-
-Bottom line
------------
-
-* Oraclepack is fine as the runner; it’s “oracle-centric” only in its flag-injection/validation UX.
-
-* The fastest path is: **upgrade Stage-3 Action Packs to include an executor dispatch step** and extend `_actions.json` with `executor` metadata so the pack can deterministically run `codex`, `gemini`, etc.
-
-If you want, I can propose the exact schema delta for `_actions.json` and the exact additional Step 09 bash logic (dispatcher) in a way that preserves your determinism rules (self-contained steps, stable ordering, fail-fast preflight).
-
----
+Current Behavior (Actual):
+- Generator supports configurable tool command strings: `oracle_cmd`, `task_master_cmd`, `tm_cmd`.
+
+Expected Behavior:
+- Generator also supports configurable tool command strings: `codex_cmd`, `gemini_cmd` (and optional `autopilot_cmd`), enabling Action Packs to call these tools directly.
+
+Reproduction Steps:
+- Not provided
+
+Requirements / Constraints:
+- Preserve the existing configurable command pattern already used for `oracle_cmd`, `task_master_cmd`, `tm_cmd`.
+- Defaults as stated in the ticket text (`codex`, `gemini`, `${tm_cmd} autopilot`).
+
+Evidence:
+- References to existing pattern: `oracle_cmd`, `task_master_cmd`, `tm_cmd`
+- Proposed additions: `codex_cmd`, `gemini_cmd`, `autopilot_cmd`
+
+Open Items / Unknowns:
+- Where the Stage-3 generator defines/declares these args (exact file/path not provided).
+- How generated artifacts currently surface tool command strings (exact schema not provided).
+
+Risks / Dependencies:
+- Depends on T2 if these command strings must also be emitted into `_actions.json.tooling`.
+
+Acceptance Criteria:
+- Stage-3 generator accepts `codex_cmd` and `gemini_cmd` (and optional `autopilot_cmd`) as inputs.
+- Defaults match the ticket text when values are not provided.
+- Existing inputs (`oracle_cmd`, `task_master_cmd`, `tm_cmd`) remain supported and unchanged.
+- Generated Action Pack artifacts include/use these variables (where the template expects tool invocations).
+
+Priority & Severity (if inferable from input text):
+- Priority: Not provided
+- Severity: Not provided
+
+Source:
+- “Your Stage-3 skill already supports… `oracle_cmd`, `task_master_cmd`, `tm_cmd`”
+- “Extend that same pattern for: `codex_cmd`… `gemini_cmd`… optionally `autopilot_cmd`”
+```
+
+```ticket T2
+T# Title:
+- Extend `_actions.json` to include per-item executor metadata and tool command strings
+
+Type:
+- enhancement
+
+Target Area:
+- Canonical actions artifacts (`_actions.json` / `_actions.md`) generated from Stage-2 outputs
+
+Summary:
+- Add explicit executor metadata to each action item so downstream Action Pack steps can deterministically decide which tool to run.
+- Add a `tooling` object to carry tool command strings (including Codex/Gemini) for use by the dispatcher.
+
+In Scope:
+- Extend `_actions.json` to include `tooling` with: `{ oracle_cmd, task_master_cmd, codex_cmd, gemini_cmd }`.
+- For each action item, add:
+  - `executor`: `"codex" | "gemini" | "tm" | "manual"`
+  - `exec_prompt`: short instruction string (no code fences; deterministic)
+  - `inputs`: optional list of paths/globs (as referenced by ticket text)
+- Ensure `_actions.md` can be produced from the JSON after the schema extension (format details not provided in ticket).
+
+Out of Scope:
+- Not provided
+
+Current Behavior (Actual):
+- `_actions.json` exists and includes `tooling` and per-item fields such as `recommended_next_action`, `acceptance_criteria` (as described in ticket text).
+
+Expected Behavior:
+- `_actions.json` includes the new `tooling` and per-item executor fields so execution can be dispatched without guessing.
+- `_actions.md` can still be generated from `_actions.json`.
+
+Reproduction Steps:
+- Not provided
+
+Requirements / Constraints:
+- `exec_prompt` must be short and deterministic (“no code fences” stated in ticket text).
+- `inputs` is optional and can be derived from “missing_artifacts / repo anchors” (source details not provided).
+
+Evidence:
+- Proposed schema fields: `tooling`, `executor`, `exec_prompt`, `inputs`
+- Existing per-item fields referenced: `recommended_next_action`, `acceptance_criteria`
+
+Open Items / Unknowns:
+- Exact current `_actions.json` schema and where it is defined (not provided).
+- How `_actions.md` is rendered from `_actions.json` (not provided).
+
+Risks / Dependencies:
+- T3 depends on these fields being present to implement the dispatcher logic.
+
+Acceptance Criteria:
+- `_actions.json` includes `tooling` with the listed command keys.
+- Each action item includes `executor` and `exec_prompt`; `inputs` is present when available and omitted/empty when not.
+- The executor enum matches the ticket text: `codex|gemini|tm|manual`.
+- `_actions.md` generation continues to work with the extended JSON structure.
+
+Priority & Severity (if inferable from input text):
+- Priority: Not provided
+- Severity: Not provided
+
+Source:
+- “Extend `_actions.json` to include an executor plan per item”
+- “Add fields like… `tooling`: `{ oracle_cmd, task_master_cmd, codex_cmd, gemini_cmd }`”
+- “per item… `executor`… `exec_prompt`… `inputs`”
+```
+
+```ticket T3
+T# Title:
+- Add `implement` dispatch mode (or Step 09) to Action Pack template to run Codex/Gemini based on `_actions.json`
+
+Type:
+- enhancement
+
+Target Area:
+- Stage-3 Action Pack template (modes: `backlog|pipelines|autopilot`) and step execution flow
+
+Summary:
+- Introduce an execution path that reads `_actions.json`, selects the top N actions, and dispatches to the appropriate tool based on `executor`.
+- This is intended to make Action Packs perform actual implementation calls (e.g., `codex exec …`, `gemini -p …`) instead of only producing planning artifacts.
+
+In Scope:
+- Add either:
+  - `mode=implement`, or
+  - a new Step 09 gated by `MODE == implement`.
+- In that mode/step:
+  - Read `<out_dir>/_actions.json`.
+  - Select the top N items (based on existing `top_n` concept referenced in ticket text).
+  - Dispatch:
+    - `codex exec …` for items with executor `codex`
+    - `gemini -p …` for items with executor `gemini`
+  - (Other executor values referenced in ticket text: `tm`, `manual` — behavior not specified beyond inclusion in enum.)
+
+Out of Scope:
+- Not provided
+
+Current Behavior (Actual):
+- Action Pack modes exist: `backlog|pipelines|autopilot`.
+- Current example pack “does not call `codex`, `gemini`, etc. at all” (per ticket text).
+
+Expected Behavior:
+- When `MODE=implement`, the Action Pack executes tool commands for actions according to `_actions.json.executor`.
+
+Reproduction Steps:
+- Not provided
+
+Requirements / Constraints:
+- Use `_actions.json` as the source of truth for executor decisions (as described).
+- Top-N selection should use the existing `top_n` referenced in ticket text.
+
+Evidence:
+- Proposed mode/step: “Add an ‘implement’ mode (or a Step 09)”
+- Proposed dispatch: “`codex exec …`… `gemini -p …`”
+- Top-N: “selects the top N items (you already have `top_n`)”
+
+Open Items / Unknowns:
+- Where `top_n` is currently defined and how ranking is determined (not provided).
+- Exact location/structure for `<out_dir>/_actions.json` (not provided).
+
+Risks / Dependencies:
+- Depends on T2 because dispatcher requires `executor`/`exec_prompt` data in `_actions.json`.
+- Depends on T1 if dispatcher uses `codex_cmd` / `gemini_cmd` variables.
+
+Acceptance Criteria:
+- Action Pack supports a distinct execution path for `implement` (as a mode or gated step).
+- In `implement`, the Action Pack reads `_actions.json` and dispatches at least `codex` and `gemini` executors using the stated command forms.
+- Existing modes (`backlog|pipelines|autopilot`) remain unchanged in behavior.
+- If `_actions.json` is missing/unreadable, the implement path fails clearly (exact messaging not provided).
+
+Priority & Severity (if inferable from input text):
+- Priority: Not provided
+- Severity: Not provided
+
+Source:
+- “Add an ‘implement’ mode (or a Step 09)… reads `<out_dir>/_actions.json`”
+- “dispatches deterministically: `codex exec …`… `gemini -p …`”
+- “This particular Action Pack does not call `codex`, `gemini`, etc. at all”
+```
+
+```ticket T4
+T# Title:
+- Add non-interactive and safety guardrails for Codex/Gemini execution in Action Packs
+
+Type:
+- enhancement
+
+Target Area:
+- Action Pack execution behavior when running non-`oracle` tools (Codex/Gemini), including runner constraints around stdin/TTY
+
+Summary:
+- The ticket notes that oraclepack runs step scripts without attaching stdin/TTY, which can break or hang interactive CLIs.
+- Add guardrails so Action Packs use non-interactive invocation patterns and keep defaults safe (explicitly: do not “yolo” by default).
+
+In Scope:
+- Ensure Codex invocation is non-interactive (ticket references `codex exec …` as the intended entrypoint).
+- Ensure Gemini invocation is non-interactive (ticket references `gemini -p/--prompt` as intended).
+- Apply safety defaults: “Keep safety defaults strict (do not ‘yolo’ by default)” (flag specifics not mandated beyond this phrase).
+- Reflect/acknowledge runner constraint: “does not attach stdin/TTY” and the resulting failure mode for interactive tools.
+
+Out of Scope:
+- Not provided
+
+Current Behavior (Actual):
+- Runner behavior described: executes scripts via `bash -lc`, does not attach stdin/TTY; interactive CLIs may fail or stall.
+
+Expected Behavior:
+- Action Packs avoid interactive-only command forms and use non-interactive command forms for Codex/Gemini.
+- Defaults remain conservative and do not enable “yolo” behavior by default.
+
+Reproduction Steps:
+- Not provided
+
+Requirements / Constraints:
+- Must account for “oraclepack doesn’t provide stdin/TTY to subprocesses” (per ticket text).
+- Must keep safety defaults strict; do not enable “yolo” by default.
+
+Evidence:
+- “oraclepack will execute each step… but it does not attach stdin/TTY to the subprocess”
+- “interactive CLIs… fail immediately… or stall waiting for input”
+- “Keep safety defaults strict (do not ‘yolo’ by default)”
+
+Open Items / Unknowns:
+- Exact approval/safety flags to use for Gemini/Codex (not provided in ticket text beyond “yolo” mention).
+- Where to place guardrails (template preflight vs dispatcher vs documentation) not specified.
+
+Risks / Dependencies:
+- Works alongside T3 (implement dispatcher); guardrails should apply to that path.
+
+Acceptance Criteria:
+- Implement path uses non-interactive forms (`codex exec …`, `gemini -p/--prompt …`) as referenced in ticket text.
+- Default behavior does not enable “yolo” execution.
+- Action Pack behavior is compatible with “no stdin/TTY” runner constraint (i.e., does not require interactive prompts to proceed).
+
+Priority & Severity (if inferable from input text):
+- Priority: Not provided
+- Severity: Not provided
+
+Source:
+- “oraclepack… does not attach stdin/TTY… interactive CLIs… fail… or stall”
+- “Keep safety defaults strict (do not ‘yolo’ by default)”
+- “Codex… `codex exec`… Gemini CLI… `--prompt` / `-p`”
+```
+
+```ticket T5
+T# Title:
+- Generalize oraclepack override injection/validation beyond `oracle` to a multi-tool command registry (optional)
+
+Type:
+- enhancement
+
+Target Area:
+- oraclepack core: command detection for overrides injection and overrides validation (currently `oracle`-anchored)
+
+Summary:
+- The ticket identifies that oraclepack’s “nice UX features” (flag overrides + validation) are currently oracle-specific because detection/injection targets only `oracle` commands.
+- Optional work: generalize detection to support additional tool prefixes and add per-tool override sets.
+
+In Scope:
+- Generalize command detection/injection from `oracle`-only to a small registry of command prefixes (explicitly listed in ticket text): `oracle`, `codex`, `gemini`, `task-master`, `tm`.
+- Add per-tool override sets so “Oracle Flags” are not the only concept when tools differ.
+
+Out of Scope:
+- Not provided
+
+Current Behavior (Actual):
+- Special logic targets only lines that start with `oracle`: detects invocations, injects flags into `oracle …`, and validates overrides using `oracle --dry-run summary` (as described in ticket text).
+
+Expected Behavior:
+- The system can detect/inject overrides for additional tool prefixes listed above.
+- Overrides configuration is tool-specific (per-tool override sets).
+
+Reproduction Steps:
+- Not provided
+
+Requirements / Constraints:
+- Must preserve the existing oracle behavior while extending to additional command prefixes.
+
+Evidence:
+- “special logic only for lines that start with `oracle`… detects… injects… overrides validation”
+- “Generalize… to a small registry of command prefixes (`oracle`, `codex`, `gemini`, `task-master`, `tm`)”
+- “Add per-tool override sets”
+
+Open Items / Unknowns:
+- Exact internal functions/files to modify (names mentioned but paths not provided in this ticket text).
+- How validation should work for non-`oracle` tools (not specified beyond “per-tool override sets”).
+
+Risks / Dependencies:
+- Not provided
+
+Acceptance Criteria:
+- Non-`oracle` command prefixes listed in the ticket are recognized by the override injection mechanism.
+- Overrides can be configured per tool (not only “Oracle Flags”).
+- Existing `oracle` override injection and validation behavior continues to function.
+
+Priority & Severity (if inferable from input text):
+- Priority: Not provided
+- Severity: Not provided
+
+Source:
+- “Oraclepack… special logic only for lines that start with `oracle`”
+- “Generalize… to… prefixes (`oracle`, `codex`, `gemini`, `task-master`, `tm`)”
+- “Add per-tool override sets”
+```
 ```
 
 .tickets/Oraclepack Action Pack Issue.md
@@ -1161,6 +1354,330 @@ Source:
 [1]: https://developers.openai.com/codex/cli/reference/?utm_source=chatgpt.com "Command line options"
 [2]: https://geminicli.com/docs/tools/?utm_source=chatgpt.com "Gemini CLI tools"
 [3]: https://github.com/eyaltoledano/claude-task-master?utm_source=chatgpt.com "eyaltoledano/claude-task-master"
+```
+
+.tickets/Oraclepack Compatibility Issues.md
+```
+Parent Ticket:
+
+* Title: Oraclepack Actionpack Compatibility: non-`oracle` tools execution, dispatcher/overrides gaps, and adding Codex/Gemini headless steps
+* Summary:
+
+  * There is confusion about whether oraclepack can run Action Packs that include non-`oracle` commands (e.g., `task-master` / `tm`, `codex`, `gemini`). The current behavior is that oraclepack executes each step as shell (`bash -lc ...`) and only applies oracle-specific injection/validation to commands that begin with `oracle`. The request also includes adding headless `gemini` + non-interactive `codex exec` automation into the placeholder steps of `ticket-action-pack.md`, and optionally extending this pattern to taskify-generated packs.
+* Source:
+
+  * Link/ID: Not provided
+  * Original ticket excerpt (≤25 words) capturing the overall theme: “injects flags into commands that begin with `oracle`… does not match `tm`, `codex`, `gemini`… won’t dispatch/wrap non-`oracle` commands” (per file)
+* Global Constraints:
+
+  * Action Pack is “oraclepack-ingestible” (single `bash` fence, `# NN)` steps) (per file)
+  * Do not assume oraclepack overrides apply to non-`oracle` commands (per file)
+* Global Environment:
+
+  * Steps run via `bash -lc ...` in the project root; oraclepack does not change `WorkDir` to `out_dir` (per file)
+  * ROI filter behavior may skip steps with no `ROI=` if a threshold > 0 is used (per file)
+* Global Evidence:
+
+  * References: `oracle_pack_and_taskify-skills.md`, `oraclepack-tui.md`, `ticket-action-pack.md` (per file)
+  * Noted behaviors: oracle-only regex targeting; override validation runs `oracle --dry-run summary` on detected oracle invocations (per file)
+  * Mentioned outputs: `.oraclepack/ticketify/_tickets_index.json`, `_actions.json`, `_actions.md`, `.taskmaster/docs/tickets_prd.md`, `.oraclepack/ticketify/tm-complexity.json`, `ticket-action-pack.state.json`, `ticket-action-pack.report.json` (per file)
+
+Split Plan:
+
+* Coverage Map:
+
+  * “oraclepack runs each step as a bash script (`bash -lc <step script>`).” → T1
+  * “injects flags into commands that begin with `oracle`… regex anchored to `^(\\s*)(oracle)\\b`.” → T2
+  * “TUI override validation… runs `oracle --dry-run summary`… skips steps without oracle invocations.” → T2
+  * “`tm` / `task-master` run directly… not routed through oracle.” → T1
+  * “If you manually add `codex` / `gemini` lines… oraclepack will try to run them directly.” → T1
+  * “If CLI isn’t installed/on PATH → step fails; if interactive → blocks.” → T3
+  * “If you don’t add those commands… pack mainly uses `oracle` + Task Master; won’t ‘implement’ via Codex/Gemini.” → T1
+  * `ticket-action-pack.md` Step 01 writes `.oraclepack/ticketify/_tickets_index.json` → Info-only
+  * `ticket-action-pack.md` Step 02 writes `_actions.json` + `_actions.md` → Info-only
+  * `ticket-action-pack.md` Step 03 writes `.taskmaster/docs/tickets_prd.md` → Info-only
+  * `ticket-action-pack.md` Steps 05–07 run `task-master parse-prd`, `analyze-complexity`, `expand --all` and write `.oraclepack/ticketify/tm-complexity.json` → Info-only
+  * “Steps 08–20 are placeholders/notes (echo guidance).” → T3
+  * “Best insertion points… placeholder steps (09–13 and 16).” → T3
+  * Step 09: Gemini headless selects next target, writes `.oraclepack/ticketify/next.json` → T3
+  * Step 10: `codex exec` implements selected action, writes `.oraclepack/ticketify/codex-implement.md` → T3
+  * Step 11: verification via `codex exec` and/or Gemini diff review, writes `.oraclepack/ticketify/codex-verify.md` and/or `.oraclepack/ticketify/gemini-review.json` → T3
+  * Step 16: Gemini drafts PR body, writes `.oraclepack/ticketify/PR.md` → T3
+  * “Optional… add an agent-mode to oraclepack-taskify packs… keep 20-step contract intact.” → T4
+  * “Key constraint… overrides only target commands that begin with `oracle`; codex/gemini won’t inherit unless wrap/extend oraclepack.” → T2
+  * Failure notes: missing `.tickets/`, missing `task-master` / provider keys, ROI filter gotcha → T1
+* Dependencies:
+
+  * T3 depends on T2 because codex/gemini steps will not participate in oraclepack override injection/validation unless oraclepack is extended beyond `oracle`-prefixed commands (per file).
+  * T4 depends on T2 for the same reason (per file).
+* Split Tickets:
+
+```ticket T1
+T# Title:
+- Clarify current oraclepack Action Pack execution semantics (and common failure modes)
+
+Type:
+- docs
+
+Target Area:
+- oraclepack CLI/TUI user-facing documentation (exact file(s) not provided)
+
+Summary:
+- Document the current behavior that oraclepack executes Action Pack steps as `bash -lc ...` and only applies oracle-specific behavior to `oracle`-prefixed commands. Capture practical implications for running packs containing `task-master`/`tm`, `codex`, and `gemini`, including common failure modes and the ROI filter gotcha noted in the ticket content.
+
+In Scope:
+- Document that steps execute as shell (`bash -lc ...`) and whatever commands appear in the step body are executed.
+- Document that non-`oracle` commands (`task-master`/`tm`, `codex`, `gemini`) run directly and are not routed through oracle.
+- Document the “interactive CLI can block” and “missing binary on PATH fails the step” implications.
+- Document `ticket-action-pack.md` likely failure points called out: missing `.tickets/`, missing `task-master`/provider configuration/API keys, ROI filter gotcha.
+- Document that Steps 08–20 are placeholders unless replaced with real commands.
+
+Out of Scope:
+- Changing oraclepack dispatcher / override injection logic.
+- Editing `ticket-action-pack.md` steps to add new automation.
+
+Current Behavior (Actual):
+- Confusion among reviewers/users about whether oraclepack “runs everything through oracle.”
+- Running packs without `oracle ...` commands results in no oracle-specific override behavior being applied.
+
+Expected Behavior:
+- A clear, discoverable doc section explains what oraclepack does/does not do with non-`oracle` commands and how to interpret failures.
+
+Reproduction Steps:
+- Not provided.
+
+Requirements / Constraints:
+- Preserve the current semantics described in the ticket content (no implied change to execution model).
+
+Evidence:
+- “oraclepack runs each step as a bash script (`bash -lc <step script>`).”
+- “If the CLI is interactive → it will block waiting for input.”
+- “ROI filter gotcha… steps with no `ROI=`… may be skipped.”
+
+Open Items / Unknowns:
+- Where documentation should live (README, `oraclepack-tui.md`, or other) is not provided.
+- Whether this should be shown in TUI help text vs repository docs is not provided.
+
+Risks / Dependencies:
+- Not provided.
+
+Acceptance Criteria:
+- Documentation explicitly states:
+  - Steps execute via `bash -lc ...` and run the literal commands present.
+  - Only `oracle`-prefixed commands receive oraclepack’s special handling.
+  - Non-`oracle` tools (`tm`/`task-master`, `codex`, `gemini`) run directly (PATH/interactive caveats included).
+  - The listed failure modes and ROI filter gotcha are described with practical guidance.
+- Documentation includes a short “What to expect after running `ticket-action-pack.md`” section referencing the artifact paths named in the ticket content.
+
+Priority & Severity (if inferable from input text):
+- Priority: Not provided
+- Severity: Not provided
+
+Source:
+- “oraclepack runs each step as a bash script (`bash -lc <step script>`).”
+- “injects flags into commands that begin with `oracle`… does not match `tm`, `codex`, `gemini`.”
+- “ROI filter gotcha… steps with no `ROI=`… may be skipped.”
+```
+
+```ticket T2
+T# Title:
+- Extend oraclepack override injection/validation beyond `oracle`-prefixed commands (dispatcher changes)
+
+Type:
+- enhancement
+
+Target Area:
+- oraclepack command detection + overrides/validation pipeline (regex/dispatch behavior; exact file paths not provided)
+
+Summary:
+- The current oraclepack behavior applies oracle-specific transforms only to commands that begin with `oracle` and the TUI override validation only targets oracle invocations. Implement “dispatcher changes” so that non-`oracle` commands (explicitly referenced: `tm`/`task-master`, `codex`, `gemini`) can participate in the same override/validation flow, or otherwise be handled explicitly as first-class command targets.
+
+In Scope:
+- Update command detection so it is not limited to `oracle` (currently anchored to `^(\\s*)(oracle)\\b` per the ticket text).
+- Update override validation so it does not only run `oracle --dry-run summary` on detected oracle invocations and skip steps without oracle invocations.
+- Ensure steps containing `tm`/`task-master`, `codex`, and/or `gemini` can be detected for dispatcher/validation purposes (as described in the ticket content).
+
+Out of Scope:
+- Adding new `codex exec` / `gemini` automation steps to specific packs (handled in T3).
+- Changing Task Master’s behavior or requirements.
+
+Current Behavior (Actual):
+- Flag injection “only… injects flags into commands that begin with `oracle`… does not match `tm`, `task-master`, `codex`, `gemini`.”
+- TUI override validation “only targets `oracle` commands… runs `oracle --dry-run summary`… steps without oracle invocations are skipped.”
+
+Expected Behavior:
+- Dispatcher/override handling is not limited to `oracle`-prefixed commands for the explicitly mentioned tool commands, so non-`oracle` steps are not silently excluded from override/validation.
+
+Reproduction Steps:
+- Not provided.
+
+Requirements / Constraints:
+- Must preserve existing `oracle` command behavior.
+- Must address the limitation called out: overrides/validation currently only target `oracle` commands.
+
+Evidence:
+- “injects flags into commands that begin with `oracle` (regex… `^(\\s*)(oracle)\\b`).”
+- “override validation… runs `oracle --dry-run summary`… steps without oracle invocations are skipped.”
+- “codex/gemini won’t inherit oraclepack overrides unless you wrap them yourself or extend oraclepack.”
+
+Open Items / Unknowns:
+- Exact desired behavior for applying overrides to `tm`/`task-master`, `codex`, and `gemini` is not provided (which flags apply, how validation works).
+- Whether the dispatcher should “interpret actions” vs only broaden prefix-based detection is not provided.
+
+Risks / Dependencies:
+- Risk: unclear spec for how overrides should apply to each non-`oracle` tool could lead to partial/incorrect behavior.
+
+Acceptance Criteria:
+- A pack step containing at least one of the referenced non-`oracle` command prefixes (`tm`/`task-master`, `codex`, `gemini`) is no longer automatically excluded from the override/validation pipeline solely due to not starting with `oracle`.
+- Existing behavior for `oracle`-prefixed commands remains unchanged.
+
+Priority & Severity (if inferable from input text):
+- Priority: Not provided
+- Severity: Not provided
+
+Source:
+- “injects flags into commands that begin with `oracle`… does not match `tm`, `codex`, `gemini`.”
+- “override validation… only targets `oracle` commands… steps without oracle invocations are skipped.”
+- “codex/gemini won’t inherit oraclepack overrides unless you wrap them yourself or extend oraclepack.”
+```
+
+```ticket T3
+T# Title:
+- Replace `ticket-action-pack.md` placeholder steps with headless Gemini + non-interactive Codex automation
+
+Type:
+- enhancement
+
+Target Area:
+- `ticket-action-pack.md` (ticketify Action Pack content/template; exact generator location not provided)
+
+Summary:
+- Steps 08–20 are described as placeholders/notes that only echo guidance. Replace specific placeholder steps (explicitly called out: 09–13 and 16) to add end-to-end automation using headless `gemini` and `codex exec`, producing machine-readable and human-readable artifacts under `.oraclepack/ticketify/`.
+
+In Scope:
+- Step 09: Add headless `gemini` selection that writes `.oraclepack/ticketify/next.json`.
+- Step 10: Add non-interactive `codex exec` implementation that consumes `next.json` and writes `.oraclepack/ticketify/codex-implement.md`.
+- Step 11: Add verification automation via `codex exec` and/or Gemini diff review:
+  - `.oraclepack/ticketify/codex-verify.md` and/or `.oraclepack/ticketify/gemini-review.json`.
+- Step 16: Add PR draft automation that writes `.oraclepack/ticketify/PR.md`.
+- Include command-availability guards and “skip” behavior as shown in the referenced step snippets (e.g., `command -v ...` checks) to avoid hard failures when tools are missing.
+
+Out of Scope:
+- Changing Steps 01–07 semantics (ticket discovery/actions/PRD/Task Master parse/complexity/expand).
+- Extending oraclepack’s override injection/validation to cover `codex`/`gemini` (handled in T2).
+
+Current Behavior (Actual):
+- Steps 08–20 “are effectively placeholders/notes (echo guidance)” and “don’t dispatch Codex/Gemini or implement code unless the step body explicitly contains those commands.”
+- If `codex`/`gemini` are added and the binary is missing → step fails; if interactive → blocks.
+
+Expected Behavior:
+- Running the updated steps produces the specified `.oraclepack/ticketify/*` artifacts and enables a headless “select → implement → verify → draft PR” workflow driven by the earlier-generated ticketify outputs.
+
+Reproduction Steps:
+- Not provided.
+
+Requirements / Constraints:
+- Must write the artifacts to the paths specified in the step examples (e.g., `.oraclepack/ticketify/next.json`, `codex-implement.md`, `codex-verify.md`, `gemini-review.json`, `PR.md`).
+- Must tolerate missing `codex`/`gemini` binaries via skip behavior (per the example snippets).
+
+Evidence:
+- “Best insertion points are the placeholder steps… (09–13 and 16).”
+- Step outputs in examples:
+  - “Wrote .oraclepack/ticketify/next.json”
+  - “Wrote .oraclepack/ticketify/codex-implement.md”
+  - “Wrote .oraclepack/ticketify/codex-verify.md”
+  - “Wrote .oraclepack/ticketify/gemini-review.json”
+  - “Wrote .oraclepack/ticketify/PR.md”
+- “If the CLI is interactive → it will block waiting for input.”
+
+Open Items / Unknowns:
+- Whether Step 11 should use Codex execution, Gemini review, or both by default is not provided.
+- Whether Steps 12–13 should be modified (they are within the suggested 09–13 range but specifics are not included in the provided snippets).
+
+Risks / Dependencies:
+- Depends on T2 if these steps must participate in oraclepack’s overrides/validation system (otherwise, they run as direct shell commands).
+- Risk: tool interactivity can block runs if headless/non-interactive flags are not sufficient (noted in the ticket content).
+
+Acceptance Criteria:
+- After running Step 09, `.oraclepack/ticketify/next.json` exists.
+- After running Step 10 (with Step 09 completed), `.oraclepack/ticketify/codex-implement.md` exists.
+- After running Step 11, at least one of:
+  - `.oraclepack/ticketify/codex-verify.md` or `.oraclepack/ticketify/gemini-review.json`
+  exists (as configured by the updated pack).
+- After running Step 16, `.oraclepack/ticketify/PR.md` exists.
+- If `codex` is not available on PATH, Step 10 and any Codex-based Step 11 behavior performs the documented skip behavior (no hard crash beyond what the step defines).
+- If `gemini` is not available on PATH, Step 09/16 and any Gemini-based Step 11 behavior performs the documented skip behavior.
+
+Priority & Severity (if inferable from input text):
+- Priority: Not provided
+- Severity: Not provided
+
+Source:
+- “Steps 08–20… placeholders/notes… don’t dispatch Codex/Gemini… unless… contains the actual `codex` / `gemini` commands.”
+- “Best insertion points… placeholder steps… (09–13 and 16).”
+- “If the CLI is interactive → it will block waiting for input.”
+```
+
+```ticket T4
+T# Title:
+- Add “agent-mode” to oraclepack-taskify Action Pack generation (Codex/Gemini path in place of autopilot)
+
+Type:
+- enhancement
+
+Target Area:
+- oraclepack-taskify Action Pack template/generator (exact file paths not provided)
+
+Summary:
+- Extend taskify-generated Action Packs so they can optionally use an “agent-mode” (e.g., `mode=codex` / `mode=gemini`) in the phase after Task Master has expanded tasks (when `tasks.json` and `tm-complexity.json` exist). The ticket text specifies keeping the 20-step contract intact by swapping the existing autopilot entrypoint step slot with agent implementation.
+
+In Scope:
+- Add a mode switch for taskify-generated packs (explicitly suggested: `mode=codex` / `mode=gemini`).
+- Place the agent-mode insertion “right after Task Master expands tasks” (per ticket content).
+- Keep the “20-step contract intact” by swapping “autopilot entrypoint” with “agent implementation” using the same step slot (per ticket content).
+
+Out of Scope:
+- Modifying `ticket-action-pack.md` (handled in T3).
+- Defining new Task Master workflows beyond what is described.
+
+Current Behavior (Actual):
+- Taskify Action Pack can include a “guarded `tm autopilot` entrypoint” (per ticket content).
+- Without dispatcher/agent commands in steps, no Codex/Gemini implementation occurs (per ticket content).
+
+Expected Behavior:
+- A taskify-generated Action Pack can be generated in an agent-mode that uses Codex/Gemini implementation in the appropriate step slot while retaining the existing step-count/schema contract.
+
+Reproduction Steps:
+- Not provided.
+
+Requirements / Constraints:
+- Maintain the existing pack schema/contract: “keeping the 20-step contract intact” (per ticket content).
+- Agent-mode placement occurs after Task Master expansion (“the point where you have `tasks.json` and `tm-complexity.json`”) (per ticket content).
+
+Evidence:
+- “Optional… add an agent-mode to oraclepack-taskify packs… right after Task Master expands tasks… keep the 20-step contract intact.”
+- “swap ‘autopilot entrypoint’ with ‘agent implementation’ using the same step slot.”
+
+Open Items / Unknowns:
+- How the mode is selected (CLI flag, TUI option, config) is not provided in the included content.
+- Exact step number/slot to replace is not provided.
+
+Risks / Dependencies:
+- Depends on T2 if Codex/Gemini calls must receive oraclepack overrides/validation (per ticket’s “won’t inherit unless wrap/extend” note).
+
+Acceptance Criteria:
+- There is a documented/implemented way to generate a taskify Action Pack in `mode=codex` and/or `mode=gemini`.
+- In agent-mode, the pack still conforms to the same step-count contract described in the ticket content (20 steps; autopilot entrypoint swapped rather than expanded beyond contract).
+- Agent-mode insertion occurs after Task Master task expansion artifacts exist (as described in the ticket content).
+
+Priority & Severity (if inferable from input text):
+- Priority: Not provided
+- Severity: Not provided
+
+Source:
+- “Optional… add an agent-mode to oraclepack-taskify packs… right after Task Master expands tasks… keep the 20-step contract intact.”
+- “swap ‘autopilot entrypoint’ with ‘agent implementation’ using the same step slot.”
+```
 ```
 
 .tickets/Oraclepack Pipeline Improvements.md
@@ -1818,6 +2335,524 @@ Source:
   - “Our pain point: {PAIN-POINT} … continue without needing it.”
   - “```md {REFERENCE-FILE}.md”
 ````
+```
+
+.tickets/Oraclepack TUI Integration.md
+```
+Parent Ticket:
+
+* Title: Oraclepack TUI integration for PRD Generator Project URL + ticketify PRD run flow
+* Summary: Enable oraclepack to route a ticket-derived PRD artifact (`tickets_prd.md`) to a specific “PRD Generator” ChatGPT Project URL via the TUI and automated runs. Address the current failure when attempting to run `tickets_prd.md` as a pack (“no bash code block found”) by introducing supported execution paths (micro-pack and/or single-shot call), and optionally generating a richer PRD context bundle + dedicated PRD-generator pack from ticketify outputs.
+* Source:
+
+  * Link/ID: Oraclepack TUI Integration (1).md
+  * Original ticket excerpt (≤25 words) capturing the overall theme: “utilize our specific prd-generator from one of many gpt project urls… add that project url… as an option in the tui.”
+* Global Constraints:
+
+  * `tickets_prd.md` is content/artifact and cannot be executed as a pack unless wrapped in a valid oraclepack structure (requires a `bash` fenced block).
+  * Pack parsing requires a ` ```bash … ``` ` fenced code block; otherwise error: “invalid pack structure: no bash code block found”.
+  * Avoid hardcoding ChatGPT Project URLs into packs/repos; prefer selecting/storing via the TUI URL picker/store.
+  * Support “one of many project urls” including per-step targeting for PRD generation steps.
+  * “Simple oracle calls” should be possible without sending entire multi-step packs.
+* Global Environment:
+
+  * Unknown
+* Global Evidence:
+
+  * Error string: `Error: invalid pack structure: no bash code block found`.
+  * “Projects in ChatGPT” (Projects retain chats/files within a project). ([OpenAI Help Center][1])
+  * CommonMark: fenced code blocks support an “info string” after the opening fence (language identifier). ([CommonMark Spec][2])
+
+Split Plan:
+
+* Coverage Map:
+
+  1. Original item: “add that project url and send it with our oraclepack in an automated manner… option in the tui.”
+     Assigned Ticket ID: T1
+  2. Original item: “simple way of utilizing oracle for simpler calls… do not require entire packs being sent.”
+     Assigned Ticket ID: T4
+  3. Original item: “oraclepack will not allow the `tickets_prd.md`… `invalid pack structure: no bash code block found`.”
+     Assigned Ticket ID: T3
+  4. Original item: “Add a new entry in the URL picker… Name: `PRD Generator`… Scope: `project`… or `global`.”
+     Assigned Ticket ID: T1
+  5. Original item: “Set it as default (`s`)…”
+     Assigned Ticket ID: T1
+  6. Original item: “Headless/CI: add a CLI flag… `oraclepack run --chatgpt-url <url>` (or `--chatgpt-url-name <saved-name>`).”
+     Assigned Ticket ID: T2
+  7. Original item: “Using multiple project URLs… `RuntimeOverrides` supports `ChatGPTURL` and `ApplyToSteps`… missing piece is Overrides Wizard UI.”
+     Assigned Ticket ID: T5
+  8. Original item: “Add a new wizard step: ‘ChatGPT URL’… reuse URLPickerModel… write to `pendingOverrides.ChatGPTURL`.”
+     Assigned Ticket ID: T5
+  9. Original item: “Option A: ‘micro-pack’… attach `tickets_prd.md`… run `oracle` once…”
+     Assigned Ticket ID: T3
+  10. Original item: “Option B: add `oraclepack call`… pick URL preset… pick files… run one `oracle` invocation… bypass `internal/pack/parser.go`…”
+      Assigned Ticket ID: T4
+  11. Original item: “Better idea: `tickets_prd.md` artifact parsed into a valid oraclepack… sent to PRD-generator project url… add missing context as part of stage.”
+      Assigned Ticket ID: T6
+  12. Original item: “Generate deterministic `prd_context.md`… feature summary, prioritized requirements, user stories + AC, constraints/deps/out-of-scope/risks/open questions, keep vs rewrite.”
+      Assigned Ticket ID: T6
+  13. Original item: “Generate `.oraclepack/ticketify/prd-generator.pack.md`… attach `tickets_prd.md` + `prd_context.md`… `--write-output ".taskmaster/docs/final_prd.md"`.”
+      Assigned Ticket ID: T6
+  14. Original item: “Wire it into the TUI… toggle `[ ] Generate enhanced PRD via PRD Generator Project`… prompt pick URL… run pack… apply `RuntimeOverrides{ChatGPTURL: <picked>, ApplyToSteps: {"01": true}}`.”
+      Assigned Ticket ID: T7
+  15. Original item: “Static context in ChatGPT Project; dynamic context in `prd_context.md` attachment.”
+      Assigned Ticket ID: T6
+* Dependencies:
+
+  * T7 depends on T6 because the TUI flow runs the generated `prd-generator.pack.md` and attaches `prd_context.md`.
+* Split Tickets:
+
+```ticket T1
+T# Title:
+- Add/select PRD Generator ChatGPT Project URL in TUI URL picker (project/global scope + default)
+
+Type:
+- enhancement
+
+Target Area:
+- oraclepack TUI URL picker/store (“ChatGPT Project URLs”)
+
+Summary:
+- Provide a standard way to store and select a “PRD Generator” ChatGPT Project URL from the existing URL picker/store, with project vs global scope guidance and the ability to set it as the default. This enables routing PRD-generation runs through the intended ChatGPT Project without hardcoding URLs into packs.
+
+In Scope:
+- Ensure the TUI supports creating/selecting an entry named `PRD Generator` with a ChatGPT Project URL.
+- Support scope selection: `project` (repo-specific) vs `global` (shared), as described.
+- Support setting the selected entry as the default (`s`) for the relevant scope.
+
+Out of Scope:
+- Not provided
+
+Current Behavior (Actual):
+- Not provided
+
+Expected Behavior:
+- User can add/select `PRD Generator` as a named URL entry.
+- User can set it as default for the current workflow/repo.
+
+Reproduction Steps:
+- Not provided
+
+Requirements / Constraints:
+- Do not hardcode URLs into packs/repos (prefer picker/store selection).
+- Preserve support for project vs global URL scoping.
+
+Evidence:
+- “Add a new entry in the URL picker… Name: `PRD Generator`… Scope: `project`… `global`…”
+- “Set it as default (`s`)…”
+
+Open Items / Unknowns:
+- Actual PRD Generator ChatGPT Project URL value(s) (not provided).
+- Whether a predefined/seeded entry is required vs user-created entry (not provided).
+
+Risks / Dependencies:
+- Not provided
+
+Acceptance Criteria:
+- [ ] TUI allows creating/selecting a `PRD Generator` URL entry.
+- [ ] TUI allows choosing `project` vs `global` scope for the entry.
+- [ ] TUI allows setting the entry as default (`s`) and that default is subsequently used when selected.
+
+Priority & Severity (if inferable from input text):
+- Priority: Not provided
+- Severity: Not provided
+
+Source:
+- “Add a new entry in the URL picker: … Name: `PRD Generator`”
+- “Scope: `project`… `global`…”
+- “Set it as default (`s`)…”
+```
+
+```ticket T2
+T# Title:
+- Add headless/CI CLI override for ChatGPT URL selection during runs
+
+Type:
+- enhancement
+
+Target Area:
+- oraclepack CLI run command (headless / `--no-tui` runs)
+
+Summary:
+- Add a CLI override so headless/CI executions can force a ChatGPT URL (or saved URL name) rather than relying on interactive selection. This supports automated routing to the PRD Generator project URL.
+
+In Scope:
+- Add CLI support equivalent to: `oraclepack run --chatgpt-url <url>` and/or `--chatgpt-url-name <saved-name>`.
+- Ensure the provided value sets the runner’s ChatGPT URL for the run.
+
+Out of Scope:
+- Not provided
+
+Current Behavior (Actual):
+- “Right now, the TUI resolves a URL; but there isn’t a CLI flag … that forces it in `--no-tui` runs.”
+
+Expected Behavior:
+- Headless/CI runs can specify a ChatGPT URL (or saved name) and have it applied for the run.
+
+Reproduction Steps:
+- Not provided
+
+Requirements / Constraints:
+- Must work without requiring the interactive TUI URL picker.
+- Must not require editing packs to include URLs.
+
+Evidence:
+- “Headless/CI: add a CLI flag to override the picker”
+- “Add `oraclepack run --chatgpt-url <url>` (or `--chatgpt-url-name <saved-name>`)...”
+
+Open Items / Unknowns:
+- Exact CLI flag naming/shape (both `--chatgpt-url` and `--chatgpt-url-name` are suggested; final selection not provided).
+
+Risks / Dependencies:
+- Not provided
+
+Acceptance Criteria:
+- [ ] `oraclepack run --chatgpt-url <url>` applies the provided URL for the run.
+- [ ] If `--chatgpt-url-name <saved-name>` is implemented, it resolves to a stored URL and applies it for the run.
+- [ ] Works in non-interactive/headless mode.
+
+Priority & Severity (if inferable from input text):
+- Priority: Not provided
+- Severity: Not provided
+
+Source:
+- “Headless/CI: add a CLI flag to override the picker”
+- “Add `oraclepack run --chatgpt-url <url>` (or `--chatgpt-url-name <saved-name>`)...”
+```
+
+````ticket T3
+T# Title:
+- Provide a micro-pack wrapper to run PRD generation using tickets_prd.md (valid bash fence pack)
+
+Type:
+- enhancement
+
+Target Area:
+- oraclepack pack inputs (micro-pack file used to call `oracle` with `tickets_prd.md`)
+
+Summary:
+- Introduce a minimal, valid oraclepack “micro-pack” that wraps PRD generation as an executable pack step. This avoids attempting to run `tickets_prd.md` directly (which fails pack validation) while enabling attaching `tickets_prd.md` to a single `oracle` call.
+
+In Scope:
+- Provide a one-step (or 2–3 step) pack that:
+  - Is valid for oraclepack parsing (contains a `bash` fenced code block).
+  - Attaches `tickets_prd.md`.
+  - Runs `oracle` once to generate a PRD output.
+- Ensure this flow can be routed to the selected PRD Generator ChatGPT Project URL (via existing URL selection/overrides mechanism).
+
+Out of Scope:
+- Full “single-shot call” mode that bypasses pack parsing (see T4).
+
+Current Behavior (Actual):
+- Running `tickets_prd.md` as a pack fails with: “Error: invalid pack structure: no bash code block found”.
+
+Expected Behavior:
+- A micro-pack wrapper can be run successfully by oraclepack and performs the PRD-generation oracle call using `tickets_prd.md` as an attachment.
+
+Reproduction Steps:
+1) Attempt to run `tickets_prd.md` as a pack and observe “no bash code block found”.
+2) Run the micro-pack wrapper pack and observe it parses and executes.
+
+Requirements / Constraints:
+- Pack must include a ` ```bash … ``` ` fenced block to be parseable.
+- Must attach `tickets_prd.md` to the oracle invocation.
+
+Evidence:
+- Error: “invalid pack structure: no bash code block found”
+- “Generate a 1-step pack… attach `tickets_prd.md`… run `oracle` once…”
+
+Open Items / Unknowns:
+- Final location/name of the micro-pack file (example name provided: `prd-generator-call.pack.md`).
+- Exact prompt text and output path conventions for the oracle call (not fully specified).
+
+Risks / Dependencies:
+- Not provided
+
+Acceptance Criteria:
+- [ ] A micro-pack file exists and is parseable by oraclepack (contains a `bash` fenced block).
+- [ ] Running the micro-pack executes a single `oracle` call that includes `tickets_prd.md` as an attachment.
+- [ ] The flow does not require running `tickets_prd.md` directly as a pack.
+
+Priority & Severity (if inferable from input text):
+- Priority: Not provided
+- Severity: Not provided
+
+Source:
+- “Generate a 1-step pack… attach `tickets_prd.md`…”
+- “Create a new file… valid pack… run `oracle` while attaching `tickets_prd.md`.”
+- “Error: invalid pack structure: no bash code block found”
+````
+
+```ticket T4
+T# Title:
+- Add single-shot oracle invocation mode (CLI/TUI) that bypasses pack parsing
+
+Type:
+- enhancement
+
+Target Area:
+- oraclepack CLI + TUI (“single-call” mode)
+
+Summary:
+- Add a new execution path for “simple oracle calls” that does not require a full pack file or pack parsing. The user can select a ChatGPT URL preset, attach files such as `tickets_prd.md`, provide a prompt/template, and run exactly one `oracle` invocation.
+
+In Scope:
+- Implement a new subcommand such as `oraclepack call` (or `oraclepack oracle`) that:
+  - Lets the user pick a ChatGPT URL preset.
+  - Lets the user specify attachments (e.g., `tickets_prd.md`).
+  - Runs one `oracle …` invocation.
+- Implement a corresponding TUI flow/screen for “Single Oracle Call” with:
+  - URL preset selection
+  - attachments selection
+  - prompt/template input
+  - run
+- Ensure this path bypasses pack parsing requirements (no need for a `bash` fenced block).
+
+Out of Scope:
+- Generating ticket-derived context bundle (`prd_context.md`) and a dedicated PRD generator pack (see T6/T7).
+
+Current Behavior (Actual):
+- “Simple calls” currently imply using packs; running `tickets_prd.md` directly fails pack validation.
+
+Expected Behavior:
+- Users can perform a single oracle call via oraclepack without needing a pack file format.
+
+Reproduction Steps:
+- Not provided
+
+Requirements / Constraints:
+- Must bypass `internal/pack/parser.go` (as described) so it does not require a `bashFenceRegex`-parseable pack structure.
+- Must support selecting a ChatGPT URL preset and attaching files.
+
+Evidence:
+- “Option B (best UX): add a new CLI/TUI mode for single-shot calls”
+- “Add a subcommand like: `oraclepack call`… pick ChatGPT URL preset… files to attach…”
+
+Open Items / Unknowns:
+- Exact CLI UX (flags for attachments, prompt, output path) not fully specified.
+- Whether output-writing is required (“--write-output …” is shown in examples elsewhere but not mandated here).
+
+Risks / Dependencies:
+- Not provided
+
+Acceptance Criteria:
+- [ ] `oraclepack call` (or equivalent) runs a single oracle invocation without requiring a pack file.
+- [ ] User can select a ChatGPT URL preset and attach `tickets_prd.md`.
+- [ ] A TUI “Single Oracle Call” flow exists with URL selection, attachments selection, prompt/template entry, and run.
+- [ ] Running this path does not trigger “no bash code block found” pack-structure errors.
+
+Priority & Severity (if inferable from input text):
+- Priority: Not provided
+- Severity: Not provided
+
+Source:
+- “Option B (best UX): add a new CLI/TUI mode for single-shot calls”
+- “Add a subcommand like: `oraclepack call` (or `oraclepack oracle`)”
+- “This avoids the structural requirement that triggers your error…”
+```
+
+```ticket T5
+T# Title:
+- Extend Overrides Wizard to support per-step ChatGPT URL selection (RuntimeOverrides.ChatGPTURL)
+
+Type:
+- enhancement
+
+Target Area:
+- oraclepack TUI Overrides Wizard UI
+
+Summary:
+- Enable selecting a ChatGPT URL in the Overrides Wizard and applying it to specific steps via per-step targeting. This supports “one of many project urls” where only PRD generation steps use the PRD Generator project while others use the default.
+
+In Scope:
+- Add a wizard step: “ChatGPT URL”.
+- Reuse the existing URL picker/store UI model (URLPickerModel) to choose a URL.
+- Store the selection into `pendingOverrides.ChatGPTURL`.
+- Ensure per-step targeting continues to work via `ApplyToSteps`, so only selected steps get the override.
+
+Out of Scope:
+- Not provided
+
+Current Behavior (Actual):
+- Overrides Wizard “currently picks flags + target steps, but doesn’t let you pick a ChatGPT URL to apply for those targeted steps.”
+
+Expected Behavior:
+- Overrides Wizard allows selecting a ChatGPT URL override and applying it only to selected steps.
+
+Reproduction Steps:
+- Not provided
+
+Requirements / Constraints:
+- Must integrate with existing `RuntimeOverrides` structure (supports `ChatGPTURL` and `ApplyToSteps`).
+- Must not force a single global URL for the entire run when per-step targeting is desired.
+
+Evidence:
+- “`RuntimeOverrides` supports `ChatGPTURL` and `ApplyToSteps` targeting.”
+- “Add a new wizard step: ‘ChatGPT URL’… Write the chosen value into `pendingOverrides.ChatGPTURL`.”
+
+Open Items / Unknowns:
+- Exact UX flow placement/order in the wizard (not provided).
+- How conflicts are resolved between default URL and step override when both are present (not provided).
+
+Risks / Dependencies:
+- Not provided
+
+Acceptance Criteria:
+- [ ] Overrides Wizard includes a “ChatGPT URL” selection step.
+- [ ] Selected URL is stored in `pendingOverrides.ChatGPTURL`.
+- [ ] When overrides are applied to a subset of steps, only those steps use the overridden ChatGPT URL; other steps use the default.
+- [ ] Existing step-targeting selection remains functional.
+
+Priority & Severity (if inferable from input text):
+- Priority: Not provided
+- Severity: Not provided
+
+Source:
+- “`RuntimeOverrides` supports `ChatGPTURL` … `ApplyToSteps` targeting.”
+- “Add a new wizard step: **‘ChatGPT URL’**”
+- “Write the chosen value into `pendingOverrides.ChatGPTURL`.”
+```
+
+````ticket T6
+T# Title:
+- Enhance ticketify outputs: generate prd_context.md + prd-generator.pack.md for PRD Generator Project
+
+Type:
+- enhancement
+
+Target Area:
+- oraclepack-ticketify outputs/artifacts generation
+
+Summary:
+- Generate a deterministic PRD context bundle alongside `tickets_prd.md`, then generate a dedicated, valid micro-pack that calls `oracle` against the PRD Generator ChatGPT Project URL using both `tickets_prd.md` and the new context artifact. This supplies the missing context needed for higher-quality PRD generation while keeping the PRD Generator’s stable instructions in the ChatGPT Project.
+
+In Scope:
+- Generate `.oraclepack/ticketify/prd_context.md` containing ticket-derived context, including:
+  - product/feature summary inferred from tickets
+  - prioritized requirements (functional + non-functional)
+  - user stories + acceptance criteria extracted from tickets
+  - constraints, dependencies, out-of-scope, risks, open questions
+  - explicit “what to keep vs rewrite” instructions for the PRD generator
+- Generate `.oraclepack/ticketify/prd-generator.pack.md` that:
+  - Is a valid pack with a `bash` fenced code block.
+  - Attaches BOTH `tickets_prd.md` and `prd_context.md`.
+  - Calls `oracle … --write-output ".taskmaster/docs/final_prd.md"` (as shown in the example).
+- Preserve the intended split of context:
+  - Static context lives in the PRD Generator ChatGPT Project.
+  - Dynamic context is attached via `prd_context.md`.
+
+Out of Scope:
+- Not provided
+
+Current Behavior (Actual):
+- `tickets_prd.md` alone “does not include the context it would need” for the PRD generator.
+
+Expected Behavior:
+- ticketify produces `prd_context.md` and `prd-generator.pack.md` so PRD generation can run with complete, deterministic inputs.
+
+Reproduction Steps:
+- Not provided
+
+Requirements / Constraints:
+- Outputs should be deterministic and ticket-derived (“stable ordering/determinism” is implied by “deterministic… ticket-derived”).
+- Generated PRD pack must be valid for oraclepack parsing (contains ` ```bash … ``` `).
+- Avoid hardcoding ChatGPT Project URLs into the generated pack; selection/override handled externally (TUI/overrides).
+
+Evidence:
+- “Generate a deterministic ‘PRD context bundle’ artifact…”
+- “Emit a second markdown file… `.oraclepack/ticketify/prd-generator.pack.md`”
+- “Attach BOTH… `tickets_prd.md`… `prd_context.md`… `--write-output ".taskmaster/docs/final_prd.md"`”
+
+Open Items / Unknowns:
+- Exact prompt content to send to PRD Generator project (not fully specified).
+- Exact source inputs from ticketify flow used to derive `prd_context.md` (“index/actions/etc.” referenced but not enumerated).
+
+Risks / Dependencies:
+- Not provided
+
+Acceptance Criteria:
+- [ ] ticketify produces `.oraclepack/ticketify/prd_context.md` with the listed context sections/bullets.
+- [ ] ticketify produces `.oraclepack/ticketify/prd-generator.pack.md` that is parseable by oraclepack (contains a `bash` fence).
+- [ ] The generated pack attaches both `tickets_prd.md` and `prd_context.md`.
+- [ ] The generated pack writes output to `.taskmaster/docs/final_prd.md` (as specified in the example).
+- [ ] Generated artifacts are deterministic (same ticket inputs produce stable output ordering/content structure).
+
+Priority & Severity (if inferable from input text):
+- Priority: Not provided
+- Severity: Not provided
+
+Source:
+- “Generate a deterministic ‘PRD context bundle’ artifact”
+- “Emit a second markdown file… `.oraclepack/ticketify/prd-generator.pack.md`”
+- “Attach BOTH… `tickets_prd.md`… `prd_context.md`”
+````
+
+```ticket T7
+T# Title:
+- Add TUI option to run ticketify → PRD Generator flow using selected ChatGPT Project URL
+
+Type:
+- enhancement
+
+Target Area:
+- oraclepack TUI (new toggle/flow for PRD generation)
+
+Summary:
+- Add a TUI toggle/option to run the generated PRD generator pack and route it to the PRD Generator ChatGPT Project URL. The TUI should prompt for (or auto-select) the PRD Generator URL entry, execute `prd-generator.pack.md`, and apply per-step ChatGPT URL overrides to the PRD generation step.
+
+In Scope:
+- Add a TUI toggle like: `[ ] Generate enhanced PRD via PRD Generator Project`.
+- When enabled:
+  1) Prompt user to pick the PRD-generator URL from the existing URL picker (or auto-select “PRD Generator” if present).
+  2) Run the generated `prd-generator.pack.md`.
+  3) Apply `RuntimeOverrides{ChatGPTURL: <picked>, ApplyToSteps: {"01": true}}` (or whichever step calls oracle).
+
+Out of Scope:
+- Not provided
+
+Current Behavior (Actual):
+- Not provided
+
+Expected Behavior:
+- TUI provides an explicit entry point for the PRD Generator run that applies the correct ChatGPT URL specifically to PRD generation step(s).
+
+Reproduction Steps:
+- Not provided
+
+Requirements / Constraints:
+- Must use existing URL picker/store (no hardcoded URL in pack/repo).
+- Must apply ChatGPT URL override to targeted PRD step(s), not necessarily globally.
+
+Evidence:
+- “Add a TUI toggle like: `[ ] Generate enhanced PRD via PRD Generator Project`”
+- “prompt user to pick the PRD-generator URL… run `prd-generator.pack.md`… apply `RuntimeOverrides{ChatGPTURL: <picked>, ApplyToSteps: {"01": true}}`…”
+
+Open Items / Unknowns:
+- Whether step ID is always `01` or determined dynamically (“or whichever step calls oracle”).
+- Whether auto-selecting “PRD Generator” is required behavior or best-effort fallback.
+
+Risks / Dependencies:
+- Depends on ticketify generating `prd-generator.pack.md` and `prd_context.md` (T6).
+
+Acceptance Criteria:
+- [ ] TUI displays a toggle/option labeled as specified (or equivalent).
+- [ ] When enabled, user can select (or auto-select) the PRD Generator ChatGPT URL entry.
+- [ ] TUI runs `prd-generator.pack.md`.
+- [ ] The PRD generation step(s) run with the selected ChatGPT URL override applied via `ApplyToSteps`.
+- [ ] Non-PRD steps (if any) are not forced to use the PRD Generator URL unless targeted.
+
+Priority & Severity (if inferable from input text):
+- Priority: Not provided
+- Severity: Not provided
+
+Source:
+- “[ ] Generate enhanced PRD via PRD Generator Project”
+- “prompt user to pick the PRD-generator URL… run… apply `RuntimeOverrides{ChatGPTURL: <picked>, ApplyToSteps: {"01": true}}`”
+- “without hardcoding URLs into packs or repos…”
+```
+
+[1]: https://help.openai.com/en/articles/10169521-using-projects-in-chatgpt?utm_source=chatgpt.com "Projects in ChatGPT"
+[2]: https://spec.commonmark.org/0.12/?utm_source=chatgpt.com "Fenced code blocks"
 ```
 
 .tickets/Oraclepack Workflow Enhancement.md
@@ -3639,123 +4674,6 @@ async def oraclepack_taskify_validate_stage2(params: TaskifyValidateStage2Input)
         lines.append("- **missing**:")
         lines += [f"  - {m}" for m in report["missing"]]
     if report["ambiguous"]:
-        lines.append("- **ambiguous**:")
-        for k, v in report["ambiguous"].items():
-            lines.append(f"  - {k}: {v}")
-    if report["selected"]:
-        lines.append("- **selected**:")
-        for k in sorted(report["selected"].keys()):
-            lines.append(f"  - {k}: {report['selected'][k]}")
-    return "\n".join(lines)
-
-
-@mcp.tool(
-    name="oraclepack_taskify_validate_action_pack",
-    annotations={
-        "title": "Validate Stage-3 Action Pack structure",
-        "readOnlyHint": True,
-        "destructiveHint": False,
-        "idempotentHint": True,
-        "openWorldHint": False,
-    },
-)
-async def oraclepack_taskify_validate_action_pack(params: TaskifyValidateActionPackInput) -> Any:
-    pack_path = resolve_under_roots(Path(params.pack_path), cfg.allowed_roots)
-    if not pack_path.is_file():
-        raise FileNotFoundError(f"pack not found: {pack_path}")
-
-    report = validate_action_pack(pack_path)
-    if params.response_format == ResponseFormat.json:
-        return report
-
-    lines = [f"# Action Pack validation: `{pack_path}`", ""]
-    lines.append(f"- **ok**: {report['ok']}")
-    lines.append(f"- **step_count**: {report['step_count']}")
-    if report["errors"]:
-        lines.append("- **errors**:")
-        lines += [f"  - {e}" for e in report["errors"]]
-    return "\n".join(lines)
-
-
-@mcp.tool(
-    name="oraclepack_taskify_artifacts_summary",
-    annotations={
-        "title": "Summarize expected Stage-3 artifacts",
-        "readOnlyHint": True,
-        "destructiveHint": False,
-        "idempotentHint": True,
-        "openWorldHint": False,
-    },
-)
-async def oraclepack_taskify_artifacts_summary(params: TaskifyArtifactsSummaryInput) -> Any:
-    out_dir = resolve_under_roots(Path(params.out_dir), cfg.allowed_roots)
-
-    # Known artifacts from the skill
-    expected = {
-        "actions_json": out_dir / "_actions.json",
-        "actions_md": out_dir / "_actions.md",
-        "tm_complexity": out_dir / "tm-complexity.json",
-        "prd": Path(cfg.workdir) / ".taskmaster" / "docs" / "oracle-actions-prd.md",
-        "pipelines_doc": Path(cfg.workdir) / "docs" / "oracle-actions-pipelines.md",
-        "taskmaster_tasks_local": Path(cfg.workdir) / "tasks.json",
-        "taskmaster_tasks_dot": Path(cfg.workdir) / ".taskmaster" / "tasks.json",
-    }
-
-    found: dict[str, str] = {}
-    missing: dict[str, str] = {}
-    for k, p in expected.items():
-        # Some paths may not be under allowed_roots; report as "not allowed" rather than crashing.
-        try:
-            p2 = resolve_under_roots(p, cfg.allowed_roots)
-        except PathNotAllowedError:
-            missing[k] = f"not allowed by ORACLEPACK_ALLOWED_ROOTS: {p}"
-            continue
-
-        if p2.exists():
-            found[k] = str(p2)
-        else:
-            missing[k] = str(p2)
-
-    payload = {"out_dir": str(out_dir), "found": found, "missing": missing}
-
-    if params.response_format == ResponseFormat.json:
-        return payload
-
-    lines = [f"# Stage-3 artifacts summary: `{out_dir}`", ""]
-    if found:
-        lines.append("## found")
-        for k, v in found.items():
-            lines.append(f"- **{k}**: `{v}`")
-    if missing:
-        lines.append("\n## missing")
-        for k, v in missing.items():
-            lines.append(f"- **{k}**: `{v}`")
-    return "\n".join(lines)
-
-
-@mcp.tool(
-    name="oraclepack_taskify_run_action_pack",
-    annotations={
-        "title": "Run a Stage-3 Action Pack via oraclepack",
-        "readOnlyHint": False,
-        "destructiveHint": True,
-        "idempotentHint": False,
-        "openWorldHint": True,
-    },
-)
-async def oraclepack_taskify_run_action_pack(params: TaskifyRunActionPackInput) -> Any:
-    _ensure_exec_enabled()
-
-    pack_path = resolve_under_roots(Path(params.pack_path), cfg.allowed_roots)
-
-    # Validate pack structure before executing
-    v = validate_action_pack(pack_path)
-    if not v["ok"]:
-        raise ValueError(f"Refusing to execute invalid Action Pack: {json.dumps(v, indent=2)}")
-
-    argv: list[str] = [cfg.oraclepack_bin]
-    argv += ["--no-tui"]
-    if params.out_dir:
 [TRUNCATED]
 ```
 

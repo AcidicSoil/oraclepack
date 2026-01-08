@@ -1287,7 +1287,7 @@
   "bugfix-tui": {
     "tasks": [
       {
-        "id": "1",
+        "id": 1,
         "title": "Define Runtime Overrides Data Model & Step-Aware Merge Logic",
         "description": "Create the core data structures to hold runtime overrides and implement the logic to merge them with baseline flags on a per-step basis.",
         "details": "Create a new package `internal/overrides`. Define `RuntimeOverrides` struct containing `AddedFlags` ([]string), `RemovedFlags` ([]string), `ChatGPTURL` (string), and `ApplyToSteps` (map[string]bool). Implement `EffectiveFlags(stepID string, baseline []string) []string` which returns the final flag set for a given step. If the step is not in `ApplyToSteps`, return baseline. Otherwise, append added flags, remove removed flags, and inject `--chatgpt-url` if set. Add unit tests covering various combinations (add/remove intersection, empty sets).",
@@ -1302,7 +1302,7 @@
         "updatedAt": "2026-01-02T16:21:30.521Z"
       },
       {
-        "id": "2",
+        "id": 2,
         "title": "Implement Oracle Invocation Extraction (Scanning)",
         "description": "Develop a robust scanner to identify and extract `oracle` command invocations from bash scripts, handling multi-line continuations.",
         "details": "Create `internal/exec/oracle_scan.go`. Implement `ExtractOracleInvocations(script string) []OracleInvocation`. It must detect lines starting with `oracle` (allowing for indentation) and capture the full command including multi-line continuations (lines ending with `\\`). The struct `OracleInvocation` should hold the `Raw` command string and a `Display` version for UI. Use regex or a simple line-by-line state machine. Ensure it handles edge cases like trailing spaces before backslashes.\n\n[2026-01-02] Fixed scanner compile/test issues: corrected backslash suffix literal in internal/overrides/scanner.go; converted multiline expected command to raw string in internal/overrides/scanner_test.go. go test ./internal/overrides now passes.\n\n[2026-01-02] Implemented ExtractOracleInvocations in internal/exec/oracle_scan.go, moved scanner from overrides to exec package, updated tests, and removed overrides OracleInvocation type. go test ./internal/exec ./internal/overrides passes.",
@@ -1340,7 +1340,7 @@
         "updatedAt": "2026-01-02T18:14:10.000Z"
       },
       {
-        "id": "3",
+        "id": 3,
         "title": "Upgrade Flag Injection to Support Multi-line Commands",
         "description": "Refactor the existing flag injection logic to safely insert flags into multi-line `oracle` commands without breaking shell syntax.",
         "details": "Modify `internal/exec/inject.go` (or create a new version if preferred). The `InjectFlags` function should use the logic from the scanner to locate the insertion point. For multi-line commands (ending with `\\`), inject flags before the backslash on the first line or append to the argument list in a way that preserves valid shell syntax. Ensure it still handles single-line commands correctly. This replaces the naive line-replacement approach.\n\n[2026-01-02] Implemented multi-line flag injection: insert flags after oracle token, preserve indentation, handle continuation backslashes, and skip commented lines. Updated inject tests for multiline and comment cases. go test ./internal/exec passes.",
@@ -1416,7 +1416,7 @@
         "updatedAt": "2026-01-02T18:03:59.000Z"
       },
       {
-        "id": "4",
+        "id": 4,
         "title": "Implement Mode 2 Validation Runner",
         "description": "Create a validation routine that runs `oracle --dry-run summary` to verify that overrides result in valid commands.",
         "details": "Create `internal/exec/oracle_validate.go`. Implement `ValidateOverrides(ctx, ...)` which iterates through targeted steps, extracts oracle invocations using the scanner from Task 2, applies overrides using the model from Task 1, and executes the resulting command with `--dry-run summary`. It should capture specific error output if the command fails. This ensures the user's configuration is valid before execution.\n\n[2026-01-02] Added validation runner in internal/exec/oracle_validate.go with ValidationError struct, dry-run execution, PATH export, and tests in internal/exec/oracle_validate_test.go. go test ./internal/exec ./internal/overrides passes.",
@@ -1494,7 +1494,7 @@
         "updatedAt": "2026-01-02T18:18:21.000Z"
       },
       {
-        "id": "5",
+        "id": 5,
         "title": "Implement TUI State Machine for Overrides Flow",
         "description": "Scaffold the Bubble Tea model for the overrides wizard, managing transitions between main screen and overrides sub-screens.",
         "details": "In `internal/tui/overrides_flow.go`, define a `Model` that wraps the specific sub-models (picker, url, confirm). Define messages `OverridesStartedMsg`, `OverridesAppliedMsg`, `OverridesCancelledMsg`. Implement the `Update` loop to handle switching between steps: Flags -> Steps -> URL -> Confirm. Integrate this as a new state in the main `internal/tui/tui.go` model.\n\n[2026-01-02] Added overrides flow scaffold (internal/tui/overrides_flow.go) with steps, messages, and basic navigation. Integrated into main TUI with ViewOverrides state and key 'o' to start; handles apply/cancel transitions. go test ./internal/tui passes.",
@@ -1546,7 +1546,7 @@
         "updatedAt": "2026-01-02T18:20:00.000Z"
       },
       {
-        "id": "6",
+        "id": 6,
         "title": "Develop Multi-select Flags Picker UI",
         "description": "Build a TUI component to allow users to select/deselect common oracle flags.",
         "details": "Create `internal/tui/overrides_flags.go`. Use `github.com/charmbracelet/bubbles/list` or a custom component. It should display a curated list of flags (e.g., `--debug`, `--json`). Allow multi-selection. Visually distinguish between baseline flags (pre-selected/immutable context) and override flags. Store selection in the `RuntimeOverrides` model.\n\n[2026-01-02] Added flags picker component in internal/tui/overrides_flags.go with multi-select, baseline handling, and custom delegate. Integrated into overrides flow flags step view. go test ./internal/tui passes.",
@@ -1622,7 +1622,7 @@
         "updatedAt": "2026-01-02T18:22:11.000Z"
       },
       {
-        "id": "7",
+        "id": 7,
         "title": "Develop Step Targeting and URL Input UI",
         "description": "Build TUI components for selecting target steps and entering the ChatGPT Project URL.",
         "details": "Create `internal/tui/overrides_steps.go` (list of steps from the pack, multi-select) and `internal/tui/overrides_url.go` (text input using `bubbles/textinput`). The step picker defaults to 'all selected'. The URL input validates simple URL format. Both update the shared `RuntimeOverrides` state.\n\n[2026-01-02] Added steps picker and URL input components (internal/tui/overrides_steps.go, internal/tui/overrides_url.go) and integrated into overrides flow with basic validation and navigation. Updated flow constructor to accept pack steps. go test ./internal/tui passes.",
@@ -1699,7 +1699,7 @@
         "updatedAt": "2026-01-02T18:24:41.000Z"
       },
       {
-        "id": "8",
+        "id": 8,
         "title": "Implement Confirmation Screen with Validation Trigger",
         "description": "Build the final summary screen that shows the diff and runs the validation logic before applying.",
         "details": "Create `internal/tui/overrides_confirm.go`. Display a summary of Added/Removed flags, URL, and count of targeted steps. On confirm key press (e.g., 'Enter'), trigger the validation runner (Task 4) via a `Cmd`. If validation fails, display the error (Step ID + Output) and allow retry. If success, return `OverridesAppliedMsg`.\n\n[2026-01-02] Added confirmation view and validation flow (internal/tui/overrides_confirm.go) with validation cmd, error handling, and OverridesAppliedMsg payload. Integrated confirm step into overrides flow and stored applied overrides in main model. go test ./internal/tui passes.",
@@ -1742,7 +1742,7 @@
         "updatedAt": "2026-01-02T18:27:40.000Z"
       },
       {
-        "id": "9",
+        "id": 9,
         "title": "Integrate Overrides into Execution Engine",
         "description": "Wire the runtime overrides into the actual step execution logic in the runner.",
         "details": "Modify `internal/app/app.go` or `internal/runner/runner.go` (where `RunStep` is called). The runner needs access to the `RuntimeOverrides` object. Inside the execution loop, before running a step script, call `overrides.EffectiveFlags(step.ID, baseline)`. Pass these effective flags to `InjectFlags` (Task 3). Ensure non-targeted steps run as normal.\n\n[2026-01-02] Integrated RuntimeOverrides into exec.Runner and RunStep (effective flags per step). Wired OverridesAppliedMsg to set runner overrides in TUI. go test ./internal/exec ./internal/tui passes.",
@@ -1795,7 +1795,7 @@
         "updatedAt": "2026-01-02T18:29:02.000Z"
       },
       {
-        "id": "10",
+        "id": 10,
         "title": "Add Main Screen Indicators and Final Polish",
         "description": "Update the main run screen to indicate when overrides are active to prevent user confusion.",
         "details": "In `internal/tui/tui.go`, checking `OverridesAppliedMsg` to update the main model state. Render a small status bar or badge (e.g., \"Overrides Active: +2 flags\") on the main view. Ensure the keybinding to open the overrides flow is visible in the help footer.\n\n[2026-01-02] Added overrides status indicator in main view, updated help text, and cleared overrides on cancel/reset. go test ./internal/tui passes.",
@@ -1871,7 +1871,7 @@
         "updatedAt": "2026-01-02T18:31:12.000Z"
       },
       {
-        "id": "11",
+        "id": 11,
         "title": "Post-implementation improvements",
         "description": "Capture follow-up improvements identified after overrides wizard work.",
         "details": "Improvements list:\\n- Add persistent help bar on main screen (outside viewport) for key shortcuts.\\n- Overrides confirm: show effective oracle flags + summarize validation errors (count/list).\\n- Clipboard fallback: write temp file on copy failure and notify.\\n- ROI filter persistence: save ROI mode/threshold on toggle + load on start.\\n- Add tests for URL picker, step preview, ROI persistence.\\n- Any other UI polish discovered during scan.",
@@ -1883,7 +1883,7 @@
         "updatedAt": "2026-01-02T22:30:18.523Z"
       },
       {
-        "id": "12",
+        "id": 12,
         "title": "Integrate Glow Markdown Rendering for TUI Viewport",
         "description": "Implement a width-aware Markdown rendering utility using Glamour and integrate it into the Bubble Tea viewport to display formatted content.",
         "details": "1. Create a new package `internal/render` and implement `RenderMarkdown(text string, width int, style string) (string, error)`. Use `github.com/charmbracelet/glamour` as the underlying engine. \n2. Configure Glamour to use a standard terminal style (e.g., 'dark' or 'light' based on TUI defaults) while ensuring the `glamour.WithWordWrap(width)` option is utilized to handle the viewport's dynamic sizing. \n3. In `internal/tui/tui.go`, modify the `Update` function to trigger a re-render of the current selection's description whenever a `tea.WindowSizeMsg` is received or the cursor selection changes. \n4. Update the viewport content using `viewport.SetContent()` with the output from the `render` package. \n5. Ensure the renderer is strictly a library call; do not invoke the Glow binary or TUI program directly. \n6. Handle potential rendering errors by falling back to raw text display to ensure the TUI remains functional.",
@@ -1906,6 +1906,696 @@
       "completedCount": 12,
       "tags": [
         "bugfix-tui"
+      ],
+      "created": "2026-01-08T01:17:51.784Z",
+      "description": "Tasks for bugfix-tui context",
+      "updated": "2026-01-08T01:17:51.784Z"
+    }
+  },
+  "feat-mcp": {
+    "tasks": [
+      {
+        "id": "1",
+        "title": "Initialize Project Structure and Environment Configuration",
+        "description": "Set up the oraclepack-mcp-server directory structure and implement the configuration loader for environment variables.",
+        "details": "Create the project structure: `oraclepack_mcp_server/` package, `requirements.txt`, and `README.md`. Implement `config.py` using `pydantic-settings` or a similar pattern to load: `ORACLEPACK_BIN`, `ORACLEPACK_ALLOWED_ROOTS` (comma-separated list), `ORACLEPACK_ENABLE_EXEC` (bool), `ORACLEPACK_MAX_READ_BYTES` (default 64KB), and `ORACLEPACK_MAX_OUTPUT_CHARS` (default 32000). Ensure the config loader handles defaults according to the PRD.",
+        "testStrategy": "Unit test the configuration loader to verify environment variables are correctly mapped to internal settings and defaults are applied when variables are missing.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Scaffold Project Directory and Metadata Files",
+            "description": "Initialize the base project structure including the main package directory and initial README.",
+            "dependencies": [],
+            "details": "Create the root directory 'oraclepack-mcp-server', the python package directory 'oraclepack_mcp_server/', an empty '__init__.py', and a 'README.md' documenting the purpose of the server.",
+            "status": "done",
+            "testStrategy": "Verify directory structure exists using 'ls -R' and ensure README.md is present.",
+            "updatedAt": "2026-01-08T01:25:12.977Z",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Define Project Dependencies and Requirements",
+            "description": "Create the requirements.txt file with all necessary libraries for the MCP server and configuration management.",
+            "dependencies": [
+              1
+            ],
+            "details": "Include 'pydantic-settings', 'mcp', and 'pytest' in 'requirements.txt'. Ensure versions are pinned or compatible with the target environment.",
+            "status": "done",
+            "testStrategy": "Run 'pip install -r requirements.txt' in a virtual environment to ensure all dependencies resolve without conflict.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-08T01:25:19.087Z"
+          },
+          {
+            "id": 3,
+            "title": "Implement Base Configuration Model with Pydantic",
+            "description": "Create oraclepack_mcp_server/config.py using pydantic-settings to manage environment variables.",
+            "dependencies": [
+              2
+            ],
+            "details": "Define a 'Settings' class that inherits from 'BaseSettings'. Map the variables: ORACLEPACK_BIN, ORACLEPACK_ALLOWED_ROOTS, ORACLEPACK_ENABLE_EXEC, ORACLEPACK_MAX_READ_BYTES, and ORACLEPACK_MAX_OUTPUT_CHARS.",
+            "status": "done",
+            "testStrategy": "Instantiate the Settings class in a script and print the default values to ensure they match the PRD requirements.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-08T01:25:36.703Z"
+          },
+          {
+            "id": 4,
+            "title": "Configure Type Parsing and Default Values",
+            "description": "Implement specific parsing logic for list and boolean environment variables in config.py.",
+            "dependencies": [
+              3
+            ],
+            "details": "Ensure ORACLEPACK_ALLOWED_ROOTS handles comma-separated strings into a list of strings/paths. Set defaults: MAX_READ_BYTES to 65536 and MAX_OUTPUT_CHARS to 32000. Set 'env_prefix' to '' if needed.",
+            "status": "done",
+            "testStrategy": "Manually set environment variables like 'ORACLEPACK_ALLOWED_ROOTS=/tmp,/var' and verify the loaded model contains a list of two items.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-08T01:25:36.708Z"
+          },
+          {
+            "id": 5,
+            "title": "Develop Configuration Unit Test Suite",
+            "description": "Create a test suite to validate the environment configuration loader.",
+            "dependencies": [
+              4
+            ],
+            "details": "Create 'tests/test_config.py'. Write tests to check default value assignment and ensure that providing environment variables correctly overrides the defaults. Test the parsing of the comma-separated roots.",
+            "status": "done",
+            "testStrategy": "Run 'pytest tests/test_config.py' and ensure all assertions for value mapping and type conversion pass.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-08T01:26:18.788Z"
+          }
+        ],
+        "updatedAt": "2026-01-08T01:26:18.788Z"
+      },
+      {
+        "id": "2",
+        "title": "Implement Security and Path Resolution Service",
+        "description": "Develop the security module to handle path validation and execution gating.",
+        "details": "Implement `security.py`. Create a `validate_path` function that resolves paths and ensures they reside within `ORACLEPACK_ALLOWED_ROOTS` using `pathlib.Path.resolve()` and `os.path.commonpath`. Implement an `is_exec_enabled` check that strictly evaluates `ORACLEPACK_ENABLE_EXEC`. Logic must reject any path escaping the allowed roots with a clear error.",
+        "testStrategy": "Test `validate_path` with relative paths, symlinks (if applicable), and paths outside the allowed roots. Verify that `is_exec_enabled` reflects the boolean state of the environment flag.",
+        "priority": "high",
+        "dependencies": [
+          "1"
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Initialize security module and configuration loading",
+            "description": "Create the security.py module and implement configuration retrieval for security settings.",
+            "dependencies": [],
+            "details": "Create 'src/oraclepack/security.py'. Implement logic to parse 'ORACLEPACK_ALLOWED_ROOTS' from the environment as a list of absolute paths. Ensure 'ORACLEPACK_ENABLE_EXEC' is correctly interpreted as a boolean value.",
+            "status": "done",
+            "testStrategy": "Verify that environment variables are correctly parsed into internal constants within the security module.",
+            "updatedAt": "2026-01-08T01:27:27.798Z",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Implement execution gating logic",
+            "description": "Develop the is_exec_enabled function to control access to execution features.",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement 'is_exec_enabled()' in 'security.py'. This function should return the boolean state of 'ORACLEPACK_ENABLE_EXEC'. It must strictly evaluate the setting to prevent unauthorized subprocess execution.",
+            "status": "done",
+            "testStrategy": "Unit test is_exec_enabled with various environment configurations (True, False, unset).",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-08T01:27:27.803Z"
+          },
+          {
+            "id": 3,
+            "title": "Implement secure path resolution and validation",
+            "description": "Develop the validate_path function using pathlib and os.path.commonpath for root enforcement.",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement 'validate_path(user_path: str) -> Path'. Use 'pathlib.Path(user_path).resolve()' to obtain the absolute path. Compare this resolved path against the list of 'ORACLEPACK_ALLOWED_ROOTS' using 'os.path.commonpath' to ensure no path traversal or root escapes occur.",
+            "status": "done",
+            "testStrategy": "Test with valid internal paths, relative paths, and paths attempting traversal (e.g., ../../etc/passwd).",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-08T01:27:27.808Z"
+          },
+          {
+            "id": 4,
+            "title": "Implement security exception handling",
+            "description": "Define and integrate custom security exceptions for path and execution violations.",
+            "dependencies": [
+              3
+            ],
+            "details": "Define a 'SecurityError' exception class. Update 'validate_path' to raise this exception with a clear, descriptive message when a path is found outside the allowed roots. Ensure messages do not leak sensitive system structure.",
+            "status": "done",
+            "testStrategy": "Assert that SecurityError is raised when providing paths outside the defined ORACLEPACK_ALLOWED_ROOTS.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-08T01:27:27.812Z"
+          },
+          {
+            "id": 5,
+            "title": "Create comprehensive security test suite",
+            "description": "Develop a dedicated test file to verify all security constraints and edge cases.",
+            "dependencies": [
+              2,
+              3,
+              4
+            ],
+            "details": "Create 'tests/test_security.py'. Include test cases for symlink resolution, multiple allowed roots, empty root lists, and the interaction between relative paths and the current working directory in 'validate_path'.",
+            "status": "done",
+            "testStrategy": "Execute pytest on the new test file and ensure 100% coverage of security logic branches.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-08T01:27:27.816Z"
+          }
+        ],
+        "updatedAt": "2026-01-08T01:27:27.816Z"
+      },
+      {
+        "id": "3",
+        "title": "Develop Oraclepack CLI Async Subprocess Wrapper",
+        "description": "Create a robust wrapper for calling the oraclepack CLI with timeout and truncation handling.",
+        "details": "Implement `oraclepack_cli.py`. Use `asyncio.create_subprocess_exec` to run the `oraclepack` binary. Capture stdout/stderr. Implement character-based truncation logic for tool outputs based on `ORACLEPACK_MAX_OUTPUT_CHARS`. Handle timeouts by returning exit code 124. The runner should return a structured object: `{ok, exit_code, duration_s, stdout, stderr, stdout_truncated, stderr_truncated}`.",
+        "testStrategy": "Mock the subprocess call to test truncation logic, timeout handling (using `asyncio.wait_for`), and successful capture of exit codes/output.",
+        "priority": "high",
+        "dependencies": [
+          "1",
+          "2"
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Define OraclepackResult Dataclass and Config Constants",
+            "description": "Create the data structure for the CLI output and initialize configuration from environment variables.",
+            "dependencies": [],
+            "details": "In oraclepack_cli.py, define a dataclass 'OraclepackResult' with fields: ok (bool), exit_code (int), duration_s (float), stdout (str), stderr (str), stdout_truncated (bool), and stderr_truncated (bool). Load 'ORACLEPACK_MAX_OUTPUT_CHARS' from the environment with a sensible default.",
+            "status": "done",
+            "testStrategy": "Verify that the dataclass can be instantiated and environment variables are correctly read using unit tests.",
+            "updatedAt": "2026-01-08T01:28:32.443Z",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Implement Output Truncation Logic",
+            "description": "Develop a helper function to truncate stdout/stderr based on character limits.",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement a helper function that takes a string and the max character limit. It should return a tuple of (truncated_string, was_truncated_bool). This logic will be applied to both stdout and stderr independently to ensure compliance with ORACLEPACK_MAX_OUTPUT_CHARS.",
+            "status": "done",
+            "testStrategy": "Unit test the truncation function with strings smaller than, equal to, and larger than the character limit.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-08T01:28:32.448Z"
+          },
+          {
+            "id": 3,
+            "title": "Implement Async Subprocess Execution Core",
+            "description": "Create the core runner using asyncio.create_subprocess_exec.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Implement the async function 'run_oraclepack_cli' that accepts a list of arguments. Use 'asyncio.create_subprocess_exec' with 'stdout=asyncio.subprocess.PIPE' and 'stderr=asyncio.subprocess.PIPE'. Capture the raw bytes and decode them using UTF-8 (handling errors gracefully).",
+            "status": "done",
+            "testStrategy": "Execute a simple command like 'echo' and verify that output is captured and decoded correctly.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-08T01:28:32.452Z"
+          },
+          {
+            "id": 4,
+            "title": "Add Timeout Handling and Execution Timing",
+            "description": "Integrate duration tracking and timeout logic using asyncio.wait_for.",
+            "dependencies": [
+              3
+            ],
+            "details": "Wrap the subprocess execution in 'asyncio.wait_for' using a configurable timeout. Use 'time.perf_counter()' to calculate 'duration_s'. If a 'TimeoutError' occurs, ensure the process is terminated and return an 'OraclepackResult' with 'exit_code' 124 and 'ok' set to False.",
+            "status": "done",
+            "testStrategy": "Test with a mock subprocess that sleeps longer than the timeout to verify 'exit_code' 124 and proper cleanup.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-08T01:28:32.456Z"
+          },
+          {
+            "id": 5,
+            "title": "Integrate Result Construction and Error Mapping",
+            "description": "Finalize the 'run_oraclepack_cli' function to return the structured result object.",
+            "dependencies": [
+              4
+            ],
+            "details": "Combine the captured exit code, timed duration, and truncated outputs into the 'OraclepackResult' object. Ensure 'ok' is True only if 'exit_code' is 0. Ensure all exceptions (like FileNotFoundError if the binary is missing) are caught and mapped to a failed 'OraclepackResult'.",
+            "status": "done",
+            "testStrategy": "Comprehensive unit tests using 'unittest.mock' to simulate various exit codes and output sizes.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-08T01:28:32.459Z"
+          }
+        ],
+        "updatedAt": "2026-01-08T01:28:32.459Z"
+      },
+      {
+        "id": "4",
+        "title": "Implement Action Pack Validation and Detection Logic",
+        "description": "Implement the logic for Stage-2 validation and directory/file detection for Action Packs.",
+        "details": "Develop validation logic to enforce exactly one file per prefix `01..20`. Implement detection for 'auto', explicit directory, and explicit file modes. Validation must check for the 'single bash fence' constraint and valid step headers in markdown files. If invalid, return a dictionary containing `missing` and `ambiguous` sets for the prefixes.",
+        "testStrategy": "Create a test suite with various directory structures: missing prefixes, multiple files with same prefix, invalid bash fences, and correct structures to verify deterministic results.",
+        "priority": "medium",
+        "dependencies": [
+          "3"
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Define Validation Result Schemas and Constants",
+            "description": "Establish the data structures and constants required for Stage-2 validation, including prefix ranges and error reporting structures.",
+            "dependencies": [],
+            "details": "Create or update a module (e.g., `src/models.py` or `src/validator.py`) to define a `ValidationResult` object. This must include fields for 'missing' and 'ambiguous' sets to track prefixes 01 through 20. Define constants for the supported prefix regex and range limits.",
+            "status": "done",
+            "testStrategy": "Unit tests to verify that the ValidationResult object correctly handles set operations and serialization.",
+            "updatedAt": "2026-01-08T01:29:43.273Z",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Implement Action Pack Path Detection Logic",
+            "description": "Develop the logic to resolve Action Pack locations based on 'auto', explicit directory, and explicit file modes.",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement a resolver that: 1. In 'auto' mode, searches the current and parent directories for valid Action Pack structures. 2. In 'directory' mode, validates the contents of a specific path. 3. In 'file' mode, treats a single file as an Action Pack. Ensure integration with the security module's path validation.",
+            "status": "done",
+            "testStrategy": "Test with various filesystem layouts: single files, nested directories, and missing paths to ensure correct mode selection.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-08T01:29:43.278Z"
+          },
+          {
+            "id": 3,
+            "title": "Implement Prefix Collision and Gap Detection",
+            "description": "Create the scanner that enforces the 'exactly one file per prefix' rule for prefixes 01..20.",
+            "dependencies": [
+              2
+            ],
+            "details": "Implement logic to iterate through files in a detected directory, extract numerical prefixes (01-20), and group them. Return prefixes with multiple file matches in the 'ambiguous' set and prefixes with zero matches in the 'missing' set. Ignore files that do not follow the prefix convention.",
+            "status": "done",
+            "testStrategy": "Provide directories with duplicate prefixes (e.g., 01-a.md and 01-b.md) and skipped prefixes (e.g., 01, 03) to verify set populations.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-08T01:29:43.282Z"
+          },
+          {
+            "id": 4,
+            "title": "Implement Markdown Content and Step Header Validation",
+            "description": "Develop the parser to enforce the 'single bash fence' and valid header constraints within markdown files.",
+            "dependencies": [
+              3
+            ],
+            "details": "For each file in the Action Pack, parse the markdown content to ensure it contains exactly one triple-backtick bash code block. Additionally, verify that the file begins with a valid step header (e.g., '# Step XX: Title'). Return specific errors if multiple fences or invalid headers are found.",
+            "status": "done",
+            "testStrategy": "Unit tests using raw strings of markdown representing valid, multiple-fence, zero-fence, and malformed header scenarios.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-08T01:29:43.286Z"
+          },
+          {
+            "id": 5,
+            "title": "Integrate Validation Engine and Execute Comprehensive Test Suite",
+            "description": "Combine detection, prefix, and content validation into a single workflow and verify against the requirements.",
+            "dependencies": [
+              4
+            ],
+            "details": "Expose a main `validate_action_pack` function that orchestrates the previous steps. Implement a full test suite as described in the parent task, covering all edge cases (missing prefixes, ambiguity, invalid fences) to ensure deterministic results as required by the spec.",
+            "status": "done",
+            "testStrategy": "Integration tests using temporary directories and files to simulate real-world Action Pack structures and verify the final dictionary output.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-08T01:29:43.291Z"
+          }
+        ],
+        "updatedAt": "2026-01-08T01:29:43.291Z"
+      },
+      {
+        "id": "5",
+        "title": "Implement MCP Server Core and Transports",
+        "description": "Set up the MCP server using the Python SDK, supporting both stdio and streamable-http transports.",
+        "details": "Implement `server.py` and `__main__.py` using the `mcp` Python library (Anthropic). Support `--transport stdio` and `--transport streamable-http`. For HTTP, implement Origin validation and localhost binding with basic authentication as specified. Ensure `stdio` mode does not interleave logs on stdout by redirecting application logs to stderr.",
+        "testStrategy": "Start the server in both modes. Use an MCP inspector or client to verify connection. Test HTTP origin validation by sending requests with unauthorized Origin headers.",
+        "priority": "high",
+        "dependencies": [
+          "1",
+          "2",
+          "3"
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Initialize MCP Server and Configure Stderr Logging",
+            "description": "Create the core MCP server instance and set up logging to stderr.",
+            "dependencies": [],
+            "details": "Initialize `mcp.server.Server` in `oraclepack/server.py`. Configure the Python logging module to direct all logs to `sys.stderr` to prevent interference with the `stdio` transport protocol on `stdout`. Set the server name and version metadata.",
+            "status": "done",
+            "testStrategy": "Verify that logging output appears in the terminal's stderr while stdout remains empty or reserved for MCP frames.",
+            "updatedAt": "2026-01-08T01:31:52.674Z",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Implement CLI Argument Parsing in __main__.py",
+            "description": "Develop the entry point for the MCP server with support for transport selection.",
+            "dependencies": [
+              1
+            ],
+            "details": "Use `argparse` to implement CLI flags: `--transport` (choices: `stdio`, `streamable-http`), `--host`, `--port`, `--auth-token`, and `--allowed-origins`. Ensure the script correctly routes execution to the selected transport handler.",
+            "status": "done",
+            "testStrategy": "Run the module with various flag combinations and verify correct argument parsing using print/log statements.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-08T01:31:52.679Z"
+          },
+          {
+            "id": 3,
+            "title": "Implement Stdio Transport Runner",
+            "description": "Set up the asynchronous loop for handling MCP communication over standard input/output.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Implement the logic to run the server using `mcp.server.stdio.stdio_server`. Ensure that the server handles the initialization handshake and gracefully shuts down on EOF or SIGINT.",
+            "status": "done",
+            "testStrategy": "Use the MCP Inspector or a simple Python client to connect via stdio and verify the 'initialize' request-response cycle.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-08T01:31:52.684Z"
+          },
+          {
+            "id": 4,
+            "title": "Implement Streamable-HTTP Transport with Security Controls",
+            "description": "Develop the HTTP transport layer with Origin validation and basic authentication.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Implement an SSE-based transport (Server-Sent Events) for the MCP server. Add middleware or logic to validate the 'Origin' header against `--allowed-origins`. Enforce localhost binding by default and implement basic token-based authentication for incoming HTTP connections.",
+            "status": "done",
+            "testStrategy": "Attempt to connect via HTTP with unauthorized Origin headers or missing auth tokens and verify 403/401 responses. Verify successful connection from allowed origins.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-08T01:31:52.689Z"
+          },
+          {
+            "id": 5,
+            "title": "Register Tools and Integrate Oraclepack Business Logic",
+            "description": "Expose the CLI wrapper and validation logic as MCP tools.",
+            "dependencies": [
+              3,
+              4
+            ],
+            "details": "Register tools on the server instance using `@server.list_tools()` and `@server.call_tool()`. Map MCP tool calls to the `oraclepack_cli` wrapper (Task 3) and validation services (Task 4). Ensure output truncation and security path checks are applied to all tool executions.",
+            "status": "done",
+            "testStrategy": "Invoke registered tools via an MCP client and verify that the output matches expected results from the oraclepack CLI, including proper error handling for invalid paths.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-08T01:31:52.694Z"
+          }
+        ],
+        "updatedAt": "2026-01-08T01:31:52.694Z"
+      },
+      {
+        "id": "6",
+        "title": "Expose Read-Only MCP Tools",
+        "description": "Register and implement the read-only tools: oraclepack_list_packs, oraclepack_read_file, and oraclepack_validate.",
+        "details": "Annotate tools as 'read-only' in MCP metadata. `oraclepack_read_file` must enforce `ORACLEPACK_MAX_READ_BYTES` and `ORACLEPACK_ALLOWED_ROOTS`. `oraclepack_validate` uses logic from Task 4. Implement response formatters that support Markdown and JSON output with truncation indicators.",
+        "testStrategy": "Call each read-only tool via an MCP client. Verify that `oraclepack_read_file` rejects unauthorized paths and truncates large files.",
+        "priority": "medium",
+        "dependencies": [
+          "4",
+          "5"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-01-08T01:32:32.688Z"
+      },
+      {
+        "id": "7",
+        "title": "Expose Execution and Taskify MCP Tools",
+        "description": "Register and implement destructive tools: oraclepack_run_pack and oraclepack_taskify_run_action_pack.",
+        "details": "Annotate tools as destructive/open-world. These tools MUST check `ORACLEPACK_ENABLE_EXEC` before proceeding. Implement `taskify.py` helpers to facilitate action pack execution. The tools should map CLI flags like `--no-tui`, `--out-dir`, and `--oracle-bin` from MCP arguments to the subprocess call.",
+        "testStrategy": "Verify that execution fails with a clear error when `ORACLEPACK_ENABLE_EXEC=0`. When enabled, verify the subprocess receives the correct flags and returns the expected result payload.",
+        "priority": "medium",
+        "dependencies": [
+          "4",
+          "5"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-01-08T01:32:32.692Z"
+      },
+      {
+        "id": "8",
+        "title": "Implement Oraclepack Prompt Generator",
+        "description": "Develop a utility to generate prompts for agents based on action pack structures.",
+        "details": "Implement a helper within `taskify.py` or a new module that generates a system prompt or instruction block. This should describe how the agent should interact with the validated action pack and what artifacts to expect. Integrate this into the tool outputs where relevant.",
+        "testStrategy": "Validate that the generated prompt correctly reflects the action pack's steps and requirements.",
+        "priority": "low",
+        "dependencies": [
+          "4"
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Define Prompt Templates for Action Pack Interaction",
+            "description": "Create a collection of string templates that describe how an agent should handle Action Packs.",
+            "dependencies": [],
+            "details": "Establish constant string templates in a new 'prompts.py' module or within 'taskify.py'. These templates must explain the '01-20' prefix sequencing, the single-bash-fence requirement, and the handling of markdown headers.",
+            "status": "done",
+            "testStrategy": "Verify that templates contain placeholders for dynamic content like step names and pack descriptions.",
+            "updatedAt": "2026-01-08T01:33:40.953Z",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Implement the Prompt Generation Logic",
+            "description": "Develop a function to assemble the final system prompt based on validated Action Pack metadata.",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement 'generate_action_pack_prompt(metadata: dict) -> str'. This function will take the output from the Task 4 validator (prefixes, file paths, step titles) and inject them into the templates to create a coherent instruction block.",
+            "status": "done",
+            "testStrategy": "Unit test with various mock metadata structures to ensure correct string interpolation and formatting.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-08T01:33:40.959Z"
+          },
+          {
+            "id": 3,
+            "title": "Integrate Prompt Generator into Taskify Workflow",
+            "description": "Ensure the prompt is generated immediately after successful Action Pack validation.",
+            "dependencies": [
+              2
+            ],
+            "details": "Modify the main execution flow in 'taskify.py' to call the prompt generator once an Action Pack is identified and validated. Store the resulting string in the Action Pack state object.",
+            "status": "done",
+            "testStrategy": "Trace execution in 'taskify.py' to confirm the prompt is available in the final result object after validation.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-08T01:33:40.963Z"
+          },
+          {
+            "id": 4,
+            "title": "Expose Generated Prompt via MCP Tool Outputs",
+            "description": "Update the MCP server tool responses to include the generated instructions for the calling agent.",
+            "dependencies": [
+              3
+            ],
+            "details": "Modify 'server.py' or the tool registration logic so that tools returning Action Pack information include the generated prompt as part of the 'description' or a dedicated 'instructions' field in the JSON output.",
+            "status": "done",
+            "testStrategy": "Use an MCP inspector or client to call the tool and verify the 'instructions' field is present and correctly populated.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-08T01:33:40.967Z"
+          },
+          {
+            "id": 5,
+            "title": "End-to-End Validation of Agent Instructions",
+            "description": "Perform a full test to ensure the generated prompt effectively guides an agent through a sample Action Pack.",
+            "dependencies": [
+              4
+            ],
+            "details": "Create a complex sample Action Pack with 3+ steps. Run the generation logic and manually verify the prompt accurately describes the steps and constraints (bash fences, sequence).",
+            "status": "done",
+            "testStrategy": "Functional test using a real or mocked LLM agent to see if it follows the generated instructions for the sample pack.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-08T01:33:40.970Z"
+          }
+        ],
+        "updatedAt": "2026-01-08T01:33:40.970Z"
+      },
+      {
+        "id": "9",
+        "title": "Verbose Payload Rendering and Artifact Summarizer",
+        "description": "Implement the Verbose Payload Rendering TUI and the artifact summarizer.",
+        "details": "Create a summarizer that reports the presence/absence of expected artifacts (e.g., reports, logs). For the TUI aspect (if consumed via MCP), ensure the JSON response includes a 'verbose_rendering' field containing a Markdown-formatted summary of the execution payload for easier reading by the agent/user.",
+        "testStrategy": "Run a pack and check that the artifact summary accurately reflects the files created on disk. Verify the markdown rendering is valid and legible.",
+        "priority": "low",
+        "dependencies": [
+          "7"
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Define Artifact Summarizer Interface",
+            "description": "Create a module to define expected artifacts and check their presence on the filesystem.",
+            "dependencies": [],
+            "details": "Implement an `ArtifactSummarizer` class that accepts a list of expected file patterns or paths. It should provide a `summarize()` method that returns a dictionary mapping file paths to their status (exists, missing) and basic metadata (size).",
+            "status": "done",
+            "testStrategy": "Unit test with mock filesystem to verify that the summarizer correctly identifies present and absent files based on patterns.",
+            "updatedAt": "2026-01-08T01:34:30.654Z",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Implement Markdown Rendering Utility",
+            "description": "Develop a utility function to convert execution results into a formatted Markdown string.",
+            "dependencies": [
+              1
+            ],
+            "details": "Create a `render_verbose_summary` function that takes execution outputs, artifact status, and pack metadata to produce a structured Markdown document. Use tables for artifacts and code blocks for log snippets.",
+            "status": "done",
+            "testStrategy": "Verify the generated Markdown string against a schema and ensure it renders correctly in a standard Markdown viewer.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-08T01:34:30.658Z"
+          },
+          {
+            "id": 3,
+            "title": "Integrate Summarizer into Execution Flow",
+            "description": "Update the core execution logic to trigger artifact summarization after a pack run.",
+            "dependencies": [
+              1
+            ],
+            "details": "Modify the main execution entry point (e.g., in `taskify.py` or `runner.py`) to call the `ArtifactSummarizer` once the process completes. Capture the results for inclusion in the final response payload.",
+            "status": "done",
+            "testStrategy": "Integration test: Run a sample pack and verify that the internal result object contains the summarized artifact information.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-08T01:34:30.663Z"
+          },
+          {
+            "id": 4,
+            "title": "Update MCP Server Response Payload",
+            "description": "Modify the MCP server tool handlers to include the 'verbose_rendering' field.",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "Update the tool execution logic in `server.py` to include the 'verbose_rendering' key in the JSON response. This field should contain the Markdown output from the rendering utility.",
+            "status": "done",
+            "testStrategy": "Use an MCP client to call a tool and verify that the JSON response includes a valid 'verbose_rendering' Markdown string.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-08T01:34:30.666Z"
+          },
+          {
+            "id": 5,
+            "title": "Implement File-Based Log Summarization",
+            "description": "Add logic to extract and summarize tail-end logs or specific report contents into the verbose rendering.",
+            "dependencies": [
+              2,
+              4
+            ],
+            "details": "Enhance the summarizer to read the last N lines of log files or extract key metrics from report files (like JSON summaries) and inject them into the Markdown rendering for immediate visibility.",
+            "status": "done",
+            "testStrategy": "Run a pack that generates a log file; verify that the 'verbose_rendering' includes the expected log tail or report summary.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-08T01:34:30.671Z"
+          }
+        ],
+        "updatedAt": "2026-01-08T01:34:30.671Z"
+      },
+      {
+        "id": "10",
+        "title": "Final Integration and MCP Compliance Testing",
+        "description": "Perform end-to-end testing of the MCP server to ensure all derived actions (A01-A26) are satisfied.",
+        "details": "Conduct a full pass of the derived actions. Verify deterministic outputs, truncation flags, timeout exit codes, and prefix validation logic. Ensure the repository includes final documentation in README.md explaining how to connect an agent (like Claude Desktop) to the MCP server.",
+        "testStrategy": "Automated integration test suite that spins up the server and uses an MCP client to execute a battery of tool calls against a controlled filesystem environment.",
+        "priority": "high",
+        "dependencies": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9"
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Establish E2E Integration Test Harness",
+            "description": "Create a robust integration test suite that spawns the MCP server as a subprocess and interacts with it using a client mock.",
+            "dependencies": [],
+            "details": "Implement a testing framework in `tests/integration/` using `pytest` and `pytest-asyncio`. Use the `mcp` Python SDK to create a client that connects via stdio to the server. Include utility functions to prepare a temporary 'sandbox' filesystem environment.",
+            "status": "done",
+            "testStrategy": "Verify the harness can successfully launch the server, call the 'list_tools' method, and receive a valid JSON-RPC response.",
+            "updatedAt": "2026-01-08T01:36:03.222Z",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Validate Path Security and Sandbox Constraints (A01-A08)",
+            "description": "Verify that all file-based actions strictly adhere to ORACLEPACK_ALLOWED_ROOTS and prevent path traversal.",
+            "dependencies": [
+              1
+            ],
+            "details": "Create test cases that attempt to access files outside of the configured `ORACLEPACK_ALLOWED_ROOTS`. Specifically test relative paths (`../`), symlinks (if supported), and absolute paths. Ensure the server returns deterministic error codes and does not leak system information.",
+            "status": "done",
+            "testStrategy": "Automated tests asserting that calls to tools like 'cat' or 'ls' outside the sandbox return a 'Permission Denied' or similar structured error.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-08T01:36:03.227Z"
+          },
+          {
+            "id": 3,
+            "title": "Verify Output Truncation and Timeout Logic (A09-A20)",
+            "description": "Ensure the server correctly handles large outputs and long-running subprocesses according to configuration.",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement tests for `ORACLEPACK_MAX_OUTPUT_CHARS` limits. Verify that stdout is truncated correctly and the 'truncated' flag is set in the response. Test timeout scenarios where a command exceeds the allowed duration, ensuring the exit code 124 is caught and reported correctly.",
+            "status": "done",
+            "testStrategy": "Execute commands generating large byte streams and commands with 'sleep' to verify truncation thresholds and timeout triggers.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-08T01:36:03.231Z"
+          },
+          {
+            "id": 4,
+            "title": "Perform MCP Protocol Compliance Audit (A21-A26)",
+            "description": "Ensure the server's tool definitions and JSON-RPC messaging fully comply with the Model Context Protocol specification.",
+            "dependencies": [
+              1
+            ],
+            "details": "Validate the schema of every tool exposed by the server. Ensure that types, required fields, and descriptions are present. Verify that logs are correctly directed to stderr to avoid corrupting the stdio transport channel.",
+            "status": "done",
+            "testStrategy": "Use an MCP Inspector tool or a protocol validator script to check the JSON-RPC message formats and schema definitions.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-08T01:36:03.235Z"
+          },
+          {
+            "id": 5,
+            "title": "Finalize README and Connection Documentation",
+            "description": "Update the project documentation to provide clear instructions for agent integration, specifically for Claude Desktop.",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "details": "Add a 'Deployment' section to `README.md`. Include a sample `claude_desktop_config.json` block showing how to configure the environment variables and the path to the executable. Document the purpose of each environment variable (ROOTS, EXEC, MAX_BYTES).",
+            "status": "done",
+            "testStrategy": "Manual verification by copying the documented configuration into a local Claude Desktop setup and confirming the server initializes and tools appear.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-08T01:36:03.239Z"
+          }
+        ],
+        "updatedAt": "2026-01-08T01:36:03.239Z"
+      }
+    ],
+    "metadata": {
+      "version": "1.0.0",
+      "lastModified": "2026-01-08T01:36:03.240Z",
+      "taskCount": 10,
+      "completedCount": 10,
+      "tags": [
+        "feat-mcp"
       ]
     }
   }

@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "oraclepack-mcp-server"
+version = "0.1.0"
+description = "MCP wrapper for oraclepack CLI"
+authors = [
+    { name = "Oraclepack Contributor" }
+]
+dependencies = [
+    "mcp[cli]>=0.1.0",
+    "pydantic-settings>=2.0.0",
+    "pydantic>=2.0.0",
+]
+requires-python = ">=3.10"
+
+[project.scripts]
+oraclepack-mcp = "oraclepack_mcp_server.__main__:main"

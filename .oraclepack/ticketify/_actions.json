@@ -1,0 +1,279 @@
+{
+  "actions": [
+    {
+      "action_id": "Expose Oraclepack as MCP-A01",
+      "kind": "task",
+      "source_line": 83,
+      "text": "Repository includes README.md, requirements.txt, and `oraclepack_mcp_server` package directory.",
+      "ticket_id": "Expose Oraclepack as MCP",
+      "ticket_path": ".tickets/mcp/Expose Oraclepack as MCP.md"
+    },
+    {
+      "action_id": "Expose Oraclepack as MCP-A02",
+      "kind": "task",
+      "source_line": 84,
+      "text": "Running `python -m oraclepack_mcp_server --transport stdio` is supported (starts server process).",
+      "ticket_id": "Expose Oraclepack as MCP",
+      "ticket_path": ".tickets/mcp/Expose Oraclepack as MCP.md"
+    },
+    {
+      "action_id": "Expose Oraclepack as MCP-A03",
+      "kind": "task",
+      "source_line": 85,
+      "text": "Running `python -m oraclepack_mcp_server --transport streamable-http` is supported (starts server process).",
+      "ticket_id": "Expose Oraclepack as MCP",
+      "ticket_path": ".tickets/mcp/Expose Oraclepack as MCP.md"
+    },
+    {
+      "action_id": "Expose Oraclepack as MCP-A04",
+      "kind": "task",
+      "source_line": 133,
+      "text": "Config loader reads the listed env vars and applies defaults as documented.",
+      "ticket_id": "Expose Oraclepack as MCP",
+      "ticket_path": ".tickets/mcp/Expose Oraclepack as MCP.md"
+    },
+    {
+      "action_id": "Expose Oraclepack as MCP-A05",
+      "kind": "task",
+      "source_line": 134,
+      "text": "Path resolution rejects paths outside allowed roots.",
+      "ticket_id": "Expose Oraclepack as MCP",
+      "ticket_path": ".tickets/mcp/Expose Oraclepack as MCP.md"
+    },
+    {
+      "action_id": "Expose Oraclepack as MCP-A06",
+      "kind": "task",
+      "source_line": 135,
+      "text": "File reads enforce max bytes and indicate truncation.",
+      "ticket_id": "Expose Oraclepack as MCP",
+      "ticket_path": ".tickets/mcp/Expose Oraclepack as MCP.md"
+    },
+    {
+      "action_id": "Expose Oraclepack as MCP-A07",
+      "kind": "task",
+      "source_line": 136,
+      "text": "Exec gating flag is available for run tools to check.",
+      "ticket_id": "Expose Oraclepack as MCP",
+      "ticket_path": ".tickets/mcp/Expose Oraclepack as MCP.md"
+    },
+    {
+      "action_id": "Expose Oraclepack as MCP-A08",
+      "kind": "task",
+      "source_line": 175,
+      "text": "Runner returns: ok, exit_code, duration_s, stdout, stderr, stdout_truncated, stderr_truncated.",
+      "ticket_id": "Expose Oraclepack as MCP",
+      "ticket_path": ".tickets/mcp/Expose Oraclepack as MCP.md"
+    },
+    {
+      "action_id": "Expose Oraclepack as MCP-A09",
+      "kind": "task",
+      "source_line": 176,
+      "text": "Timeout produces exit_code=124 (or equivalent) and includes a timeout message.",
+      "ticket_id": "Expose Oraclepack as MCP",
+      "ticket_path": ".tickets/mcp/Expose Oraclepack as MCP.md"
+    },
+    {
+      "action_id": "Expose Oraclepack as MCP-A10",
+      "kind": "task",
+      "source_line": 177,
+      "text": "Outputs are truncated to configured character limit and flags are set accordingly.",
+      "ticket_id": "Expose Oraclepack as MCP",
+      "ticket_path": ".tickets/mcp/Expose Oraclepack as MCP.md"
+    },
+    {
+      "action_id": "Expose Oraclepack as MCP-A11",
+      "kind": "task",
+      "source_line": 222,
+      "text": "Validation returns ok=false with `missing` when any prefix has no matches.",
+      "ticket_id": "Expose Oraclepack as MCP",
+      "ticket_path": ".tickets/mcp/Expose Oraclepack as MCP.md"
+    },
+    {
+      "action_id": "Expose Oraclepack as MCP-A12",
+      "kind": "task",
+      "source_line": 223,
+      "text": "Validation returns ok=false with `ambiguous` when any prefix has >1 match.",
+      "ticket_id": "Expose Oraclepack as MCP",
+      "ticket_path": ".tickets/mcp/Expose Oraclepack as MCP.md"
+    },
+    {
+      "action_id": "Expose Oraclepack as MCP-A13",
+      "kind": "task",
+      "source_line": 224,
+      "text": "Validation returns ok=true only when exactly one match exists for every prefix 01..20.",
+      "ticket_id": "Expose Oraclepack as MCP",
+      "ticket_path": ".tickets/mcp/Expose Oraclepack as MCP.md"
+    },
+    {
+      "action_id": "Expose Oraclepack as MCP-A14",
+      "kind": "task",
+      "source_line": 225,
+      "text": "Detection supports explicit dir and explicit file resolution and produces an `out_dir`.",
+      "ticket_id": "Expose Oraclepack as MCP",
+      "ticket_path": ".tickets/mcp/Expose Oraclepack as MCP.md"
+    },
+    {
+      "action_id": "Expose Oraclepack as MCP-A15",
+      "kind": "task",
+      "source_line": 226,
+      "text": "Detection supports \u201cauto\u201d and returns deterministic results for the same filesystem state.",
+      "ticket_id": "Expose Oraclepack as MCP",
+      "ticket_path": ".tickets/mcp/Expose Oraclepack as MCP.md"
+    },
+    {
+      "action_id": "Expose Oraclepack as MCP-A16",
+      "kind": "task",
+      "source_line": 276,
+      "text": "All tools listed in the parent ticket are registered and callable.",
+      "ticket_id": "Expose Oraclepack as MCP",
+      "ticket_path": ".tickets/mcp/Expose Oraclepack as MCP.md"
+    },
+    {
+      "action_id": "Expose Oraclepack as MCP-A17",
+      "kind": "task",
+      "source_line": 277,
+      "text": "`oraclepack_read_file` enforces allowed roots and max read bytes.",
+      "ticket_id": "Expose Oraclepack as MCP",
+      "ticket_path": ".tickets/mcp/Expose Oraclepack as MCP.md"
+    },
+    {
+      "action_id": "Expose Oraclepack as MCP-A18",
+      "kind": "task",
+      "source_line": 278,
+      "text": "`oraclepack_run_pack` and `oraclepack_taskify_run_action_pack` refuse execution unless `ORACLEPACK_ENABLE_EXEC=1`.",
+      "ticket_id": "Expose Oraclepack as MCP",
+      "ticket_path": ".tickets/mcp/Expose Oraclepack as MCP.md"
+    },
+    {
+      "action_id": "Expose Oraclepack as MCP-A19",
+      "kind": "task",
+      "source_line": 279,
+      "text": "Response formatter supports markdown and json outputs and includes truncation indicators.",
+      "ticket_id": "Expose Oraclepack as MCP",
+      "ticket_path": ".tickets/mcp/Expose Oraclepack as MCP.md"
+    },
+    {
+      "action_id": "Expose Oraclepack as MCP-A20",
+      "kind": "task",
+      "source_line": 321,
+      "text": "Running with `--transport stdio` is supported and does not interleave logs on stdout.",
+      "ticket_id": "Expose Oraclepack as MCP",
+      "ticket_path": ".tickets/mcp/Expose Oraclepack as MCP.md"
+    },
+    {
+      "action_id": "Expose Oraclepack as MCP-A21",
+      "kind": "task",
+      "source_line": 322,
+      "text": "Running with `--transport streamable-http` includes Origin validation and uses localhost binding + authentication (mechanism documented/implemented).",
+      "ticket_id": "Expose Oraclepack as MCP",
+      "ticket_path": ".tickets/mcp/Expose Oraclepack as MCP.md"
+    },
+    {
+      "action_id": "Expose Oraclepack as MCP-A22",
+      "kind": "task",
+      "source_line": 323,
+      "text": "Validate/list/read tools are annotated as read-only; run tools are annotated as destructive/open-world.",
+      "ticket_id": "Expose Oraclepack as MCP",
+      "ticket_path": ".tickets/mcp/Expose Oraclepack as MCP.md"
+    },
+    {
+      "action_id": "Expose Oraclepack as MCP-A23",
+      "kind": "task",
+      "source_line": 367,
+      "text": "Validation fails with a clear error when the action pack violates the \u201csingle bash fence\u201d constraint.",
+      "ticket_id": "Expose Oraclepack as MCP",
+      "ticket_path": ".tickets/mcp/Expose Oraclepack as MCP.md"
+    },
+    {
+      "action_id": "Expose Oraclepack as MCP-A24",
+      "kind": "task",
+      "source_line": 368,
+      "text": "Validation fails with a clear error when step headers do not meet the stated expectations.",
+      "ticket_id": "Expose Oraclepack as MCP",
+      "ticket_path": ".tickets/mcp/Expose Oraclepack as MCP.md"
+    },
+    {
+      "action_id": "Expose Oraclepack as MCP-A25",
+      "kind": "task",
+      "source_line": 369,
+      "text": "Artifact summarizer reports presence/absence of the example artifacts and returns a readable summary.",
+      "ticket_id": "Expose Oraclepack as MCP",
+      "ticket_path": ".tickets/mcp/Expose Oraclepack as MCP.md"
+    },
+    {
+      "action_id": "Expose Oraclepack as MCP-A26",
+      "kind": "task",
+      "source_line": 370,
+      "text": "Tool outputs are deterministic for the same filesystem state.",
+      "ticket_id": "Expose Oraclepack as MCP",
+      "ticket_path": ".tickets/mcp/Expose Oraclepack as MCP.md"
+    },
+    {
+      "action_id": "MCP Server for Oraclepack-A01",
+      "kind": "task",
+      "source_line": 114,
+      "text": "MCP server starts successfully in both `stdio` and `streamable-http` modes.",
+      "ticket_id": "MCP Server for Oraclepack",
+      "ticket_path": ".tickets/mcp/MCP Server for Oraclepack.md"
+    },
+    {
+      "action_id": "MCP Server for Oraclepack-A02",
+      "kind": "task",
+      "source_line": 115,
+      "text": "All listed tools are exposed with the documented names.",
+      "ticket_id": "MCP Server for Oraclepack",
+      "ticket_path": ".tickets/mcp/MCP Server for Oraclepack.md"
+    },
+    {
+      "action_id": "MCP Server for Oraclepack-A03",
+      "kind": "task",
+      "source_line": 116,
+      "text": "When `ORACLEPACK_ENABLE_EXEC!=1`, run tools refuse to execute and return a clear error; validate/list/read tools still work.",
+      "ticket_id": "MCP Server for Oraclepack",
+      "ticket_path": ".tickets/mcp/MCP Server for Oraclepack.md"
+    },
+    {
+      "action_id": "MCP Server for Oraclepack-A04",
+      "kind": "task",
+      "source_line": 117,
+      "text": "`oraclepack_read_file` rejects paths outside `ORACLEPACK_ALLOWED_ROOTS`.",
+      "ticket_id": "MCP Server for Oraclepack",
+      "ticket_path": ".tickets/mcp/MCP Server for Oraclepack.md"
+    },
+    {
+      "action_id": "MCP Server for Oraclepack-A05",
+      "kind": "task",
+      "source_line": 118,
+      "text": "Stage-2 validation enforces exactly one file per prefix `01`..`20` and returns `missing` and `ambiguous` sets when invalid.",
+      "ticket_id": "MCP Server for Oraclepack",
+      "ticket_path": ".tickets/mcp/MCP Server for Oraclepack.md"
+    },
+    {
+      "action_id": "MCP Server for Oraclepack-A06",
+      "kind": "task",
+      "source_line": 119,
+      "text": "Stage-2 detection resolves out-dir correctly for both:",
+      "ticket_id": "MCP Server for Oraclepack",
+      "ticket_path": ".tickets/mcp/MCP Server for Oraclepack.md"
+    },
+    {
+      "action_id": "MCP Server for Oraclepack-A07",
+      "kind": "task",
+      "source_line": 124,
+      "text": "stdout/stderr truncation and timeouts are enforced on CLI subprocess execution.",
+      "ticket_id": "MCP Server for Oraclepack",
+      "ticket_path": ".tickets/mcp/MCP Server for Oraclepack.md"
+    },
+    {
+      "action_id": "MCP Server for Oraclepack-A08",
+      "kind": "task",
+      "source_line": 125,
+      "text": "Tool annotations are applied as specified for read-only vs destructive tools.",
+      "ticket_id": "MCP Server for Oraclepack",
+      "ticket_path": ".tickets/mcp/MCP Server for Oraclepack.md"
+    }
+  ],
+  "count": 34,
+  "out_dir": ".oraclepack/ticketify",
+  "version": 1
+}

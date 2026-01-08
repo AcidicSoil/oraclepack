@@ -1,0 +1,16 @@
+README.md
+pyproject.toml
+oraclepack_mcp_server/__init__.py
+oraclepack_mcp_server/__main__.py
+oraclepack_mcp_server/config.py
+oraclepack_mcp_server/oraclepack_cli.py
+oraclepack_mcp_server/security.py
+oraclepack_mcp_server/server.py
+oraclepack_mcp_server/taskify.py
+oraclepack_mcp_server.egg-info/PKG-INFO
+oraclepack_mcp_server.egg-info/SOURCES.txt
+oraclepack_mcp_server.egg-info/dependency_links.txt
+oraclepack_mcp_server.egg-info/entry_points.txt
+oraclepack_mcp_server.egg-info/requires.txt
+oraclepack_mcp_server.egg-info/top_level.txt
+tests/test_config.py
