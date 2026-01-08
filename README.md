@@ -4,7 +4,7 @@
   <a href="https://github.com/acidicsoil/oraclepack/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/acidicsoil/oraclepack/actions/workflows/ci.yml/badge.svg" /></a>
   <a href="https://github.com/acidicsoil/oraclepack/actions/workflows/release.yml"><img alt="Release" src="https://github.com/acidicsoil/oraclepack/actions/workflows/release.yml/badge.svg" /></a>
   <a href="https://github.com/acidicsoil/oraclepack/releases/latest"><img alt="Release Version" src="https://img.shields.io/github/v/release/acidicsoil/oraclepack?sort=semver" /></a>
-  <a href="https://github.com/acidicsoil/oraclepack/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/github/license/acidicsoil/oraclepack" /></a>
+  <a href="https://github.com/acidicsoil/oraclepack/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-green" /></a>
   <a href="https://github.com/acidicsoil/oraclepack/blob/main/go.mod"><img alt="Go Version" src="https://img.shields.io/github/go-mod/go-version/acidicsoil/oraclepack" /></a>
 </p>
 
