@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "pack_hash": "",
+  "start_time": "0001-01-01T00:00:00Z",
+  "step_statuses": {},
+  "roi_threshold": 4.7,
+  "roi_mode": "over"
+}

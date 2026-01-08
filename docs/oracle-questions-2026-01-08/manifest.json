@@ -1,0 +1,103 @@
+{
+  "groups": [
+    {
+      "attached_paths": [
+        ".tickets/PRD-TUI/Oraclepack TUI Integration.md",
+        ".tickets/PRD-TUI/PRD-generator URL routing.md"
+      ],
+      "group": "PRD-TUI",
+      "original_tickets": [
+        ".tickets/PRD-TUI/Oraclepack TUI Integration.md",
+        ".tickets/PRD-TUI/PRD-generator URL routing.md"
+      ],
+      "out_dir": "docs/oracle-questions-2026-01-08/prd-tui",
+      "pack_path": "docs/oracle-questions-2026-01-08/packs/prd-tui.md",
+      "part": 1,
+      "slug": "prd-tui"
+    },
+    {
+      "attached_paths": [
+        ".tickets/actions/Enable Action Packs Dispatch.md",
+        ".tickets/actions/Improving Oraclepack Workflow.md",
+        ".tickets/actions/Oraclepack Action Pack Integration.md",
+        ".tickets/actions/Oraclepack Action Pack Issue.md",
+        ".tickets/actions/Oraclepack Action Packs.md",
+        ".tickets/actions/Oraclepack Compatibility Issues.md"
+      ],
+      "group": "actions",
+      "original_tickets": [
+        ".tickets/actions/Enable Action Packs Dispatch.md",
+        ".tickets/actions/Improving Oraclepack Workflow.md",
+        ".tickets/actions/Oraclepack Action Pack Integration.md",
+        ".tickets/actions/Oraclepack Action Pack Issue.md",
+        ".tickets/actions/Oraclepack Action Packs.md",
+        ".tickets/actions/Oraclepack Compatibility Issues.md"
+      ],
+      "out_dir": "docs/oracle-questions-2026-01-08/actions",
+      "pack_path": "docs/oracle-questions-2026-01-08/packs/actions.md",
+      "part": 1,
+      "slug": "actions"
+    },
+    {
+      "attached_paths": [
+        ".tickets/mcp/Expose Oraclepack as MCP.md",
+        ".tickets/mcp/MCP Server for Oraclepack.md",
+        ".tickets/mcp/gaps-still-not-covered.md",
+        ".tickets/mcp/gaps_part2-mcp-builder.md",
+        ".tickets/mcp/oraclepack-MCP.md",
+        ".tickets/mcp/oraclepack_mcp_server.md"
+      ],
+      "group": "mcp",
+      "original_tickets": [
+        ".tickets/mcp/Expose Oraclepack as MCP.md",
+        ".tickets/mcp/MCP Server for Oraclepack.md",
+        ".tickets/mcp/gaps-still-not-covered.md",
+        ".tickets/mcp/gaps_part2-mcp-builder.md",
+        ".tickets/mcp/oraclepack-MCP.md",
+        ".tickets/mcp/oraclepack_mcp_server.md"
+      ],
+      "out_dir": "docs/oracle-questions-2026-01-08/mcp",
+      "pack_path": "docs/oracle-questions-2026-01-08/packs/mcp.md",
+      "part": 1,
+      "slug": "mcp"
+    },
+    {
+      "attached_paths": [
+        ".tickets/Oraclepack File Storage.md",
+        ".tickets/Oraclepack Schema Approach.md",
+        ".tickets/Oraclepack bash fix.md",
+        ".tickets/Publish OraclePack MCP.md"
+      ],
+      "group": "misc",
+      "original_tickets": [
+        ".tickets/Oraclepack File Storage.md",
+        ".tickets/Oraclepack Schema Approach.md",
+        ".tickets/Oraclepack bash fix.md",
+        ".tickets/Publish OraclePack MCP.md"
+      ],
+      "out_dir": "docs/oracle-questions-2026-01-08/misc",
+      "pack_path": "docs/oracle-questions-2026-01-08/packs/misc.md",
+      "part": 1,
+      "slug": "misc"
+    },
+    {
+      "attached_paths": [
+        ".tickets/other/Oraclepack Pipeline Improvements.md",
+        ".tickets/other/Oraclepack Prompt Generator.md",
+        ".tickets/other/Oraclepack Workflow Enhancement.md",
+        ".tickets/other/Verbose Payload Rendering TUI.md"
+      ],
+      "group": "other",
+      "original_tickets": [
+        ".tickets/other/Oraclepack Pipeline Improvements.md",
+        ".tickets/other/Oraclepack Prompt Generator.md",
+        ".tickets/other/Oraclepack Workflow Enhancement.md",
+        ".tickets/other/Verbose Payload Rendering TUI.md"
+      ],
+      "out_dir": "docs/oracle-questions-2026-01-08/other",
+      "pack_path": "docs/oracle-questions-2026-01-08/packs/other.md",
+      "part": 1,
+      "slug": "other"
+    }
+  ]
+}
