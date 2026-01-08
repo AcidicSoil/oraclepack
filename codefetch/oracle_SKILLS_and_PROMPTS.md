@@ -2,6 +2,17 @@
 Project Structure:
 └── .config
     └── skills
+        ├── oraclepack-pipeline-improver
+        │   ├── assets
+        │   │   ├── backlog-template.md
+        │   │   ├── change-plan-template.md
+        │   │   └── normalized.example.jsonl
+        │   ├── references
+        │   │   ├── actionizer-spec.md
+        │   │   ├── cli-contract.md
+        │   │   ├── run-manifest-spec.md
+        │   │   └── stage1-prompt-metadata.md
+        │   └── SKILL.md
         └── oraclepack-tickets-pack
             ├── references
             │   ├── attachment-minimization.md
@@ -15,6 +26,136 @@ Project Structure:
 </filetree>
 
 <source_code>
+.config/skills/oraclepack-pipeline-improver/SKILL.md
+```
+---
+name: oraclepack-pipeline-improver
+description: Improve an oraclepack (Go wrapper around @steipete/oracle) pipeline by specifying/implementing deterministic validate→run→actionize behavior:strict pack validation, run manifests, stable run directories, resume/rerun semantics, concurrency/backoff, optional caching, and a Stage 3 “Actionizer” that converts 20 oracle outputs into actionable engineering work artifacts.
+metadata:
+  short-description: Deterministic oraclepack validate/run/actionize pipeline spec + implementation rails
+---
+
+## Quick start
+
+Use this skill when the user wants to:
+
+- make oraclepack runs deterministic and resume-safe,
+- add a strict validator and machine-readable outputs,
+- add Stage 3 “actionize” to convert the 20 question outputs into an actionable backlog/change plan,
+- make the pipeline CI-friendly and path-safe.
+
+Interpret the user’s free-text `{{args}}` as the target subset (validate/run/actionize/caching/CI) plus any paths to focus on.
+
+If repo context or current CLI behavior is missing, write **Unknown/TODO** and proceed with a spec-first answer.
+
+## Workflow
+
+### 1) Establish “observed vs proposed”
+
+1. List what inputs are available (repo files, current CLI help text, sample pack md, run output dirs).
+2. Split all statements into:
+   - **Observed** (backed by provided evidence),
+   - **Proposed** (the target contract to implement),
+   - **Unknown/TODO** (needs files/flags not provided).
+
+### 2) Define the target pipeline contract (deterministic by default)
+
+Produce a concrete contract for:
+
+- `oraclepack validate` (strict + JSON output),
+- `oraclepack run` (stable run dir + `run.json`/`steps.json` + outputs + resume/rerun),
+- `oraclepack actionize` (reads run dir and produces `actionizer/` artifacts),
+- CI mode behavior (non-interactive, structured logs, policy-driven exit codes),
+- Path safety for output writing.
+
+Use:
+
+- references/cli-contract.md
+- references/run-manifest-spec.md
+- references/actionizer-spec.md
+
+### 3) Map contract → implementation deltas (minimal, additive, backward-compatible)
+
+1. Identify current commands/flags and current on-disk layout (Observed).
+2. Propose additive changes:
+   - new flags and new subcommands should not break existing pack schema without an explicit migration path,
+   - new on-disk outputs should be in `.oraclepack/runs/<pack_id>/...` without removing legacy output locations (unless requested).
+3. For each proposed change, specify:
+   - code touchpoints (files/modules: **Unknown** if repo not provided),
+   - acceptance tests and fixtures,
+   - failure modes and user-visible error messages.
+
+### 4) Stage 1 prompt shaping (pack generation) to help Stage 3 parse reliably
+
+If the workflow includes Stage 1 pack generation:
+
+- propose embedding **mini-metadata inside each prompt** (does not change pack schema),
+- keep metadata parseable and consistent.
+
+Use references/stage1-prompt-metadata.md.
+
+### 5) Produce final deliverables (spec + plan, optionally code)
+
+Deliverables should be:
+
+1. **Pipeline contract** (validate/run/actionize + CI + safety).
+2. **On-disk schemas** (`run.json`, `steps.json`, `normalized.jsonl`, `backlog.md`, `change-plan.md`).
+3. **Acceptance criteria** and a minimal test plan.
+4. **Implementation plan** (ordered steps, smallest shippable increments).
+5. If code context is provided and the user wants implementation: output concrete file edits + new files.
+
+## Output contract
+
+Unless the user asks for something else, output a single Markdown report with:
+
+- **Scope** (what parts of validate/run/actionize/CI/caching are included)
+- **Observed current behavior** (or **Unknown**)
+- **Proposed contract** (link to reference sections where applicable)
+- **Disk layout + schemas**
+- **Acceptance criteria**
+- **Implementation plan** (phased; smallest first)
+- **Risks / unknowns**
+- **Missing inputs** (exact paths/flags/help output needed)
+
+If asked to generate templates, use the assets:
+
+- assets/backlog-template.md
+- assets/change-plan-template.md
+- assets/normalized.example.jsonl
+
+## Failure modes
+
+- Missing repo / CLI help / sample run dirs → mark **Unknown** and provide a spec-first response.
+- Missing definitions for CI thresholds / policies → include **TODO** defaults and clearly label them as policy choices.
+- Any “current behavior” claim without evidence → downgrade to **Unknown**.
+
+## Invocation examples
+
+1) Add strict validator + JSON output:
+
+- `$oraclepack-pipeline-improver Add oraclepack validate --strict --json; define schema checks and CI gating exit codes`
+
+1) Deterministic run dir + resume/rerun:
+
+- `$oraclepack-pipeline-improver Specify .oraclepack/runs/<pack_id>/ layout, run.json/steps.json, resume default, --rerun failed|all|01,03`
+
+1) Concurrency + backoff policy:
+
+- `$oraclepack-pipeline-improver Add --max-parallel N and transient error retry budget/backoff rules`
+
+1) Stage 3 Actionizer:
+
+- `$oraclepack-pipeline-improver Implement oraclepack actionize; generate normalized.jsonl + backlog.md + change-plan.md with stable IDs`
+
+1) CI mode:
+
+- `$oraclepack-pipeline-improver Provide run --ci --non-interactive --json-log and actionize --ci; policy-driven exit codes`
+
+1) Stage 1 prompt metadata shaping:
+
+- `$oraclepack-pipeline-improver Add prompt-embedded metadata (QuestionId/Category/Reference/ExpectedArtifacts) without changing pack schema`
+```
+
 .config/skills/oraclepack-tickets-pack/SKILL.md
 ```
 ---
@@ -155,6 +296,469 @@ This skill produces:
 - Attachment rules: `references/attachment-minimization.md`
 - Validator: `scripts/validate_pack.py`
 - Optional linter: `scripts/lint_attachments.py`
+```
+
+.config/skills/oraclepack-pipeline-improver/references/actionizer-spec.md
+```
+<!-- # path: oraclepack-pipeline-improver/references/actionizer-spec.md -->
+# Stage 3 “Actionizer” spec (proposed)
+
+Goal: deterministically convert the 20 outputs of a run into actionable engineering work artifacts, without duplicating work on reruns.
+
+## Inputs
+
+- `.oraclepack/runs/<pack_id>/run.json`
+- `.oraclepack/runs/<pack_id>/steps.json`
+- `.oraclepack/runs/<pack_id>/outputs/*`
+
+## Processing pipeline (deterministic)
+
+1) **Load** run + steps + outputs
+- If any output is missing, mark that step as `missing_output` in normalization.
+
+2) **Normalize** each step output into a stable record
+- Extract (when present):
+  - question metadata (QuestionId/Category/Reference/ExpectedArtifacts),
+  - recommended actions,
+  - evidence anchors (paths, symbols, commands),
+  - unknowns / missing inputs.
+- Classify:
+  - `actionable` (clear tasks),
+  - `blocked` (missing evidence prevents action),
+  - `conflict` (contradictory requirements/answers),
+  - `noop` (no action required).
+
+3) **Deduplicate** tasks across steps
+- Use stable task IDs derived from `pack_hash` + a stable task key (e.g., normalized title + target path).
+- Reruns must produce byte-identical outputs when inputs unchanged.
+
+4) **Generate** three core artifacts:
+- `normalized.jsonl` (machine-readable records)
+- `backlog.md` (human-prioritized tasks)
+- `change-plan.md` (ordered implementation plan, smallest-first)
+
+5) Optional exports:
+- `github-issues.json` (issue objects; exact schema TODO/Unknown)
+- `taskmaster.json` (taskmaster-style import; exact schema TODO/Unknown)
+
+## Output files
+
+### A) `actionizer/normalized.jsonl`
+
+One JSON object per line.
+
+**Proposed record fields:**
+- `pack_id` (string)
+- `pack_hash` (string)
+- `step_id` (string `"01"`..`"20"`)
+- `task_id` (string; stable)
+- `title` (string)
+- `status` (enum: `actionable` | `blocked` | `conflict` | `noop`)
+- `category` (string | null)
+- `reference` (string | null)
+- `expected_artifacts` (string[] | null)
+- `actions` (string[]) — concrete “do X” items
+- `evidence` (object)
+  - `paths` (string[])
+  - `symbols` (string[])
+  - `commands` (string[])
+- `notes` (string[])
+- `missing_inputs` (string[])
+
+### B) `actionizer/backlog.md`
+
+Use assets/backlog-template.md as the base.
+
+Rules:
+- Group by category (if present), else by subsystem (inferred from reference paths).
+- Include blocked/conflict items explicitly with “what evidence is needed”.
+
+### C) `actionizer/change-plan.md`
+
+Use assets/change-plan-template.md as the base.
+
+Rules:
+- Ordered, smallest shippable increments first.
+- Each step includes acceptance criteria and “done when…” checks.
+- If CI gating thresholds exist, include them; else mark TODO.
+
+## Handling blocked/conflict outputs
+
+- `blocked` must include a **single next smallest experiment** (one action) to obtain missing evidence.
+- `conflict` must include:
+  - conflicting statements,
+  - what file/path/log is needed to resolve,
+  - a proposed resolution strategy (flagged as Proposed).
+
+## Idempotency / stability requirements
+
+- Stable IDs (required):
+  - deterministic function of `pack_hash` + `step_id` + normalized title (or similar stable key).
+- Reruns:
+  - must not duplicate tasks,
+  - must regenerate byte-identical artifacts if inputs unchanged.
+```
+
+.config/skills/oraclepack-pipeline-improver/references/cli-contract.md
+```
+<!-- # path: oraclepack-pipeline-improver/references/cli-contract.md -->
+# oraclepack CLI contract (proposed)
+
+This document is the target CLI behavior to implement. If the current repo differs, treat that as **Observed** and this as **Proposed**.
+
+## Commands
+
+### 1) `oraclepack validate`
+
+**Goal:** Deterministically validate a pack file and (optionally) emit machine-readable results.
+
+**Proposed:**
+- `oraclepack validate <pack.md> [--strict] [--json]`
+
+**--strict checks (proposed minimum):**
+- Exactly **20** oracle invocations.
+- No schema drift vs expected pack format (**exact schema rules: TODO/Unknown** unless provided).
+- Each question has required fields present (as enforceable in current schema; else **TODO**).
+- Stable ordering checks (if applicable): ROI desc, effort asc (only if the pack uses those fields; else skip).
+
+**--json output (proposed):**
+- Print a single JSON object to stdout (or to a specified file if supported; **TODO**).
+- Include `ok: boolean`, `errors: []`, `warnings: []`, and per-question metadata when parseable.
+
+### 2) `oraclepack run`
+
+**Goal:** Execute the 20 steps into a deterministic run directory with resumable semantics.
+
+**Proposed:**
+- `oraclepack run <pack.md> [--max-parallel N] [--resume] [--rerun all|failed|01,03,07] [--ci] [--non-interactive] [--json-log]`
+
+**Run dir (proposed):**
+- Create: `.oraclepack/runs/<pack_id>/`
+- Emit at least:
+  - `.oraclepack/runs/<pack_id>/run.json`
+  - `.oraclepack/runs/<pack_id>/steps.json`
+  - `.oraclepack/runs/<pack_id>/outputs/` (20 files; naming convention below)
+  - `.oraclepack/runs/<pack_id>/logs/` (optional)
+
+**pack_id (proposed):**
+- `YYYY-MM-DD__<gitshort>__<packhash8>`
+- If git SHA unavailable: use `nogit` for `<gitshort>`.
+
+**Output naming (proposed):**
+- Prefer deterministic: `outputs/01.md` ... `outputs/20.md`
+- If a stable QuestionId exists: optionally include in filename, but do not break determinism.
+
+**Resume/rerun (proposed):**
+- Resume is default if the run dir already exists:
+  - skip steps already marked `ok` with matching output hash.
+- `--rerun failed` reruns only failed steps.
+- `--rerun all` reruns all steps.
+- `--rerun 01,03,07` reruns specified step IDs.
+
+**Concurrency (proposed):**
+- `--max-parallel N` bounds parallel provider calls.
+- Optional: per-provider caps via config (**TODO/Unknown**: config format).
+
+**Transient errors (proposed):**
+- Implement exponential backoff + jitter on retryable errors (e.g., 429/503) up to a retry budget.
+- Persist retry counts/outcomes into `steps.json`.
+
+### 3) `oraclepack actionize`
+
+**Goal:** Convert run outputs into actionable engineering work artifacts.
+
+**Proposed:**
+- `oraclepack actionize --run-dir .oraclepack/runs/<pack_id> [--ci]`
+
+**Inputs:**
+- `run.json`, `steps.json`
+- `outputs/` (20 outputs)
+
+**Outputs:**
+- `.oraclepack/runs/<pack_id>/actionizer/normalized.jsonl`
+- `.oraclepack/runs/<pack_id>/actionizer/backlog.md`
+- `.oraclepack/runs/<pack_id>/actionizer/change-plan.md`
+- Optional:
+  - `.oraclepack/runs/<pack_id>/actionizer/github-issues.json`
+  - `.oraclepack/runs/<pack_id>/actionizer/taskmaster.json`
+
+## CI mode (proposed)
+
+- `oraclepack run --ci --non-interactive --json-log`
+- `oraclepack actionize --ci`
+
+**Behavior (proposed):**
+- No TUI interaction.
+- Structured logs enabled (JSONL or JSON objects; **TODO/Unknown** exact format).
+- Exit codes are policy-driven:
+  - validation failures → non-zero
+  - run failures exceeding retry budget → non-zero
+  - optional policy thresholds (completion rate, action yield) → **TODO/Unknown** threshold values.
+
+## Security / path safety (proposed)
+
+- Prevent any output flag (including legacy `--write-output` if present) from writing outside the intended run directory.
+- Reject path traversal (e.g., `..`) and absolute paths when writing within `.oraclepack/runs/<pack_id>/...`.
+```
+
+.config/skills/oraclepack-pipeline-improver/references/run-manifest-spec.md
+```
+<!-- # path: oraclepack-pipeline-improver/references/run-manifest-spec.md -->
+# Run manifest spec (proposed)
+
+This defines the minimum content for run artifacts to enable traceability, resume/rerun, and Stage 3 processing.
+
+## `.oraclepack/runs/<pack_id>/run.json`
+
+**Required fields (proposed minimum):**
+- `pack_id` (string)
+- `pack_path` (string)
+- `pack_hash` (string; full hash)
+- `created_at` (RFC3339 string)
+- `git_sha` (string | null)
+- `oraclepack_version` (string | TODO if not available)
+- `oracle_version` (string | TODO if not available)
+- `max_parallel` (number | null)
+- `ci` (boolean)
+- `providers` (object | TODO if not available)
+- `models` (object | TODO if not available)
+
+**Notes:**
+- If any value cannot be derived, set it to `null` and record a `warnings[]` entry rather than inventing it.
+
+## `.oraclepack/runs/<pack_id>/steps.json`
+
+Represent steps as an array of 20 items ordered by `step_id`.
+
+**Per-step fields (proposed minimum):**
+- `step_id` (string `"01"`..`"20"`)
+- `question_id` (string | null) — if present in the pack/prompt metadata
+- `category` (string | null)
+- `reference` (string | null)
+- `invocation_hash` (string) — hash of canonical invocation inputs (prompt + attachments + provider/model knobs)
+- `output_path` (string)
+- `output_hash` (string | null)
+- `status` (enum: `pending` | `ok` | `failed` | `skipped`)
+- `attempts` (number)
+- `last_error` (string | null)
+- `started_at` (RFC3339 string | null)
+- `finished_at` (RFC3339 string | null)
+
+## Hashing (proposed)
+
+### `pack_hash`
+- Compute from a canonical representation of the pack file:
+  - normalize line endings,
+  - remove non-semantic whitespace if safe (TODO/Unknown: exact pack grammar),
+  - hash the resulting bytes.
+
+### `invocation_hash`
+- Compute from:
+  - prompt text (including embedded mini-metadata),
+  - attachment file contents (hash of contents, not just paths),
+  - provider + model identifiers,
+  - deterministic knobs (temperature, etc.) if applicable.
+
+If attachment content hashing cannot be performed, record **Unknown/TODO** and do not enable caching based on incomplete inputs.
+```
+
+.config/skills/oraclepack-pipeline-improver/references/stage1-prompt-metadata.md
+```
+<!-- # path: oraclepack-pipeline-improver/references/stage1-prompt-metadata.md -->
+# Stage 1 prompt-embedded metadata (proposed)
+
+Goal: improve downstream parsing for Stage 2/3 without changing the oracle pack schema.
+
+## Constraints
+
+- Do not change the pack’s structural schema unless an explicit migration path is provided.
+- Embed metadata inside the prompt text (the `-p` payload) in a parseable, consistent format.
+
+## Recommended metadata block (inside the prompt)
+
+Add at the *very top* of each prompt:
+
+```
+
+[oraclepack-meta]
+QuestionId: 07
+Category: permissions
+Reference: src/server/auth/middleware.ts
+ExpectedArtifacts:
+
+* src/server/auth/**
+* docs/plans/...
+  [/oraclepack-meta]
+
+```
+
+## Parsing rules (deterministic)
+
+- The block starts with `[oraclepack-meta]` and ends with `[/oraclepack-meta]`.
+- Keys are case-sensitive as shown.
+- Multi-line lists are allowed for `ExpectedArtifacts`.
+- If any key is missing, treat it as `null` and continue.
+
+## Minimal required keys (recommended)
+
+- QuestionId
+- Category
+- Reference
+- ExpectedArtifacts (optional but recommended)
+
+If the Stage 1 generator cannot produce these, it should write `Unknown` values explicitly rather than omitting keys.
+```
+
+.config/skills/oraclepack-pipeline-improver/assets/backlog-template.md
+```
+<!-- # path: oraclepack-pipeline-improver/assets/backlog-template.md -->
+# Oraclepack Actionizer Backlog
+
+Run:
+- pack_id: TODO
+- pack_hash: TODO
+- generated_at: TODO
+
+## Summary
+
+- Total tasks: TODO
+- Actionable: TODO
+- Blocked: TODO
+- Conflicts: TODO
+
+## P0 (do first)
+
+### <task_id> — <title>
+- Status: actionable | blocked | conflict | noop
+- Category: TODO
+- Reference: TODO
+- Expected artifacts: TODO
+- Actions:
+  - TODO
+- Evidence:
+  - Paths: TODO
+  - Symbols: TODO
+  - Commands: TODO
+- Done when:
+  - TODO
+
+## P1
+
+### <task_id> — <title>
+- (same fields)
+
+## Blocked / needs evidence
+
+### <task_id> — <title>
+- Missing inputs:
+  - TODO
+- Next smallest experiment (one action):
+  - TODO
+
+## Conflicts / needs resolution
+
+### <task_id> — <title>
+- Conflicting statements:
+  - TODO
+- What evidence resolves this:
+  - TODO
+- Proposed resolution (clearly marked as Proposed):
+  - TODO
+```
+
+.config/skills/oraclepack-pipeline-improver/assets/change-plan-template.md
+```
+<!-- # path: oraclepack-pipeline-improver/assets/change-plan-template.md -->
+# Oraclepack Change Plan
+
+Run:
+- pack_id: TODO
+- pack_hash: TODO
+- generated_at: TODO
+
+## Principles
+
+- Smallest shippable increments first.
+- Every step has an acceptance check.
+- Unknowns are explicit; no guessing.
+
+## Phase 0 — Guardrails (validate + safety)
+
+1) Implement/confirm strict validation (validate --strict --json)
+- Scope:
+  - TODO
+- Acceptance:
+  - TODO (e.g., rejects non-20 packs; emits JSON summary)
+- Tests:
+  - TODO (fixtures for invalid packs)
+
+2) Path safety for output writing
+- Scope:
+  - TODO
+- Acceptance:
+  - TODO (rejects .. traversal / absolute escape)
+- Tests:
+  - TODO
+
+## Phase 1 — Deterministic runs (run dir + manifests + resume)
+
+3) Stable run dir + run.json / steps.json
+- Scope:
+  - TODO
+- Acceptance:
+  - TODO (creates .oraclepack/runs/<pack_id>/..., stable naming)
+- Tests:
+  - TODO
+
+4) Resume default + --rerun semantics
+- Scope:
+  - TODO
+- Acceptance:
+  - TODO (interrupt + rerun skips completed via hashes)
+- Tests:
+  - TODO
+
+## Phase 2 — Reliability (concurrency + retries + optional caching)
+
+5) Concurrency cap
+- Scope:
+  - TODO
+- Acceptance:
+  - TODO (never exceeds N parallel calls)
+
+6) Retry/backoff on transient errors
+- Scope:
+  - TODO
+- Acceptance:
+  - TODO (bounded retries; recorded in steps.json)
+
+7) Optional caching (if enabled)
+- Scope:
+  - TODO
+- Acceptance:
+  - TODO (unchanged inputs cause zero provider calls)
+
+## Phase 3 — Actionizer (Stage 3)
+
+8) Implement actionize command and artifacts
+- Scope:
+  - normalized.jsonl + backlog.md + change-plan.md
+- Acceptance:
+  - TODO (byte-identical output on rerun with unchanged inputs)
+
+## CI integration (optional)
+
+9) Add CI mode wiring (run --ci --non-interactive --json-log; actionize --ci)
+- Policy thresholds:
+  - TODO/Unknown
+- Acceptance:
+  - TODO (exit codes match policy)
+```
+
+.config/skills/oraclepack-pipeline-improver/assets/normalized.example.jsonl
+```
+{"pack_id":"2026-01-05__nogit__deadbeef","pack_hash":"deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef","step_id":"07","task_id":"t_deadbeef_07_a1b2c3d4","title":"Define authorization boundary for server routes","status":"blocked","category":"permissions","reference":"src/server/auth/**","expected_artifacts":["src/server/auth/**","src/routes/**"],"actions":["Locate existing auth middleware/guards and document intended boundary","Add route guard checks or middleware wiring where missing"],"evidence":{"paths":["src/server/auth/**","src/routes/**"],"symbols":[],"commands":["ck --regex auth|permission|role src/server src/routes"]},"notes":["Auth wiring not evidenced in provided inputs"],"missing_inputs":["Repo paths containing current auth middleware or route guards (e.g., src/server/auth/**)","CLI help output for oraclepack validate/run/actionize (if already exists)"]}
+{"pack_id":"2026-01-05__nogit__deadbeef","pack_hash":"deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef","step_id":"13","task_id":"t_deadbeef_13_e5f6a7b8","title":"Bound upload persistence metadata and retention policy","status":"actionable","category":"caching/state","reference":"src/server/persistence/sessionUploads.server.ts","expected_artifacts":["src/server/persistence/**","docs/plans/**"],"actions":["Add explicit retention policy + max entries/size controls","Ensure metadata captured is sufficient for downstream analysis"],"evidence":{"paths":["src/server/persistence/sessionUploads.server.ts"],"symbols":["saveSessionUpload"],"commands":["ck --regex saveSessionUpload src"]},"notes":[],"missing_inputs":[]}
 ```
 
 .config/skills/oraclepack-tickets-pack/references/attachment-minimization.md

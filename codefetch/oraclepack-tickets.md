@@ -20,13 +20,1005 @@ Project Structure:
     │   ├── Oraclepack Prompt Generator.md
     │   ├── Oraclepack Workflow Enhancement.md
     │   └── Verbose Payload Rendering TUI.md
-    └── PRD-TUI
-        ├── Oraclepack TUI Integration.md
-        └── PRD-generator URL routing.md
+    ├── PRD-TUI
+    │   ├── Oraclepack TUI Integration.md
+    │   └── PRD-generator URL routing.md
+    ├── Oraclepack File Storage.md
+    ├── Oraclepack Schema Approach.md
+    ├── Oraclepack bash fix.md
+    └── Publish OraclePack MCP.md
 
 </filetree>
 
 <source_code>
+.tickets/Oraclepack File Storage.md
+```
+Parent Ticket:
+
+* Title: Stop oraclepack from writing run state/config JSON files into the project working directory
+* Summary: oraclepack currently writes per-pack `*.state.json`, `*.report.json`, and `*.chatgpt-urls.json` files into the repo/working directory. The requested change is to store these as config/state/cache outside the repo root (prefer XDG base dirs) and/or under a dedicated project-local `.oraclepack/` directory to avoid clutter.
+* Source:
+
+  * Link/ID: Not provided
+  * Original ticket excerpt (≤25 words) capturing the overall theme: “Move state/report outputs out of CWD by default… Stop producing per-pack `*.chatgpt-urls.json` by default.”
+* Global Constraints:
+
+  * Treat outputs as **config/state/cache** and store outside repo root using XDG base dirs (per ticket text).
+  * Use Go `os.UserConfigDir()` / `os.UserCacheDir()` for cross-platform defaults (per ticket text).
+  * No `UserStateDir()` in Go stdlib; implement `$XDG_STATE_HOME` fallback (per ticket text).
+* Global Environment:
+
+  * Unknown
+* Global Evidence:
+
+  * Current filenames mentioned: `<packBase>.state.json`, `<packBase>.report.json`, `<sameBase>.chatgpt-urls.json`.
+  * XDG Base Directory spec reference (background).
+  * Go `os.UserConfigDir` / `os.UserCacheDir` reference (background).
+
+Split Plan:
+
+* Coverage Map:
+
+  * Original item: “`oraclepack run` … derives filenames from the pack basename and writes them to the current working directory: `statePath := <packBase>.state.json`, `reportPath := <packBase>.report.json`”
+
+    * Assigned Ticket ID: T2
+  * Original item: “The TUI ‘ChatGPT URL picker’ then creates `<sameBase>.chatgpt-urls.json` next to the state file (or next to the pack file if statePath is empty).”
+
+    * Assigned Ticket ID: T3
+  * Original item: “It also defaults edits to **project scope**, so it will keep generating project-scoped stores unless the user explicitly switches to global.”
+
+    * Assigned Ticket ID: T3
+  * Original item: “Treat these as **config/state/cache** and store them outside the repo root using standard base dirs: … `$XDG_CONFIG_HOME` … `$XDG_STATE_HOME` … `$XDG_CACHE_HOME`…”
+
+    * Assigned Ticket ID: T1
+  * Original item: “In Go, you should use `os.UserConfigDir()` / `os.UserCacheDir()`… (There’s no `UserStateDir()`… implement XDG_STATE_HOME fallback…)”
+
+    * Assigned Ticket ID: T1
+  * Original item: “Move state/report outputs out of CWD by default… Update `internal/cli/run.go`… Make the directory overridable with a flag/env (e.g., `--state-dir` / `ORACLEPACK_STATE_DIR`).”
+
+    * Assigned Ticket ID: T2
+  * Original item: “Stop producing per-pack `*.chatgpt-urls.json` by default… Best UX default: change … default save scope to **global**…”
+
+    * Assigned Ticket ID: T3
+  * Original item: “Keep ‘project scope’ as an opt-in mode, but write it to a single per-project location (e.g., `<repo>/.oraclepack/chatgpt-urls.json`), not `<packName>.chatgpt-urls.json`.”
+
+    * Assigned Ticket ID: T3
+  * Original item: “Acceptable alternative (project-local…): `<repo>/.oraclepack/state/*.state.json` … `<repo>/.oraclepack/chatgpt-urls.json` … add `.oraclepack/` to `.gitignore`.”
+
+    * Assigned Ticket ID: T4
+  * Original item: “Immediate workaround (no code changes): Add these to `.gitignore`: `*.state.json`, `*.report.json`, `*.chatgpt-urls.json`.”
+
+    * Assigned Ticket ID: T4
+* Dependencies:
+
+  * T2 depends on T1 because T2 needs an agreed/default “oraclepack state dir” location strategy (XDG-based) to write into.
+  * T3 depends on T1 because T3 needs a global config location strategy (XDG-based) for URL persistence.
+* Split Tickets:
+
+```ticket T1
+T# Title: Define XDG-based directory strategy for oraclepack config/state/cache
+Type: chore
+Target Area: Config/state path resolution (shared utility / helpers)
+Summary:
+- Define the standard locations where oraclepack stores user config, run state, and cache so outputs stop polluting the repo root.
+- The ticket requires using XDG base dirs and Go’s cross-platform helpers where applicable, with an explicit fallback for state.
+In Scope:
+- Adopt XDG directory categories as the guiding model:
+  - Config: `$XDG_CONFIG_HOME` (default `~/.config`)
+  - State: `$XDG_STATE_HOME` (default `~/.local/state`)
+  - Cache: `$XDG_CACHE_HOME` (default `~/.cache`)
+- Use Go `os.UserConfigDir()` / `os.UserCacheDir()` for cross-platform defaults (per ticket text).
+- Implement a state-dir resolver that honors `$XDG_STATE_HOME` and falls back when not set (since Go stdlib has no `UserStateDir()`).
+Out of Scope:
+- Not provided
+Current Behavior (Actual):
+- Not provided
+Expected Behavior:
+- oraclepack has a single, consistent mechanism to determine:
+  - “oraclepack config dir” (for user prefs like URL lists)
+  - “oraclepack state dir” (for resume/run state)
+  - “oraclepack cache dir” (for non-essential cached data)
+Reproduction Steps:
+- Not provided
+Requirements / Constraints:
+- Treat outputs as config/state/cache; store outside repo root using standard base dirs (per ticket text).
+- Use `os.UserConfigDir()` / `os.UserCacheDir()` where applicable (per ticket text).
+- Implement `$XDG_STATE_HOME` fallback logic (per ticket text).
+Evidence:
+- “Treat these as config/state/cache and store them outside the repo root using standard base dirs…” (parent ticket)
+- “In Go, you should use os.UserConfigDir() / os.UserCacheDir()… There’s no UserStateDir()…” (parent ticket)
+Open Items / Unknowns:
+- Exact package/file locations for where to place the shared directory-resolution logic: Unknown
+Risks / Dependencies:
+- Not provided
+Acceptance Criteria:
+- A single directory-resolution mechanism exists for config/state/cache categories as described in scope.
+- The state-dir resolution honors `$XDG_STATE_HOME` when set and has a documented fallback when unset.
+- The config/cache resolution uses Go’s `os.UserConfigDir()` / `os.UserCacheDir()` (or equivalent wrapper) per ticket text.
+Priority & Severity (if inferable from input text):
+- Priority: Not provided
+- Severity: Not provided
+Source:
+- “Treat these as config/state/cache and store them outside the repo root using standard base dirs…”
+- “In Go, you should use os.UserConfigDir() / os.UserCacheDir()… There’s no UserStateDir()…”
+```
+
+```ticket T2
+T# Title: Move run-generated state/report JSON outputs out of CWD and add state-dir override
+Type: enhancement
+Target Area: Run command output paths (`internal/cli/run.go`)
+Summary:
+- oraclepack currently writes `<packBase>.state.json` and `<packBase>.report.json` into the current working directory.
+- Update the run pathing so these files are written under a dedicated “oraclepack state dir” by default, with an override via flag/env.
+In Scope:
+- Change default output location for:
+  - `<packBase>.state.json`
+  - `<packBase>.report.json`
+  from current working directory to a dedicated “oraclepack state dir”.
+- Update `internal/cli/run.go` to compute state/report paths under that state dir (per ticket text).
+- Add override via flag and env:
+  - `--state-dir`
+  - `ORACLEPACK_STATE_DIR`
+Out of Scope:
+- Not provided
+Current Behavior (Actual):
+- `<packBase>.state.json` and `<packBase>.report.json` are written to the current working directory.
+Expected Behavior:
+- By default, running oraclepack does not create `*.state.json` / `*.report.json` in the repo root / CWD.
+- By default, state/report files are written under the dedicated oraclepack state dir.
+- Setting `--state-dir` or `ORACLEPACK_STATE_DIR` writes state/report files under the specified directory.
+Reproduction Steps:
+1) Run `oraclepack run` from a repo root (or any working directory).
+2) Observe creation of `<packBase>.state.json` and `<packBase>.report.json` in the working directory.
+Requirements / Constraints:
+- Must be overridable by `--state-dir` / `ORACLEPACK_STATE_DIR` (per ticket text).
+- Should use the state-dir strategy defined in T1 for the default state dir.
+Evidence:
+- “`oraclepack run` … writes them to the current working directory: `statePath := <packBase>.state.json`, `reportPath := <packBase>.report.json`”
+- “Update `internal/cli/run.go` … Make the directory overridable with a flag/env (e.g., `--state-dir` / `ORACLEPACK_STATE_DIR`).”
+Open Items / Unknowns:
+- Whether state/report filenames must remain exactly `<packBase>.state.json` / `<packBase>.report.json` or can change: Not provided
+Risks / Dependencies:
+- Depends on T1 for default state-dir resolution strategy.
+Acceptance Criteria:
+- Running oraclepack with no overrides does not create `*.state.json` or `*.report.json` in the current working directory.
+- With no overrides, state/report files are written under the resolved oraclepack state dir.
+- With `--state-dir=<dir>`, state/report files are written under `<dir>`.
+- With `ORACLEPACK_STATE_DIR=<dir>`, state/report files are written under `<dir>`.
+Priority & Severity (if inferable from input text):
+- Priority: Not provided
+- Severity: Not provided
+Source:
+- “`oraclepack run` … writes … `<packBase>.state.json` … `<packBase>.report.json` … to the current working directory”
+- “Move state/report outputs out of CWD by default… Update internal/cli/run.go… `--state-dir` / `ORACLEPACK_STATE_DIR`”
+```
+
+```ticket T3
+T# Title: Stop generating per-pack `*.chatgpt-urls.json`; default URL picker persistence to global store
+Type: enhancement
+Target Area: TUI “ChatGPT URL picker” persistence
+Summary:
+- The TUI URL picker currently creates `<sameBase>.chatgpt-urls.json` near the pack/state file and defaults edits to project scope.
+- Change it so the default save scope is global (one file), while keeping project scope as an opt-in that writes to a single stable per-project path.
+In Scope:
+- Remove/avoid creating `<sameBase>.chatgpt-urls.json` “next to the state file (or next to the pack file…)” (per ticket text).
+- Change the URL picker default save scope to **global** (per ticket text).
+- Keep “project scope” as opt-in, but store at a single stable path:
+  - `<repo>/.oraclepack/chatgpt-urls.json`
+  rather than `<packName>.chatgpt-urls.json` (per ticket text).
+- Persist the global URL store to a single global location:
+  - Per ticket text, an existing global store path is referenced: `~/.oraclepack/chatgpt-urls.json`.
+Out of Scope:
+- Not provided
+Current Behavior (Actual):
+- URL picker creates `<sameBase>.chatgpt-urls.json` next to the state file (or pack file).
+- URL picker defaults edits to project scope.
+Expected Behavior:
+- Using the URL picker does not create `<packBase>.chatgpt-urls.json` files.
+- Default persistence is global (one stable file).
+- Project scope, if selected, writes only to `<repo>/.oraclepack/chatgpt-urls.json`.
+Reproduction Steps:
+1) Use the TUI “ChatGPT URL picker” during a run.
+2) Observe `<sameBase>.chatgpt-urls.json` being created near pack/state file.
+Requirements / Constraints:
+- Default save scope should be global (per ticket text).
+- Project scope must be opt-in and must not create per-pack URL json files (per ticket text).
+- Global persistence location:
+  - Conflicting guidance exists: ticket recommends XDG config dir generally, but also references existing `~/.oraclepack/chatgpt-urls.json` path.
+Evidence:
+- “The TUI ‘ChatGPT URL picker’ then creates `<sameBase>.chatgpt-urls.json`…”
+- “It also defaults edits to project scope…”
+- “Stop producing per-pack `*.chatgpt-urls.json` by default… change … default save scope to global…”
+- “Keep ‘project scope’ as an opt-in… write it to `<repo>/.oraclepack/chatgpt-urls.json`… not `<packName>.chatgpt-urls.json`.”
+Open Items / Unknowns:
+- Whether to keep `~/.oraclepack/chatgpt-urls.json` as the global path or migrate to `$XDG_CONFIG_HOME/...` (both appear in the parent ticket guidance).
+- Exact file/path of the “URL picker” implementation: Not provided
+Risks / Dependencies:
+- Depends on T1 if migrating global storage to XDG config dir.
+Acceptance Criteria:
+- After using the URL picker, no `<packBase>.chatgpt-urls.json` is created near the pack/state/CWD.
+- Default behavior persists URLs to exactly one global store (stable path; not per-pack).
+- When “project scope” is selected, URLs persist to `<repo>/.oraclepack/chatgpt-urls.json` (single per-project file).
+Priority & Severity (if inferable from input text):
+- Priority: Not provided
+- Severity: Not provided
+Source:
+- “The TUI ‘ChatGPT URL picker’ then creates `<sameBase>.chatgpt-urls.json`…”
+- “Best UX default: change … default save scope to global…”
+- “Keep ‘project scope’ … `<repo>/.oraclepack/chatgpt-urls.json`, not `<packName>.chatgpt-urls.json`.”
+```
+
+```ticket T4
+T# Title: Add project-local `.oraclepack/` layout guidance and `.gitignore` patterns to prevent repo pollution
+Type: docs
+Target Area: Repo hygiene (docs / templates / ignore rules)
+Summary:
+- The parent ticket proposes an acceptable project-local layout under `<repo>/.oraclepack/` and an immediate workaround via `.gitignore`.
+- Capture these as documented guidance (and/or provide default ignore patterns) so repos remain clean even before code changes land.
+In Scope:
+- Document (or provide recommended structure for) project-local layout:
+  - `<repo>/.oraclepack/state/*.state.json`
+  - `<repo>/.oraclepack/state/*.report.json`
+  - `<repo>/.oraclepack/chatgpt-urls.json`
+- Add guidance to add `.oraclepack/` to `.gitignore` when adopting that structure.
+- Add the immediate workaround ignore patterns:
+  - `*.state.json`
+  - `*.report.json`
+  - `*.chatgpt-urls.json`
+Out of Scope:
+- Not provided
+Current Behavior (Actual):
+- Not provided
+Expected Behavior:
+- Repos can adopt a single project-local `.oraclepack/` directory and ignore it.
+- Repos can immediately ignore current output filenames to avoid noise.
+Reproduction Steps:
+- Not provided
+Requirements / Constraints:
+- Must preserve the exact patterns and structure described in the parent ticket text.
+Evidence:
+- “Acceptable alternative (project-local…): `<repo>/.oraclepack/state/*.state.json` … add `.oraclepack/` to `.gitignore`.”
+- “Immediate workaround (no code changes): Add these to `.gitignore`: `*.state.json`, `*.report.json`, `*.chatgpt-urls.json`.”
+Open Items / Unknowns:
+- Where this guidance should live (README, docs page, template): Not provided
+Risks / Dependencies:
+- Not provided
+Acceptance Criteria:
+- Documentation includes the described `.oraclepack/` directory layout and explicitly recommends ignoring `.oraclepack/` when using it.
+- Documentation includes the three immediate-workaround `.gitignore` patterns exactly as specified.
+Priority & Severity (if inferable from input text):
+- Priority: Not provided
+- Severity: Not provided
+Source:
+- “Acceptable alternative (project-local…): `<repo>/.oraclepack/state/*.state.json`… add `.oraclepack/` to `.gitignore`.”
+- “Immediate workaround… Add these to `.gitignore`: `*.state.json`…”
+```
+```
+
+.tickets/Oraclepack Schema Approach.md
+```
+Parent Ticket:
+
+* Title: Adopt a schema-driven approach to prevent oraclepack run failures
+* Summary:
+
+  * Current runs fail because structure is inferred from Markdown heuristics (e.g., exactly one ```bash fence, sequential step headers, exactly 20 steps).
+  * Proposal: generate a machine-validated **manifest** (JSON Schema) and **deterministically render** the Markdown pack; optionally add stricter linting for Markdown-only packs.
+* Source:
+
+  * Link/ID (if present) or “Not provided”
+  * Original ticket excerpt (≤25 words) capturing the overall theme
+
+    * “separate ‘machine-validated structure’ from ‘human-readable Markdown’ … generate only a JSON manifest … then a deterministic renderer produces the Markdown pack.”
+* Global Constraints:
+
+  * Keep existing oraclepack Markdown contract / backward-compatible (“keep the existing Markdown contract for oraclepack execution”).
+  * Steps must be exactly 20; step IDs must be sequential 01..20.
+* Global Environment:
+
+  * Unknown
+* Global Evidence:
+
+  * Error text: “invalid pack structure: no bash code block found”.
+  * Pack constraints referenced: “Exactly one ```bash fence”, “Exactly 20 steps”, “sequential step numbers”.
+
+Split Plan:
+
+* Coverage Map:
+
+  * Original item: “separate ‘machine-validated structure’ from ‘human-readable Markdown.’”
+
+    * Assigned Ticket ID: T1
+  * Original item: “AI generates only a JSON manifest that must validate against a JSON Schema; renderer produces Markdown pack.”
+
+    * Assigned Ticket ID: T1
+  * Original item: “Prevent missing/multiple ```bash fences (root cause of ‘invalid pack structure: no bash code block found’).”
+
+    * Assigned Ticket ID: T3
+  * Original item: “Prevent non-sequential steps (Go validator requires sequential step numbers).”
+
+    * Assigned Ticket ID: T1
+  * Original item: “Prevent wrong step count (enforce exactly 20 in schema).”
+
+    * Assigned Ticket ID: T1
+  * Original item: “Minimal ‘Pack Manifest v1’ JSON Schema (Draft 2020-12) with schema_version/kind/out_dir/write_output/steps; step fields id/title/bash plus roi/impact/confidence/effort/horizon/category/reference.”
+
+    * Assigned Ticket ID: T1
+  * Original item: “Rendering rule (deterministic): one ```bash fence; prelude out_dir=…; optional --write-output; each step ‘# 01) …’ with body.”
+
+    * Assigned Ticket ID: T2
+  * Original item: “If Markdown-only: add explicit schema/lint mode (exactly one ```bash fence; exactly 20 steps; sequential 01..20; optional header tokens).”
+
+    * Assigned Ticket ID: T3
+  * Original item: “Stage-2 directory contract: exactly one file per prefix 01-*.md … 20-*.md.”
+
+    * Assigned Ticket ID: T3
+  * Original item: “Action pack lint (Stage 3): one ```bash fence; enforce 01..20 exact count.”
+
+    * Assigned Ticket ID: T3
+  * Original item: “CI checks: validate(manifest.json) → render(pack.md) → oraclepack validate pack.md → (optional) dry-run checks.”
+
+    * Assigned Ticket ID: T4
+* Dependencies:
+
+  * T2 depends on T1 because the renderer needs the validated “Pack Manifest v1” structure as input.
+  * T4 depends on T1 and T2 because CI runs “validate(manifest.json) → render(pack.md)”.
+* Split Tickets:
+
+```ticket T1
+T# Title: Define and validate “Pack Manifest v1” schema (manifest-first)
+Type: chore
+Target Area: Pack authoring contract (manifest JSON + JSON Schema validation)
+Summary:
+- Introduce a manifest-first source of truth: the AI produces a JSON manifest that must validate against a JSON Schema.
+- The schema enforces step count (exactly 20) and step IDs (01..20) to prevent structural runner failures.
+- This separates machine-validated structure from the Markdown pack to reduce malformed packs.
+In Scope:
+- Define “Pack Manifest v1” JSON Schema (Draft 2020-12) with required fields: schema_version (const 1), kind (enum), out_dir, steps (min/max 20).
+- Define step object constraints: required id/title/bash; id pattern for 01..20; optional roi/impact/confidence/effort/horizon/category/reference.
+- Validate manifests against the schema before rendering/using them.
+Out of Scope:
+- Not provided
+Current Behavior (Actual):
+- Runner infers structure from Markdown heuristics; malformed structure can cause run-time validation errors.
+- Step count and sequential numbering can be violated if not enforced early.
+Expected Behavior:
+- A manifest that does not conform (wrong count, wrong IDs, missing required fields) is rejected by schema validation.
+- Manifests accepted by validation always contain exactly 20 steps with valid IDs and required fields.
+Reproduction Steps:
+1) Provide a manifest with fewer than 20 steps.
+2) Provide a manifest with a non-matching step id (e.g., "21" or "1").
+3) Validate manifest and confirm it fails schema validation.
+Requirements / Constraints:
+- schema_version must be 1.
+- steps must be exactly 20 (minItems=20, maxItems=20).
+- step id must match 01..20 via pattern.
+Evidence:
+- “the AI generates only a JSON manifest that must validate against a JSON Schema” (ticket text)
+- “Wrong step count (you can enforce exactly 20 in schema rather than ‘hoping’ the model did it).”
+Open Items / Unknowns:
+- Exact location/path conventions for storing manifest.json are not provided.
+- How/where validation is invoked (CLI, CI, library) is not provided.
+Risks / Dependencies:
+- Risk: keeping backward compatibility requires rendering to the existing Markdown pack contract (handled in T2).
+Acceptance Criteria:
+- [ ] A JSON Schema exists for “Pack Manifest v1” with required fields and constraints as described.
+- [ ] A manifest with != 20 steps fails validation.
+- [ ] A manifest with an invalid step id fails validation.
+- [ ] A manifest missing required fields (schema_version/kind/out_dir/steps) fails validation.
+Priority & Severity (if inferable from input text):
+- Priority: Not provided
+- Severity: Not provided
+Source:
+- “Manifest-first + JSON Schema (then render Markdown)”
+- “minItems: 20, maxItems: 20”
+- “id … pattern: ^(0[1-9]|1[0-9]|20)$”
+```
+
+````ticket T2
+T# Title: Implement deterministic renderer from manifest → oraclepack Markdown pack
+Type: enhancement
+Target Area: Pack rendering (manifest → Markdown pack)
+Summary:
+- Add a deterministic rendering rule that converts a validated manifest into a Markdown pack that always satisfies oraclepack’s structural expectations.
+- This prevents issues like missing/multiple bash fences and malformed step formatting by making Markdown a compiled artifact.
+In Scope:
+- Render exactly one fenced code block labeled `bash` in the entire document.
+- Render prelude lines including: `out_dir="..."` and optional `--write-output` as described.
+- Render each step with header `# NN) ...` and step body from `bash` content.
+Out of Scope:
+- Not provided
+Current Behavior (Actual):
+- Markdown is the primary artifact; structure can be malformed by generation, causing downstream failures.
+Expected Behavior:
+- Renderer output always includes exactly one `bash` fence and emits all 20 steps in order.
+- Pack contains the required prelude line(s) described in the ticket text.
+Reproduction Steps:
+1) Validate a manifest (per T1).
+2) Render to Markdown.
+3) Confirm output contains exactly one `bash` fence and step headers for 01..20 in sequence.
+Requirements / Constraints:
+- Output must be runner-ingestible per the described structural rules (single bash fence, 20 steps, sequential).
+Evidence:
+- “Rendering rule (deterministic) … emits exactly: one ```bash fence … prelude lines … then each step: # 01) … Step body = bash”
+Open Items / Unknowns:
+- Exact step title formatting beyond “# NN) …” is not provided.
+- Whether additional header tokens (ROI=…) are required at render time is not provided.
+Risks / Dependencies:
+- Depends on T1 (renderer assumes manifest structure/constraints).
+Acceptance Criteria:
+- [ ] Given a valid manifest, renderer produces a Markdown pack with exactly one ```bash fenced block.
+- [ ] Output contains 20 step headers numbered 01..20 in order.
+- [ ] Output includes the `out_dir="..."` prelude line.
+- [ ] Renderer can conditionally include the optional `--write-output` line when present in the manifest.
+Priority & Severity (if inferable from input text):
+- Priority: Not provided
+- Severity: Not provided
+Source:
+- “From this manifest, your renderer emits exactly: One ```bash fence”
+- “Prelude lines: out_dir="..." … optional --write-output”
+- “Then each step: # 01) … Step body = bash”
+````
+
+````ticket T3
+T# Title: Add stricter lint/validation for Markdown-only packs and Stage-2/Stage-3 outputs
+Type: chore
+Target Area: Pack linting/validation (Markdown packs + output directory contract)
+Summary:
+- If the project keeps Markdown-only as a supported input path, add an explicit lint/validation mode that enforces the same structural contract.
+- Extend checks to Stage-2 output directory naming expectations and Stage-3 action pack constraints to reduce “runner infers structure” failures.
+In Scope:
+- Pack-level lint (Stage 1) enforcing:
+  - Exactly one ```bash fence.
+  - Exactly 20 steps.
+  - Step IDs exactly 01..20 and sequential.
+  - Optional enforcement of required header tokens (ROI= impact= confidence= … reference=) as described.
+- Stage-2 directory contract lint:
+  - Exactly one file per prefix 01-*.md … 20-*.md.
+- Stage-3 action pack lint:
+  - Exactly one ```bash fence.
+  - Enforce 01..20 and exact count.
+Out of Scope:
+- Not provided
+Current Behavior (Actual):
+- Common failure mode noted: “invalid pack structure: no bash code block found.”
+- Existing checks may be incomplete (“your current check only ensures ‘some’ step headers exist” per ticket text).
+Expected Behavior:
+- Markdown packs that violate the contract are rejected early with lint errors before execution.
+- Stage-2 outputs and Stage-3 action packs are validated against exact-count and naming/structure rules.
+Reproduction Steps:
+1) Create a Markdown pack with no `bash` fenced block → lint should fail.
+2) Create a Markdown pack with 19 steps or non-sequential IDs → lint should fail.
+3) Create an output directory missing `07-*.md` or containing duplicates for a prefix → lint should fail.
+Requirements / Constraints:
+- Enforce: one ```bash fence, exactly 20 steps, sequential 01..20.
+Evidence:
+- “Missing / multiple ```bash fences (common root cause of ‘invalid pack structure: no bash code block found’).”
+- “Add an explicit schema/lint mode … Exactly one ```bash fence … Exactly 20 steps … Step IDs exactly 01..20”
+- “Stage-2 directory contract … Exactly one file per prefix 01-*.md … 20-*.md”
+- “Action pack lint (Stage 3) … Enforce 01..20 and exact count”
+Open Items / Unknowns:
+- Exact current validator behaviors and what already exists vs missing are not provided.
+Risks / Dependencies:
+- Risk: enforcing optional header tokens could break existing packs if not already standardized.
+Acceptance Criteria:
+- [ ] Lint fails when no `bash` fence exists and surfaces a clear error.
+- [ ] Lint fails when step count != 20.
+- [ ] Lint fails when step IDs are not exactly 01..20 sequential.
+- [ ] Stage-2 lint fails when any step output prefix 01..20 is missing or duplicated.
+- [ ] Stage-3 lint fails when action pack does not have exactly one `bash` fence or correct 01..20 steps.
+Priority & Severity (if inferable from input text):
+- Priority: Not provided
+- Severity: Not provided
+Source:
+- “invalid pack structure: no bash code block found”
+- “Pack-level lint (Stage 1) … Exactly one ```bash fence … Exactly 20 steps”
+- “Stage-2 directory contract … Exactly one file per prefix 01-*.md … 20-*.md”
+````
+
+```ticket T4
+T# Title: Add CI validation pipeline for manifest-first workflow (validate → render → oraclepack validate → optional dry-run)
+Type: chore
+Target Area: CI checks / pipeline gating
+Summary:
+- Add CI checks that gate merges/runs on structural correctness by validating the manifest, rendering Markdown deterministically, and validating the rendered pack with oraclepack tooling.
+- This formalizes the “Markdown is compiled artifact” approach and reduces runtime surprises.
+In Scope:
+- CI sequence as described:
+  - validate(manifest.json)
+  - render(pack.md)
+  - oraclepack validate pack.md
+  - optional dry-run checks
+Out of Scope:
+- Not provided
+Current Behavior (Actual):
+- Pack structural issues can slip into execution time if not validated earlier.
+Expected Behavior:
+- CI fails fast when manifest validation fails or rendered pack fails oraclepack validation.
+Reproduction Steps:
+1) Commit a manifest with 19 steps; CI should fail at validate(manifest.json).
+2) Commit a manifest that renders an invalid pack (if possible); CI should fail at oraclepack validate.
+Requirements / Constraints:
+- CI must preserve existing oraclepack Markdown contract (rendered pack is what oraclepack consumes).
+Evidence:
+- “Add CI checks: validate(manifest.json) → render(pack.md) → oraclepack validate pack.md → (optional) dry-run checks”
+Open Items / Unknowns:
+- Where CI runs (provider/tooling) is not provided.
+- Whether “dry-run checks” exist and what they check is not provided.
+Risks / Dependencies:
+- Depends on T1 and T2 to provide validate+render steps.
+Acceptance Criteria:
+- [ ] CI runs schema validation on manifest.json and fails on invalid manifests.
+- [ ] CI renders pack.md deterministically from the manifest.
+- [ ] CI runs oraclepack validation on pack.md and fails if invalid.
+- [ ] Optional dry-run step is present if supported; otherwise omitted without breaking the sequence intent.
+Priority & Severity (if inferable from input text):
+- Priority: Not provided
+- Severity: Not provided
+Source:
+- “Add CI checks: validate(manifest.json) → render(pack.md) → oraclepack validate pack.md → (optional) dry-run checks”
+- “Treat Markdown packs as a compiled artifact, not the source of truth.”
+```
+```
+
+.tickets/Oraclepack bash fix.md
+```
+Parent Ticket:
+
+* Title: Prevent oraclepack pack failures caused by orphaned `-p/--prompt` lines in generated bash steps
+* Summary: Generated oraclepack markdown packs can emit a multiline `oracle ...` command where `-p "$(cat <<'PROMPT' ...)"` starts on a new line without a continuation, causing Bash to treat `-p` as a standalone command and fail (`exit status 127`). The fix requires making pack generation structurally safe and adding validator guardrails that fail fast on regressions.
+* Source:
+
+  * Link/ID: Bash command syntax fix.md
+  * Original ticket excerpt (≤25 words) capturing the overall theme: “make the generator/template structurally unable to emit orphaned flags… and make oraclepack validate fail fast”
+* Global Constraints:
+
+  * “never put `-p/--prompt` (or any flag) on its own line”
+  * “no inline comments at end of an `oracle ...` line”
+* Global Environment:
+
+  * Unknown
+* Global Evidence:
+
+  * Error: `bash: line 59: -p: command not found` + `exit status 127`
+  * Reference pack: `oracle-pack-2026-01-08-tickets-direct.md` (pattern repeated across steps)
+
+Split Plan:
+
+* Coverage Map:
+
+  * “`bash: line 59: -p: command not found` + `exit status 127`” → T1
+  * “`-p "$(cat <<'PROMPT' ...)"` is on the next line without `\` … repeated in others” → T1
+  * “Minimal fix: add a continuation backslash, or put `-p` on the same line” → T1
+  * “Optional comment goes ABOVE the command, not inline” → T1
+  * “Wherever you render `oracle ... "${ticket_args[@]}" # extra_files ...` then newline then `-p ...` … change it” → T1
+  * “Permanent template rule: never put `-p/--prompt` on its own line; build prompt first, then call oracle on a single command line” → T1
+  * “Enforce: no inline comments at end of an `oracle ...` line” → T1
+  * “If you must wrap long lines, require explicit `\` continuations and disallow comments on continued lines” → T1
+  * “Add checks to `oraclepack validate` after extracting the single `bash` fence” → T2
+  * “Add `bash -n` syntax check” → T2
+  * “Add `shellcheck` static analysis” → T2
+  * “Custom ‘orphaned flag line’ detector (regex + continuation exceptions)” → T2
+  * “Ensure `oraclepack run` always calls `validate` first (or at minimum in TUI Run/Rerun paths)” → T3
+  * “Add CI/pre-commit: run `oraclepack validate` on any generated/modified pack” → T3
+  * “Offer: point at exact rendering pattern + canonical snippet” → Non-actionable / Info-only
+* Dependencies:
+
+  * T3 depends on T2 because “Make validate unavoidable” is intended to enforce the added validator checks that catch regressions.
+* Split Tickets:
+
+```ticket T1
+T# Title: Make pack generation structurally safe (no orphaned `-p/--prompt` lines)
+Type: bug
+Target Area: Pack generator/template that emits oraclepack Markdown steps (tickets-direct pack generation)
+Summary:
+- Generated packs can split an `oracle ...` invocation across lines such that `-p "$(cat <<'PROMPT' ...)"` starts on a new line without a continuation.
+- Bash then executes `-p` as a standalone command, causing `command not found` and `exit status 127`.
+- Update generation patterns so prompts are built safely and the `oracle` command remains a single logical command (or uses correct continuations without inline comment footguns).
+In Scope:
+- Eliminate multiline `oracle` invocations that place `-p/--prompt` on its own line.
+- Apply the “minimal fix” pattern where multiline is unavoidable: add a line-continuation `\` (and ensure comments do not break continuation).
+- Enforce generator rule: no inline trailing comments on `oracle ...` lines (comments/newlines can terminate the command unexpectedly).
+- Adopt canonical “build prompt first, then call oracle” step shape as the standard emission pattern.
+Out of Scope:
+- Not provided
+Current Behavior (Actual):
+- `oracle ...` command is terminated by a newline, then `-p "$(cat <<'PROMPT' ...)"` appears on the next line without `\`, so Bash treats `-p` as a command and fails.
+Expected Behavior:
+- Generated bash steps never emit orphaned flag lines (e.g., `-p`, `-f`, `--prompt`) that can be interpreted as standalone shell commands.
+- Generated `oracle` invocations are either a single logical line or correctly continued (without inline comments breaking continuation).
+Reproduction Steps:
+1. Run the generated pack `oracle-pack-2026-01-08-tickets-direct.md`.
+2. Observe the step where `-p` begins a new line without a continuation and the shell errors.
+Requirements / Constraints:
+- “never put `-p/--prompt` (or any flag) on its own line”
+- “no inline comments at end of an `oracle ...` line”
+- If wrapping is necessary: require explicit `\` continuations and disallow comments on continued lines.
+Evidence:
+- Error: `bash: line 59: -p: command not found` + `exit status 127`
+- Pattern described: `-p "$(cat <<'PROMPT' ...)"` on next line without `\` in `oracle-pack-2026-01-08-tickets-direct.md`
+Open Items / Unknowns:
+- Exact location(s) of the emitting template(s): Unknown / Not provided
+- Whether multiple generators/templates emit the pattern beyond tickets-direct: Unknown / Not provided
+Risks / Dependencies:
+- Risk: Partial fixes (only adding `\`) may regress if inline comments or formatting are reintroduced.
+Acceptance Criteria:
+- Generated packs do not contain any step where a line begins with `-p` / `--prompt` intended as a continuation of `oracle` without an explicit safe structure.
+- Running the regenerated tickets-direct pack no longer produces `-p: command not found` / `exit status 127` for the previously failing steps.
+- Generator output follows one of:
+  - prompt built first + `oracle ... --prompt "$prompt"` as a single logical command, OR
+  - explicit `\` continuation with no inline trailing comments on continued lines.
+Priority & Severity (if inferable from input text):
+- Priority: Not provided
+- Severity: Not provided
+Source:
+- “`bash: line 59: -p: command not found` + `exit status 127`”
+- “the `-p "$(cat <<'PROMPT' ...)"` part is on the next line without a line-continuation (`\`)”
+- “Permanent template rule: never put `-p/--prompt` (or any flag) on its own line”
+```
+
+```ticket T2
+T# Title: Add validator guardrails (bash-lint + orphaned-flag detection) to fail fast
+Type: enhancement
+Target Area: `oraclepack validate` (after extracting the single `bash` fence)
+Summary:
+- Even with a safer generator, regressions can reintroduce orphaned flag lines that only fail at runtime.
+- Add validation checks that detect bash syntax issues and the specific “orphaned flag line” class before execution.
+- Validation should clearly fail on suspicious standalone flag lines unless safely continued.
+In Scope:
+- Run `bash -n` against the extracted bash step script(s) as a syntax sanity check.
+- Run `shellcheck` static analysis on the extracted bash script(s).
+- Implement the custom “orphaned flag line” detector:
+  - Fail if a non-heredoc line matches `^\s*-(p|f)\b` or `^\s*--(prompt|file|write-output)\b`
+  - Unless the previous non-empty line ends with a legal continuation (`\`, `|`, `&&`, `||`, `(`, etc.)
+Out of Scope:
+- Making `validate` mandatory in all run paths (handled separately)
+Current Behavior (Actual):
+- Not provided
+Expected Behavior:
+- `oraclepack validate` fails fast with a clear error when a pack contains likely orphaned flag lines (e.g., `-p ...`) outside permitted continuation contexts.
+- `oraclepack validate` reports bash syntax issues before execution.
+Reproduction Steps:
+1. Create/modify a pack step where `-p` is on its own line without a valid continuation.
+2. Run `oraclepack validate`.
+Requirements / Constraints:
+- Checks are added “after extracting the single `bash` fence”.
+- Orphaned-flag detector must ignore heredoc bodies (“non-heredoc line”).
+Evidence:
+- “Add these checks to `oraclepack validate` after extracting the single `bash` fence”
+- Detector specification (regex + continuation exceptions) provided in ticket text.
+Open Items / Unknowns:
+- Availability/installation method for `shellcheck` in the execution environment: Unknown / Not provided
+- Exact current structure of `oraclepack validate` and how it extracts bash fence: Unknown / Not provided
+Risks / Dependencies:
+- Risk: False positives if continuation heuristics are too strict; must match the specified allowed continuations.
+Acceptance Criteria:
+- `oraclepack validate` includes `bash -n` and fails on invalid bash syntax in the extracted script(s).
+- `oraclepack validate` runs `shellcheck` and surfaces failures per project policy (pass/fail behavior not specified in ticket text).
+- `oraclepack validate` fails when a non-heredoc line begins with `-p`, `-f`, `--prompt`, `--file`, or `--write-output` and the previous non-empty line does not end with an allowed continuation token.
+- `oraclepack validate` does not falsely flag valid heredoc prompt bodies.
+Priority & Severity (if inferable from input text):
+- Priority: Not provided
+- Severity: Not provided
+Source:
+- “Add these checks to `oraclepack validate` after extracting the single `bash` fence”
+- “`bash -n` syntax check (cheap sanity)”
+- “Custom ‘orphaned flag line’ detector… `^\s*-(p|f)\b` … unless… ends with… (`\`, `|`, `&&`, `||`, `(`, etc.)”
+```
+
+```ticket T3
+T# Title: Make validation unavoidable in normal use (run/TUI) and add CI/pre-commit gate
+Type: chore
+Target Area: `oraclepack run` execution flow, TUI “Run/Rerun” paths, and repo automation (CI/pre-commit)
+Summary:
+- Validation guardrails are only effective if they run consistently before pack execution.
+- Ensure `oraclepack run` calls `validate` first (or at minimum in TUI Run/Rerun paths).
+- Add automated gating so modified/generated packs are validated before being executed/merged.
+In Scope:
+- Ensure `oraclepack run` always calls `validate` first.
+- Ensure TUI “Run/Rerun” paths invoke `validate` first (at minimum).
+- Add CI/pre-commit step to run `oraclepack validate` on generated/modified packs.
+Out of Scope:
+- Implementing the validator checks themselves (handled separately)
+Current Behavior (Actual):
+- Not provided
+Expected Behavior:
+- Running a pack via CLI or TUI triggers validation first, preventing execution of invalid packs.
+- CI/pre-commit blocks changes that introduce invalid pack structure detectable by `oraclepack validate`.
+Reproduction Steps:
+1. Introduce a known-invalid pattern (e.g., orphaned `-p` line) into a pack.
+2. Attempt to run via `oraclepack run` and via TUI Run/Rerun.
+3. Attempt to commit/CI-run with the invalid pack present.
+Requirements / Constraints:
+- “Ensure `oraclepack run` always calls `validate` first (or at minimum in TUI ‘Run/Rerun’ paths).”
+- “Add CI/pre-commit: run `oraclepack validate` on any generated/modified pack.”
+Evidence:
+- The ticket text specifies making validation unavoidable and adding CI/pre-commit gating.
+Open Items / Unknowns:
+- Existing CI/pre-commit tooling and where to hook validation: Unknown / Not provided
+- Exact TUI entrypoints for Run/Rerun: Unknown / Not provided
+Risks / Dependencies:
+- Depends on `oraclepack validate` providing the intended guardrails to justify making it mandatory.
+Acceptance Criteria:
+- `oraclepack run` invokes `validate` before executing pack steps.
+- TUI Run/Rerun paths invoke `validate` before execution (at minimum).
+- CI/pre-commit configuration exists to run `oraclepack validate` on generated/modified packs and fails on validation errors.
+Priority & Severity (if inferable from input text):
+- Priority: Not provided
+- Severity: Not provided
+Source:
+- “Make validate unavoidable in normal use”
+- “Ensure `oraclepack run` always calls `validate` first (or at minimum in TUI ‘Run/Rerun’ paths).”
+- “Add CI/pre-commit: run `oraclepack validate` on any generated/modified pack.”
+```
+```
+
+.tickets/Publish OraclePack MCP.md
+```
+Parent Ticket:
+
+* Title: Publish/distribute `oraclepack-mcp-server` to avoid long-form MCP client configuration
+* Summary: Replace the hardcoded venv interpreter path in MCP client configs with a portable, short config, and optionally enable one-click installation for supported clients.
+* Source:
+
+  * Link/ID (if present) or “Not provided”: `oraclepack-op-mcp.md`
+  * Original ticket excerpt (≤25 words) capturing the overall theme: “publish this so we do not have to use the long form configuration for configuring mcp clients”
+* Global Constraints:
+
+  * Eliminate reliance on an absolute venv interpreter path in MCP client configuration.
+  * Preserve required env variables (`ORACLEPACK_BIN`, `ORACLEPACK_ALLOWED_ROOTS`, `ORACLEPACK_ENABLE_EXEC`) in examples.
+* Global Environment:
+
+  * Unknown
+* Global Evidence:
+
+  * Current MCP client config example (shows venv path + args + env).
+
+Split Plan:
+
+* Coverage Map:
+
+  * Original item: “how do I publish this so we do not have to use the long form configuration for configuring mcp clients?”
+
+    * Assigned Ticket ID: T1
+  * Original item: Current config uses venv interpreter path: `"command": "/home/user/.../venv/bin/python"`
+
+    * Assigned Ticket ID: T1
+  * Original item: Current args: `["-m", "oraclepack_mcp_server", "--transport", "stdio"]`
+
+    * Assigned Ticket ID: T1
+  * Original item: Current env vars: `ORACLEPACK_BIN`, `ORACLEPACK_ALLOWED_ROOTS`, `ORACLEPACK_ENABLE_EXEC`
+
+    * Assigned Ticket ID: T1
+  * Original item: Option 1: “Publish a Python package so the MCP command is just a PATH executable” + `uv build`, `uv publish`, `uv tool install ...`
+
+    * Assigned Ticket ID: T1
+  * Original item: Option 1 config snippet (command becomes `oraclepack-mcp-server`, args `--transport stdio`, env preserved)
+
+    * Assigned Ticket ID: T1
+  * Original item: Note: “If you want to reduce env too, prefer absolute paths…”
+
+    * Assigned Ticket ID: T1
+  * Original item: Option 2: “No install short config: run via uvx” + config snippet using `"command": "uvx"`
+
+    * Assigned Ticket ID: T2
+  * Original item: Option 2 note: aligns with `server.json` PyPI example using `runtimeHint: "uvx"`
+
+    * Assigned Ticket ID: T4
+  * Original item: Option 3a: “Claude Desktop: ship a .mcpb bundle” + `mcpb init`, `mcpb pack` + distribute `.mcpb`
+
+    * Assigned Ticket ID: T3
+  * Original item: Option 3b: “publish to Official MCP Registry (and GitHub MCP Registry)” via `server.json` and `mcp-publisher` steps
+
+    * Assigned Ticket ID: T4
+  * Original item: Recommendation section (choose Option 1 for no venv path; Option 3 for no manual config)
+
+    * Assigned Ticket ID: Info-only
+  * Original item: Note: “standardize the executable name to match the PyPI identifier”
+
+    * Assigned Ticket ID: T1
+* Dependencies:
+
+  * T2 depends on T1 because the `uvx` approach runs the published package name (`oraclepack-mcp-server`).
+  * T4 depends on T1 because the described registry publishing path references a PyPI stdio server example.
+* Split Tickets:
+
+```ticket T1
+T# Title: Publish `oraclepack-mcp-server` as a PATH executable (PyPI + uv tools) and update config example
+Type: enhancement
+Target Area: Distribution/packaging for MCP server (`oraclepack-mcp-server`) + MCP client config examples
+Summary:
+- Publish the MCP server as a Python package so MCP clients can invoke it via a normal command on PATH instead of a venv interpreter path.
+- Provide the shorter MCP client configuration example that uses `command: "oraclepack-mcp-server"` and preserves required env vars.
+In Scope:
+- Publish steps using uv:
+  - `uv build`
+  - `uv publish`
+- Install guidance via uv tools:
+  - `uv tool install oraclepack-mcp-server`
+- Update the MCP client config example to:
+  - `"command": "oraclepack-mcp-server"`
+  - `"args": ["--transport", "stdio"]`
+  - Keep env: `ORACLEPACK_BIN`, `ORACLEPACK_ALLOWED_ROOTS`, `ORACLEPACK_ENABLE_EXEC`
+- Naming guidance: standardize executable name to match the PyPI identifier (e.g., `oraclepack-mcp-server`).
+- Guidance note: prefer absolute paths for env values if trying to reduce/env-stabilize in hosts with undefined working directory.
+Out of Scope:
+- “One-click install” packaging and registry publishing (handled in other tickets).
+Current Behavior (Actual):
+- MCP client config points at a venv interpreter path and runs `-m oraclepack_mcp_server`:
+  - `"command": "/home/user/.../venv/bin/python"`
+Expected Behavior:
+- MCP client config can run a PATH command directly:
+  - `"command": "oraclepack-mcp-server"`
+  - No venv absolute path required.
+Reproduction Steps:
+- Not provided
+Requirements / Constraints:
+- Preserve required env variables in examples:
+  - `ORACLEPACK_BIN`
+  - `ORACLEPACK_ALLOWED_ROOTS`
+  - `ORACLEPACK_ENABLE_EXEC`
+Evidence:
+- Current config snippet includes venv interpreter path and env vars:
+  - `"command": "/home/user/projects/temp/oraclepack/oraclepack-mcp-server/venv/bin/python"`
+  - `"args": ["-m", "oraclepack_mcp_server", "--transport", "stdio"]`
+  - `ORACLEPACK_BIN`, `ORACLEPACK_ALLOWED_ROOTS`, `ORACLEPACK_ENABLE_EXEC`
+Open Items / Unknowns:
+- Package metadata and repository details for publishing (Unknown / Not provided).
+- Desired final executable name if it differs from `oraclepack-mcp-server` (Unknown / Not provided).
+Risks / Dependencies:
+- Not provided
+Acceptance Criteria:
+- A published distribution path exists that does not require MCP clients to reference a venv interpreter path.
+- Documentation/config example shows:
+  - `"command": "oraclepack-mcp-server"`
+  - `"args": ["--transport", "stdio"]`
+  - env variables preserved as shown in the source text.
+- Executable naming guidance is documented (“match the PyPI identifier”).
+Priority & Severity (if inferable from input text):
+- Priority: Not provided
+- Severity: Not provided
+Source:
+- “publish/distribute paths that eliminate the venv absolute path”
+- “Publish a Python package so the MCP `command` is just a PATH executable”
+- “uv build / uv publish … uv tool install oraclepack-mcp-server”
+```
+
+```ticket T2
+T# Title: Add “no install” MCP config option using `uvx`
+Type: docs
+Target Area: MCP client configuration documentation/examples
+Summary:
+- Provide a short MCP client configuration that runs the server via `uvx` so users don’t need a pre-created local venv path in config.
+- Keep required environment variables in the example config.
+In Scope:
+- Document the `uvx`-based MCP client config example:
+  - `"command": "uvx"`
+  - `"args": ["oraclepack-mcp-server", "--transport", "stdio"]`
+  - env: `ORACLEPACK_BIN`, `ORACLEPACK_ALLOWED_ROOTS`, `ORACLEPACK_ENABLE_EXEC`
+Out of Scope:
+- Publishing to PyPI (handled in T1).
+- Registry publishing via `server.json`/`mcp-publisher` (handled in T4).
+Current Behavior (Actual):
+- Config is “long-form” due to a venv interpreter path.
+Expected Behavior:
+- Users can use a short config that invokes `uvx` with the package name and stdio transport args.
+Reproduction Steps:
+- Not provided
+Requirements / Constraints:
+- Preserve required env variables in the example config.
+Evidence:
+- Option 2 config snippet:
+  - `"command": "uvx"`
+  - `"args": ["oraclepack-mcp-server", "--transport", "stdio"]`
+Open Items / Unknowns:
+- Whether target MCP clients/hosts support `uvx` invocation in their MCP server configuration (Unknown / Not provided).
+Risks / Dependencies:
+- Depends on T1 (published package name referenced by `uvx`).
+Acceptance Criteria:
+- Documentation includes the `uvx` config snippet exactly as described in the source text.
+- Documentation explicitly retains the required env variable keys used in the source text.
+Priority & Severity (if inferable from input text):
+- Priority: Not provided
+- Severity: Not provided
+Source:
+- “No install short config: run via `uvx`”
+- `"command": "uvx", "args": ["oraclepack-mcp-server", "--transport", "stdio"]`
+```
+
+```ticket T3
+T# Title: Create and distribute a `.mcpb` bundle for Claude Desktop installation
+Type: enhancement
+Target Area: MCP Bundle packaging for Claude Desktop distribution
+Summary:
+- Package the local MCP server as a `.mcpb` bundle so users can install via a UI flow in supported clients (Claude Desktop mentioned).
+- Document the bundle creation commands and distribution approach.
+In Scope:
+- Use MCPB tooling steps as described:
+  - `npm install -g @anthropic-ai/mcpb`
+  - `mcpb init`
+  - `mcpb pack`
+- Distribute the resulting `.mcpb` (example given: GitHub Releases).
+- Document that users install via Claude Desktop Extensions UI flow (per source text).
+Out of Scope:
+- PyPI publishing and `uv` tooling approach (handled in T1).
+- Official/GitHub MCP registry publishing (handled in T4).
+Current Behavior (Actual):
+- Users must configure MCP clients manually with JSON.
+Expected Behavior:
+- Users can install the server via a `.mcpb` bundle in clients that support MCP bundles (Claude Desktop mentioned).
+Reproduction Steps:
+- Not provided
+Requirements / Constraints:
+- Follow the described `.mcpb` workflow (init + pack).
+Evidence:
+- “Claude Desktop: ship a `.mcpb` bundle … mcpb init … mcpb pack … Distribute the resulting `.mcpb`”
+Open Items / Unknowns:
+- Bundle manifest contents and exact server entrypoints required by MCPB for this server (Unknown / Not provided).
+Risks / Dependencies:
+- Not provided
+Acceptance Criteria:
+- A `.mcpb` bundle can be produced using the documented CLI steps.
+- Documentation explains how to obtain the `.mcpb` (distribution channel mentioned) and install it in Claude Desktop (Extensions UI flow mentioned).
+Priority & Severity (if inferable from input text):
+- Priority: Not provided
+- Severity: Not provided
+Source:
+- “Claude Desktop: ship a `.mcpb` bundle”
+- “mcpb init … mcpb pack”
+- “Distribute the resulting `.mcpb` (e.g., GitHub Releases)”
+```
+
+```ticket T4
+T# Title: Publish `server.json` via `mcp-publisher` for MCP Registry / GitHub MCP Registry discovery
+Type: enhancement
+Target Area: Registry publishing metadata (`server.json`) + publishing workflow (`mcp-publisher`)
+Summary:
+- Enable “one-click install” in supported clients by publishing a `server.json` descriptor via `mcp-publisher`, targeting the Official MCP Registry and GitHub MCP Registry (as described).
+- Document the high-level publishing steps and ownership proof requirement as stated.
+In Scope:
+- Generate `server.json` using `mcp-publisher init`.
+- Follow the publishing sequence as described:
+  1) Install `mcp-publisher`
+  2) `mcp-publisher init` to generate `server.json`
+  3) Prove package ownership (PyPI: add `mcp-name: ...` to README)
+  4) `mcp-publisher login github`
+  5) `mcp-publisher publish`
+- Ensure `server.json` aligns with the described PyPI stdio example capabilities (mentions `environmentVariables` and `runtimeHint: "uvx"`).
+Out of Scope:
+- `.mcpb` bundling (handled in T3).
+- Core PyPI package publishing steps (handled in T1).
+Current Behavior (Actual):
+- Users must manually configure MCP clients using JSON and local paths.
+Expected Behavior:
+- Server is discoverable/installable via registry mechanisms described (VS Code / ecosystem via registry).
+Reproduction Steps:
+- Not provided
+Requirements / Constraints:
+- Include the described package ownership proof metadata for PyPI (README `mcp-name: ...`).
+Evidence:
+- “publish a `server.json` via `mcp-publisher`”
+- Step list including `mcp-publisher init`, README `mcp-name: ...`, `login github`, `publish`
+- Note about PyPI example supporting `environmentVariables` and `runtimeHint: "uvx"`
+Open Items / Unknowns:
+- Final server identifier/name to use for `mcp-name: ...` (Unknown / Not provided).
+- Which registries/clients are in scope beyond “VS Code / ecosystem” phrasing (Unknown / Not provided).
+Risks / Dependencies:
+- Depends on T1 if the published registry entry targets a PyPI package distribution (as described).
+Acceptance Criteria:
+- A `server.json` exists generated/maintained via `mcp-publisher init` per the described workflow.
+- Documentation includes the stated publishing steps and the PyPI ownership proof requirement (`mcp-name: ...` in README).
+- Documentation notes the described `runtimeHint: "uvx"` alignment for the PyPI stdio example.
+Priority & Severity (if inferable from input text):
+- Priority: Not provided
+- Severity: Not provided
+Source:
+- “publish to the Official MCP Registry (and GitHub MCP Registry)”
+- “publish a `server.json` via `mcp-publisher`”
+- “Prove package ownership … add `mcp-name: ...` to your README”
+```
+```
+
 .tickets/PRD-TUI/Oraclepack TUI Integration.md
 ```
 Parent Ticket:
@@ -374,87 +1366,6 @@ Reproduction Steps:
 
 Requirements / Constraints:
 - Must integrate with existing `RuntimeOverrides` structure (supports `ChatGPTURL` and `ApplyToSteps`).
-- Must not force a single global URL for the entire run when per-step targeting is desired.
-
-Evidence:
-- “`RuntimeOverrides` supports `ChatGPTURL` and `ApplyToSteps` targeting.”
-- “Add a new wizard step: ‘ChatGPT URL’… Write the chosen value into `pendingOverrides.ChatGPTURL`.”
-
-Open Items / Unknowns:
-- Exact UX flow placement/order in the wizard (not provided).
-- How conflicts are resolved between default URL and step override when both are present (not provided).
-
-Risks / Dependencies:
-- Not provided
-
-Acceptance Criteria:
-- [ ] Overrides Wizard includes a “ChatGPT URL” selection step.
-- [ ] Selected URL is stored in `pendingOverrides.ChatGPTURL`.
-- [ ] When overrides are applied to a subset of steps, only those steps use the overridden ChatGPT URL; other steps use the default.
-- [ ] Existing step-targeting selection remains functional.
-
-Priority & Severity (if inferable from input text):
-- Priority: Not provided
-- Severity: Not provided
-
-Source:
-- “`RuntimeOverrides` supports `ChatGPTURL` … `ApplyToSteps` targeting.”
-- “Add a new wizard step: **‘ChatGPT URL’**”
-- “Write the chosen value into `pendingOverrides.ChatGPTURL`.”
-```
-
-````ticket T6
-T# Title:
-- Enhance ticketify outputs: generate prd_context.md + prd-generator.pack.md for PRD Generator Project
-
-Type:
-- enhancement
-
-Target Area:
-- oraclepack-ticketify outputs/artifacts generation
-
-Summary:
-- Generate a deterministic PRD context bundle alongside `tickets_prd.md`, then generate a dedicated, valid micro-pack that calls `oracle` against the PRD Generator ChatGPT Project URL using both `tickets_prd.md` and the new context artifact. This supplies the missing context needed for higher-quality PRD generation while keeping the PRD Generator’s stable instructions in the ChatGPT Project.
-
-In Scope:
-- Generate `.oraclepack/ticketify/prd_context.md` containing ticket-derived context, including:
-  - product/feature summary inferred from tickets
-  - prioritized requirements (functional + non-functional)
-  - user stories + acceptance criteria extracted from tickets
-  - constraints, dependencies, out-of-scope, risks, open questions
-  - explicit “what to keep vs rewrite” instructions for the PRD generator
-- Generate `.oraclepack/ticketify/prd-generator.pack.md` that:
-  - Is a valid pack with a `bash` fenced code block.
-  - Attaches BOTH `tickets_prd.md` and `prd_context.md`.
-  - Calls `oracle … --write-output ".taskmaster/docs/final_prd.md"` (as shown in the example).
-- Preserve the intended split of context:
-  - Static context lives in the PRD Generator ChatGPT Project.
-  - Dynamic context is attached via `prd_context.md`.
-
-Out of Scope:
-- Not provided
-
-Current Behavior (Actual):
-- `tickets_prd.md` alone “does not include the context it would need” for the PRD generator.
-
-Expected Behavior:
-- ticketify produces `prd_context.md` and `prd-generator.pack.md` so PRD generation can run with complete, deterministic inputs.
-
-Reproduction Steps:
-- Not provided
-
-Requirements / Constraints:
-- Outputs should be deterministic and ticket-derived (“stable ordering/determinism” is implied by “deterministic… ticket-derived”).
-- Generated PRD pack must be valid for oraclepack parsing (contains ` ```bash … ``` `).
-- Avoid hardcoding ChatGPT Project URLs into the generated pack; selection/override handled externally (TUI/overrides).
-
-Evidence:
-- “Generate a deterministic ‘PRD context bundle’ artifact…”
-- “Emit a second markdown file… `.oraclepack/ticketify/prd-generator.pack.md`”
-- “Attach BOTH… `tickets_prd.md`… `prd_context.md`… `--write-output ".taskmaster/docs/final_prd.md"`”
-
-Open Items / Unknowns:
-- Exact prompt content to send to PRD Generator project (not fully specified).
 [TRUNCATED]
 ```
 
@@ -1307,29 +2218,7 @@ Requirements / Constraints:
 Evidence:
 - “special logic only for lines that start with `oracle`… detects… injects… overrides validation”
 - “Generalize… to a small registry of command prefixes (`oracle`, `codex`, `gemini`, `task-master`, `tm`)”
-- “Add per-tool override sets”
-
-Open Items / Unknowns:
-- Exact internal functions/files to modify (names mentioned but paths not provided in this ticket text).
-- How validation should work for non-`oracle` tools (not specified beyond “per-tool override sets”).
-
-Risks / Dependencies:
-- Not provided
-
-Acceptance Criteria:
-- Non-`oracle` command prefixes listed in the ticket are recognized by the override injection mechanism.
-- Overrides can be configured per tool (not only “Oracle Flags”).
-- Existing `oracle` override injection and validation behavior continues to function.
-
-Priority & Severity (if inferable from input text):
-- Priority: Not provided
-- Severity: Not provided
-
-Source:
-- “Oraclepack… special logic only for lines that start with `oracle`”
-- “Generalize… to… prefixes (`oracle`, `codex`, `gemini`, `task-master`, `tm`)”
-- “Add per-tool override sets”
-```
+[TRUNCATED]
 ```
 
 .tickets/actions/Oraclepack Action Pack Issue.md
@@ -1874,35 +2763,7 @@ Requirements / Constraints:
 - Registry-based handling for additional tool prefixes as listed in the ticket text.
 
 Evidence:
-- References: “special logic only for lines that start with `oracle`… detects… injects… validation runs `oracle --dry-run summary`…”
-- References: “Optional: improve oraclepack UX… registry of command prefixes… Add per-tool override sets…”
-
-Open Items / Unknowns:
-- Exact code locations for `ExtractOracleInvocations` / `InjectFlags` and override sets in the repo (paths not provided in this ticket text).
-
-Risks / Dependencies:
-- Not required to make Action Packs execute non-oracle tools; explicitly described as “nice-to-have”.
-- Potential semantic mismatch if oracle-style overrides are applied to other CLIs without per-tool override sets.
-
-Acceptance Criteria:
-- oraclepack supports a registry of command prefixes including: `oracle`, `codex`, `gemini`, `task-master`, `tm`.
-- Overrides/flag injection is not hard-coded to only `oracle` command lines.
-- Per-tool override sets exist (or equivalent structure) so overrides are not incorrectly treated as “Oracle Flags” for non-oracle tools.
-- Existing oracle-only behavior remains functional.
-
-Priority & Severity (if inferable from input text):
-- Priority: Not provided
-- Severity: Not provided
-
-Source:
-- “Oraclepack executes each step as shell, but it has special logic only for lines that start with `oracle`”
-- “Generalize `ExtractOracleInvocations` / `InjectFlags`… registry of command prefixes (`oracle`, `codex`, `gemini`, `task-master`, `tm`)”
-- “Add per-tool override sets…”
-```
-
-[1]: https://developers.openai.com/codex/cli/reference/?utm_source=chatgpt.com "Command line options"
-[2]: https://geminicli.com/docs/tools/?utm_source=chatgpt.com "Gemini CLI tools"
-[3]: https://github.com/eyaltoledano/claude-task-master?utm_source=chatgpt.com "eyaltoledano/claude-task-master"
+[TRUNCATED]
 ```
 
 .tickets/actions/Oraclepack Compatibility Issues.md
@@ -2164,69 +3025,7 @@ Priority & Severity (if inferable from input text):
 Source:
 - “Steps 08–20… placeholders/notes… don’t dispatch Codex/Gemini… unless… contains the actual `codex` / `gemini` commands.”
 - “Best insertion points… placeholder steps… (09–13 and 16).”
-- “If the CLI is interactive → it will block waiting for input.”
-```
-
-```ticket T4
-T# Title:
-- Add “agent-mode” to oraclepack-taskify Action Pack generation (Codex/Gemini path in place of autopilot)
-
-Type:
-- enhancement
-
-Target Area:
-- oraclepack-taskify Action Pack template/generator (exact file paths not provided)
-
-Summary:
-- Extend taskify-generated Action Packs so they can optionally use an “agent-mode” (e.g., `mode=codex` / `mode=gemini`) in the phase after Task Master has expanded tasks (when `tasks.json` and `tm-complexity.json` exist). The ticket text specifies keeping the 20-step contract intact by swapping the existing autopilot entrypoint step slot with agent implementation.
-
-In Scope:
-- Add a mode switch for taskify-generated packs (explicitly suggested: `mode=codex` / `mode=gemini`).
-- Place the agent-mode insertion “right after Task Master expands tasks” (per ticket content).
-- Keep the “20-step contract intact” by swapping “autopilot entrypoint” with “agent implementation” using the same step slot (per ticket content).
-
-Out of Scope:
-- Modifying `ticket-action-pack.md` (handled in T3).
-- Defining new Task Master workflows beyond what is described.
-
-Current Behavior (Actual):
-- Taskify Action Pack can include a “guarded `tm autopilot` entrypoint” (per ticket content).
-- Without dispatcher/agent commands in steps, no Codex/Gemini implementation occurs (per ticket content).
-
-Expected Behavior:
-- A taskify-generated Action Pack can be generated in an agent-mode that uses Codex/Gemini implementation in the appropriate step slot while retaining the existing step-count/schema contract.
-
-Reproduction Steps:
-- Not provided.
-
-Requirements / Constraints:
-- Maintain the existing pack schema/contract: “keeping the 20-step contract intact” (per ticket content).
-- Agent-mode placement occurs after Task Master expansion (“the point where you have `tasks.json` and `tm-complexity.json`”) (per ticket content).
-
-Evidence:
-- “Optional… add an agent-mode to oraclepack-taskify packs… right after Task Master expands tasks… keep the 20-step contract intact.”
-- “swap ‘autopilot entrypoint’ with ‘agent implementation’ using the same step slot.”
-
-Open Items / Unknowns:
-- How the mode is selected (CLI flag, TUI option, config) is not provided in the included content.
-- Exact step number/slot to replace is not provided.
-
-Risks / Dependencies:
-- Depends on T2 if Codex/Gemini calls must receive oraclepack overrides/validation (per ticket’s “won’t inherit unless wrap/extend” note).
-
-Acceptance Criteria:
-- There is a documented/implemented way to generate a taskify Action Pack in `mode=codex` and/or `mode=gemini`.
-- In agent-mode, the pack still conforms to the same step-count contract described in the ticket content (20 steps; autopilot entrypoint swapped rather than expanded beyond contract).
-- Agent-mode insertion occurs after Task Master task expansion artifacts exist (as described in the ticket content).
-
-Priority & Severity (if inferable from input text):
-- Priority: Not provided
-- Severity: Not provided
-
-Source:
-- “Optional… add an agent-mode to oraclepack-taskify packs… right after Task Master expands tasks… keep the 20-step contract intact.”
-- “swap ‘autopilot entrypoint’ with ‘agent implementation’ using the same step slot.”
-```
+[TRUNCATED]
 ```
 
 .tickets/other/Oraclepack Pipeline Improvements.md
@@ -3682,74 +4481,6 @@ Out of Scope:
 Current Behavior (Actual):
 - Not provided.
 Expected Behavior:
-- MCP clients see proper tool risk hints and HTTP transport is protected as recommended for local/real-time usage.
-Reproduction Steps:
-- Not provided.
-Requirements / Constraints:
-- Must support “stdio” and “streamable-http”.
-- Must provide tool annotations as described.
-Evidence:
-- Transport choices and HTTP security recommendations. :contentReference[oaicite:46]{index=46}
-- Tool annotation guidance (readOnlyHint/destructiveHint/openWorldHint). :contentReference[oaicite:47]{index=47}
-Open Items / Unknowns:
-- Exact auth mechanism for streamable-http (token, mTLS, etc.): Not provided.
-Risks / Dependencies:
-- Depends on MCP SDK capabilities available in the chosen implementation.
-Acceptance Criteria:
-- [ ] Running with `--transport stdio` is supported and does not interleave logs on stdout.
-- [ ] Running with `--transport streamable-http` includes Origin validation and uses localhost binding + authentication (mechanism documented/implemented).
-- [ ] Validate/list/read tools are annotated as read-only; run tools are annotated as destructive/open-world.
-Priority & Severity (if inferable from input text):
-- Priority: Not provided
-- Severity: Not provided
-Source:
-- “Streamable HTTP … implement Origin validation and bind to localhost + auth to avoid DNS rebinding …” :contentReference[oaicite:48]{index=48}
-- “mark validate/list/read tools as readOnlyHint … mark run tools as destructiveHint, openWorldHint …” :contentReference[oaicite:49]{index=49}
-```
-
-````ticket T7
-T# Title: Implement Stage-3 Action Pack validation + artifact summarization helpers
-Type: chore
-Target Area: oraclepack_mcp_server/taskify.py (Stage-3 helpers) and wiring into server tools
-Summary:
-- Implement helper functions to validate Stage-3 “Action Pack” markdown constraints before execution and to summarize key Stage-3 artifacts produced by running action packs.
-- These helpers support deterministic agent workflows around Taskify outputs.
-In Scope:
-- Action Pack validation logic:
-  - Enforce “single ```bash fence” and “step headers” constraints as stated in the parent ticket.
-- Artifacts summary logic:
-  - Summarize outputs such as `_actions.json`, `_actions.md`, PRD path, `tm-complexity.json`, and “pipelines doc” when present.
-- Integration points:
-  - Provide outputs suitable for `oraclepack_taskify_validate_action_pack` and `oraclepack_taskify_artifacts_summary` tools (registered in T5).
-Out of Scope:
-- Stage-2 detection/validation (T4).
-- Actual execution of action packs (tool wiring and subprocess invocation handled in T5/T3).
-Current Behavior (Actual):
-- Not provided.
-Expected Behavior:
-- Action packs can be validated for structural correctness prior to execution, and resulting artifacts can be summarized for quick agent consumption.
-Reproduction Steps:
-- Not provided.
-Requirements / Constraints:
-- Validate Stage-3 Action Pack “single ```bash fence, step headers `# NN)`”.
-- Summarize Stage-3 artifacts: `_actions.json`, PRD path, `tm-complexity.json`, pipelines doc, etc.
-Evidence:
-- Stage-3 validation requirement text. :contentReference[oaicite:50]{index=50}
-- Artifact summary examples list. :contentReference[oaicite:51]{index=51}
-Open Items / Unknowns:
-- Exact, formal grammar for “step headers” beyond the example text: Not provided.
-- Exact artifact filenames/paths beyond examples: Not provided.
-Risks / Dependencies:
-- Not provided.
-Acceptance Criteria:
-- [ ] Validation fails with a clear error when the action pack violates the “single bash fence” constraint.
-- [ ] Validation fails with a clear error when step headers do not meet the stated expectations.
-- [ ] Artifact summarizer reports presence/absence of the example artifacts and returns a readable summary.
-- [ ] Tool outputs are deterministic for the same filesystem state.
-Priority & Severity (if inferable from input text):
-- Priority: Not provided
-- Severity: Not provided
-Source:
 [TRUNCATED]
 ```
 
@@ -4588,121 +5319,6 @@ class ReadFileInput(BaseModel):
 
 
 class TaskifyDetectStage2Input(BaseModel):
-    stage2_path: str = Field(default="auto", description="Dir or file, or 'auto'")
-    repo_root: str = Field(default=".", description="Repo root for relative resolution")
-    response_format: ResponseFormat = Field(default=ResponseFormat.markdown)
-
-
-class TaskifyValidateStage2Input(BaseModel):
-    out_dir: str = Field(..., description="Directory that should contain 01-*.md..20-*.md")
-    response_format: ResponseFormat = Field(default=ResponseFormat.markdown)
-
-
-class TaskifyValidateActionPackInput(BaseModel):
-    pack_path: str = Field(..., description="Path to Stage-3 Action Pack markdown")
-    response_format: ResponseFormat = Field(default=ResponseFormat.markdown)
-
-
-class TaskifyArtifactsSummaryInput(BaseModel):
-    out_dir: str = Field(..., description="Stage-3 out_dir (where _actions.json etc are written)")
-    response_format: ResponseFormat = Field(default=ResponseFormat.markdown)
-
-
-class TaskifyRunActionPackInput(BaseModel):
-    pack_path: str = Field(..., description="Path to the Stage-3 Action Pack markdown")
-    out_dir: str | None = Field(default=None, description="Pass --out-dir for execution")
-    timeout_s: int = Field(default=7200)
-    response_format: ResponseFormat = Field(default=ResponseFormat.markdown)
-
-
-cfg = load_config()
-
-mcp = FastMCP(
-    name="oraclepack-mcp-server",
-    # For production Streamable HTTP deployments, stateless_http + json_response is recommended.
-    # Clients may override by running behind an ASGI app if needed.
-    stateless_http=True,
-    json_response=True,
-)
-
-
-def _md_codeblock(lang: str, content: str) -> str:
-    return f"```{lang}\n{content}\n```"
-
-
-def _format_cmd_result(result: Any, response_format: ResponseFormat) -> Any:
-    if response_format == ResponseFormat.json:
-        return {
-            "ok": result.ok,
-            "exit_code": result.exit_code,
-            "duration_s": result.duration_s,
-            "stdout": result.stdout,
-            "stderr": result.stderr,
-            "stdout_truncated": result.stdout_truncated,
-            "stderr_truncated": result.stderr_truncated,
-        }
-
-    lines = []
-    lines.append(f"**ok**: {result.ok}")
-    lines.append(f"**exit_code**: {result.exit_code}")
-    lines.append(f"**duration_s**: {result.duration_s:.2f}")
-    lines.append("")
-
-    if result.stdout:
-        lines.append("## stdout")
-        lines.append(_md_codeblock("text", result.stdout))
-        if result.stdout_truncated:
-            lines.append(f"(stdout truncated to {cfg.character_limit} chars)")
-
-    if result.stderr:
-        lines.append("## stderr")
-        lines.append(_md_codeblock("text", result.stderr))
-        if result.stderr_truncated:
-            lines.append(f"(stderr truncated to {cfg.character_limit} chars)")
-
-    return "\n".join(lines)
-
-
-def _ensure_exec_enabled() -> None:
-    if not cfg.enable_exec:
-        raise PermissionError(
-            "Execution is disabled. Set ORACLEPACK_ENABLE_EXEC=1 to enable pack execution tools."
-        )
-
-
-@mcp.tool(
-    name="oraclepack_validate_pack",
-    annotations={
-        "title": "Validate oraclepack pack",
-        "readOnlyHint": True,
-        "destructiveHint": False,
-        "idempotentHint": True,
-        "openWorldHint": False,
-    },
-)
-async def oraclepack_validate_pack(params: PackPathInput) -> Any:
-    pack_path = resolve_under_roots(Path(params.pack_path), cfg.allowed_roots)
-
-    argv = [cfg.oraclepack_bin, "validate", str(pack_path)]
-    result = await run_cmd(argv, cwd=cfg.workdir, timeout_s=120, env={}, character_limit=cfg.character_limit)
-    return _format_cmd_result(result, params.response_format)
-
-
-@mcp.tool(
-    name="oraclepack_list_steps",
-    annotations={
-        "title": "List steps in an oraclepack pack",
-        "readOnlyHint": True,
-        "destructiveHint": False,
-        "idempotentHint": True,
-        "openWorldHint": False,
-    },
-)
-async def oraclepack_list_steps(params: PackPathInput) -> Any:
-    pack_path = resolve_under_roots(Path(params.pack_path), cfg.allowed_roots)
-
-    argv = [cfg.oraclepack_bin, "list", str(pack_path)]
-    result = await run_cmd(argv, cwd=cfg.workdir, timeout_s=120, env={}, character_limit=cfg.character_limit)
 [TRUNCATED]
 ```
 

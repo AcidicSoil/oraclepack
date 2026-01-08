@@ -13,6 +13,7 @@
     "code:t": "codefetch -t 5 --include-dir .tickets -o oraclepack-tickets.md --max-tokens 50000 --token-limiter truncated",
     "code:mcp": "codefetch -t 5 --include-dir oraclepack-mcp-server -o oraclepack-mcp.md --max-tokens 50000 --token-limiter truncated",
     "code:tm": "codefetch -t 5 --include-files \"**/tm-*\",\"**/tm-*/**/*\" -o tm_SKILL_and_PROMPTS.md --max-tokens 75000",
-    "code:opt": "codefetch -t 5 --include-files \".config/skills/oraclepack-taskify/**/*.md\",\".config/skills/oraclepack-gold-pack/**/*.md\" -o oraclepack-goldpack-taskify_SKILL.md --max-tokens 75000 --token-limiter truncated"
+    "code:opt": "codefetch -t 5 --include-dir oraclepack-mcp-server,internal,cmd -o oraclepack-op-mcp.md --max-tokens 75000 --token-limiter truncated",
+    "scri": "bash scripts/codefetch_skill.sh"
   }
 }

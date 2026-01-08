@@ -44,10 +44,22 @@ Project Structure:
 │   ├── scripts
 │   │   ├── build_install_oraclepack.md
 │   │   ├── build_install_oraclepack.sh
+│   │   ├── codefetch_skill.sh
 │   │   ├── install-global.ps1
 │   │   ├── install-global.sh
 │   │   └── tag-release.sh
 │   └── skills
+│       ├── oraclepack-pipeline-improver
+│       │   ├── assets
+│       │   │   ├── backlog-template.md
+│       │   │   ├── change-plan-template.md
+│       │   │   └── normalized.example.jsonl
+│       │   ├── references
+│       │   │   ├── actionizer-spec.md
+│       │   │   ├── cli-contract.md
+│       │   │   ├── run-manifest-spec.md
+│       │   │   └── stage1-prompt-metadata.md
+│       │   └── SKILL.md
 │       └── oraclepack-tickets-pack
 │           ├── references
 │           │   ├── attachment-minimization.md
@@ -61,12 +73,136 @@ Project Structure:
 │   └── workflows
 │       ├── ci.yml
 │       └── release.yml
-├── .oraclepack
-│   └── ticketify
-│       ├── _actions.json
-│       ├── _actions.md
-│       ├── _tickets_index.json
-│       └── ticket-action-pack.md
+├── .mypy_cache
+│   ├── 3.12
+│   │   ├── _typeshed
+│   │   │   ├── __init__.data.json
+│   │   │   ├── __init__.meta.json
+│   │   │   ├── importlib.data.json
+│   │   │   └── importlib.meta.json
+│   │   ├── collections
+│   │   │   ├── __init__.data.json
+│   │   │   ├── __init__.meta.json
+│   │   │   ├── abc.data.json
+│   │   │   └── abc.meta.json
+│   │   ├── email
+│   │   │   ├── __init__.data.json
+│   │   │   ├── __init__.meta.json
+│   │   │   ├── _policybase.data.json
+│   │   │   ├── _policybase.meta.json
+│   │   │   ├── charset.data.json
+│   │   │   ├── charset.meta.json
+│   │   │   ├── contentmanager.data.json
+│   │   │   ├── contentmanager.meta.json
+│   │   │   ├── errors.data.json
+│   │   │   ├── errors.meta.json
+│   │   │   ├── header.data.json
+│   │   │   ├── header.meta.json
+│   │   │   ├── message.data.json
+│   │   │   ├── message.meta.json
+│   │   │   ├── policy.data.json
+│   │   │   └── policy.meta.json
+│   │   ├── importlib
+│   │   │   ├── metadata
+│   │   │   │   ├── __init__.data.json
+│   │   │   │   ├── __init__.meta.json
+│   │   │   │   ├── _meta.data.json
+│   │   │   │   └── _meta.meta.json
+│   │   │   ├── resources
+│   │   │   │   ├── __init__.data.json
+│   │   │   │   ├── __init__.meta.json
+│   │   │   │   ├── _common.data.json
+│   │   │   │   ├── _common.meta.json
+│   │   │   │   ├── abc.data.json
+│   │   │   │   └── abc.meta.json
+│   │   │   ├── __init__.data.json
+│   │   │   ├── __init__.meta.json
+│   │   │   ├── _abc.data.json
+│   │   │   ├── _abc.meta.json
+│   │   │   ├── _bootstrap.data.json
+│   │   │   ├── _bootstrap.meta.json
+│   │   │   ├── _bootstrap_external.data.json
+│   │   │   ├── _bootstrap_external.meta.json
+│   │   │   ├── abc.data.json
+│   │   │   ├── abc.meta.json
+│   │   │   ├── machinery.data.json
+│   │   │   ├── machinery.meta.json
+│   │   │   ├── readers.data.json
+│   │   │   └── readers.meta.json
+│   │   ├── os
+│   │   │   ├── __init__.data.json
+│   │   │   ├── __init__.meta.json
+│   │   │   ├── path.data.json
+│   │   │   └── path.meta.json
+│   │   ├── sys
+│   │   │   ├── __init__.data.json
+│   │   │   ├── __init__.meta.json
+│   │   │   ├── _monitoring.data.json
+│   │   │   └── _monitoring.meta.json
+│   │   ├── zipfile
+│   │   │   ├── _path
+│   │   │   │   ├── __init__.data.json
+│   │   │   │   └── __init__.meta.json
+│   │   │   ├── __init__.data.json
+│   │   │   └── __init__.meta.json
+│   │   ├── @plugins_snapshot.json
+│   │   ├── _ast.data.json
+│   │   ├── _ast.meta.json
+│   │   ├── _codecs.data.json
+│   │   ├── _codecs.meta.json
+│   │   ├── _collections_abc.data.json
+│   │   ├── _collections_abc.meta.json
+│   │   ├── _frozen_importlib.data.json
+│   │   ├── _frozen_importlib.meta.json
+│   │   ├── _frozen_importlib_external.data.json
+│   │   ├── _frozen_importlib_external.meta.json
+│   │   ├── _io.data.json
+│   │   ├── _io.meta.json
+│   │   ├── _sitebuiltins.data.json
+│   │   ├── _sitebuiltins.meta.json
+│   │   ├── abc.data.json
+│   │   ├── abc.meta.json
+│   │   ├── ast.data.json
+│   │   ├── ast.meta.json
+│   │   ├── builtins.data.json
+│   │   ├── builtins.meta.json
+│   │   ├── codecs.data.json
+│   │   ├── codecs.meta.json
+│   │   ├── contextlib.data.json
+│   │   ├── contextlib.meta.json
+│   │   ├── dataclasses.data.json
+│   │   ├── dataclasses.meta.json
+│   │   ├── enum.data.json
+│   │   ├── enum.meta.json
+│   │   ├── genericpath.data.json
+│   │   ├── genericpath.meta.json
+│   │   ├── io.data.json
+│   │   ├── io.meta.json
+│   │   ├── pathlib.data.json
+│   │   ├── pathlib.meta.json
+│   │   ├── posixpath.data.json
+│   │   ├── posixpath.meta.json
+│   │   ├── re.data.json
+│   │   ├── re.meta.json
+│   │   ├── resource.data.json
+│   │   ├── resource.meta.json
+│   │   ├── sre_compile.data.json
+│   │   ├── sre_compile.meta.json
+│   │   ├── sre_constants.data.json
+│   │   ├── sre_constants.meta.json
+│   │   ├── sre_parse.data.json
+│   │   ├── sre_parse.meta.json
+│   │   ├── subprocess.data.json
+│   │   ├── subprocess.meta.json
+│   │   ├── test.data.json
+│   │   ├── test.meta.json
+│   │   ├── types.data.json
+│   │   ├── types.meta.json
+│   │   ├── typing.data.json
+│   │   ├── typing.meta.json
+│   │   ├── typing_extensions.data.json
+│   │   └── typing_extensions.meta.json
+│   └── CACHEDIR.TAG
 ├── .ruler
 │   ├── AGENTS.md
 │   ├── ruler.toml
@@ -96,34 +232,13 @@ Project Structure:
 │   │   ├── Oraclepack Prompt Generator.md
 │   │   ├── Oraclepack Workflow Enhancement.md
 │   │   └── Verbose Payload Rendering TUI.md
-│   └── PRD-TUI
-│       ├── Oraclepack TUI Integration.md
-│       └── PRD-generator URL routing.md
-├── docs
-│   ├── oracle-questions-2026-01-07
-│   │   ├── 01-contracts-interfaces-surface.md
-│   │   ├── 02-contracts-interfaces-integration.md
-│   │   ├── 03-invariants-domain.md
-│   │   ├── 04-invariants-validation.md
-│   │   ├── 05-caching-state-layers.md
-│   │   ├── 06-caching-state-consistency.md
-│   │   ├── 07-background-jobs-discovery.md
-│   │   ├── 08-background-jobs-reliability.md
-│   │   ├── 09-observability-signals.md
-│   │   ├── 10-observability-gaps.md
-│   │   ├── 11-permissions-model.md
-│   │   ├── 12-permissions-enforcement.md
-│   │   ├── 13-migrations-schema.md
-│   │   ├── 14-migrations-compat.md
-│   │   ├── 15-ux-flows-primary.md
-│   │   ├── 16-ux-flows-edgecases.md
-│   │   ├── 17-failure-modes-taxonomy.md
-│   │   ├── 18-failure-modes-resilience.md
-│   │   ├── 19-feature-flags-inventory.md
-│   │   └── 20-feature-flags-rollout.md
-│   ├── oracle-actions-pack-2026-01-07.md
-│   ├── oracle-pack-2026-01-07.md
-│   └── oracle-pack-2026-01-08.md
+│   ├── PRD-TUI
+│   │   ├── Oraclepack TUI Integration.md
+│   │   └── PRD-generator URL routing.md
+│   ├── Oraclepack File Storage.md
+│   ├── Oraclepack Schema Approach.md
+│   ├── Oraclepack bash fix.md
+│   └── Publish OraclePack MCP.md
 ├── internal
 │   ├── app
 │   │   ├── app.go
@@ -214,6 +329,34 @@ Project Structure:
 │   ├── inspector.config.json
 │   ├── pyproject.toml
 │   └── requirements.txt
+├── scripts
+│   ├── build_install_oraclepack.md
+│   ├── build_install_oraclepack.sh
+│   ├── codefetch_skill.sh
+│   ├── install-global.ps1
+│   ├── install-global.sh
+│   └── tag-release.sh
+├── skills
+│   ├── oraclepack-pipeline-improver
+│   │   ├── assets
+│   │   │   ├── backlog-template.md
+│   │   │   ├── change-plan-template.md
+│   │   │   └── normalized.example.jsonl
+│   │   ├── references
+│   │   │   ├── actionizer-spec.md
+│   │   │   ├── cli-contract.md
+│   │   │   ├── run-manifest-spec.md
+│   │   │   └── stage1-prompt-metadata.md
+│   │   └── SKILL.md
+│   └── oraclepack-tickets-pack
+│       ├── references
+│       │   ├── attachment-minimization.md
+│       │   ├── ticket-bundling.md
+│       │   └── tickets-pack-template.md
+│       ├── scripts
+│       │   ├── lint_attachments.py
+│       │   └── validate_pack.py
+│       └── SKILL.md
 ├── .browser-echo-mcp.json
 ├── .goreleaser.yaml
 ├── go.mod
@@ -231,7 +374,7 @@ Project Structure:
 <source_code>
 .browser-echo-mcp.json
 ```
-{"url":"http://127.0.0.1:44831","route":"/__client-logs","timestamp":1767882579175,"pid":23273}
+{"url":"http://127.0.0.1:45301","route":"/__client-logs","timestamp":1767903207887,"pid":62589}
 ```
 
 .goreleaser.yaml
@@ -442,7 +585,8 @@ package.json
     "code:t": "codefetch -t 5 --include-dir .tickets -o oraclepack-tickets.md --max-tokens 50000 --token-limiter truncated",
     "code:mcp": "codefetch -t 5 --include-dir oraclepack-mcp-server -o oraclepack-mcp.md --max-tokens 50000 --token-limiter truncated",
     "code:tm": "codefetch -t 5 --include-files \"**/tm-*\",\"**/tm-*/**/*\" -o tm_SKILL_and_PROMPTS.md --max-tokens 75000",
-    "code:opt": "codefetch -t 5 --include-files \".config/skills/oraclepack-taskify/**/*.md\",\".config/skills/oraclepack-gold-pack/**/*.md\" -o oraclepack-goldpack-taskify_SKILL.md --max-tokens 75000 --token-limiter truncated"
+    "code:opt": "codefetch -t 5 --include-dir oraclepack-mcp-server,internal,cmd -o oraclepack-op-mcp.md --max-tokens 75000 --token-limiter truncated",
+    "scri": "bash scripts/codefetch_skill.sh"
   }
 }
 ```
@@ -461,6 +605,13 @@ tickets_prd.chatgpt-urls.json
   "default": "",
   "items": null
 }
+```
+
+.mypy_cache/CACHEDIR.TAG
+```
+Signature: 8a477f597d28d172789f06886806bc55
+# This file is a cache directory tag automatically created by mypy.
+# For information about cache directory tags see https://bford.info/cachedir/
 ```
 
 .ruler/AGENTS.md
@@ -837,118 +988,7 @@ Taskmaster supports multiple AI coding assistant rule sets that can be configure
 
 - Run `next_task` / `task-master next` to show the next task to work on.
 - The command identifies tasks with all dependencies satisfied
-- Tasks are prioritized by priority level, dependency count, and ID
-- The command shows comprehensive task information including:
-    - Basic task details and description
-    - Implementation details
-    - Subtasks (if they exist)
-    - Contextual suggested actions
-- Recommended before starting any new development work
-- Respects your project's dependency structure
-- Ensures tasks are completed in the appropriate sequence
-- Provides ready-to-use commands for common task actions
-
-## Viewing Specific Task Details
-
-- Run `get_task` / `task-master show <id>` to view a specific task.
-- Use dot notation for subtasks: `task-master show 1.2` (shows subtask 2 of task 1)
-- Displays comprehensive information similar to the next command, but for a specific task
-- For parent tasks, shows all subtasks and their current status
-- For subtasks, shows parent task information and relationship
-- Provides contextual suggested actions appropriate for the specific task
-- Useful for examining task details before implementation or checking status
-
-## Managing Task Dependencies
-
-- Use `add_dependency` / `task-master add-dependency --id=<id> --depends-on=<id>` to add a dependency.
-- Use `remove_dependency` / `task-master remove-dependency --id=<id> --depends-on=<id>` to remove a dependency.
-- The system prevents circular dependencies and duplicate dependency entries
-- Dependencies are checked for existence before being added or removed
-- Task files are automatically regenerated after dependency changes
-- Dependencies are visualized with status indicators in task listings and files
-
-## Task Reorganization
-
-- Use `move_task` / `task-master move --from=<id> --to=<id>` to move tasks or subtasks within the hierarchy
-- This command supports several use cases:
-  - Moving a standalone task to become a subtask (e.g., `--from=5 --to=7`)
-  - Moving a subtask to become a standalone task (e.g., `--from=5.2 --to=7`)
-  - Moving a subtask to a different parent (e.g., `--from=5.2 --to=7.3`)
-  - Reordering subtasks within the same parent (e.g., `--from=5.2 --to=5.4`)
-  - Moving a task to a new, non-existent ID position (e.g., `--from=5 --to=25`)
-  - Moving multiple tasks at once using comma-separated IDs (e.g., `--from=10,11,12 --to=16,17,18`)
-- The system includes validation to prevent data loss:
-  - Allows moving to non-existent IDs by creating placeholder tasks
-  - Prevents moving to existing task IDs that have content (to avoid overwriting)
-  - Validates source tasks exist before attempting to move them
-- The system maintains proper parent-child relationships and dependency integrity
-- Task files are automatically regenerated after the move operation
-- This provides greater flexibility in organizing and refining your task structure as project understanding evolves
-- This is especially useful when dealing with potential merge conflicts arising from teams creating tasks on separate branches. Solve these conflicts very easily by moving your tasks and keeping theirs.
-
-## Iterative Subtask Implementation
-
-Once a task has been broken down into subtasks using `expand_task` or similar methods, follow this iterative process for implementation:
-
-1.  **Understand the Goal (Preparation):**
-    *   Use `get_task` / `task-master show <subtaskId>` (see @`taskmaster.md`) to thoroughly understand the specific goals and requirements of the subtask.
-
-2.  **Initial Exploration & Planning (Iteration 1):**
-    *   This is the first attempt at creating a concrete implementation plan.
-    *   Explore the codebase to identify the precise files, functions, and even specific lines of code that will need modification.
-    *   Determine the intended code changes (diffs) and their locations.
-    *   Gather *all* relevant details from this exploration phase.
-
-3.  **Log the Plan:**
-    *   Run `update_subtask` / `task-master update-subtask --id=<subtaskId> --prompt='<detailed plan>'`.
-    *   Provide the *complete and detailed* findings from the exploration phase in the prompt. Include file paths, line numbers, proposed diffs, reasoning, and any potential challenges identified. Do not omit details. The goal is to create a rich, timestamped log within the subtask's `details`.
-
-4.  **Verify the Plan:**
-    *   Run `get_task` / `task-master show <subtaskId>` again to confirm that the detailed implementation plan has been successfully appended to the subtask's details.
-
-5.  **Begin Implementation:**
-    *   Set the subtask status using `set_task_status` / `task-master set-status --id=<subtaskId> --status=in-progress`.
-    *   Start coding based on the logged plan.
-
-6.  **Refine and Log Progress (Iteration 2+):**
-    *   As implementation progresses, you will encounter challenges, discover nuances, or confirm successful approaches.
-    *   **Before appending new information**: Briefly review the *existing* details logged in the subtask (using `get_task` or recalling from context) to ensure the update adds fresh insights and avoids redundancy.
-    *   **Regularly** use `update_subtask` / `task-master update-subtask --id=<subtaskId> --prompt='<update details>\n- What worked...\n- What didn't work...'` to append new findings.
-    *   **Crucially, log:**
-        *   What worked ("fundamental truths" discovered).
-        *   What didn't work and why (to avoid repeating mistakes).
-        *   Specific code snippets or configurations that were successful.
-        *   Decisions made, especially if confirmed with user input.
-        *   Any deviations from the initial plan and the reasoning.
-    *   The objective is to continuously enrich the subtask's details, creating a log of the implementation journey that helps the AI (and human developers) learn, adapt, and avoid repeating errors.
-
-7.  **Review & Update Rules (Post-Implementation):**
-    *   Once the implementation for the subtask is functionally complete, review all code changes and the relevant chat history.
-    *   Identify any new or modified code patterns, conventions, or best practices established during the implementation.
-    *   Create new or update existing rules following internal guidelines (previously linked to `cursor_rules.md` and `self_improve.md`).
-
-8.  **Mark Task Complete:**
-    *   After verifying the implementation and updating any necessary rules, mark the subtask as completed: `set_task_status` / `task-master set-status --id=<subtaskId> --status=done`.
-
-9.  **Commit Changes (If using Git):**
-    *   Stage the relevant code changes and any updated/new rule files (`git add .`).
-    *   Craft a comprehensive Git commit message summarizing the work done for the subtask, including both code implementation and any rule adjustments.
-    *   Execute the commit command directly in the terminal (e.g., `git commit -m 'feat(module): Implement feature X for subtask <subtaskId>\n\n- Details about changes...\n- Updated rule Y for pattern Z'`).
-    *   Consider if a Changeset is needed according to internal versioning guidelines (previously linked to `changeset.md`). If so, run `npm run changeset`, stage the generated file, and amend the commit or create a new one.
-
-10. **Proceed to Next Subtask:**
-    *   Identify the next subtask (e.g., using `next_task` / `task-master next`).
-
-## Code Analysis & Refactoring Techniques
-
-- **Top-Level Function Search**:
-    - Useful for understanding module structure or planning refactors.
-    - Use grep/ripgrep to find exported functions/constants:
-      `rg "export (async function|function|const) \w+"` or similar patterns.
-    - Can help compare functions between files during migrations or identify potential naming conflicts.
-
----
-*This workflow provides a general guideline. Adapt it based on your specific project needs and team practices.*
+[TRUNCATED]
 ```
 
 .rules/rules.md
@@ -1327,2254 +1367,995 @@ This document provides a detailed reference for interacting with Taskmaster, cov
     *   `prompt`: `Optional: Provide extra context or specific instructions to Taskmaster for generating the subtasks.` (CLI: `-p, --prompt <text>`)
     *   `force`: `Optional: If true, clear existing subtasks before generating new ones. Default is false (append).` (CLI: `--force`)
     *   `tag`: `Specify which tag context the task belongs to. Defaults to the current active tag.` (CLI: `--tag <name>`)
-    *   `file`: `Path to your Taskmaster 'tasks.json' file. Default relies on auto-detection.` (CLI: `-f, --file <file>`)
-*   **Usage:** Generate a detailed implementation plan for a complex task before starting coding. Automatically uses complexity report recommendations if available and `num` is not specified.
-*   **Important:** This MCP tool makes AI calls and can take up to a minute to complete. Please inform users to hang tight while the operation is in progress.
-
-### 14. Expand All Tasks (`expand_all`)
-
-*   **MCP Tool:** `expand_all`
-*   **CLI Command:** `task-master expand --all [options]` (Note: CLI uses the `expand` command with the `--all` flag)
-*   **Description:** `Tell Taskmaster to automatically expand all eligible pending/in-progress tasks based on complexity analysis or defaults. Appends subtasks by default.`
-*   **Key Parameters/Options:**
-    *   `num`: `Optional: Suggests how many subtasks Taskmaster should aim to create per task.` (CLI: `-n, --num <number>`)
-    *   `research`: `Enable research role for more informed subtask generation. Requires appropriate API key.` (CLI: `-r, --research`)
-    *   `prompt`: `Optional: Provide extra context for Taskmaster to apply generally during expansion.` (CLI: `-p, --prompt <text>`)
-    *   `force`: `Optional: If true, clear existing subtasks before generating new ones for each eligible task. Default is false (append).` (CLI: `--force`)
-    *   `tag`: `Specify which tag context to expand. Defaults to the current active tag.` (CLI: `--tag <name>`)
-    *   `file`: `Path to your Taskmaster 'tasks.json' file. Default relies on auto-detection.` (CLI: `-f, --file <file>`)
-*   **Usage:** Useful after initial task generation or complexity analysis to break down multiple tasks at once.
-*   **Important:** This MCP tool makes AI calls and can take up to a minute to complete. Please inform users to hang tight while the operation is in progress.
-
-### 15. Clear Subtasks (`clear_subtasks`)
-
-*   **MCP Tool:** `clear_subtasks`
-*   **CLI Command:** `task-master clear-subtasks [options]`
-*   **Description:** `Remove all subtasks from one or more specified Taskmaster parent tasks.`
-*   **Key Parameters/Options:**
-    *   `id`: `The ID(s) of the Taskmaster parent task(s) whose subtasks you want to remove, e.g., '15' or '16,18'. Required unless using 'all'.` (CLI: `-i, --id <ids>`)
-    *   `all`: `Tell Taskmaster to remove subtasks from all parent tasks.` (CLI: `--all`)
-    *   `tag`: `Specify which tag context to operate on. Defaults to the current active tag.` (CLI: `--tag <name>`)
-    *   `file`: `Path to your Taskmaster 'tasks.json' file. Default relies on auto-detection.` (CLI: `-f, --file <file>`)
-*   **Usage:** Used before regenerating subtasks with `expand_task` if the previous breakdown needs replacement.
-
-### 16. Remove Subtask (`remove_subtask`)
-
-*   **MCP Tool:** `remove_subtask`
-*   **CLI Command:** `task-master remove-subtask [options]`
-*   **Description:** `Remove a subtask from its Taskmaster parent, optionally converting it into a standalone task.`
-*   **Key Parameters/Options:**
-    *   `id`: `Required. The ID(s) of the Taskmaster subtask(s) to remove, e.g., '15.2' or '16.1,16.3'.` (CLI: `-i, --id <id>`)
-    *   `convert`: `If used, Taskmaster will turn the subtask into a regular top-level task instead of deleting it.` (CLI: `-c, --convert`)
-    *   `generate`: `Enable Taskmaster to regenerate markdown task files after removing the subtask.` (CLI: `--generate`)
-    *   `tag`: `Specify which tag context to operate on. Defaults to the current active tag.` (CLI: `--tag <name>`)
-    *   `file`: `Path to your Taskmaster 'tasks.json' file. Default relies on auto-detection.` (CLI: `-f, --file <file>`)
-*   **Usage:** Delete unnecessary subtasks or promote a subtask to a top-level task.
-
-### 17. Move Task (`move_task`)
-
-*   **MCP Tool:** `move_task`
-*   **CLI Command:** `task-master move [options]`
-*   **Description:** `Move a task or subtask to a new position within the task hierarchy.`
-*   **Key Parameters/Options:**
-    *   `from`: `Required. ID of the task/subtask to move (e.g., "5" or "5.2"). Can be comma-separated for multiple tasks.` (CLI: `--from <id>`)
-    *   `to`: `Required. ID of the destination (e.g., "7" or "7.3"). Must match the number of source IDs if comma-separated.` (CLI: `--to <id>`)
-    *   `tag`: `Specify which tag context to operate on. Defaults to the current active tag.` (CLI: `--tag <name>`)
-    *   `file`: `Path to your Taskmaster 'tasks.json' file. Default relies on auto-detection.` (CLI: `-f, --file <file>`)
-*   **Usage:** Reorganize tasks by moving them within the hierarchy. Supports various scenarios like:
-    *   Moving a task to become a subtask
-    *   Moving a subtask to become a standalone task
-    *   Moving a subtask to a different parent
-    *   Reordering subtasks within the same parent
-    *   Moving a task to a new, non-existent ID (automatically creates placeholders)
-    *   Moving multiple tasks at once with comma-separated IDs
-*   **Validation Features:**
-    *   Allows moving tasks to non-existent destination IDs (creates placeholder tasks)
-    *   Prevents moving to existing task IDs that already have content (to avoid overwriting)
-    *   Validates that source tasks exist before attempting to move them
-    *   Maintains proper parent-child relationships
-*   **Example CLI:** `task-master move --from=5.2 --to=7.3` to move subtask 5.2 to become subtask 7.3.
-*   **Example Multi-Move:** `task-master move --from=10,11,12 --to=16,17,18` to move multiple tasks to new positions.
-*   **Common Use:** Resolving merge conflicts in tasks.json when multiple team members create tasks on different branches.
-
----
-
-## Dependency Management
-
-### 18. Add Dependency (`add_dependency`)
-
-*   **MCP Tool:** `add_dependency`
-*   **CLI Command:** `task-master add-dependency [options]`
-*   **Description:** `Define a dependency in Taskmaster, making one task a prerequisite for another.`
-*   **Key Parameters/Options:**
-    *   `id`: `Required. The ID of the Taskmaster task that will depend on another.` (CLI: `-i, --id <id>`)
-    *   `dependsOn`: `Required. The ID of the Taskmaster task that must be completed first, the prerequisite.` (CLI: `-d, --depends-on <id>`)
-    *   `tag`: `Specify which tag context to operate on. Defaults to the current active tag.` (CLI: `--tag <name>`)
-    *   `file`: `Path to your Taskmaster 'tasks.json' file. Default relies on auto-detection.` (CLI: `-f, --file <path>`)
-*   **Usage:** Establish the correct order of execution between tasks.
-
-### 19. Remove Dependency (`remove_dependency`)
-
-*   **MCP Tool:** `remove_dependency`
-*   **CLI Command:** `task-master remove-dependency [options]`
-*   **Description:** `Remove a dependency relationship between two Taskmaster tasks.`
-*   **Key Parameters/Options:**
-    *   `id`: `Required. The ID of the Taskmaster task you want to remove a prerequisite from.` (CLI: `-i, --id <id>`)
-    *   `dependsOn`: `Required. The ID of the Taskmaster task that should no longer be a prerequisite.` (CLI: `-d, --depends-on <id>`)
-    *   `tag`: `Specify which tag context to operate on. Defaults to the current active tag.` (CLI: `--tag <name>`)
-    *   `file`: `Path to your Taskmaster 'tasks.json' file. Default relies on auto-detection.` (CLI: `-f, --file <file>`)
-*   **Usage:** Update task relationships when the order of execution changes.
-
-### 20. Validate Dependencies (`validate_dependencies`)
-
-*   **MCP Tool:** `validate_dependencies`
-*   **CLI Command:** `task-master validate-dependencies [options]`
-*   **Description:** `Check your Taskmaster tasks for dependency issues (like circular references or links to non-existent tasks) without making changes.`
-*   **Key Parameters/Options:**
-    *   `tag`: `Specify which tag context to validate. Defaults to the current active tag.` (CLI: `--tag <name>`)
-    *   `file`: `Path to your Taskmaster 'tasks.json' file. Default relies on auto-detection.` (CLI: `-f, --file <file>`)
-*   **Usage:** Audit the integrity of your task dependencies.
-
-### 21. Fix Dependencies (`fix_dependencies`)
-
-*   **MCP Tool:** `fix_dependencies`
-*   **CLI Command:** `task-master fix-dependencies [options]`
-*   **Description:** `Automatically fix dependency issues (like circular references or links to non-existent tasks) in your Taskmaster tasks.`
-*   **Key Parameters/Options:**
-    *   `tag`: `Specify which tag context to fix dependencies in. Defaults to the current active tag.` (CLI: `--tag <name>`)
-    *   `file`: `Path to your Taskmaster 'tasks.json' file. Default relies on auto-detection.` (CLI: `-f, --file <file>`)
-*   **Usage:** Clean up dependency errors automatically.
-
----
-
-## Analysis & Reporting
-
-### 22. Analyze Project Complexity (`analyze_project_complexity`)
-
-*   **MCP Tool:** `analyze_project_complexity`
-*   **CLI Command:** `task-master analyze-complexity [options]`
-*   **Description:** `Have Taskmaster analyze your tasks to determine their complexity and suggest which ones need to be broken down further.`
-*   **Key Parameters/Options:**
-    *   `output`: `Where to save the complexity analysis report. Default is '.taskmaster/reports/task-complexity-report.json' (or '..._tagname.json' if a tag is used).` (CLI: `-o, --output <file>`)
-    *   `threshold`: `The minimum complexity score (1-10) that should trigger a recommendation to expand a task.` (CLI: `-t, --threshold <number>`)
-    *   `research`: `Enable research role for more accurate complexity analysis. Requires appropriate API key.` (CLI: `-r, --research`)
-    *   `tag`: `Specify which tag context to analyze. Defaults to the current active tag.` (CLI: `--tag <name>`)
-    *   `file`: `Path to your Taskmaster 'tasks.json' file. Default relies on auto-detection.` (CLI: `-f, --file <file>`)
-*   **Usage:** Used before breaking down tasks to identify which ones need the most attention.
-*   **Important:** This MCP tool makes AI calls and can take up to a minute to complete. Please inform users to hang tight while the operation is in progress.
-
-### 23. View Complexity Report (`complexity_report`)
-
-*   **MCP Tool:** `complexity_report`
-*   **CLI Command:** `task-master complexity-report [options]`
-*   **Description:** `Display the task complexity analysis report in a readable format.`
-*   **Key Parameters/Options:**
-    *   `tag`: `Specify which tag context to show the report for. Defaults to the current active tag.` (CLI: `--tag <name>`)
-    *   `file`: `Path to the complexity report (default: '.taskmaster/reports/task-complexity-report.json').` (CLI: `-f, --file <file>`)
-*   **Usage:** Review and understand the complexity analysis results after running analyze-complexity.
-
----
-
-## File Management
-
-### 24. Generate Task Files (`generate`)
-
-*   **MCP Tool:** `generate`
-*   **CLI Command:** `task-master generate [options]`
-*   **Description:** `Create or update individual Markdown files for each task based on your tasks.json.`
-*   **Key Parameters/Options:**
-    *   `output`: `The directory where Taskmaster should save the task files (default: in a 'tasks' directory).` (CLI: `-o, --output <directory>`)
-    *   `tag`: `Specify which tag context to generate files for. Defaults to the current active tag.` (CLI: `--tag <name>`)
-    *   `file`: `Path to your Taskmaster 'tasks.json' file. Default relies on auto-detection.` (CLI: `-f, --file <file>`)
-*   **Usage:** Run this after making changes to tasks.json to keep individual task files up to date. This command is now manual and no longer runs automatically.
-
----
-
-## AI-Powered Research
-
-### 25. Research (`research`)
-
-*   **MCP Tool:** `research`
-*   **CLI Command:** `task-master research [options]`
-*   **Description:** `Perform AI-powered research queries with project context to get fresh, up-to-date information beyond the AI's knowledge cutoff.`
-*   **Key Parameters/Options:**
-    *   `query`: `Required. Research query/prompt (e.g., "What are the latest best practices for React Query v5?").` (CLI: `[query]` positional or `-q, --query <text>`)
-    *   `taskIds`: `Comma-separated list of task/subtask IDs from the current tag context (e.g., "15,16.2,17").` (CLI: `-i, --id <ids>`)
-    *   `filePaths`: `Comma-separated list of file paths for context (e.g., "src/api.js,docs/readme.md").` (CLI: `-f, --files <paths>`)
-    *   `customContext`: `Additional custom context text to include in the research.` (CLI: `-c, --context <text>`)
-    *   `includeProjectTree`: `Include project file tree structure in context (default: false).` (CLI: `--tree`)
-    *   `detailLevel`: `Detail level for the research response: 'low', 'medium', 'high' (default: medium).` (CLI: `--detail <level>`)
-    *   `saveTo`: `Task or subtask ID (e.g., "15", "15.2") to automatically save the research conversation to.` (CLI: `--save-to <id>`)
-    *   `saveFile`: `If true, saves the research conversation to a markdown file in '.taskmaster/docs/research/'.` (CLI: `--save-file`)
-    *   `noFollowup`: `Disables the interactive follow-up question menu in the CLI.` (CLI: `--no-followup`)
-    *   `tag`: `Specify which tag context to use for task-based context gathering. Defaults to the current active tag.` (CLI: `--tag <name>`)
-    *   `projectRoot`: `The directory of the project. Must be an absolute path.` (CLI: Determined automatically)
-*   **Usage:** **This is a POWERFUL tool that agents should use FREQUENTLY** to:
-    *   Get fresh information beyond knowledge cutoff dates
-    *   Research latest best practices, library updates, security patches
-    *   Find implementation examples for specific technologies
-    *   Validate approaches against current industry standards
-    *   Get contextual advice based on project files and tasks
-*   **When to Consider Using Research:**
-    *   **Before implementing any task** - Research current best practices
-    *   **When encountering new technologies** - Get up-to-date implementation guidance (libraries, apis, etc)
-    *   **For security-related tasks** - Find latest security recommendations
-    *   **When updating dependencies** - Research breaking changes and migration guides
-    *   **For performance optimization** - Get current performance best practices
-    *   **When debugging complex issues** - Research known solutions and workarounds
-*   **Research + Action Pattern:**
-    *   Use `research` to gather fresh information
-    *   Use `update_subtask` to commit findings with timestamps
-    *   Use `update_task` to incorporate research into task details
-    *   Use `add_task` with research flag for informed task creation
-*   **Important:** This MCP tool makes AI calls and can take up to a minute to complete. The research provides FRESH data beyond the AI's training cutoff, making it invaluable for current best practices and recent developments.
-
----
-
-## Tag Management
-
-This new suite of commands allows you to manage different task contexts (tags).
-
-### 26. List Tags (`tags`)
-
-*   **MCP Tool:** `list_tags`
-*   **CLI Command:** `task-master tags [options]`
-*   **Description:** `List all available tags with task counts, completion status, and other metadata.`
-*   **Key Parameters/Options:**
-    *   `file`: `Path to your Taskmaster 'tasks.json' file. Default relies on auto-detection.` (CLI: `-f, --file <file>`)
-    *   `--show-metadata`: `Include detailed metadata in the output (e.g., creation date, description).` (CLI: `--show-metadata`)
-
-### 27. Add Tag (`add_tag`)
-
-*   **MCP Tool:** `add_tag`
-*   **CLI Command:** `task-master add-tag <tagName> [options]`
-*   **Description:** `Create a new, empty tag context, or copy tasks from another tag.`
-*   **Key Parameters/Options:**
-    *   `tagName`: `Name of the new tag to create (alphanumeric, hyphens, underscores).` (CLI: `<tagName>` positional)
-    *   `--from-branch`: `Creates a tag with a name derived from the current git branch, ignoring the <tagName> argument.` (CLI: `--from-branch`)
-    *   `--copy-from-current`: `Copy tasks from the currently active tag to the new tag.` (CLI: `--copy-from-current`)
-    *   `--copy-from <tag>`: `Copy tasks from a specific source tag to the new tag.` (CLI: `--copy-from <tag>`)
-    *   `--description <text>`: `Provide an optional description for the new tag.` (CLI: `-d, --description <text>`)
-    *   `file`: `Path to your Taskmaster 'tasks.json' file. Default relies on auto-detection.` (CLI: `-f, --file <file>`)
-
-### 28. Delete Tag (`delete_tag`)
-
-*   **MCP Tool:** `delete_tag`
-*   **CLI Command:** `task-master delete-tag <tagName> [options]`
 [TRUNCATED]
 ```
 
-docs/oracle-actions-pack-2026-01-07.md
+.tickets/Oraclepack File Storage.md
 ```
-# Oraclepack Stage 3 — Action Pack (Taskify)
-
-Generated: 2026-01-07
-
-Parsed args (resolved):
-- stage2_path: auto
-- out_dir: auto
-- pack_path: docs/oracle-actions-pack-2026-01-07.md
-- actions_json: auto/_actions.json
-- actions_md: auto/_actions.md
-- prd_path: .taskmaster/docs/oracle-actions-prd.md
-- tag: oraclepack
-- mode: autopilot
-- top_n: 10
-- oracle_cmd: oracle
-- task_master_cmd: task-master
-- tm_cmd: tm
-- extra_files: (embedded where applicable)
-
-This document must contain exactly one bash code fence, and no other code fences.
-
-```bash
-# 01) Preflight: resolve Stage 2 inputs and verify tools (fail fast)
-set -euo pipefail
-
-STAGE2_PATH="auto"
-OUT_DIR="auto"
-MODE="autopilot"
-TASK_MASTER_CMD="task-master"
-ORACLE_CMD="oracle"
-TM_CMD="tm"
-ACTIONS_JSON="auto/_actions.json"
-ACTIONS_MD="auto/_actions.md"
-PRD_PATH=".taskmaster/docs/oracle-actions-prd.md"
-
-check_dir_complete() {
-  local d="$1"
-  [ -d "$d" ] || return 1
-  local n
-  for n in 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20; do
-    shopt -s nullglob
-    local matches=( "$d/${n}-"*.md )
-    shopt -u nullglob
-    if [ "${#matches[@]}" -ne 1 ]; then
-      return 1
-    fi
-  done
-  return 0
-}
-
-resolve_stage2_auto() {
-  local candidate
-
-  candidate="oracle-out"
-  if check_dir_complete "$candidate"; then echo "$candidate"; return 0; fi
-
-  candidate="docs/oracle-out"
-  if check_dir_complete "$candidate"; then echo "$candidate"; return 0; fi
-
-  for candidate in $(ls -1d docs/oracle-questions-*/oracle-out/ 2>/dev/null | sort -r); do
-    if check_dir_complete "$candidate"; then echo "$candidate"; return 0; fi
-  done
-
-  for candidate in $(ls -1d docs/oracle-questions-*/ 2>/dev/null | sort -r); do
-    if check_dir_complete "$candidate"; then echo "$candidate"; return 0; fi
-  done
-
-  candidate=$(ls -1 docs/oracle-pack-*.md 2>/dev/null | sort | tail -n 1 || true)
-  if [ -n "$candidate" ]; then echo "$candidate"; return 0; fi
-
-  candidate=$(ls -1 docs/oraclepacks/oracle-pack-*.md 2>/dev/null | sort | tail -n 1 || true)
-  if [ -n "$candidate" ]; then echo "$candidate"; return 0; fi
-
-  candidate=$(ls -1 docs/oracle-questions-*/oracle-pack-*.md 2>/dev/null | sort | tail -n 1 || true)
-  if [ -n "$candidate" ]; then echo "$candidate"; return 0; fi
-
-  candidate=$(ls -1 docs/oracle-questions-*/oraclepacks/oracle-pack-*.md 2>/dev/null | sort | tail -n 1 || true)
-  if [ -n "$candidate" ]; then echo "$candidate"; return 0; fi
-
-  return 1
-}
-
-resolve_out_dir() {
-  local stage2="$1"
-  if [ "$OUT_DIR" != "auto" ]; then
-    echo "$OUT_DIR"
-    return 0
-  fi
-  if [ -d "$stage2" ]; then
-    echo "$stage2"
-    return 0
-  fi
-  if [[ "$stage2" == docs/oracle-questions-*/* ]]; then
-    local base
-    base=$(echo "$stage2" | awk -F/ '{print $1"/"$2}')
-    echo "$base/oracle-out"
-    return 0
-  fi
-  echo "oracle-out"
-}
-
-STAGE2_SOURCE=""
-if [ "$STAGE2_PATH" != "auto" ]; then
-  if [ -d "$STAGE2_PATH" ] || [ -f "$STAGE2_PATH" ]; then
-    STAGE2_SOURCE="$STAGE2_PATH"
-  else
-    echo "ERROR: stage2_path does not exist: $STAGE2_PATH" >&2
-    exit 2
-  fi
-else
-  if ! STAGE2_SOURCE=$(resolve_stage2_auto); then
-    echo "ERROR: could not resolve Stage 2 outputs via auto search." >&2
-    echo "Searched in order: oracle-out/, docs/oracle-out/, docs/oracle-questions-*/oracle-out/, docs/oracle-questions-*/, docs/oracle-pack-*.md, docs/oraclepacks/oracle-pack-*.md, docs/oracle-questions-*/oracle-pack-*.md, docs/oracle-questions-*/oraclepacks/oracle-pack-*.md" >&2
-    exit 3
-  fi
-fi
-
-if [ -d "$STAGE2_SOURCE" ]; then
-  for n in 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20; do
-    shopt -s nullglob
-    matches=( "$STAGE2_SOURCE/${n}-"*.md )
-    shopt -u nullglob
-    if [ "${#matches[@]}" -eq 0 ]; then
-      echo "ERROR: missing oracle output for prefix ${n}: expected ${STAGE2_SOURCE}/${n}-*.md" >&2
-      exit 4
-    fi
-    if [ "${#matches[@]}" -gt 1 ]; then
-      echo "ERROR: multiple oracle outputs for prefix ${n}; expected exactly one file." >&2
-      printf '%s\n' "${matches[@]}" >&2
-      exit 5
-    fi
-  done
-fi
-
-OUT_DIR_RESOLVED=$(resolve_out_dir "$STAGE2_SOURCE")
-
-if [[ "$ACTIONS_JSON" == auto/* ]]; then
-  if [ -d "$OUT_DIR_RESOLVED" ]; then
-    ACTIONS_JSON="$OUT_DIR_RESOLVED/_actions.json"
-    ACTIONS_MD="$OUT_DIR_RESOLVED/_actions.md"
-  else
-    ACTIONS_JSON="docs/_actions.json"
-    ACTIONS_MD="docs/_actions.md"
-  fi
-fi
-
-if ! command -v "${TASK_MASTER_CMD%% *}" >/dev/null 2>&1; then
-  echo "ERROR: required tool missing: ${TASK_MASTER_CMD%% *} (from task_master_cmd='${TASK_MASTER_CMD}')" >&2
-  exit 10
-fi
-
-if ! command -v "${ORACLE_CMD%% *}" >/dev/null 2>&1; then
-  echo "ERROR: required tool missing: ${ORACLE_CMD%% *} (from oracle_cmd='${ORACLE_CMD}')" >&2
-  exit 11
-fi
-
-if [ "$MODE" = "autopilot" ]; then
-  if ! command -v "${TM_CMD%% *}" >/dev/null 2>&1; then
-    echo "ERROR: autopilot mode requires tm_cmd, but tool missing: ${TM_CMD%% *} (from tm_cmd='${TM_CMD}')" >&2
-    echo "HINT: rerun Stage 3 with mode=backlog if you only want tasks generated." >&2
-    exit 12
-  fi
-fi
-
-mkdir -p "$(dirname "$ACTIONS_JSON")" "$(dirname "$ACTIONS_MD")" "$(dirname "$PRD_PATH")" "docs"
-if [ -d "$OUT_DIR_RESOLVED" ]; then mkdir -p "$OUT_DIR_RESOLVED"; fi
-
-cat > "_actions.schema.md" <<'SCHEMA'
-# Canonical Actions JSON Schema (human-readable)
-[... schema details omitted for brevity, see asset ...]
-SCHEMA
-mv "_actions.schema.md" "docs/_actions.schema.md"
-
-echo "OK: Stage2 source: ${STAGE2_SOURCE}"
-echo "OK: Out dir: ${OUT_DIR_RESOLVED}"
-echo "OK: Mode: ${MODE}"
-
-
-# 02) Synthesize canonical actions JSON + summary MD
-set -euo pipefail
-
-STAGE2_PATH="auto"
-OUT_DIR="auto"
-ACTIONS_JSON="auto/_actions.json"
-ACTIONS_MD="auto/_actions.md"
-
-check_dir_complete() {
-  local d="$1"
-  [ -d "$d" ] || return 1
-  local n
-  for n in 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20; do
-    shopt -s nullglob
-    local matches=( "$d/${n}-"*.md )
-    shopt -u nullglob
-    if [ "${#matches[@]}" -ne 1 ]; then
-      return 1
-    fi
-  done
-  return 0
-}
-
-resolve_stage2_auto() {
-  local candidate
-  candidate="oracle-out"
-  if check_dir_complete "$candidate"; then echo "$candidate"; return 0; fi
-  candidate="docs/oracle-out"
-  if check_dir_complete "$candidate"; then echo "$candidate"; return 0; fi
-  for candidate in $(ls -1d docs/oracle-questions-*/oracle-out/ 2>/dev/null | sort -r); do
-    if check_dir_complete "$candidate"; then echo "$candidate"; return 0; fi
-  done
-  for candidate in $(ls -1d docs/oracle-questions-*/ 2>/dev/null | sort -r); do
-    if check_dir_complete "$candidate"; then echo "$candidate"; return 0; fi
-  done
-  candidate=$(ls -1 docs/oracle-pack-*.md 2>/dev/null | sort | tail -n 1 || true)
-  if [ -n "$candidate" ]; then echo "$candidate"; return 0; fi
-  candidate=$(ls -1 docs/oraclepacks/oracle-pack-*.md 2>/dev/null | sort | tail -n 1 || true)
-  if [ -n "$candidate" ]; then echo "$candidate"; return 0; fi
-  candidate=$(ls -1 docs/oracle-questions-*/oracle-pack-*.md 2>/dev/null | sort | tail -n 1 || true)
-  if [ -n "$candidate" ]; then echo "$candidate"; return 0; fi
-  candidate=$(ls -1 docs/oracle-questions-*/oraclepacks/oracle-pack-*.md 2>/dev/null | sort | tail -n 1 || true)
-  if [ -n "$candidate" ]; then echo "$candidate"; return 0; fi
-  return 1
-}
-
-resolve_out_dir() {
-  local stage2="$1"
-  if [ "$OUT_DIR" != "auto" ]; then
-    echo "$OUT_DIR"
-    return 0
-  fi
-  if [ -d "$stage2" ]; then
-    echo "$stage2"
-    return 0
-  fi
-  if [[ "$stage2" == docs/oracle-questions-*/* ]]; then
-    local base
-    base=$(echo "$stage2" | awk -F/ '{print $1"/"$2}')
-    echo "$base/oracle-out"
-    return 0
-  fi
-  echo "oracle-out"
-}
-
-STAGE2_SOURCE=""
-if [ "$STAGE2_PATH" != "auto" ]; then
-  if [ -d "$STAGE2_PATH" ] || [ -f "$STAGE2_PATH" ]; then
-    STAGE2_SOURCE="$STAGE2_PATH"
-  else
-    echo "ERROR: stage2_path does not exist: $STAGE2_PATH" >&2
-    exit 20
-  fi
-else
-  if ! STAGE2_SOURCE=$(resolve_stage2_auto); then
-    echo "ERROR: could not resolve Stage 2 outputs via auto search." >&2
-    exit 21
-  fi
-fi
-
-OUT_DIR_RESOLVED=$(resolve_out_dir "$STAGE2_SOURCE")
-
-if [[ "$ACTIONS_JSON" == auto/* ]]; then
-  if [ -d "$OUT_DIR_RESOLVED" ]; then
-    ACTIONS_JSON="$OUT_DIR_RESOLVED/_actions.json"
-    ACTIONS_MD="$OUT_DIR_RESOLVED/_actions.md"
-  else
-    ACTIONS_JSON="docs/_actions.json"
-    ACTIONS_MD="docs/_actions.md"
-  fi
-fi
-
-oracle_file_flags=()
-if [ -f "$STAGE2_SOURCE" ]; then
-  oracle_file_flags+=( -f "$STAGE2_SOURCE" )
-else
-  shopt -s nullglob
-  for n in 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20; do
-    matches=( "$STAGE2_SOURCE/${n}-"*.md )
-    if [ "${#matches[@]}" -ne 1 ]; then
-      echo "ERROR: expected exactly one match for ${STAGE2_SOURCE}/${n}-*.md, got ${#matches[@]}" >&2
-      printf '%s\n' "${matches[@]:-}" >&2
-      exit 22
-    fi
-    oracle_file_flags+=( -f "${matches[0]}" )
-  done
-  shopt -u nullglob
-fi
-
-mkdir -p "$(dirname "$ACTIONS_JSON")" "$(dirname "$ACTIONS_MD")"
-
-oracle \
-  --write-output "$ACTIONS_JSON" \
-  "${oracle_file_flags[@]}" \
-  -p "$(cat <<'PROMPT'
-You are producing a SINGLE JSON document and nothing else.
-
-Task: Normalize oraclepack answers into a canonical actionable plan.
-
-Hard requirements:
-- Output MUST be valid JSON (no markdown, no prose, no code fences).
-- Output MUST follow the schema described below.
-- Output MUST be deterministic in ordering:
-  - items sorted by id ascending: 01..20
-  - arrays use stable ordering (highest priority first; ties lexical)
-- Extract only actionable work. Do not invent repo facts. If evidence is missing, record it in missing_artifacts/risk_notes explicitly.
-
-Schema (summarized):
-Root object:
-- metadata: { generated_at, pack_date, source_out_dir, repo?, tooling?, top_n }
-- items: array (max 20)
-Each item:
-- id: "01".."20"
-- source_file: string
-- category: string
-- priority_score: number
-- recommended_next_action: string (single imperative sentence)
-- missing_artifacts: string[]
-- acceptance_criteria: string[] (testable)
-- risk_notes: string[]
-- estimated_effort: "XS"|"S"|"M"|"L"|"XL"
-- dependencies?: string[] of ids
-
-Repo/run context:
-- pack_date: 2026-01-07
-- source_out_dir: auto
-- top_n: 10
-- tag: oraclepack
-
-Output hygiene:
-- Do not include backticks or fenced code blocks anywhere.
-- Keep strings concise and specific.
-
-Now produce the JSON.
-PROMPT
-)"
-
-oracle \
-  --write-output "$ACTIONS_MD" \
-  -f "$ACTIONS_JSON" \
-  -p "$(cat <<'PROMPT'
-Write a human-readable Markdown summary of the canonical actions JSON.
-
-Hard requirements:
-- Output MUST be Markdown text with headings/bullets only (no code fences).
-- Keep ordering aligned with items id ascending (01..20).
-- Include:
-  - short executive summary (5–10 bullets)
-  - top 10 prioritized list (with id, title inferred from recommended_next_action, category, and why)
-  - per-item: recommended_next_action + acceptance_criteria bullets + missing_artifacts bullets
-- Do not invent facts; reflect only what is present in the JSON.
-
-Now write the summary Markdown.
-PROMPT
-)"
-
-echo "OK: Wrote $ACTIONS_JSON"
-echo "OK: Wrote $ACTIONS_MD"
-
-
-# 03) Generate PRD for Task Master
-set -euo pipefail
-
-ACTIONS_JSON="auto/_actions.json"
-PRD_PATH=".taskmaster/docs/oracle-actions-prd.md"
-
-if [[ "$ACTIONS_JSON" == auto/* ]]; then
-  if [ -f "docs/_actions.json" ]; then
-    ACTIONS_JSON="docs/_actions.json"
-  else
-    found=$(find docs -name "_actions.json" | head -n 1 || true)
-    if [ -n "$found" ]; then ACTIONS_JSON="$found"; fi
-  fi
-fi
-
-mkdir -p "$(dirname "$PRD_PATH")"
-
-oracle \
-  --write-output "$PRD_PATH" \
-  -f "$ACTIONS_JSON" \
-  -p "$(cat <<'PROMPT'
-Write a Task Master-compatible PRD (Markdown) derived from the canonical actions JSON.
-
-Hard requirements:
-- Output MUST be Markdown (no code fences).
-- Be dependency-aware (use dependencies if present; otherwise infer minimal dependencies cautiously).
-- Prioritize focus: select the top N items by priority_score (N = TOP_N), but keep a traceability appendix mapping all ids 01..20.
-- Every selected item must become an implementation-ready PRD section with:
-  - Goal
-  - Scope
-  - Non-goals
-  - Constraints
-  - Acceptance criteria (testable)
-  - Risks/unknowns
-  - Dependencies (explicit)
-- Use the tag value "oraclepack" in the PRD text where helpful for grouping.
-
-Constants:
-- TOP_N=10
-- TAG=oraclepack
-
-Now produce the PRD.
-PROMPT
-)"
-
-echo "OK: Wrote $PRD_PATH"
-
-
-# 04) Task Master: parse PRD into tasks
-set -euo pipefail
-
-PRD_PATH=".taskmaster/docs/oracle-actions-prd.md"
-TASK_MASTER_CMD="task-master"
-TAG="oraclepack"
-
-if "${TASK_MASTER_CMD}" parse-prd "${PRD_PATH}" --tag "${TAG}" 2>/dev/null; then
-  echo "OK: task-master parse-prd (tagged) succeeded."
-else
-  echo "INFO: task-master parse-prd did not accept --tag; retrying without tag."
-  "${TASK_MASTER_CMD}" parse-prd "${PRD_PATH}"
-fi
-
-if [ -f ".taskmaster/tasks.json" ]; then
-  echo "OK: Found .taskmaster/tasks.json"
-elif [ -f "tasks.json" ]; then
-  echo "OK: Found tasks.json"
-else
-  echo "WARN: tasks.json not found at .taskmaster/tasks.json or tasks.json. Check your Task Master configuration/output path."
-fi
-
-
-# 05) Task Master: analyze complexity and save report
-set -euo pipefail
-
-TASK_MASTER_CMD="task-master"
-OUT_DIR="auto"
-
-if [[ "$OUT_DIR" == "auto" ]] || [[ ! -e "$OUT_DIR" ]]; then
-  OUT_DIR="docs"
-fi
-if [ -f "$OUT_DIR" ]; then OUT_DIR="$(dirname "$OUT_DIR")"; fi
-
-mkdir -p "$OUT_DIR"
-
-"${TASK_MASTER_CMD}" analyze-complexity --output "$OUT_DIR/tm-complexity.json"
-echo "OK: Wrote $OUT_DIR/tm-complexity.json"
-
-
-# 06) Task Master: expand tasks
-set -euo pipefail
-
-TASK_MASTER_CMD="task-master"
-
-"${TASK_MASTER_CMD}" expand --all
-echo "OK: Expanded tasks."
-
-
-# 07) Pipelines (pipelines mode only): generate deterministic pipelines from tasks.json
-set -euo pipefail
-
-MODE="autopilot"
-
-if [ "$MODE" != "pipelines" ]; then
-  echo "SKIP: mode=$MODE (pipelines step runs only when mode=pipelines)."
-else
-  tasks_path=""
-  if [ -f ".taskmaster/tasks.json" ]; then
-    tasks_path=".taskmaster/tasks.json"
-  elif [ -f "tasks.json" ]; then
-    tasks_path="tasks.json"
-  else
-    echo "ERROR: tasks.json not found; cannot generate pipelines." >&2
-    exit 70
-  fi
-
-  mkdir -p "docs"
-
-  oracle \
-    --write-output "docs/oracle-actions-pipelines.md" \
-    -f "$tasks_path" \
-    -p "$(cat <<'PROMPT'
-Generate deterministic command pipelines from tasks.json.
-
-Hard requirements:
-- Output MUST be Markdown (no code fences).
-- Include 3–6 pipelines, each a numbered list of shell commands.
-- Each pipeline must be tests-first and avoid destructive operations.
-- Commands should be generic and repo-agnostic (no invented scripts).
-- Include a short resume strategy section explaining how to re-run pipelines safely.
-
-Now write docs/oracle-actions-pipelines.md content.
-PROMPT
-)"
-
-  echo "OK: Wrote docs/oracle-actions-pipelines.md"
-fi
-
-
-# 08) Autopilot (autopilot mode only): branch safety + guarded entrypoint
-set -euo pipefail
-
-MODE="autopilot"
-TM_CMD="tm"
-OUT_DIR="auto"
-PACK_DATE="2026-01-07"
-TAG="oraclepack"
-
-if [ "$MODE" != "autopilot" ]; then
-  echo "SKIP: mode=$MODE (autopilot step runs only when mode=autopilot)."
-else
-  if ! command -v git >/dev/null 2>&1; then
-    echo "ERROR: autopilot mode requires git on PATH." >&2
-    exit 80
-  fi
-
-  if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-    echo "ERROR: not inside a git work tree; autopilot mode requires a git repo." >&2
-    exit 81
-  fi
-
-  if ! git diff --quiet || ! git diff --cached --quiet; then
-    echo "ERROR: working tree not clean. Commit/stash before autopilot." >&2
-    exit 82
-  fi
-
-  current_branch="$(git rev-parse --abbrev-ref HEAD)"
-  if [ "$current_branch" = "main" ] || [ "$current_branch" = "master" ]; then
-    new_branch="oraclepack/${PACK_DATE}-${TAG}"
-    echo "INFO: on default-like branch (${current_branch}); creating work branch: ${new_branch}"
-    git checkout -b "$new_branch"
-  else
-    echo "OK: current branch is ${current_branch}"
-  fi
-
-  if [[ "$OUT_DIR" == "auto" ]] || [[ ! -d "$OUT_DIR" ]]; then OUT_DIR="docs"; fi
-  mkdir -p "$OUT_DIR"
-
-  cat > "$OUT_DIR/tm-autopilot.state.json" <<STATE
-{"pack_date":"${PACK_DATE}","tag":"${TAG}","mode":"autopilot","notes":"State file created by Stage-3 Action Pack. Autopilot tooling should resume from this file if supported."}
-STATE
-
-  echo "OK: Wrote $OUT_DIR/tm-autopilot.state.json"
-  echo "INFO: Starting autopilot via: ${TM_CMD} autopilot"
-  echo "INFO: If your tm tool uses a different subcommand, edit this step accordingly."
-
-  if ! "${TM_CMD}" --help 2>&1 | grep -qi "autopilot"; then
-    echo "ERROR: '${TM_CMD}' does not advertise 'autopilot' in --help output." >&2
-    echo "HINT: rerun Stage 3 with mode=backlog if you only want tasks generated." >&2
-    exit 83
-  fi
-
-  "${TM_CMD}" autopilot
-fi
+Parent Ticket:
+
+* Title: Stop oraclepack from writing run state/config JSON files into the project working directory
+* Summary: oraclepack currently writes per-pack `*.state.json`, `*.report.json`, and `*.chatgpt-urls.json` files into the repo/working directory. The requested change is to store these as config/state/cache outside the repo root (prefer XDG base dirs) and/or under a dedicated project-local `.oraclepack/` directory to avoid clutter.
+* Source:
+
+  * Link/ID: Not provided
+  * Original ticket excerpt (≤25 words) capturing the overall theme: “Move state/report outputs out of CWD by default… Stop producing per-pack `*.chatgpt-urls.json` by default.”
+* Global Constraints:
+
+  * Treat outputs as **config/state/cache** and store outside repo root using XDG base dirs (per ticket text).
+  * Use Go `os.UserConfigDir()` / `os.UserCacheDir()` for cross-platform defaults (per ticket text).
+  * No `UserStateDir()` in Go stdlib; implement `$XDG_STATE_HOME` fallback (per ticket text).
+* Global Environment:
+
+  * Unknown
+* Global Evidence:
+
+  * Current filenames mentioned: `<packBase>.state.json`, `<packBase>.report.json`, `<sameBase>.chatgpt-urls.json`.
+  * XDG Base Directory spec reference (background).
+  * Go `os.UserConfigDir` / `os.UserCacheDir` reference (background).
+
+Split Plan:
+
+* Coverage Map:
+
+  * Original item: “`oraclepack run` … derives filenames from the pack basename and writes them to the current working directory: `statePath := <packBase>.state.json`, `reportPath := <packBase>.report.json`”
+
+    * Assigned Ticket ID: T2
+  * Original item: “The TUI ‘ChatGPT URL picker’ then creates `<sameBase>.chatgpt-urls.json` next to the state file (or next to the pack file if statePath is empty).”
+
+    * Assigned Ticket ID: T3
+  * Original item: “It also defaults edits to **project scope**, so it will keep generating project-scoped stores unless the user explicitly switches to global.”
+
+    * Assigned Ticket ID: T3
+  * Original item: “Treat these as **config/state/cache** and store them outside the repo root using standard base dirs: … `$XDG_CONFIG_HOME` … `$XDG_STATE_HOME` … `$XDG_CACHE_HOME`…”
+
+    * Assigned Ticket ID: T1
+  * Original item: “In Go, you should use `os.UserConfigDir()` / `os.UserCacheDir()`… (There’s no `UserStateDir()`… implement XDG_STATE_HOME fallback…)”
+
+    * Assigned Ticket ID: T1
+  * Original item: “Move state/report outputs out of CWD by default… Update `internal/cli/run.go`… Make the directory overridable with a flag/env (e.g., `--state-dir` / `ORACLEPACK_STATE_DIR`).”
+
+    * Assigned Ticket ID: T2
+  * Original item: “Stop producing per-pack `*.chatgpt-urls.json` by default… Best UX default: change … default save scope to **global**…”
+
+    * Assigned Ticket ID: T3
+  * Original item: “Keep ‘project scope’ as an opt-in mode, but write it to a single per-project location (e.g., `<repo>/.oraclepack/chatgpt-urls.json`), not `<packName>.chatgpt-urls.json`.”
+
+    * Assigned Ticket ID: T3
+  * Original item: “Acceptable alternative (project-local…): `<repo>/.oraclepack/state/*.state.json` … `<repo>/.oraclepack/chatgpt-urls.json` … add `.oraclepack/` to `.gitignore`.”
+
+    * Assigned Ticket ID: T4
+  * Original item: “Immediate workaround (no code changes): Add these to `.gitignore`: `*.state.json`, `*.report.json`, `*.chatgpt-urls.json`.”
+
+    * Assigned Ticket ID: T4
+* Dependencies:
+
+  * T2 depends on T1 because T2 needs an agreed/default “oraclepack state dir” location strategy (XDG-based) to write into.
+  * T3 depends on T1 because T3 needs a global config location strategy (XDG-based) for URL persistence.
+* Split Tickets:
+
+```ticket T1
+T# Title: Define XDG-based directory strategy for oraclepack config/state/cache
+Type: chore
+Target Area: Config/state path resolution (shared utility / helpers)
+Summary:
+- Define the standard locations where oraclepack stores user config, run state, and cache so outputs stop polluting the repo root.
+- The ticket requires using XDG base dirs and Go’s cross-platform helpers where applicable, with an explicit fallback for state.
+In Scope:
+- Adopt XDG directory categories as the guiding model:
+  - Config: `$XDG_CONFIG_HOME` (default `~/.config`)
+  - State: `$XDG_STATE_HOME` (default `~/.local/state`)
+  - Cache: `$XDG_CACHE_HOME` (default `~/.cache`)
+- Use Go `os.UserConfigDir()` / `os.UserCacheDir()` for cross-platform defaults (per ticket text).
+- Implement a state-dir resolver that honors `$XDG_STATE_HOME` and falls back when not set (since Go stdlib has no `UserStateDir()`).
+Out of Scope:
+- Not provided
+Current Behavior (Actual):
+- Not provided
+Expected Behavior:
+- oraclepack has a single, consistent mechanism to determine:
+  - “oraclepack config dir” (for user prefs like URL lists)
+  - “oraclepack state dir” (for resume/run state)
+  - “oraclepack cache dir” (for non-essential cached data)
+Reproduction Steps:
+- Not provided
+Requirements / Constraints:
+- Treat outputs as config/state/cache; store outside repo root using standard base dirs (per ticket text).
+- Use `os.UserConfigDir()` / `os.UserCacheDir()` where applicable (per ticket text).
+- Implement `$XDG_STATE_HOME` fallback logic (per ticket text).
+Evidence:
+- “Treat these as config/state/cache and store them outside the repo root using standard base dirs…” (parent ticket)
+- “In Go, you should use os.UserConfigDir() / os.UserCacheDir()… There’s no UserStateDir()…” (parent ticket)
+Open Items / Unknowns:
+- Exact package/file locations for where to place the shared directory-resolution logic: Unknown
+Risks / Dependencies:
+- Not provided
+Acceptance Criteria:
+- A single directory-resolution mechanism exists for config/state/cache categories as described in scope.
+- The state-dir resolution honors `$XDG_STATE_HOME` when set and has a documented fallback when unset.
+- The config/cache resolution uses Go’s `os.UserConfigDir()` / `os.UserCacheDir()` (or equivalent wrapper) per ticket text.
+Priority & Severity (if inferable from input text):
+- Priority: Not provided
+- Severity: Not provided
+Source:
+- “Treat these as config/state/cache and store them outside the repo root using standard base dirs…”
+- “In Go, you should use os.UserConfigDir() / os.UserCacheDir()… There’s no UserStateDir()…”
+```
+
+```ticket T2
+T# Title: Move run-generated state/report JSON outputs out of CWD and add state-dir override
+Type: enhancement
+Target Area: Run command output paths (`internal/cli/run.go`)
+Summary:
+- oraclepack currently writes `<packBase>.state.json` and `<packBase>.report.json` into the current working directory.
+- Update the run pathing so these files are written under a dedicated “oraclepack state dir” by default, with an override via flag/env.
+In Scope:
+- Change default output location for:
+  - `<packBase>.state.json`
+  - `<packBase>.report.json`
+  from current working directory to a dedicated “oraclepack state dir”.
+- Update `internal/cli/run.go` to compute state/report paths under that state dir (per ticket text).
+- Add override via flag and env:
+  - `--state-dir`
+  - `ORACLEPACK_STATE_DIR`
+Out of Scope:
+- Not provided
+Current Behavior (Actual):
+- `<packBase>.state.json` and `<packBase>.report.json` are written to the current working directory.
+Expected Behavior:
+- By default, running oraclepack does not create `*.state.json` / `*.report.json` in the repo root / CWD.
+- By default, state/report files are written under the dedicated oraclepack state dir.
+- Setting `--state-dir` or `ORACLEPACK_STATE_DIR` writes state/report files under the specified directory.
+Reproduction Steps:
+1) Run `oraclepack run` from a repo root (or any working directory).
+2) Observe creation of `<packBase>.state.json` and `<packBase>.report.json` in the working directory.
+Requirements / Constraints:
+- Must be overridable by `--state-dir` / `ORACLEPACK_STATE_DIR` (per ticket text).
+- Should use the state-dir strategy defined in T1 for the default state dir.
+Evidence:
+- “`oraclepack run` … writes them to the current working directory: `statePath := <packBase>.state.json`, `reportPath := <packBase>.report.json`”
+- “Update `internal/cli/run.go` … Make the directory overridable with a flag/env (e.g., `--state-dir` / `ORACLEPACK_STATE_DIR`).”
+Open Items / Unknowns:
+- Whether state/report filenames must remain exactly `<packBase>.state.json` / `<packBase>.report.json` or can change: Not provided
+Risks / Dependencies:
+- Depends on T1 for default state-dir resolution strategy.
+Acceptance Criteria:
+- Running oraclepack with no overrides does not create `*.state.json` or `*.report.json` in the current working directory.
+- With no overrides, state/report files are written under the resolved oraclepack state dir.
+- With `--state-dir=<dir>`, state/report files are written under `<dir>`.
+- With `ORACLEPACK_STATE_DIR=<dir>`, state/report files are written under `<dir>`.
+Priority & Severity (if inferable from input text):
+- Priority: Not provided
+- Severity: Not provided
+Source:
+- “`oraclepack run` … writes … `<packBase>.state.json` … `<packBase>.report.json` … to the current working directory”
+- “Move state/report outputs out of CWD by default… Update internal/cli/run.go… `--state-dir` / `ORACLEPACK_STATE_DIR`”
+```
+
+```ticket T3
+T# Title: Stop generating per-pack `*.chatgpt-urls.json`; default URL picker persistence to global store
+Type: enhancement
+Target Area: TUI “ChatGPT URL picker” persistence
+Summary:
+- The TUI URL picker currently creates `<sameBase>.chatgpt-urls.json` near the pack/state file and defaults edits to project scope.
+- Change it so the default save scope is global (one file), while keeping project scope as an opt-in that writes to a single stable per-project path.
+In Scope:
+- Remove/avoid creating `<sameBase>.chatgpt-urls.json` “next to the state file (or next to the pack file…)” (per ticket text).
+- Change the URL picker default save scope to **global** (per ticket text).
+- Keep “project scope” as opt-in, but store at a single stable path:
+  - `<repo>/.oraclepack/chatgpt-urls.json`
+  rather than `<packName>.chatgpt-urls.json` (per ticket text).
+- Persist the global URL store to a single global location:
+  - Per ticket text, an existing global store path is referenced: `~/.oraclepack/chatgpt-urls.json`.
+Out of Scope:
+- Not provided
+Current Behavior (Actual):
+- URL picker creates `<sameBase>.chatgpt-urls.json` next to the state file (or pack file).
+- URL picker defaults edits to project scope.
+Expected Behavior:
+- Using the URL picker does not create `<packBase>.chatgpt-urls.json` files.
+- Default persistence is global (one stable file).
+- Project scope, if selected, writes only to `<repo>/.oraclepack/chatgpt-urls.json`.
+Reproduction Steps:
+1) Use the TUI “ChatGPT URL picker” during a run.
+2) Observe `<sameBase>.chatgpt-urls.json` being created near pack/state file.
+Requirements / Constraints:
+- Default save scope should be global (per ticket text).
+- Project scope must be opt-in and must not create per-pack URL json files (per ticket text).
+- Global persistence location:
+  - Conflicting guidance exists: ticket recommends XDG config dir generally, but also references existing `~/.oraclepack/chatgpt-urls.json` path.
+Evidence:
+- “The TUI ‘ChatGPT URL picker’ then creates `<sameBase>.chatgpt-urls.json`…”
+- “It also defaults edits to project scope…”
+- “Stop producing per-pack `*.chatgpt-urls.json` by default… change … default save scope to global…”
+- “Keep ‘project scope’ as an opt-in… write it to `<repo>/.oraclepack/chatgpt-urls.json`… not `<packName>.chatgpt-urls.json`.”
+Open Items / Unknowns:
+- Whether to keep `~/.oraclepack/chatgpt-urls.json` as the global path or migrate to `$XDG_CONFIG_HOME/...` (both appear in the parent ticket guidance).
+- Exact file/path of the “URL picker” implementation: Not provided
+Risks / Dependencies:
+- Depends on T1 if migrating global storage to XDG config dir.
+Acceptance Criteria:
+- After using the URL picker, no `<packBase>.chatgpt-urls.json` is created near the pack/state/CWD.
+- Default behavior persists URLs to exactly one global store (stable path; not per-pack).
+- When “project scope” is selected, URLs persist to `<repo>/.oraclepack/chatgpt-urls.json` (single per-project file).
+Priority & Severity (if inferable from input text):
+- Priority: Not provided
+- Severity: Not provided
+Source:
+- “The TUI ‘ChatGPT URL picker’ then creates `<sameBase>.chatgpt-urls.json`…”
+- “Best UX default: change … default save scope to global…”
+- “Keep ‘project scope’ … `<repo>/.oraclepack/chatgpt-urls.json`, not `<packName>.chatgpt-urls.json`.”
+```
+
+```ticket T4
+T# Title: Add project-local `.oraclepack/` layout guidance and `.gitignore` patterns to prevent repo pollution
+Type: docs
+Target Area: Repo hygiene (docs / templates / ignore rules)
+Summary:
+- The parent ticket proposes an acceptable project-local layout under `<repo>/.oraclepack/` and an immediate workaround via `.gitignore`.
+- Capture these as documented guidance (and/or provide default ignore patterns) so repos remain clean even before code changes land.
+In Scope:
+- Document (or provide recommended structure for) project-local layout:
+  - `<repo>/.oraclepack/state/*.state.json`
+  - `<repo>/.oraclepack/state/*.report.json`
+  - `<repo>/.oraclepack/chatgpt-urls.json`
+- Add guidance to add `.oraclepack/` to `.gitignore` when adopting that structure.
+- Add the immediate workaround ignore patterns:
+  - `*.state.json`
+  - `*.report.json`
+  - `*.chatgpt-urls.json`
+Out of Scope:
+- Not provided
+Current Behavior (Actual):
+- Not provided
+Expected Behavior:
+- Repos can adopt a single project-local `.oraclepack/` directory and ignore it.
+- Repos can immediately ignore current output filenames to avoid noise.
+Reproduction Steps:
+- Not provided
+Requirements / Constraints:
+- Must preserve the exact patterns and structure described in the parent ticket text.
+Evidence:
+- “Acceptable alternative (project-local…): `<repo>/.oraclepack/state/*.state.json` … add `.oraclepack/` to `.gitignore`.”
+- “Immediate workaround (no code changes): Add these to `.gitignore`: `*.state.json`, `*.report.json`, `*.chatgpt-urls.json`.”
+Open Items / Unknowns:
+- Where this guidance should live (README, docs page, template): Not provided
+Risks / Dependencies:
+- Not provided
+Acceptance Criteria:
+- Documentation includes the described `.oraclepack/` directory layout and explicitly recommends ignoring `.oraclepack/` when using it.
+- Documentation includes the three immediate-workaround `.gitignore` patterns exactly as specified.
+Priority & Severity (if inferable from input text):
+- Priority: Not provided
+- Severity: Not provided
+Source:
+- “Acceptable alternative (project-local…): `<repo>/.oraclepack/state/*.state.json`… add `.oraclepack/` to `.gitignore`.”
+- “Immediate workaround… Add these to `.gitignore`: `*.state.json`…”
 ```
 ```
 
-docs/oracle-pack-2026-01-07.md
+.tickets/Oraclepack Schema Approach.md
 ```
-# Oracle Pack — Unknown (Gold Stage 1)
-
-## Parsed args
-- codebase_name: Unknown
-- constraints: None
-- non_goals: None
-- team_size: Unknown
-- deadline: Unknown
-- out_dir: docs/oracle-questions-2026-01-07
-- oracle_cmd: oracle
-- oracle_flags: --files-report
-- engine: None
-- model: None
-- extra_files: None
-
-Notes:
-- Template is the contract. Keep the pack runner-ingestible.
-- Exactly one fenced bash block in this whole document.
-- Exactly 20 steps, numbered 01..20.
-- Each step includes: ROI= impact= confidence= effort= horizon= category= reference=
-- Categories must be exactly the fixed set used in Coverage check.
-
-## Commands
-```bash
-# Optional preflight pattern:
-# - Add `--dry-run summary` to preview what will be sent, and keep `--files-report` enabled when available.
-
-# 01) ROI=8.2 impact=9 confidence=0.9 effort=1 horizon=Immediate category=contracts/interfaces reference=internal/cli/root.go
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-07/01-contracts-interfaces-surface.md" \
-  --file "internal/cli/root.go" \
-  --file "internal/cli/cmds.go" \
-  -p "$(cat <<'PROMPT'
-Strategist question #01
-
-Reference: internal/cli/root.go
-Category: contracts/interfaces
-Horizon: Immediate
-ROI: 8.2 (impact=9, confidence=0.9, effort=1)
-
-Question:
-Identify the primary public interface(s) of this system (CLI commands and the oracle-pack Markdown contract). For each, list the key inputs/outputs and where they are defined in code.
-
-Rationale (one sentence):
-We need a trustworthy map of the system’s “outside-facing contract” before deeper planning.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–6 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 02) ROI=7.5 impact=8 confidence=0.9 effort=1 horizon=Immediate category=contracts/interfaces reference=internal/exec/runner.go
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-07/02-contracts-interfaces-integration.md" \
-  --file "internal/exec/runner.go" \
-  --file "internal/exec/oracle_validate.go" \
-  -p "$(cat <<'PROMPT'
-Strategist question #02
-
-Reference: internal/exec/runner.go
-Category: contracts/interfaces
-Horizon: Immediate
-ROI: 7.5 (impact=8, confidence=0.9, effort=1)
-
-Question:
-What are the top integration points with external systems (oracle CLI invocation, filesystem outputs, environment variables), and what contract(s) or config declare them? Provide the minimal list of files/locations that define each integration.
-
-Rationale (one sentence):
-Integration boundaries drive risk, deployment needs, and test strategy.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–6 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 03) ROI=6.8 impact=8 confidence=0.85 effort=1 horizon=NearTerm category=invariants reference=internal/pack/parser.go
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-07/03-invariants-domain.md" \
-  --file "internal/pack/parser.go" \
-  --file "internal/pack/types.go" \
-  -p "$(cat <<'PROMPT'
-Strategist question #03
-
-Reference: internal/pack/parser.go
-Category: invariants
-Horizon: NearTerm
-ROI: 6.8 (impact=8, confidence=0.85, effort=1)
-
-Question:
-List the system’s most important invariants about pack structure and step ordering. For each, show where it is enforced (or where it should be enforced but currently is not).
-
-Rationale (one sentence):
-Invariants define correctness and are the backbone of reliable changes.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–8 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 04) ROI=6.2 impact=7 confidence=0.8 effort=1 horizon=NearTerm category=invariants reference=internal/app/app.go
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-07/04-invariants-validation.md" \
-  --file "internal/app/app.go" \
-  --file "internal/pack/parser.go" \
-  -p "$(cat <<'PROMPT'
-Strategist question #04
-
-Reference: internal/app/app.go
-Category: invariants
-Horizon: NearTerm
-ROI: 6.2 (impact=7, confidence=0.8, effort=1)
-
-Question:
-Where does validation happen (pack parse/validate, config resolution, runtime checks)? Identify validation boundaries and the most likely gaps that could cause inconsistent state.
-
-Rationale (one sentence):
-Knowing validation boundaries prevents regressions and reduces correctness risk.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–8 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 05) ROI=6.0 impact=7 confidence=0.8 effort=1 horizon=NearTerm category=caching/state reference=internal/state/types.go
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-07/05-caching-state-layers.md" \
-  --file "internal/state/types.go" \
-  --file "internal/state/persist.go" \
-  -p "$(cat <<'PROMPT'
-Strategist question #05
-
-Reference: internal/state/types.go
-Category: caching/state
-Horizon: NearTerm
-ROI: 6.0 (impact=7, confidence=0.8, effort=1)
-
-Question:
-What stateful components exist (run state, status tracking, persisted state files)? For each, describe lifecycle, read/write points, and where it is implemented.
-
-Rationale (one sentence):
-State handling is a common source of subtle bugs and operational issues.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–8 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 06) ROI=5.8 impact=7 confidence=0.75 effort=1 horizon=NearTerm category=caching/state reference=internal/app/run.go
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-07/06-caching-state-consistency.md" \
-  --file "internal/app/run.go" \
-  --file "internal/state/types.go" \
-  -p "$(cat <<'PROMPT'
-Strategist question #06
-
-Reference: internal/app/run.go
-Category: caching/state
-Horizon: NearTerm
-ROI: 5.8 (impact=7, confidence=0.75, effort=1)
-
-Question:
-Identify the top consistency risks between in-memory run state and persisted state/report outputs (stale writes, partial updates, missing flushes). Where are the knobs/configs for state behavior?
-
-Rationale (one sentence):
-Consistency failure modes often surface as “random bugs” and are expensive to debug.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–8 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 07) ROI=5.0 impact=6 confidence=0.7 effort=1 horizon=NearTerm category=background jobs reference=internal/app/run.go
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-07/07-background-jobs-discovery.md" \
-  --file "internal/app/run.go" \
-  -p "$(cat <<'PROMPT'
-Strategist question #07
-
-Reference: internal/app/run.go
-Category: background jobs
-Horizon: NearTerm
-ROI: 5.0 (impact=6, confidence=0.7, effort=1)
-
-Question:
-What background jobs/workers/scheduled tasks exist, if any? For each, identify trigger mechanism, payload, retries, idempotency, and where it is defined. If none, confirm based on evidence.
-
-Rationale (one sentence):
-Background work affects reliability, cost, and operational complexity.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–8 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 08) ROI=4.2 impact=5 confidence=0.7 effort=1 horizon=NearTerm category=background jobs reference=Unknown
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-07/08-background-jobs-reliability.md" \
-  -p "$(cat <<'PROMPT'
-Strategist question #08
-
-Reference: Unknown
-Category: background jobs
-Horizon: NearTerm
-ROI: 4.2 (impact=5, confidence=0.7, effort=1)
-
-Question:
-Where are the main reliability controls for background work (dead-lettering, backoff, concurrency limits, reprocessing), and what is missing or inconsistent? If there are no background jobs, explicitly state that and point to confirming evidence.
-
-Rationale (one sentence):
-Reliability controls prevent incident loops and data corruption.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–8 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 09) ROI=6.4 impact=8 confidence=0.8 effort=1 horizon=Immediate category=observability reference=internal/report/generate.go
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-07/09-observability-signals.md" \
-  --file "internal/report/generate.go" \
-  --file "internal/state/types.go" \
-  -p "$(cat <<'PROMPT'
-Strategist question #09
-
-Reference: internal/report/generate.go
-Category: observability
-Horizon: Immediate
-ROI: 6.4 (impact=8, confidence=0.8, effort=1)
-
-Question:
-What observability signals exist (reports, warnings, log lines), and what are the primary identifiers for correlating a run/step across components? Point to the code/config that defines them.
-
-Rationale (one sentence):
-You can’t operate or improve what you can’t measure or debug quickly.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–8 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 10) ROI=5.6 impact=7 confidence=0.8 effort=1 horizon=Immediate category=observability reference=internal/exec/runner.go
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-07/10-observability-gaps.md" \
-  --file "internal/exec/runner.go" \
-  --file "internal/errors/errors.go" \
-  -p "$(cat <<'PROMPT'
-Strategist question #10
-
-Reference: internal/exec/runner.go
-Category: observability
-Horizon: Immediate
-ROI: 5.6 (impact=7, confidence=0.8, effort=1)
-
-Question:
-Where are the biggest observability gaps (missing structured logs around key decisions, missing metrics for run outcomes, missing correlation IDs)? Recommend the smallest additions that would most improve debugging.
-
-Rationale (one sentence):
-Targeted observability improvements compound across all future changes.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–8 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 11) ROI=5.2 impact=7 confidence=0.75 effort=1 horizon=Immediate category=permissions reference=Unknown
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-07/11-permissions-model.md" \
-  -p "$(cat <<'PROMPT'
-Strategist question #11
-
-Reference: Unknown
-Category: permissions
-Horizon: Immediate
-ROI: 5.2 (impact=7, confidence=0.75, effort=1)
-
-Question:
-What is the permission model (roles/scopes/ACLs), and where is it defined? Provide the minimal set of files that encode “who can do what.” If no permission model exists, confirm that with evidence.
-
-Rationale (one sentence):
-Permission rules are a high-risk area with security and product impact.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–8 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 12) ROI=4.8 impact=6 confidence=0.8 effort=1 horizon=Immediate category=permissions reference=Unknown
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-07/12-permissions-enforcement.md" \
-  -p "$(cat <<'PROMPT'
-Strategist question #12
-
-Reference: Unknown
-Category: permissions
-Horizon: Immediate
-ROI: 4.8 (impact=6, confidence=0.8, effort=1)
-
-Question:
-Where are permissions enforced (middleware/guards/policies/service-layer checks), and where are likely bypass risks? Identify enforcement chokepoints and any inconsistent patterns.
-
-Rationale (one sentence):
-Enforcement consistency prevents privilege escalation and policy drift.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–8 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 13) ROI=4.5 impact=6 confidence=0.75 effort=1 horizon=NearTerm category=migrations reference=internal/state/types.go
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-07/13-migrations-schema.md" \
-  --file "internal/state/types.go" \
-  --file "internal/state/persist.go" \
-  -p "$(cat <<'PROMPT'
-Strategist question #13
-
-Reference: internal/state/types.go
-Category: migrations
-Horizon: NearTerm
-ROI: 4.5 (impact=6, confidence=0.75, effort=1)
-
-Question:
-How are schema/config migrations handled (state schema versioning, report format evolution)? Identify the tooling, files, and how migrations are applied or would be applied.
-
-Rationale (one sentence):
-Migration mechanics are critical for safe releases and rollbacks.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–8 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 14) ROI=4.1 impact=5 confidence=0.8 effort=1 horizon=NearTerm category=migrations reference=internal/state/types.go
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-07/14-migrations-compat.md" \
-  --file "internal/state/types.go" \
-  --file "internal/report/types.go" \
-  -p "$(cat <<'PROMPT'
-Strategist question #14
-
-Reference: internal/state/types.go
-Category: migrations
-Horizon: NearTerm
-ROI: 4.1 (impact=5, confidence=0.8, effort=1)
-
-Question:
-What are the backward/forward compatibility expectations for state/report schemas? Identify where compatibility is ensured or currently risky.
-
-Rationale (one sentence):
-Compatibility strategy prevents outages during upgrades and rollbacks.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–8 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 15) ROI=5.7 impact=7 confidence=0.8 effort=1 horizon=NearTerm category=UX flows reference=internal/tui/tui.go
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-07/15-ux-flows-primary.md" \
-  --file "internal/tui/tui.go" \
-  --file "internal/cli/run.go" \
-  -p "$(cat <<'PROMPT'
-Strategist question #15
-
-Reference: internal/tui/tui.go
-Category: UX flows
-Horizon: NearTerm
-ROI: 5.7 (impact=7, confidence=0.8, effort=1)
-
-Question:
-What are the primary user/operator flows in the TUI (run steps, run all, overrides wizard, URL selection)? Map each to main components/modules and key state transitions.
-
-Rationale (one sentence):
-Flow maps reveal critical paths and help prioritize work with user impact.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 16) ROI=5.1 impact=6 confidence=0.85 effort=1 horizon=NearTerm category=UX flows reference=internal/tui/overrides_flow.go
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-07/16-ux-flows-edgecases.md" \
-  --file "internal/tui/overrides_flow.go" \
-  --file "internal/tui/overrides_flags.go" \
-  -p "$(cat <<'PROMPT'
-Strategist question #16
-
-Reference: internal/tui/overrides_flow.go
-Category: UX flows
-Horizon: NearTerm
-ROI: 5.1 (impact=6, confidence=0.85, effort=1)
-
-Question:
-For the primary flows, what are the top edge cases and “gotchas” (validation failures, cancel/back navigation, partial completion, timeouts)? Identify where these cases are handled and where they are missing.
-
-Rationale (one sentence):
-Edge-case handling is where many UX and reliability issues originate.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 17) ROI=6.1 impact=8 confidence=0.76 effort=1 horizon=Immediate category=failure modes reference=internal/app/run.go
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-07/17-failure-modes-taxonomy.md" \
-  --file "internal/app/run.go" \
-  --file "internal/errors/errors.go" \
-  -p "$(cat <<'PROMPT'
-Strategist question #17
-
-Reference: internal/app/run.go
-Category: failure modes
-Horizon: Immediate
-ROI: 6.1 (impact=8, confidence=0.76, effort=1)
-
-Question:
-What is the failure-mode taxonomy of this system (pack validation errors, execution failures, state/report write failures)? Identify where failures are classified/handled and what is surfaced to users/operators.
-
-Rationale (one sentence):
-Explicit failure handling prevents incidents and reduces user-facing errors.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 18) ROI=5.4 impact=7 confidence=0.77 effort=1 horizon=Immediate category=failure modes reference=internal/exec/sanitize.go
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-07/18-failure-modes-resilience.md" \
-  --file "internal/exec/sanitize.go" \
-  --file "internal/exec/runner.go" \
-  -p "$(cat <<'PROMPT'
-Strategist question #18
-
-Reference: internal/exec/sanitize.go
-Category: failure modes
-Horizon: Immediate
-ROI: 5.4 (impact=7, confidence=0.77, effort=1)
-
-Question:
-What resilience mechanisms exist (sanitization, error wrapping, stop-on-fail behavior), and which critical paths lack them? Where are they configured?
-
-Rationale (one sentence):
-Resilience patterns determine real-world reliability under stress.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 19) ROI=4.7 impact=6 confidence=0.78 effort=1 horizon=NearTerm category=feature flags reference=internal/overrides/types.go
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-07/19-feature-flags-inventory.md" \
-  --file "internal/overrides/types.go" \
-  --file "internal/tui/overrides_flags.go" \
-  -p "$(cat <<'PROMPT'
-Strategist question #19
-
-Reference: internal/overrides/types.go
-Category: feature flags
-Horizon: NearTerm
-ROI: 4.7 (impact=6, confidence=0.78, effort=1)
-
-Question:
-What feature-flag-like controls exist (oracle flag overrides, per-step targeting, ROI filtering)? Inventory the flags/controls and identify where they are defined, evaluated, and documented.
-
-Rationale (one sentence):
-Flags and runtime controls enable safe rollout and experimentation and reduce release risk.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 20) ROI=4.3 impact=5 confidence=0.86 effort=1 horizon=NearTerm category=feature flags reference=internal/overrides/types.go
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-07/20-feature-flags-rollout.md" \
-  --file "internal/overrides/types.go" \
-  --file "internal/overrides/merge.go" \
-  -p "$(cat <<'PROMPT'
-Strategist question #20
-
-Reference: internal/overrides/types.go
-Category: feature flags
-Horizon: NearTerm
-ROI: 4.3 (impact=5, confidence=0.86, effort=1)
-
-Question:
-Describe the flag/rollout lifecycle for runtime overrides (how flags are selected, applied per-step, validated, and retired). Identify the minimum guardrails needed to prevent “flag debt.”
-
-Rationale (one sentence):
-A disciplined rollout lifecycle reduces long-term complexity and operational risk.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
+Parent Ticket:
+
+* Title: Adopt a schema-driven approach to prevent oraclepack run failures
+* Summary:
+
+  * Current runs fail because structure is inferred from Markdown heuristics (e.g., exactly one ```bash fence, sequential step headers, exactly 20 steps).
+  * Proposal: generate a machine-validated **manifest** (JSON Schema) and **deterministically render** the Markdown pack; optionally add stricter linting for Markdown-only packs.
+* Source:
+
+  * Link/ID (if present) or “Not provided”
+  * Original ticket excerpt (≤25 words) capturing the overall theme
+
+    * “separate ‘machine-validated structure’ from ‘human-readable Markdown’ … generate only a JSON manifest … then a deterministic renderer produces the Markdown pack.”
+* Global Constraints:
+
+  * Keep existing oraclepack Markdown contract / backward-compatible (“keep the existing Markdown contract for oraclepack execution”).
+  * Steps must be exactly 20; step IDs must be sequential 01..20.
+* Global Environment:
+
+  * Unknown
+* Global Evidence:
+
+  * Error text: “invalid pack structure: no bash code block found”.
+  * Pack constraints referenced: “Exactly one ```bash fence”, “Exactly 20 steps”, “sequential step numbers”.
+
+Split Plan:
+
+* Coverage Map:
+
+  * Original item: “separate ‘machine-validated structure’ from ‘human-readable Markdown.’”
+
+    * Assigned Ticket ID: T1
+  * Original item: “AI generates only a JSON manifest that must validate against a JSON Schema; renderer produces Markdown pack.”
+
+    * Assigned Ticket ID: T1
+  * Original item: “Prevent missing/multiple ```bash fences (root cause of ‘invalid pack structure: no bash code block found’).”
+
+    * Assigned Ticket ID: T3
+  * Original item: “Prevent non-sequential steps (Go validator requires sequential step numbers).”
+
+    * Assigned Ticket ID: T1
+  * Original item: “Prevent wrong step count (enforce exactly 20 in schema).”
+
+    * Assigned Ticket ID: T1
+  * Original item: “Minimal ‘Pack Manifest v1’ JSON Schema (Draft 2020-12) with schema_version/kind/out_dir/write_output/steps; step fields id/title/bash plus roi/impact/confidence/effort/horizon/category/reference.”
+
+    * Assigned Ticket ID: T1
+  * Original item: “Rendering rule (deterministic): one ```bash fence; prelude out_dir=…; optional --write-output; each step ‘# 01) …’ with body.”
+
+    * Assigned Ticket ID: T2
+  * Original item: “If Markdown-only: add explicit schema/lint mode (exactly one ```bash fence; exactly 20 steps; sequential 01..20; optional header tokens).”
+
+    * Assigned Ticket ID: T3
+  * Original item: “Stage-2 directory contract: exactly one file per prefix 01-*.md … 20-*.md.”
+
+    * Assigned Ticket ID: T3
+  * Original item: “Action pack lint (Stage 3): one ```bash fence; enforce 01..20 exact count.”
+
+    * Assigned Ticket ID: T3
+  * Original item: “CI checks: validate(manifest.json) → render(pack.md) → oraclepack validate pack.md → (optional) dry-run checks.”
+
+    * Assigned Ticket ID: T4
+* Dependencies:
+
+  * T2 depends on T1 because the renderer needs the validated “Pack Manifest v1” structure as input.
+  * T4 depends on T1 and T2 because CI runs “validate(manifest.json) → render(pack.md)”.
+* Split Tickets:
+
+```ticket T1
+T# Title: Define and validate “Pack Manifest v1” schema (manifest-first)
+Type: chore
+Target Area: Pack authoring contract (manifest JSON + JSON Schema validation)
+Summary:
+- Introduce a manifest-first source of truth: the AI produces a JSON manifest that must validate against a JSON Schema.
+- The schema enforces step count (exactly 20) and step IDs (01..20) to prevent structural runner failures.
+- This separates machine-validated structure from the Markdown pack to reduce malformed packs.
+In Scope:
+- Define “Pack Manifest v1” JSON Schema (Draft 2020-12) with required fields: schema_version (const 1), kind (enum), out_dir, steps (min/max 20).
+- Define step object constraints: required id/title/bash; id pattern for 01..20; optional roi/impact/confidence/effort/horizon/category/reference.
+- Validate manifests against the schema before rendering/using them.
+Out of Scope:
+- Not provided
+Current Behavior (Actual):
+- Runner infers structure from Markdown heuristics; malformed structure can cause run-time validation errors.
+- Step count and sequential numbering can be violated if not enforced early.
+Expected Behavior:
+- A manifest that does not conform (wrong count, wrong IDs, missing required fields) is rejected by schema validation.
+- Manifests accepted by validation always contain exactly 20 steps with valid IDs and required fields.
+Reproduction Steps:
+1) Provide a manifest with fewer than 20 steps.
+2) Provide a manifest with a non-matching step id (e.g., "21" or "1").
+3) Validate manifest and confirm it fails schema validation.
+Requirements / Constraints:
+- schema_version must be 1.
+- steps must be exactly 20 (minItems=20, maxItems=20).
+- step id must match 01..20 via pattern.
+Evidence:
+- “the AI generates only a JSON manifest that must validate against a JSON Schema” (ticket text)
+- “Wrong step count (you can enforce exactly 20 in schema rather than ‘hoping’ the model did it).”
+Open Items / Unknowns:
+- Exact location/path conventions for storing manifest.json are not provided.
+- How/where validation is invoked (CLI, CI, library) is not provided.
+Risks / Dependencies:
+- Risk: keeping backward compatibility requires rendering to the existing Markdown pack contract (handled in T2).
+Acceptance Criteria:
+- [ ] A JSON Schema exists for “Pack Manifest v1” with required fields and constraints as described.
+- [ ] A manifest with != 20 steps fails validation.
+- [ ] A manifest with an invalid step id fails validation.
+- [ ] A manifest missing required fields (schema_version/kind/out_dir/steps) fails validation.
+Priority & Severity (if inferable from input text):
+- Priority: Not provided
+- Severity: Not provided
+Source:
+- “Manifest-first + JSON Schema (then render Markdown)”
+- “minItems: 20, maxItems: 20”
+- “id … pattern: ^(0[1-9]|1[0-9]|20)$”
 ```
 
-Coverage check
---------------
+````ticket T2
+T# Title: Implement deterministic renderer from manifest → oraclepack Markdown pack
+Type: enhancement
+Target Area: Pack rendering (manifest → Markdown pack)
+Summary:
+- Add a deterministic rendering rule that converts a validated manifest into a Markdown pack that always satisfies oraclepack’s structural expectations.
+- This prevents issues like missing/multiple bash fences and malformed step formatting by making Markdown a compiled artifact.
+In Scope:
+- Render exactly one fenced code block labeled `bash` in the entire document.
+- Render prelude lines including: `out_dir="..."` and optional `--write-output` as described.
+- Render each step with header `# NN) ...` and step body from `bash` content.
+Out of Scope:
+- Not provided
+Current Behavior (Actual):
+- Markdown is the primary artifact; structure can be malformed by generation, causing downstream failures.
+Expected Behavior:
+- Renderer output always includes exactly one `bash` fence and emits all 20 steps in order.
+- Pack contains the required prelude line(s) described in the ticket text.
+Reproduction Steps:
+1) Validate a manifest (per T1).
+2) Render to Markdown.
+3) Confirm output contains exactly one `bash` fence and step headers for 01..20 in sequence.
+Requirements / Constraints:
+- Output must be runner-ingestible per the described structural rules (single bash fence, 20 steps, sequential).
+Evidence:
+- “Rendering rule (deterministic) … emits exactly: one ```bash fence … prelude lines … then each step: # 01) … Step body = bash”
+Open Items / Unknowns:
+- Exact step title formatting beyond “# NN) …” is not provided.
+- Whether additional header tokens (ROI=…) are required at render time is not provided.
+Risks / Dependencies:
+- Depends on T1 (renderer assumes manifest structure/constraints).
+Acceptance Criteria:
+- [ ] Given a valid manifest, renderer produces a Markdown pack with exactly one ```bash fenced block.
+- [ ] Output contains 20 step headers numbered 01..20 in order.
+- [ ] Output includes the `out_dir="..."` prelude line.
+- [ ] Renderer can conditionally include the optional `--write-output` line when present in the manifest.
+Priority & Severity (if inferable from input text):
+- Priority: Not provided
+- Severity: Not provided
+Source:
+- “From this manifest, your renderer emits exactly: One ```bash fence”
+- “Prelude lines: out_dir="..." … optional --write-output”
+- “Then each step: # 01) … Step body = bash”
+````
 
-Mark each as OK or Missing(<which step ids>):
+````ticket T3
+T# Title: Add stricter lint/validation for Markdown-only packs and Stage-2/Stage-3 outputs
+Type: chore
+Target Area: Pack linting/validation (Markdown packs + output directory contract)
+Summary:
+- If the project keeps Markdown-only as a supported input path, add an explicit lint/validation mode that enforces the same structural contract.
+- Extend checks to Stage-2 output directory naming expectations and Stage-3 action pack constraints to reduce “runner infers structure” failures.
+In Scope:
+- Pack-level lint (Stage 1) enforcing:
+  - Exactly one ```bash fence.
+  - Exactly 20 steps.
+  - Step IDs exactly 01..20 and sequential.
+  - Optional enforcement of required header tokens (ROI= impact= confidence= … reference=) as described.
+- Stage-2 directory contract lint:
+  - Exactly one file per prefix 01-*.md … 20-*.md.
+- Stage-3 action pack lint:
+  - Exactly one ```bash fence.
+  - Enforce 01..20 and exact count.
+Out of Scope:
+- Not provided
+Current Behavior (Actual):
+- Common failure mode noted: “invalid pack structure: no bash code block found.”
+- Existing checks may be incomplete (“your current check only ensures ‘some’ step headers exist” per ticket text).
+Expected Behavior:
+- Markdown packs that violate the contract are rejected early with lint errors before execution.
+- Stage-2 outputs and Stage-3 action packs are validated against exact-count and naming/structure rules.
+Reproduction Steps:
+1) Create a Markdown pack with no `bash` fenced block → lint should fail.
+2) Create a Markdown pack with 19 steps or non-sequential IDs → lint should fail.
+3) Create an output directory missing `07-*.md` or containing duplicates for a prefix → lint should fail.
+Requirements / Constraints:
+- Enforce: one ```bash fence, exactly 20 steps, sequential 01..20.
+Evidence:
+- “Missing / multiple ```bash fences (common root cause of ‘invalid pack structure: no bash code block found’).”
+- “Add an explicit schema/lint mode … Exactly one ```bash fence … Exactly 20 steps … Step IDs exactly 01..20”
+- “Stage-2 directory contract … Exactly one file per prefix 01-*.md … 20-*.md”
+- “Action pack lint (Stage 3) … Enforce 01..20 and exact count”
+Open Items / Unknowns:
+- Exact current validator behaviors and what already exists vs missing are not provided.
+Risks / Dependencies:
+- Risk: enforcing optional header tokens could break existing packs if not already standardized.
+Acceptance Criteria:
+- [ ] Lint fails when no `bash` fence exists and surfaces a clear error.
+- [ ] Lint fails when step count != 20.
+- [ ] Lint fails when step IDs are not exactly 01..20 sequential.
+- [ ] Stage-2 lint fails when any step output prefix 01..20 is missing or duplicated.
+- [ ] Stage-3 lint fails when action pack does not have exactly one `bash` fence or correct 01..20 steps.
+Priority & Severity (if inferable from input text):
+- Priority: Not provided
+- Severity: Not provided
+Source:
+- “invalid pack structure: no bash code block found”
+- “Pack-level lint (Stage 1) … Exactly one ```bash fence … Exactly 20 steps”
+- “Stage-2 directory contract … Exactly one file per prefix 01-*.md … 20-*.md”
+````
 
-* contracts/interfaces: OK
-
-* invariants: OK
-
-* caching/state: OK
-
-* background jobs: OK
-
-* observability: OK
-
-* permissions: OK
-
-* migrations: OK
-
-* UX flows: OK
-
-* failure modes: OK
-
-* feature flags: OK
+```ticket T4
+T# Title: Add CI validation pipeline for manifest-first workflow (validate → render → oraclepack validate → optional dry-run)
+Type: chore
+Target Area: CI checks / pipeline gating
+Summary:
+- Add CI checks that gate merges/runs on structural correctness by validating the manifest, rendering Markdown deterministically, and validating the rendered pack with oraclepack tooling.
+- This formalizes the “Markdown is compiled artifact” approach and reduces runtime surprises.
+In Scope:
+- CI sequence as described:
+  - validate(manifest.json)
+  - render(pack.md)
+  - oraclepack validate pack.md
+  - optional dry-run checks
+Out of Scope:
+- Not provided
+Current Behavior (Actual):
+- Pack structural issues can slip into execution time if not validated earlier.
+Expected Behavior:
+- CI fails fast when manifest validation fails or rendered pack fails oraclepack validation.
+Reproduction Steps:
+1) Commit a manifest with 19 steps; CI should fail at validate(manifest.json).
+2) Commit a manifest that renders an invalid pack (if possible); CI should fail at oraclepack validate.
+Requirements / Constraints:
+- CI must preserve existing oraclepack Markdown contract (rendered pack is what oraclepack consumes).
+Evidence:
+- “Add CI checks: validate(manifest.json) → render(pack.md) → oraclepack validate pack.md → (optional) dry-run checks”
+Open Items / Unknowns:
+- Where CI runs (provider/tooling) is not provided.
+- Whether “dry-run checks” exist and what they check is not provided.
+Risks / Dependencies:
+- Depends on T1 and T2 to provide validate+render steps.
+Acceptance Criteria:
+- [ ] CI runs schema validation on manifest.json and fails on invalid manifests.
+- [ ] CI renders pack.md deterministically from the manifest.
+- [ ] CI runs oraclepack validation on pack.md and fails if invalid.
+- [ ] Optional dry-run step is present if supported; otherwise omitted without breaking the sequence intent.
+Priority & Severity (if inferable from input text):
+- Priority: Not provided
+- Severity: Not provided
+Source:
+- “Add CI checks: validate(manifest.json) → render(pack.md) → oraclepack validate pack.md → (optional) dry-run checks”
+- “Treat Markdown packs as a compiled artifact, not the source of truth.”
+```
 ```
 
-docs/oracle-pack-2026-01-08.md
+.tickets/Oraclepack bash fix.md
 ```
-# Oracle Pack — Unknown (Tickets Stage 1)
-
-## Parsed args
-- codebase_name: Unknown
-- out_dir: docs/oracle-questions-2026-01-08
-- oracle_cmd: oracle
-- oracle_flags: --files-report
-- extra_files:
-- ticket_root: .tickets
-- ticket_glob: **/*.md
-- ticket_paths: 
-- ticket_bundle_path: docs/oracle-questions-2026-01-08/_tickets_bundle.md
-- mode: tickets
-
-Notes (contract):
-- Exactly one fenced `bash` block in this document.
-- No other ``` fences anywhere.
-- Exactly 20 steps, numbered 01..20 in order.
-- Step header: `# NN) ROI=... impact=... confidence=... effort=... horizon=... category=... reference=...`
-- Every step includes: `--write-output "docs/oracle-questions-2026-01-08/NN-<slug>.md"` (double quotes required).
-- Steps must be self-contained and must not rely on shell variables created in previous steps.
-- Pack ends with a Coverage check section listing all 10 categories as OK or Missing(<step ids>).
-
-```bash
-# Prelude (allowed inside the single bash fence)
-# - Creates out_dir deterministically
-# - Builds ticket_bundle_path deterministically from ticket_root/ticket_glob OR ticket_paths
-# - Uses lexicographic ordering only (no mtime/timestamps)
-
-set -euo pipefail
-
-mkdir -p "docs/oracle-questions-2026-01-08"
-
-python3 - <<'PY'
-from __future__ import annotations
-
-import os
-from pathlib import Path
-
-CODEBASE_NAME = "Unknown"
-OUT_DIR = "docs/oracle-questions-2026-01-08"
-TICKET_ROOT = ".tickets"
-TICKET_GLOB = "**/*.md"
-TICKET_PATHS = "".strip()
-BUNDLE_PATH = "docs/oracle-questions-2026-01-08/_tickets_bundle.md"
-
-root = Path(TICKET_ROOT)
-
-def read_text(p: Path) -> str:
-    try:
-        return p.read_text(encoding="utf-8")
-    except UnicodeDecodeError:
-        return p.read_text(encoding="utf-8", errors="replace")
-
-def title_from_md(text: str) -> str:
-    for ln in text.splitlines():
-        s = ln.strip()
-        if s.startswith("#"):
-            return s.lstrip("#").strip()[:160] or "Untitled"
-    for ln in text.splitlines():
-        s = ln.strip()
-        if s:
-            return s[:160]
-    return "Untitled"
-
-def select_key_sections(text: str) -> str:
-    # Heuristic: if small, include all; else include common ticket sections + top excerpt.
-    lines = text.splitlines()
-    if len(text) <= 8000 and len(lines) <= 250:
-        return text
-
-    keep = []
-    wanted = {"description", "context", "problem", "proposal", "solution", "acceptance criteria", "ac", "steps", "repro", "expected", "actual", "notes", "links"}
-    i = 0
-    while i < len(lines):
-        ln = lines[i]
-        s = ln.strip()
-        if s.startswith("##"):
-            hdr = s.lstrip("#").strip().lower()
-            if hdr in wanted:
-                keep.append(ln)
-                i += 1
-                # capture until next heading
-                while i < len(lines) and not lines[i].lstrip().startswith("#"):
-                    keep.append(lines[i])
-                    i += 1
-                continue
-        i += 1
-
-    # Fallback excerpt if no sections matched
-    if not any(l.strip() for l in keep):
-        excerpt = "\n".join(lines[:200])
-        return excerpt + "\n\n[... truncated ...]\n"
-    return "\n".join(keep) + "\n\n[... truncated ...]\n"
-
-def resolve_ticket_files() -> list[Path]:
-    if TICKET_PATHS:
-        items = [p.strip() for p in TICKET_PATHS.split(",") if p.strip()]
-        return sorted([Path(p) for p in items], key=lambda p: str(p))
-    if not root.exists():
-        return []
-    return sorted(list(root.glob(TICKET_GLOB)), key=lambda p: str(p))
-
-tickets = resolve_ticket_files()
-
-bundle_lines = []
-bundle_lines.append(f"# Tickets bundle — {CODEBASE_NAME}")
-bundle_lines.append("")
-bundle_lines.append("## Selection rules (deterministic)")
-bundle_lines.append(f"- ticket_root: {TICKET_ROOT}")
-bundle_lines.append(f"- ticket_glob: {TICKET_GLOB}")
-bundle_lines.append(f"- ticket_paths: {TICKET_PATHS or '(none)'}")
-bundle_lines.append("- ordering: lexicographic by path")
-bundle_lines.append("")
-
-if not tickets:
-    bundle_lines.append("## WARNING")
-    if TICKET_PATHS:
-        bundle_lines.append("- No tickets were found from ticket_paths (check paths).")
-    else:
-        bundle_lines.append("- ticket_root missing or no tickets matched the glob.")
-    bundle_lines.append("- This bundle is empty; Step 01 should request which ticket paths to attach next.")
-    bundle_lines.append("")
-
-for p in tickets:
-    try:
-        txt = read_text(p)
-    except Exception as e:
-        txt = f"[ERROR reading file: {e}]"
-    title = title_from_md(txt)
-    body = select_key_sections(txt)
-    bundle_lines.append(f"## {title}")
-    bundle_lines.append(f"- path: {p}")
-    bundle_lines.append("")
-    bundle_lines.append(body)
-    bundle_lines.append("")
-    bundle_lines.append("---")
-    bundle_lines.append("")
-
-out_path = Path(BUNDLE_PATH)
-out_path.parent.mkdir(parents=True, exist_ok=True)
-out_path.write_text("\n".join(bundle_lines).rstrip() + "\n", encoding="utf-8")
-
-print(f"OK: wrote ticket bundle: {out_path}")
-PY
-
-# 01) ROI=4.8 impact=6 confidence=0.80 effort=1 horizon=Immediate category=contracts/interfaces reference=Unknown
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-08/01-contracts-interfaces-ticket-surface.md" \
-  -f "docs/oracle-questions-2026-01-08/_tickets_bundle.md" \
-  # optional (at most one): -f "<best_repo_file_path>" \
-  # extra_files appended literally (may be empty; may include -f/--file):
-   \
-  -p "$(cat <<'PROMPT'
-Strategist question #01  (ticket-driven)
-
-Reference: Unknown
-Category: contracts/interfaces
-Horizon: Immediate
-ROI: 4.8 (impact=6, confidence=0.80, effort=1)
-
-Question:
-Using the ticket bundle as the primary context, list the public surface changes implied by the tickets (CLI/TUI/API/interfaces/contracts). For each implied change:
-- describe the new/changed interface shape
-- identify the most likely code areas involved
-- call out any backwards-compatibility constraints that must be preserved.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 02) ROI=4.6 impact=6 confidence=0.78 effort=1 horizon=Immediate category=contracts/interfaces reference=Unknown
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-08/02-contracts-interfaces-integration-points.md" \
-  -f "docs/oracle-questions-2026-01-08/_tickets_bundle.md" \
-  # optional (at most one): -f "<best_repo_file_path>" \
-  # extra_files appended literally (may be empty; may include -f/--file):
-   \
-  -p "$(cat <<'PROMPT'
-Strategist question #02  (ticket-driven)
-
-Reference: Unknown
-Category: contracts/interfaces
-Horizon: Immediate
-ROI: 4.6 (impact=6, confidence=0.78, effort=1)
-
-Question:
-Using the ticket bundle as the primary context, identify any external integrations implied by the tickets (e.g., calling new agents/tools, new CLIs, new services). For each:
-- what contract/config must be added or changed?
-- what failure/timeout behavior should be defined?
-- what should be the minimal “compat-safe” rollout approach?
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 03) ROI=5.2 impact=7 confidence=0.75 effort=2 horizon=NearTerm category=invariants reference=Unknown
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-08/03-invariants-correctness-guardrails.md" \
-  -f "docs/oracle-questions-2026-01-08/_tickets_bundle.md" \
-  # optional (at most one): -f "<best_repo_file_path>" \
-  # extra_files appended literally (may be empty; may include -f/--file):
-   \
-  -p "$(cat <<'PROMPT'
-Strategist question #03  (ticket-driven)
-
-Reference: Unknown
-Category: invariants
-Horizon: NearTerm
-ROI: 5.2 (impact=7, confidence=0.75, effort=2)
-
-Question:
-From the tickets, derive the key correctness invariants that must hold while implementing them (e.g., “runner-ingestible pack constraints”, “no schema drift”, “no unsafe paths”). For each invariant:
-- define it precisely
-- state how to enforce it (validation, linting, runtime checks)
-- identify where it should live in the codebase (by file/path patterns if evidence is missing).
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 04) ROI=5.0 impact=7 confidence=0.72 effort=2 horizon=NearTerm category=invariants reference=Unknown
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-08/04-invariants-validation-boundaries.md" \
-  -f "docs/oracle-questions-2026-01-08/_tickets_bundle.md" \
-  # optional (at most one): -f "<best_repo_file_path>" \
-  # extra_files appended literally (may be empty; may include -f/--file):
-   \
-  -p "$(cat <<'PROMPT'
-Strategist question #04  (ticket-driven)
-
-Reference: Unknown
-Category: invariants
-Horizon: NearTerm
-ROI: 5.0 (impact=7, confidence=0.72, effort=2)
-
-Question:
-Using the tickets, identify validation boundaries that must exist (ticket parsing, pack generation, pack validation). Where could invalid inputs slip through (missing tickets, malformed headers, extra fences)? Propose a minimal validation plan that preserves backward compatibility.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 05) ROI=4.4 impact=6 confidence=0.78 effort=2 horizon=NearTerm category=caching/state reference=Unknown
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-08/05-caching-state-ticket-artifacts.md" \
-  -f "docs/oracle-questions-2026-01-08/_tickets_bundle.md" \
-  # optional (at most one): -f "<best_repo_file_path>" \
-  # extra_files appended literally (may be empty; may include -f/--file):
-   \
-  -p "$(cat <<'PROMPT'
-Strategist question #05  (ticket-driven)
-
-Reference: Unknown
-Category: caching/state
-Horizon: NearTerm
-ROI: 4.4 (impact=6, confidence=0.78, effort=2)
-
-Question:
-Based on the tickets, what state/artifacts must be produced and preserved (ticket bundle, generated pack, validator outputs, runner outputs)? Identify any schema/format expectations that must remain backward compatible and how to keep them stable.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 06) ROI=4.1 impact=5 confidence=0.80 effort=2 horizon=NearTerm category=caching/state reference=Unknown
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-08/06-caching-state-determinism-consistency.md" \
-  -f "docs/oracle-questions-2026-01-08/_tickets_bundle.md" \
-  # optional (at most one): -f "<best_repo_file_path>" \
-  # extra_files appended literally (may be empty; may include -f/--file):
-   \
-  -p "$(cat <<'PROMPT'
-Strategist question #06  (ticket-driven)
-
-Reference: Unknown
-Category: caching/state
-Horizon: NearTerm
-ROI: 4.1 (impact=5, confidence=0.80, effort=2)
-
-Question:
-Using the tickets, identify determinism risks (non-deterministic ticket selection, unstable ordering, environment-dependent paths). Propose a minimal deterministic selection and bundling approach and how to test it.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 07) ROI=3.6 impact=5 confidence=0.70 effort=3 horizon=NearTerm category=background jobs reference=Unknown
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-08/07-background-jobs-ticket-implications.md" \
-  -f "docs/oracle-questions-2026-01-08/_tickets_bundle.md" \
-  # optional (at most one): -f "<best_repo_file_path>" \
-  # extra_files appended literally (may be empty; may include -f/--file):
-   \
-  -p "$(cat <<'PROMPT'
-Strategist question #07  (ticket-driven)
-
-Reference: Unknown
-Category: background jobs
-Horizon: NearTerm
-ROI: 3.6 (impact=5, confidence=0.70, effort=3)
-
-Question:
-Do any tickets imply background processing, worker modes, scheduled validation, or CI pipelines (e.g., generating packs from tickets in CI)? If yes, define:
-- trigger mechanism
-- inputs/outputs
-- retries/idempotency constraints
-If no, explicitly confirm based on the ticket bundle.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 08) ROI=3.9 impact=5 confidence=0.72 effort=3 horizon=NearTerm category=background jobs reference=Unknown
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-08/08-background-jobs-reliability-controls.md" \
-  -f "docs/oracle-questions-2026-01-08/_tickets_bundle.md" \
-  # optional (at most one): -f "<best_repo_file_path>" \
-  # extra_files appended literally (may be empty; may include -f/--file):
-   \
-  -p "$(cat <<'PROMPT'
-Strategist question #08  (ticket-driven)
-
-Reference: Unknown
-Category: background jobs
-Horizon: NearTerm
-ROI: 3.9 (impact=5, confidence=0.72, effort=3)
-
-Question:
-If tickets imply background/CI execution, what reliability controls are required (concurrency limits, backoff, reprocessing, artifact retention)? Tie each control to a specific ticket requirement and suggest minimal implementation points.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 09) ROI=4.7 impact=6 confidence=0.82 effort=2 horizon=Immediate category=observability reference=Unknown
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-08/09-observability-required-signals.md" \
-  -f "docs/oracle-questions-2026-01-08/_tickets_bundle.md" \
-  # optional (at most one): -f "<best_repo_file_path>" \
-  # extra_files appended literally (may be empty; may include -f/--file):
-   \
-  -p "$(cat <<'PROMPT'
-Strategist question #09  (ticket-driven)
-
-Reference: Unknown
-Category: observability
-Horizon: Immediate
-ROI: 4.7 (impact=6, confidence=0.82, effort=2)
-
-Question:
-From the tickets, define the minimum observability required for implementing and operating ticketed changes (logs, warnings, structured outputs, correlation/run IDs). What signals must be emitted on:
-- missing tickets
-- validation failures
-- unsafe path detection
-- runner ingestion failures?
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 10) ROI=4.5 impact=6 confidence=0.80 effort=2 horizon=Immediate category=observability reference=Unknown
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-08/10-observability-gaps-and-metrics.md" \
-  -f "docs/oracle-questions-2026-01-08/_tickets_bundle.md" \
-  # optional (at most one): -f "<best_repo_file_path>" \
-  # extra_files appended literally (may be empty; may include -f/--file):
-   \
-  -p "$(cat <<'PROMPT'
-Strategist question #10  (ticket-driven)
-
-Reference: Unknown
-Category: observability
-Horizon: Immediate
-ROI: 4.5 (impact=6, confidence=0.80, effort=2)
-
-Question:
-Using the ticket bundle, identify observability gaps that would block shipping the ticketed work safely (missing structured errors, missing per-step diagnostics, missing coverage/mismatch reporting). Recommend the smallest additions with high debugging value.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 11) ROI=5.0 impact=7 confidence=0.76 effort=2 horizon=Immediate category=permissions reference=Unknown
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-08/11-permissions-security-constraints.md" \
-  -f "docs/oracle-questions-2026-01-08/_tickets_bundle.md" \
-  # optional (at most one): -f "<best_repo_file_path>" \
-  # extra_files appended literally (may be empty; may include -f/--file):
-   \
-  -p "$(cat <<'PROMPT'
-Strategist question #11  (ticket-driven)
-
-Reference: Unknown
-Category: permissions
-Horizon: Immediate
-ROI: 5.0 (impact=7, confidence=0.76, effort=2)
-
-Question:
-From the tickets, determine what security/permissions constraints must exist (e.g., exec gating, tool invocation restrictions, file access restrictions, safe write paths). Define “who can do what” minimally and where enforcement should live.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 12) ROI=4.8 impact=7 confidence=0.74 effort=2 horizon=Immediate category=permissions reference=Unknown
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-08/12-permissions-enforcement-chokepoints.md" \
-  -f "docs/oracle-questions-2026-01-08/_tickets_bundle.md" \
-  # optional (at most one): -f "<best_repo_file_path>" \
-  # extra_files appended literally (may be empty; may include -f/--file):
-   \
-  -p "$(cat <<'PROMPT'
-Strategist question #12  (ticket-driven)
-
-Reference: Unknown
-Category: permissions
-Horizon: Immediate
-ROI: 4.8 (impact=7, confidence=0.74, effort=2)
-
-Question:
-Using the tickets, identify where permissions must be enforced (CLI command gating, TUI actions, runner execution, filesystem writes). Call out bypass risks and propose the minimal enforcement chokepoints and tests.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 13) ROI=4.2 impact=6 confidence=0.72 effort=3 horizon=NearTerm category=migrations reference=Unknown
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-08/13-migrations-schema-changes.md" \
-  -f "docs/oracle-questions-2026-01-08/_tickets_bundle.md" \
-  # optional (at most one): -f "<best_repo_file_path>" \
-  # extra_files appended literally (may be empty; may include -f/--file):
-   \
-  -p "$(cat <<'PROMPT'
-Strategist question #13  (ticket-driven)
-
-Reference: Unknown
-Category: migrations
-Horizon: NearTerm
-ROI: 4.2 (impact=6, confidence=0.72, effort=3)
-
-Question:
-Do tickets imply schema/version changes (pack schema, state/report schema, actions artifacts)? Identify what can change vs must remain backward-compatible, and propose a minimal migration strategy (if any).
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 14) ROI=4.0 impact=6 confidence=0.70 effort=3 horizon=NearTerm category=migrations reference=Unknown
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-08/14-migrations-compat-guardrails.md" \
-  -f "docs/oracle-questions-2026-01-08/_tickets_bundle.md" \
-  # optional (at most one): -f "<best_repo_file_path>" \
-  # extra_files appended literally (may be empty; may include -f/--file):
-   \
-  -p "$(cat <<'PROMPT'
-Strategist question #14  (ticket-driven)
-
-Reference: Unknown
-Category: migrations
-Horizon: NearTerm
-ROI: 4.0 (impact=6, confidence=0.70, effort=3)
-
-Question:
-Using the ticket bundle, define the compatibility expectations (backward/forward, rolling upgrades, mixed versions). Where are the risky edges, and what guardrails/tests should be required before shipping ticketed changes?
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 15) ROI=4.6 impact=6 confidence=0.80 effort=2 horizon=NearTerm category=UX flows reference=Unknown
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-08/15-ux-flows-ticketed-user-journeys.md" \
-  -f "docs/oracle-questions-2026-01-08/_tickets_bundle.md" \
-  # optional (at most one): -f "<best_repo_file_path>" \
-  # extra_files appended literally (may be empty; may include -f/--file):
-   \
-  -p "$(cat <<'PROMPT'
-Strategist question #15  (ticket-driven)
-
-Reference: Unknown
-Category: UX flows
-Horizon: NearTerm
-ROI: 4.6 (impact=6, confidence=0.80, effort=2)
-
-Question:
-From the ticket bundle, identify which user/operator flows are affected (TUI flows, CLI flows, non-interactive mode). For each flow:
-- outline steps and state transitions
-- identify key UX requirements implied by tickets
-- call out compatibility constraints with existing workflows.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 16) ROI=4.2 impact=6 confidence=0.78 effort=2 horizon=NearTerm category=UX flows reference=Unknown
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-08/16-ux-flows-edge-cases-and-gotchas.md" \
-  -f "docs/oracle-questions-2026-01-08/_tickets_bundle.md" \
-  # optional (at most one): -f "<best_repo_file_path>" \
-  # extra_files appended literally (may be empty; may include -f/--file):
-   \
-  -p "$(cat <<'PROMPT'
-Strategist question #16  (ticket-driven)
-
-Reference: Unknown
-Category: UX flows
-Horizon: NearTerm
-ROI: 4.2 (impact=6, confidence=0.78, effort=2)
-
-Question:
-Using the ticket bundle, enumerate top UX edge cases (“gotchas”) that must be handled (missing tickets, partial bundles, validation failures, ambiguous outputs, cancel/back navigation). Identify where handling should be implemented and what tests are required.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 17) ROI=5.4 impact=7 confidence=0.76 effort=2 horizon=Immediate category=failure modes reference=Unknown
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-08/17-failure-modes-taxonomy-from-tickets.md" \
-  -f "docs/oracle-questions-2026-01-08/_tickets_bundle.md" \
-  # optional (at most one): -f "<best_repo_file_path>" \
-  # extra_files appended literally (may be empty; may include -f/--file):
-   \
-  -p "$(cat <<'PROMPT'
-Strategist question #17  (ticket-driven)
-
-Reference: Unknown
-Category: failure modes
-Horizon: Immediate
-ROI: 5.4 (impact=7, confidence=0.76, effort=2)
-
-Question:
-Derive a failure-mode taxonomy implied by the tickets (ticket discovery failures, bundle generation failures, schema violations, runner ingestion errors, tool execution failures). For each failure:
-- expected user-visible behavior
-- diagnostics to emit
-- where to classify/handle it.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 18) ROI=5.1 impact=7 confidence=0.74 effort=2 horizon=Immediate category=failure modes reference=Unknown
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-08/18-failure-modes-resilience-and-recovery.md" \
-  -f "docs/oracle-questions-2026-01-08/_tickets_bundle.md" \
-  # optional (at most one): -f "<best_repo_file_path>" \
-  # extra_files appended literally (may be empty; may include -f/--file):
-   \
-  -p "$(cat <<'PROMPT'
-Strategist question #18  (ticket-driven)
-
-Reference: Unknown
-Category: failure modes
-Horizon: Immediate
-ROI: 5.1 (impact=7, confidence=0.74, effort=2)
-
-Question:
-Using the tickets, propose resilience mechanisms appropriate for the ticketed changes (sanitize unsafe output paths, fail-fast vs partial completion, error wrapping, “stop-on-fail” behavior). Identify critical paths lacking safeguards and the smallest fixes.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 19) ROI=4.7 impact=6 confidence=0.78 effort=2 horizon=NearTerm category=feature flags reference=Unknown
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-08/19-feature-flags-rollout-controls.md" \
-  -f "docs/oracle-questions-2026-01-08/_tickets_bundle.md" \
-  # optional (at most one): -f "<best_repo_file_path>" \
-  # extra_files appended literally (may be empty; may include -f/--file):
-   \
-  -p "$(cat <<'PROMPT'
-Strategist question #19  (ticket-driven)
-
-Reference: Unknown
-Category: feature flags
-Horizon: NearTerm
-ROI: 4.7 (impact=6, confidence=0.78, effort=2)
-
-Question:
-Do tickets imply the need for feature-flag-like controls (rollout gating, experimental flags, safety toggles, per-step targeting)? Inventory what controls should exist and where they should be defined/evaluated.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 20) ROI=4.3 impact=6 confidence=0.76 effort=2 horizon=NearTerm category=feature flags reference=Unknown
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-08/20-feature-flags-lifecycle-and-flag-debt.md" \
-  -f "docs/oracle-questions-2026-01-08/_tickets_bundle.md" \
-  # optional (at most one): -f "<best_repo_file_path>" \
-  # extra_files appended literally (may be empty; may include -f/--file):
-   \
-  -p "$(cat <<'PROMPT'
-Strategist question #20  (ticket-driven)
-
-Reference: Unknown
-Category: feature flags
-Horizon: NearTerm
-ROI: 4.3 (impact=6, confidence=0.76, effort=2)
-
-Question:
-Define the rollout lifecycle required to ship the ticketed changes safely (create flag, test, ramp, monitor, retire). Identify minimum guardrails needed to prevent flag debt and to keep backward compatibility.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
+Parent Ticket:
+
+* Title: Prevent oraclepack pack failures caused by orphaned `-p/--prompt` lines in generated bash steps
+* Summary: Generated oraclepack markdown packs can emit a multiline `oracle ...` command where `-p "$(cat <<'PROMPT' ...)"` starts on a new line without a continuation, causing Bash to treat `-p` as a standalone command and fail (`exit status 127`). The fix requires making pack generation structurally safe and adding validator guardrails that fail fast on regressions.
+* Source:
+
+  * Link/ID: Bash command syntax fix.md
+  * Original ticket excerpt (≤25 words) capturing the overall theme: “make the generator/template structurally unable to emit orphaned flags… and make oraclepack validate fail fast”
+* Global Constraints:
+
+  * “never put `-p/--prompt` (or any flag) on its own line”
+  * “no inline comments at end of an `oracle ...` line”
+* Global Environment:
+
+  * Unknown
+* Global Evidence:
+
+  * Error: `bash: line 59: -p: command not found` + `exit status 127`
+  * Reference pack: `oracle-pack-2026-01-08-tickets-direct.md` (pattern repeated across steps)
+
+Split Plan:
+
+* Coverage Map:
+
+  * “`bash: line 59: -p: command not found` + `exit status 127`” → T1
+  * “`-p "$(cat <<'PROMPT' ...)"` is on the next line without `\` … repeated in others” → T1
+  * “Minimal fix: add a continuation backslash, or put `-p` on the same line” → T1
+  * “Optional comment goes ABOVE the command, not inline” → T1
+  * “Wherever you render `oracle ... "${ticket_args[@]}" # extra_files ...` then newline then `-p ...` … change it” → T1
+  * “Permanent template rule: never put `-p/--prompt` on its own line; build prompt first, then call oracle on a single command line” → T1
+  * “Enforce: no inline comments at end of an `oracle ...` line” → T1
+  * “If you must wrap long lines, require explicit `\` continuations and disallow comments on continued lines” → T1
+  * “Add checks to `oraclepack validate` after extracting the single `bash` fence” → T2
+  * “Add `bash -n` syntax check” → T2
+  * “Add `shellcheck` static analysis” → T2
+  * “Custom ‘orphaned flag line’ detector (regex + continuation exceptions)” → T2
+  * “Ensure `oraclepack run` always calls `validate` first (or at minimum in TUI Run/Rerun paths)” → T3
+  * “Add CI/pre-commit: run `oraclepack validate` on any generated/modified pack” → T3
+  * “Offer: point at exact rendering pattern + canonical snippet” → Non-actionable / Info-only
+* Dependencies:
+
+  * T3 depends on T2 because “Make validate unavoidable” is intended to enforce the added validator checks that catch regressions.
+* Split Tickets:
+
+```ticket T1
+T# Title: Make pack generation structurally safe (no orphaned `-p/--prompt` lines)
+Type: bug
+Target Area: Pack generator/template that emits oraclepack Markdown steps (tickets-direct pack generation)
+Summary:
+- Generated packs can split an `oracle ...` invocation across lines such that `-p "$(cat <<'PROMPT' ...)"` starts on a new line without a continuation.
+- Bash then executes `-p` as a standalone command, causing `command not found` and `exit status 127`.
+- Update generation patterns so prompts are built safely and the `oracle` command remains a single logical command (or uses correct continuations without inline comment footguns).
+In Scope:
+- Eliminate multiline `oracle` invocations that place `-p/--prompt` on its own line.
+- Apply the “minimal fix” pattern where multiline is unavoidable: add a line-continuation `\` (and ensure comments do not break continuation).
+- Enforce generator rule: no inline trailing comments on `oracle ...` lines (comments/newlines can terminate the command unexpectedly).
+- Adopt canonical “build prompt first, then call oracle” step shape as the standard emission pattern.
+Out of Scope:
+- Not provided
+Current Behavior (Actual):
+- `oracle ...` command is terminated by a newline, then `-p "$(cat <<'PROMPT' ...)"` appears on the next line without `\`, so Bash treats `-p` as a command and fails.
+Expected Behavior:
+- Generated bash steps never emit orphaned flag lines (e.g., `-p`, `-f`, `--prompt`) that can be interpreted as standalone shell commands.
+- Generated `oracle` invocations are either a single logical line or correctly continued (without inline comments breaking continuation).
+Reproduction Steps:
+1. Run the generated pack `oracle-pack-2026-01-08-tickets-direct.md`.
+2. Observe the step where `-p` begins a new line without a continuation and the shell errors.
+Requirements / Constraints:
+- “never put `-p/--prompt` (or any flag) on its own line”
+- “no inline comments at end of an `oracle ...` line”
+- If wrapping is necessary: require explicit `\` continuations and disallow comments on continued lines.
+Evidence:
+- Error: `bash: line 59: -p: command not found` + `exit status 127`
+- Pattern described: `-p "$(cat <<'PROMPT' ...)"` on next line without `\` in `oracle-pack-2026-01-08-tickets-direct.md`
+Open Items / Unknowns:
+- Exact location(s) of the emitting template(s): Unknown / Not provided
+- Whether multiple generators/templates emit the pattern beyond tickets-direct: Unknown / Not provided
+Risks / Dependencies:
+- Risk: Partial fixes (only adding `\`) may regress if inline comments or formatting are reintroduced.
+Acceptance Criteria:
+- Generated packs do not contain any step where a line begins with `-p` / `--prompt` intended as a continuation of `oracle` without an explicit safe structure.
+- Running the regenerated tickets-direct pack no longer produces `-p: command not found` / `exit status 127` for the previously failing steps.
+- Generator output follows one of:
+  - prompt built first + `oracle ... --prompt "$prompt"` as a single logical command, OR
+  - explicit `\` continuation with no inline trailing comments on continued lines.
+Priority & Severity (if inferable from input text):
+- Priority: Not provided
+- Severity: Not provided
+Source:
+- “`bash: line 59: -p: command not found` + `exit status 127`”
+- “the `-p "$(cat <<'PROMPT' ...)"` part is on the next line without a line-continuation (`\`)”
+- “Permanent template rule: never put `-p/--prompt` (or any flag) on its own line”
 ```
 
-## Coverage check
+```ticket T2
+T# Title: Add validator guardrails (bash-lint + orphaned-flag detection) to fail fast
+Type: enhancement
+Target Area: `oraclepack validate` (after extracting the single `bash` fence)
+Summary:
+- Even with a safer generator, regressions can reintroduce orphaned flag lines that only fail at runtime.
+- Add validation checks that detect bash syntax issues and the specific “orphaned flag line” class before execution.
+- Validation should clearly fail on suspicious standalone flag lines unless safely continued.
+In Scope:
+- Run `bash -n` against the extracted bash step script(s) as a syntax sanity check.
+- Run `shellcheck` static analysis on the extracted bash script(s).
+- Implement the custom “orphaned flag line” detector:
+  - Fail if a non-heredoc line matches `^\s*-(p|f)\b` or `^\s*--(prompt|file|write-output)\b`
+  - Unless the previous non-empty line ends with a legal continuation (`\`, `|`, `&&`, `||`, `(`, etc.)
+Out of Scope:
+- Making `validate` mandatory in all run paths (handled separately)
+Current Behavior (Actual):
+- Not provided
+Expected Behavior:
+- `oraclepack validate` fails fast with a clear error when a pack contains likely orphaned flag lines (e.g., `-p ...`) outside permitted continuation contexts.
+- `oraclepack validate` reports bash syntax issues before execution.
+Reproduction Steps:
+1. Create/modify a pack step where `-p` is on its own line without a valid continuation.
+2. Run `oraclepack validate`.
+Requirements / Constraints:
+- Checks are added “after extracting the single `bash` fence”.
+- Orphaned-flag detector must ignore heredoc bodies (“non-heredoc line”).
+Evidence:
+- “Add these checks to `oraclepack validate` after extracting the single `bash` fence”
+- Detector specification (regex + continuation exceptions) provided in ticket text.
+Open Items / Unknowns:
+- Availability/installation method for `shellcheck` in the execution environment: Unknown / Not provided
+- Exact current structure of `oraclepack validate` and how it extracts bash fence: Unknown / Not provided
+Risks / Dependencies:
+- Risk: False positives if continuation heuristics are too strict; must match the specified allowed continuations.
+Acceptance Criteria:
+- `oraclepack validate` includes `bash -n` and fails on invalid bash syntax in the extracted script(s).
+- `oraclepack validate` runs `shellcheck` and surfaces failures per project policy (pass/fail behavior not specified in ticket text).
+- `oraclepack validate` fails when a non-heredoc line begins with `-p`, `-f`, `--prompt`, `--file`, or `--write-output` and the previous non-empty line does not end with an allowed continuation token.
+- `oraclepack validate` does not falsely flag valid heredoc prompt bodies.
+Priority & Severity (if inferable from input text):
+- Priority: Not provided
+- Severity: Not provided
+Source:
+- “Add these checks to `oraclepack validate` after extracting the single `bash` fence”
+- “`bash -n` syntax check (cheap sanity)”
+- “Custom ‘orphaned flag line’ detector… `^\s*-(p|f)\b` … unless… ends with… (`\`, `|`, `&&`, `||`, `(`, etc.)”
+```
 
-Mark each as `OK` or `Missing(<step ids>)`:
+```ticket T3
+T# Title: Make validation unavoidable in normal use (run/TUI) and add CI/pre-commit gate
+Type: chore
+Target Area: `oraclepack run` execution flow, TUI “Run/Rerun” paths, and repo automation (CI/pre-commit)
+Summary:
+- Validation guardrails are only effective if they run consistently before pack execution.
+- Ensure `oraclepack run` calls `validate` first (or at minimum in TUI Run/Rerun paths).
+- Add automated gating so modified/generated packs are validated before being executed/merged.
+In Scope:
+- Ensure `oraclepack run` always calls `validate` first.
+- Ensure TUI “Run/Rerun” paths invoke `validate` first (at minimum).
+- Add CI/pre-commit step to run `oraclepack validate` on generated/modified packs.
+Out of Scope:
+- Implementing the validator checks themselves (handled separately)
+Current Behavior (Actual):
+- Not provided
+Expected Behavior:
+- Running a pack via CLI or TUI triggers validation first, preventing execution of invalid packs.
+- CI/pre-commit blocks changes that introduce invalid pack structure detectable by `oraclepack validate`.
+Reproduction Steps:
+1. Introduce a known-invalid pattern (e.g., orphaned `-p` line) into a pack.
+2. Attempt to run via `oraclepack run` and via TUI Run/Rerun.
+3. Attempt to commit/CI-run with the invalid pack present.
+Requirements / Constraints:
+- “Ensure `oraclepack run` always calls `validate` first (or at minimum in TUI ‘Run/Rerun’ paths).”
+- “Add CI/pre-commit: run `oraclepack validate` on any generated/modified pack.”
+Evidence:
+- The ticket text specifies making validation unavoidable and adding CI/pre-commit gating.
+Open Items / Unknowns:
+- Existing CI/pre-commit tooling and where to hook validation: Unknown / Not provided
+- Exact TUI entrypoints for Run/Rerun: Unknown / Not provided
+Risks / Dependencies:
+- Depends on `oraclepack validate` providing the intended guardrails to justify making it mandatory.
+Acceptance Criteria:
+- `oraclepack run` invokes `validate` before executing pack steps.
+- TUI Run/Rerun paths invoke `validate` before execution (at minimum).
+- CI/pre-commit configuration exists to run `oraclepack validate` on generated/modified packs and fails on validation errors.
+Priority & Severity (if inferable from input text):
+- Priority: Not provided
+- Severity: Not provided
+Source:
+- “Make validate unavoidable in normal use”
+- “Ensure `oraclepack run` always calls `validate` first (or at minimum in TUI ‘Run/Rerun’ paths).”
+- “Add CI/pre-commit: run `oraclepack validate` on any generated/modified pack.”
+```
+```
 
-- contracts/interfaces: OK
-- invariants: OK
-- caching/state: OK
-- background jobs: OK
-- observability: OK
-- permissions: OK
-- migrations: OK
-- UX flows: OK
-- failure modes: OK
-- feature flags: OK
+.tickets/Publish OraclePack MCP.md
+```
+Parent Ticket:
+
+* Title: Publish/distribute `oraclepack-mcp-server` to avoid long-form MCP client configuration
+* Summary: Replace the hardcoded venv interpreter path in MCP client configs with a portable, short config, and optionally enable one-click installation for supported clients.
+* Source:
+
+  * Link/ID (if present) or “Not provided”: `oraclepack-op-mcp.md`
+  * Original ticket excerpt (≤25 words) capturing the overall theme: “publish this so we do not have to use the long form configuration for configuring mcp clients”
+* Global Constraints:
+
+  * Eliminate reliance on an absolute venv interpreter path in MCP client configuration.
+  * Preserve required env variables (`ORACLEPACK_BIN`, `ORACLEPACK_ALLOWED_ROOTS`, `ORACLEPACK_ENABLE_EXEC`) in examples.
+* Global Environment:
+
+  * Unknown
+* Global Evidence:
+
+  * Current MCP client config example (shows venv path + args + env).
+
+Split Plan:
+
+* Coverage Map:
+
+  * Original item: “how do I publish this so we do not have to use the long form configuration for configuring mcp clients?”
+
+    * Assigned Ticket ID: T1
+  * Original item: Current config uses venv interpreter path: `"command": "/home/user/.../venv/bin/python"`
+
+    * Assigned Ticket ID: T1
+  * Original item: Current args: `["-m", "oraclepack_mcp_server", "--transport", "stdio"]`
+
+    * Assigned Ticket ID: T1
+  * Original item: Current env vars: `ORACLEPACK_BIN`, `ORACLEPACK_ALLOWED_ROOTS`, `ORACLEPACK_ENABLE_EXEC`
+
+    * Assigned Ticket ID: T1
+  * Original item: Option 1: “Publish a Python package so the MCP command is just a PATH executable” + `uv build`, `uv publish`, `uv tool install ...`
+
+    * Assigned Ticket ID: T1
+  * Original item: Option 1 config snippet (command becomes `oraclepack-mcp-server`, args `--transport stdio`, env preserved)
+
+    * Assigned Ticket ID: T1
+  * Original item: Note: “If you want to reduce env too, prefer absolute paths…”
+
+    * Assigned Ticket ID: T1
+  * Original item: Option 2: “No install short config: run via uvx” + config snippet using `"command": "uvx"`
+
+    * Assigned Ticket ID: T2
+  * Original item: Option 2 note: aligns with `server.json` PyPI example using `runtimeHint: "uvx"`
+
+    * Assigned Ticket ID: T4
+  * Original item: Option 3a: “Claude Desktop: ship a .mcpb bundle” + `mcpb init`, `mcpb pack` + distribute `.mcpb`
+
+    * Assigned Ticket ID: T3
+  * Original item: Option 3b: “publish to Official MCP Registry (and GitHub MCP Registry)” via `server.json` and `mcp-publisher` steps
+
+    * Assigned Ticket ID: T4
+  * Original item: Recommendation section (choose Option 1 for no venv path; Option 3 for no manual config)
+
+    * Assigned Ticket ID: Info-only
+  * Original item: Note: “standardize the executable name to match the PyPI identifier”
+
+    * Assigned Ticket ID: T1
+* Dependencies:
+
+  * T2 depends on T1 because the `uvx` approach runs the published package name (`oraclepack-mcp-server`).
+  * T4 depends on T1 because the described registry publishing path references a PyPI stdio server example.
+* Split Tickets:
+
+```ticket T1
+T# Title: Publish `oraclepack-mcp-server` as a PATH executable (PyPI + uv tools) and update config example
+Type: enhancement
+Target Area: Distribution/packaging for MCP server (`oraclepack-mcp-server`) + MCP client config examples
+Summary:
+- Publish the MCP server as a Python package so MCP clients can invoke it via a normal command on PATH instead of a venv interpreter path.
+- Provide the shorter MCP client configuration example that uses `command: "oraclepack-mcp-server"` and preserves required env vars.
+In Scope:
+- Publish steps using uv:
+  - `uv build`
+  - `uv publish`
+- Install guidance via uv tools:
+  - `uv tool install oraclepack-mcp-server`
+- Update the MCP client config example to:
+  - `"command": "oraclepack-mcp-server"`
+  - `"args": ["--transport", "stdio"]`
+  - Keep env: `ORACLEPACK_BIN`, `ORACLEPACK_ALLOWED_ROOTS`, `ORACLEPACK_ENABLE_EXEC`
+- Naming guidance: standardize executable name to match the PyPI identifier (e.g., `oraclepack-mcp-server`).
+- Guidance note: prefer absolute paths for env values if trying to reduce/env-stabilize in hosts with undefined working directory.
+Out of Scope:
+- “One-click install” packaging and registry publishing (handled in other tickets).
+Current Behavior (Actual):
+- MCP client config points at a venv interpreter path and runs `-m oraclepack_mcp_server`:
+  - `"command": "/home/user/.../venv/bin/python"`
+Expected Behavior:
+- MCP client config can run a PATH command directly:
+  - `"command": "oraclepack-mcp-server"`
+  - No venv absolute path required.
+Reproduction Steps:
+- Not provided
+Requirements / Constraints:
+- Preserve required env variables in examples:
+  - `ORACLEPACK_BIN`
+  - `ORACLEPACK_ALLOWED_ROOTS`
+  - `ORACLEPACK_ENABLE_EXEC`
+Evidence:
+- Current config snippet includes venv interpreter path and env vars:
+  - `"command": "/home/user/projects/temp/oraclepack/oraclepack-mcp-server/venv/bin/python"`
+  - `"args": ["-m", "oraclepack_mcp_server", "--transport", "stdio"]`
+  - `ORACLEPACK_BIN`, `ORACLEPACK_ALLOWED_ROOTS`, `ORACLEPACK_ENABLE_EXEC`
+Open Items / Unknowns:
+- Package metadata and repository details for publishing (Unknown / Not provided).
+- Desired final executable name if it differs from `oraclepack-mcp-server` (Unknown / Not provided).
+Risks / Dependencies:
+- Not provided
+Acceptance Criteria:
+- A published distribution path exists that does not require MCP clients to reference a venv interpreter path.
+- Documentation/config example shows:
+  - `"command": "oraclepack-mcp-server"`
+  - `"args": ["--transport", "stdio"]`
+  - env variables preserved as shown in the source text.
+- Executable naming guidance is documented (“match the PyPI identifier”).
+Priority & Severity (if inferable from input text):
+- Priority: Not provided
+- Severity: Not provided
+Source:
+- “publish/distribute paths that eliminate the venv absolute path”
+- “Publish a Python package so the MCP `command` is just a PATH executable”
+- “uv build / uv publish … uv tool install oraclepack-mcp-server”
+```
+
+```ticket T2
+T# Title: Add “no install” MCP config option using `uvx`
+Type: docs
+Target Area: MCP client configuration documentation/examples
+Summary:
+- Provide a short MCP client configuration that runs the server via `uvx` so users don’t need a pre-created local venv path in config.
+- Keep required environment variables in the example config.
+In Scope:
+- Document the `uvx`-based MCP client config example:
+  - `"command": "uvx"`
+  - `"args": ["oraclepack-mcp-server", "--transport", "stdio"]`
+  - env: `ORACLEPACK_BIN`, `ORACLEPACK_ALLOWED_ROOTS`, `ORACLEPACK_ENABLE_EXEC`
+Out of Scope:
+- Publishing to PyPI (handled in T1).
+- Registry publishing via `server.json`/`mcp-publisher` (handled in T4).
+Current Behavior (Actual):
+- Config is “long-form” due to a venv interpreter path.
+Expected Behavior:
+- Users can use a short config that invokes `uvx` with the package name and stdio transport args.
+Reproduction Steps:
+- Not provided
+Requirements / Constraints:
+- Preserve required env variables in the example config.
+Evidence:
+- Option 2 config snippet:
+  - `"command": "uvx"`
+  - `"args": ["oraclepack-mcp-server", "--transport", "stdio"]`
+Open Items / Unknowns:
+- Whether target MCP clients/hosts support `uvx` invocation in their MCP server configuration (Unknown / Not provided).
+Risks / Dependencies:
+- Depends on T1 (published package name referenced by `uvx`).
+Acceptance Criteria:
+- Documentation includes the `uvx` config snippet exactly as described in the source text.
+- Documentation explicitly retains the required env variable keys used in the source text.
+Priority & Severity (if inferable from input text):
+- Priority: Not provided
+- Severity: Not provided
+Source:
+- “No install short config: run via `uvx`”
+- `"command": "uvx", "args": ["oraclepack-mcp-server", "--transport", "stdio"]`
+```
+
+```ticket T3
+T# Title: Create and distribute a `.mcpb` bundle for Claude Desktop installation
+Type: enhancement
+Target Area: MCP Bundle packaging for Claude Desktop distribution
+Summary:
+- Package the local MCP server as a `.mcpb` bundle so users can install via a UI flow in supported clients (Claude Desktop mentioned).
+- Document the bundle creation commands and distribution approach.
+In Scope:
+- Use MCPB tooling steps as described:
+  - `npm install -g @anthropic-ai/mcpb`
+  - `mcpb init`
+  - `mcpb pack`
+- Distribute the resulting `.mcpb` (example given: GitHub Releases).
+- Document that users install via Claude Desktop Extensions UI flow (per source text).
+Out of Scope:
+- PyPI publishing and `uv` tooling approach (handled in T1).
+- Official/GitHub MCP registry publishing (handled in T4).
+Current Behavior (Actual):
+- Users must configure MCP clients manually with JSON.
+Expected Behavior:
+- Users can install the server via a `.mcpb` bundle in clients that support MCP bundles (Claude Desktop mentioned).
+Reproduction Steps:
+- Not provided
+Requirements / Constraints:
+- Follow the described `.mcpb` workflow (init + pack).
+Evidence:
+- “Claude Desktop: ship a `.mcpb` bundle … mcpb init … mcpb pack … Distribute the resulting `.mcpb`”
+Open Items / Unknowns:
+- Bundle manifest contents and exact server entrypoints required by MCPB for this server (Unknown / Not provided).
+Risks / Dependencies:
+- Not provided
+Acceptance Criteria:
+- A `.mcpb` bundle can be produced using the documented CLI steps.
+- Documentation explains how to obtain the `.mcpb` (distribution channel mentioned) and install it in Claude Desktop (Extensions UI flow mentioned).
+Priority & Severity (if inferable from input text):
+- Priority: Not provided
+- Severity: Not provided
+Source:
+- “Claude Desktop: ship a `.mcpb` bundle”
+- “mcpb init … mcpb pack”
+- “Distribute the resulting `.mcpb` (e.g., GitHub Releases)”
+```
+
+```ticket T4
+T# Title: Publish `server.json` via `mcp-publisher` for MCP Registry / GitHub MCP Registry discovery
+Type: enhancement
+Target Area: Registry publishing metadata (`server.json`) + publishing workflow (`mcp-publisher`)
+Summary:
+- Enable “one-click install” in supported clients by publishing a `server.json` descriptor via `mcp-publisher`, targeting the Official MCP Registry and GitHub MCP Registry (as described).
+- Document the high-level publishing steps and ownership proof requirement as stated.
+In Scope:
+- Generate `server.json` using `mcp-publisher init`.
+- Follow the publishing sequence as described:
+  1) Install `mcp-publisher`
+  2) `mcp-publisher init` to generate `server.json`
+  3) Prove package ownership (PyPI: add `mcp-name: ...` to README)
+  4) `mcp-publisher login github`
+  5) `mcp-publisher publish`
+- Ensure `server.json` aligns with the described PyPI stdio example capabilities (mentions `environmentVariables` and `runtimeHint: "uvx"`).
+Out of Scope:
+- `.mcpb` bundling (handled in T3).
+- Core PyPI package publishing steps (handled in T1).
+Current Behavior (Actual):
+- Users must manually configure MCP clients using JSON and local paths.
+Expected Behavior:
+- Server is discoverable/installable via registry mechanisms described (VS Code / ecosystem via registry).
+Reproduction Steps:
+- Not provided
+Requirements / Constraints:
+- Include the described package ownership proof metadata for PyPI (README `mcp-name: ...`).
+Evidence:
+- “publish a `server.json` via `mcp-publisher`”
+- Step list including `mcp-publisher init`, README `mcp-name: ...`, `login github`, `publish`
+- Note about PyPI example supporting `environmentVariables` and `runtimeHint: "uvx"`
+Open Items / Unknowns:
+- Final server identifier/name to use for `mcp-name: ...` (Unknown / Not provided).
+- Which registries/clients are in scope beyond “VS Code / ecosystem” phrasing (Unknown / Not provided).
+Risks / Dependencies:
+- Depends on T1 if the published registry entry targets a PyPI package distribution (as described).
+Acceptance Criteria:
+- A `server.json` exists generated/maintained via `mcp-publisher init` per the described workflow.
+- Documentation includes the stated publishing steps and the PyPI ownership proof requirement (`mcp-name: ...` in README).
+- Documentation notes the described `runtimeHint: "uvx"` alignment for the PyPI stdio example.
+Priority & Severity (if inferable from input text):
+- Priority: Not provided
+- Severity: Not provided
+Source:
+- “publish to the Official MCP Registry (and GitHub MCP Registry)”
+- “publish a `server.json` via `mcp-publisher`”
+- “Prove package ownership … add `mcp-name: ...` to your README”
+```
 ```
 
 oraclepack-mcp-server/inspector.config.json
@@ -3623,6 +2404,600 @@ oraclepack-mcp-server/requirements.txt
 mcp[cli]
 pydantic-settings
 pydantic>=2.0
+```
+
+scripts/build_install_oraclepack.md
+```
+```bash
+# path: scripts/build_install_oraclepack.sh
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Builds oraclepack for:
+# - WSL/Linux (oraclepack)
+# - Windows amd64 (oraclepack.exe)
+# Then installs:
+# - WSL binary -> ~/.local/bin/
+# - Windows exe -> /mnt/c/Users/<winuser>/.local/bin/
+# And writes a Git Bash wrapper:
+# - /mnt/c/Users/<winuser>/bin/oraclepack  (calls WSL binary via wsl.exe)
+
+usage() {
+  cat <<'USAGE'
+Usage:
+  scripts/build_install_oraclepack.sh [options]
+
+Options:
+  --repo-root <path>      Repo root (default: git toplevel, else current dir)
+  --win-user <name>       Windows username (default: auto-detect, else "user")
+  --wsl-distro <name>     WSL distro name for wsl.exe -d (default: $WSL_DISTRO_NAME or "Ubuntu-24.04")
+  --wsl-user <name>       WSL username for wsl.exe -u (default: current user)
+  --no-linux              Skip building/installing Linux binary
+  --no-windows            Skip building/installing Windows .exe
+  --no-wrapper            Skip writing the Git Bash wrapper script
+  --cgo <0|1>             Set CGO_ENABLED (default: leave unchanged)
+
+Examples:
+  scripts/build_install_oraclepack.sh
+  scripts/build_install_oraclepack.sh --win-user Alice --wsl-distro Ubuntu-24.04
+USAGE
+}
+
+die() { echo "error: $*" >&2; exit 1; }
+
+have() { command -v "$1" >/dev/null 2>&1; }
+
+detect_repo_root() {
+  if have git && git rev-parse --show-toplevel >/dev/null 2>&1; then
+    git rev-parse --show-toplevel
+  else
+    pwd
+  fi
+}
+
+detect_win_user() {
+  # Best-effort: ask Windows for %USERNAME% via cmd.exe (works in most WSL setups).
+  if have cmd.exe; then
+    local u
+    u="$(cmd.exe /c "echo %USERNAME%" 2>/dev/null | tr -d '\r' | tail -n 1 || true)"
+    if [[ -n "${u:-}" && "${u:-}" != "%USERNAME%" ]]; then
+      echo "$u"
+      return
+    fi
+  fi
+  echo "user"
+}
+
+REPO_ROOT=""
+WIN_USER=""
+WSL_DISTRO="${WSL_DISTRO_NAME:-Ubuntu-24.04}"
+WSL_USER="$(whoami)"
+DO_LINUX=1
+DO_WINDOWS=1
+DO_WRAPPER=1
+CGO=""
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --repo-root)  REPO_ROOT="${2:-}"; shift 2;;
+    --win-user)   WIN_USER="${2:-}"; shift 2;;
+    --wsl-distro) WSL_DISTRO="${2:-}"; shift 2;;
+    --wsl-user)   WSL_USER="${2:-}"; shift 2;;
+    --no-linux)   DO_LINUX=0; shift;;
+    --no-windows) DO_WINDOWS=0; shift;;
+    --no-wrapper) DO_WRAPPER=0; shift;;
+    --cgo)        CGO="${2:-}"; shift 2;;
+    -h|--help)    usage; exit 0;;
+    *)            die "unknown option: $1 (use --help)";;
+  esac
+done
+
+[[ -n "$REPO_ROOT" ]] || REPO_ROOT="$(detect_repo_root)"
+[[ -d "$REPO_ROOT" ]] || die "repo root not found: $REPO_ROOT"
+
+[[ -n "$WIN_USER" ]] || WIN_USER="$(detect_win_user)"
+
+have go || die "go not found in PATH"
+
+# Paths
+LINUX_OUT="$REPO_ROOT/oraclepack"
+WIN_OUT="$REPO_ROOT/oraclepack.exe"
+
+LINUX_INSTALL_DIR="$HOME/.local/bin"
+LINUX_INSTALL_PATH="$LINUX_INSTALL_DIR/oraclepack"
+
+WIN_HOME="/mnt/c/Users/$WIN_USER"
+WIN_LOCAL_BIN_DIR="$WIN_HOME/.local/bin"
+WIN_LOCAL_BIN_PATH="$WIN_LOCAL_BIN_DIR/oraclepack.exe"
+
+WIN_GITBASH_BIN_DIR="$WIN_HOME/bin"
+WIN_GITBASH_WRAPPER_PATH="$WIN_GITBASH_BIN_DIR/oraclepack"
+
+# Optional CGO toggle
+if [[ -n "$CGO" ]]; then
+  [[ "$CGO" == "0" || "$CGO" == "1" ]] || die "--cgo must be 0 or 1"
+  export CGO_ENABLED="$CGO"
+fi
+
+cd "$REPO_ROOT"
+
+# Build binaries
+if [[ "$DO_LINUX" -eq 1 ]]; then
+  echo "==> Building Linux (WSL) binary: $LINUX_OUT"
+  go build -o "$LINUX_OUT" ./cmd/oraclepack
+fi
+
+if [[ "$DO_WINDOWS" -eq 1 ]]; then
+  echo "==> Building Windows amd64 exe: $WIN_OUT"
+  GOOS=windows GOARCH=amd64 go build -o "$WIN_OUT" ./cmd/oraclepack
+fi
+
+# Install binaries
+if [[ "$DO_LINUX" -eq 1 ]]; then
+  echo "==> Installing Linux binary -> $LINUX_INSTALL_PATH"
+  mkdir -p "$LINUX_INSTALL_DIR"
+  cp -f "$LINUX_OUT" "$LINUX_INSTALL_PATH"
+fi
+
+if [[ "$DO_WINDOWS" -eq 1 ]]; then
+  echo "==> Installing Windows exe -> $WIN_LOCAL_BIN_PATH"
+  mkdir -p "$WIN_LOCAL_BIN_DIR"
+  cp -f "$WIN_OUT" "$WIN_LOCAL_BIN_PATH"
+fi
+
+# Write Git Bash wrapper (stored on Windows filesystem)
+if [[ "$DO_WRAPPER" -eq 1 ]]; then
+  echo "==> Writing Git Bash wrapper -> $WIN_GITBASH_WRAPPER_PATH"
+  mkdir -p "$WIN_GITBASH_BIN_DIR"
+
+  cat > "$WIN_GITBASH_WRAPPER_PATH" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Git for Windows (Git Bash) path-conversion off for this exec call.
+# Required so /home/... is not rewritten into C:/Program Files/Git/...
+MSYS_NO_PATHCONV=1 exec wsl.exe -d ${WSL_DISTRO@Q} -u ${WSL_USER@Q} -- ${LINUX_INSTALL_PATH@Q} "\$@"
+EOF
+
+  # Ensure LF line endings (in case editor/tool wrote CRLF) and best-effort executable bit.
+  sed -i 's/\r$//' "$WIN_GITBASH_WRAPPER_PATH" || true
+  chmod +x "$WIN_GITBASH_WRAPPER_PATH" 2>/dev/null || true
+
+  echo "==> Note: In Git Bash, ensure ~/bin is in PATH (so 'oraclepack' resolves to this wrapper)."
+fi
+
+echo "==> Done."
+echo "    WSL binary:     $LINUX_INSTALL_PATH"
+echo "    Windows exe:    $WIN_LOCAL_BIN_PATH"
+echo "    Git Bash wrap:  $WIN_GITBASH_WRAPPER_PATH"
+```
+
+Run (from repo root in WSL):
+
+```bash
+chmod +x scripts/build_install_oraclepack.sh
+scripts/build_install_oraclepack.sh
+```
+
+Optional example:
+
+```bash
+scripts/build_install_oraclepack.sh --win-user user --wsl-distro Ubuntu-24.04 --wsl-user user
+```
+```
+
+scripts/build_install_oraclepack.sh
+```
+# path: scripts/build_install_oraclepack.sh
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Builds oraclepack for:
+# - WSL/Linux (oraclepack)
+# - Windows amd64 (oraclepack.exe)
+# Then installs:
+# - WSL binary -> ~/.local/bin/
+# - Windows exe -> /mnt/c/Users/<winuser>/.local/bin/
+# And writes a Git Bash wrapper:
+# - /mnt/c/Users/<winuser>/bin/oraclepack  (calls WSL binary via wsl.exe)
+
+usage() {
+  cat <<'USAGE'
+Usage:
+  scripts/build_install_oraclepack.sh [options]
+
+Options:
+  --repo-root <path>      Repo root (default: git toplevel, else current dir)
+  --win-user <name>       Windows username (default: auto-detect, else "user")
+  --wsl-distro <name>     WSL distro name for wsl.exe -d (default: $WSL_DISTRO_NAME or "Ubuntu-24.04")
+  --wsl-user <name>       WSL username for wsl.exe -u (default: current user)
+  --no-linux              Skip building/installing Linux binary
+  --no-windows            Skip building/installing Windows .exe
+  --no-wrapper            Skip writing the Git Bash wrapper script
+  --cgo <0|1>             Set CGO_ENABLED (default: leave unchanged)
+
+Examples:
+  scripts/build_install_oraclepack.sh
+  scripts/build_install_oraclepack.sh --win-user Alice --wsl-distro Ubuntu-24.04
+USAGE
+}
+
+die() { echo "error: $*" >&2; exit 1; }
+
+have() { command -v "$1" >/dev/null 2>&1; }
+
+detect_repo_root() {
+  if have git && git rev-parse --show-toplevel >/dev/null 2>&1; then
+    git rev-parse --show-toplevel
+  else
+    pwd
+  fi
+}
+
+detect_win_user() {
+  # Best-effort: ask Windows for %USERNAME% via cmd.exe (works in most WSL setups).
+  if have cmd.exe; then
+    local u
+    u="$(cmd.exe /c "echo %USERNAME%" 2>/dev/null | tr -d '\r' | tail -n 1 || true)"
+    if [[ -n "${u:-}" && "${u:-}" != "%USERNAME%" ]]; then
+      echo "$u"
+      return
+    fi
+  fi
+  echo "user"
+}
+
+REPO_ROOT=""
+WIN_USER=""
+WSL_DISTRO="${WSL_DISTRO_NAME:-Ubuntu-24.04}"
+WSL_USER="$(whoami)"
+DO_LINUX=1
+DO_WINDOWS=1
+DO_WRAPPER=1
+CGO=""
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --repo-root)  REPO_ROOT="${2:-}"; shift 2;;
+    --win-user)   WIN_USER="${2:-}"; shift 2;;
+    --wsl-distro) WSL_DISTRO="${2:-}"; shift 2;;
+    --wsl-user)   WSL_USER="${2:-}"; shift 2;;
+    --no-linux)   DO_LINUX=0; shift;;
+    --no-windows) DO_WINDOWS=0; shift;;
+    --no-wrapper) DO_WRAPPER=0; shift;;
+    --cgo)        CGO="${2:-}"; shift 2;;
+    -h|--help)    usage; exit 0;;
+    *)            die "unknown option: $1 (use --help)";;
+  esac
+done
+
+[[ -n "$REPO_ROOT" ]] || REPO_ROOT="$(detect_repo_root)"
+[[ -d "$REPO_ROOT" ]] || die "repo root not found: $REPO_ROOT"
+
+[[ -n "$WIN_USER" ]] || WIN_USER="$(detect_win_user)"
+
+have go || die "go not found in PATH"
+
+# Paths
+LINUX_OUT="$REPO_ROOT/oraclepack"
+WIN_OUT="$REPO_ROOT/oraclepack.exe"
+
+LINUX_INSTALL_DIR="$HOME/.local/bin"
+LINUX_INSTALL_PATH="$LINUX_INSTALL_DIR/oraclepack"
+
+WIN_HOME="/mnt/c/Users/$WIN_USER"
+WIN_LOCAL_BIN_DIR="$WIN_HOME/.local/bin"
+WIN_LOCAL_BIN_PATH="$WIN_LOCAL_BIN_DIR/oraclepack.exe"
+
+WIN_GITBASH_BIN_DIR="$WIN_HOME/bin"
+WIN_GITBASH_WRAPPER_PATH="$WIN_GITBASH_BIN_DIR/oraclepack"
+
+# Optional CGO toggle
+if [[ -n "$CGO" ]]; then
+  [[ "$CGO" == "0" || "$CGO" == "1" ]] || die "--cgo must be 0 or 1"
+  export CGO_ENABLED="$CGO"
+fi
+
+cd "$REPO_ROOT"
+
+# Build binaries
+if [[ "$DO_LINUX" -eq 1 ]]; then
+  echo "==> Building Linux (WSL) binary: $LINUX_OUT"
+  go build -o "$LINUX_OUT" ./cmd/oraclepack
+fi
+
+if [[ "$DO_WINDOWS" -eq 1 ]]; then
+  echo "==> Building Windows amd64 exe: $WIN_OUT"
+  GOOS=windows GOARCH=amd64 go build -o "$WIN_OUT" ./cmd/oraclepack
+fi
+
+# Install binaries
+if [[ "$DO_LINUX" -eq 1 ]]; then
+  echo "==> Installing Linux binary -> $LINUX_INSTALL_PATH"
+  mkdir -p "$LINUX_INSTALL_DIR"
+  cp -f "$LINUX_OUT" "$LINUX_INSTALL_PATH"
+fi
+
+if [[ "$DO_WINDOWS" -eq 1 ]]; then
+  echo "==> Installing Windows exe -> $WIN_LOCAL_BIN_PATH"
+  mkdir -p "$WIN_LOCAL_BIN_DIR"
+  cp -f "$WIN_OUT" "$WIN_LOCAL_BIN_PATH"
+fi
+
+# Write Git Bash wrapper (stored on Windows filesystem)
+if [[ "$DO_WRAPPER" -eq 1 ]]; then
+  echo "==> Writing Git Bash wrapper -> $WIN_GITBASH_WRAPPER_PATH"
+  mkdir -p "$WIN_GITBASH_BIN_DIR"
+
+  cat > "$WIN_GITBASH_WRAPPER_PATH" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Git for Windows (Git Bash) path-conversion off for this exec call.
+# Required so /home/... is not rewritten into C:/Program Files/Git/...
+MSYS_NO_PATHCONV=1 exec wsl.exe -d ${WSL_DISTRO@Q} -u ${WSL_USER@Q} -- ${LINUX_INSTALL_PATH@Q} "\$@"
+EOF
+
+  # Ensure LF line endings (in case editor/tool wrote CRLF) and best-effort executable bit.
+  sed -i 's/\r$//' "$WIN_GITBASH_WRAPPER_PATH" || true
+  chmod +x "$WIN_GITBASH_WRAPPER_PATH" 2>/dev/null || true
+
+  echo "==> Note: In Git Bash, ensure ~/bin is in PATH (so 'oraclepack' resolves to this wrapper)."
+fi
+
+echo "==> Done."
+echo "    WSL binary:     $LINUX_INSTALL_PATH"
+echo "    Windows exe:    $WIN_LOCAL_BIN_PATH"
+echo "    Git Bash wrap:  $WIN_GITBASH_WRAPPER_PATH"
+```
+
+scripts/codefetch_skill.sh
+```
+# path: scripts/codefetch_skill.sh
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'USAGE'
+Usage:
+  bash scripts/codefetch_skill.sh <skill-name> [output-file]
+
+The argument must be the skill directory name under ./skills (no prefix assumptions),
+e.g.:
+  bash scripts/codefetch_skill.sh oraclepack-tickets-pack
+  bash scripts/codefetch_skill.sh tickets-pack
+  bash scripts/codefetch_skill.sh my-skill-name ./out.md
+
+Env overrides:
+  CODEFETCH_THREADS   (default: 5)
+  CODEFETCH_MAXTOKENS (default: 75000)
+USAGE
+}
+
+if [[ "${1:-}" == "" || "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+  usage
+  exit 0
+fi
+
+skill_name="$1"
+threads="${CODEFETCH_THREADS:-5}"
+max_tokens="${CODEFETCH_MAXTOKENS:-75000}"
+
+skill_dir="skills/${skill_name%/}"
+
+if [[ ! -d "$skill_dir" ]]; then
+  echo "Error: skill directory not found: $skill_dir" >&2
+  echo "Expected a folder under ./skills/ named exactly: '$skill_name'" >&2
+  exit 1
+fi
+
+out="${2:-${skill_name}_skill.md}"
+
+include_files=(
+  "${skill_dir}/SKILL.md"
+  "${skill_dir}/assets/**/*"
+  "${skill_dir}/references/**/*"
+  "${skill_dir}/scripts/**/*"
+)
+
+include_files_csv=""
+for pat in "${include_files[@]}"; do
+  if [[ -z "$include_files_csv" ]]; then
+    include_files_csv="$pat"
+  else
+    include_files_csv="${include_files_csv},$pat"
+  fi
+done
+
+codefetch -t "$threads" \
+  --include-dir "$skill_dir" \
+  --include-files "$include_files_csv" \
+  -o "$out" \
+  --max-tokens "$max_tokens"
+
+echo "Wrote: $out"
+```
+
+scripts/install-global.ps1
+```
+# path: scripts/install-global.ps1
+[CmdletBinding()]
+param(
+  [string]$InstallDir = "C:\Tools",
+  [switch]$AddToPath,
+  [switch]$SkipTests
+)
+
+$ErrorActionPreference = "Stop"
+
+function Get-RepoRoot {
+  try {
+    return (git rev-parse --show-toplevel).Trim()
+  } catch {
+    throw "Not inside a git repo (expected oraclepack repo)."
+  }
+}
+
+$RepoRoot = Get-RepoRoot
+Set-Location $RepoRoot
+
+if (-not (Get-Command go -ErrorAction SilentlyContinue)) {
+  throw "Go not found in PATH."
+}
+
+Write-Host "==> Repo: $RepoRoot"
+Write-Host "==> InstallDir: $InstallDir"
+
+if (-not $SkipTests) {
+  Write-Host "==> go test ./..."
+  go test ./...
+}
+
+# Match README build target: ./cmd/oraclepack
+Write-Host "==> go build -o oraclepack.exe ./cmd/oraclepack"
+go build -o oraclepack.exe ./cmd/oraclepack
+
+New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
+Copy-Item -Force -Path (Join-Path $RepoRoot "oraclepack.exe") -Destination (Join-Path $InstallDir "oraclepack.exe")
+
+if ($AddToPath) {
+  $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
+  if ($userPath -notmatch [Regex]::Escape($InstallDir)) {
+    $newPath = if ([string]::IsNullOrWhiteSpace($userPath)) { $InstallDir } else { "$userPath;$InstallDir" }
+    [Environment]::SetEnvironmentVariable("Path", $newPath, "User")
+    Write-Host "==> Added to User PATH: $InstallDir (restart terminal to pick up PATH changes)"
+  } else {
+    Write-Host "==> InstallDir already in User PATH"
+  }
+}
+
+Write-Host "==> Installed: $InstallDir\oraclepack.exe"
+& (Join-Path $InstallDir "oraclepack.exe") --version 2>$null
+```
+
+scripts/install-global.sh
+```
+# path: scripts/install-global.sh
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'USAGE'
+install-global.sh — rebuild oraclepack and install it to a PATH directory.
+
+Usage:
+  ./scripts/install-global.sh [--prefix DIR] [--sudo] [--skip-tests]
+
+Options:
+  --prefix DIR     Install directory (default: ~/.local/bin; macOS prefers /usr/local/bin if writable)
+  --sudo           Use sudo when copying into --prefix (for system dirs like /usr/local/bin)
+  --skip-tests     Skip `go test ./...`
+
+Examples:
+  ./scripts/install-global.sh
+  ./scripts/install-global.sh --prefix "$HOME/.local/bin"
+  ./scripts/install-global.sh --prefix /usr/local/bin --sudo
+USAGE
+}
+
+PREFIX=""
+USE_SUDO=0
+SKIP_TESTS=0
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --prefix) PREFIX="${2:-}"; shift 2 ;;
+    --sudo) USE_SUDO=1; shift ;;
+    --skip-tests) SKIP_TESTS=1; shift ;;
+    -h|--help) usage; exit 0 ;;
+    *) echo "Unknown arg: $1" >&2; usage; exit 2 ;;
+  esac
+done
+
+# Repo root (so script works from anywhere)
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+if [[ -z "${REPO_ROOT}" ]]; then
+  echo "Error: not inside a git repo (expected oraclepack repo)." >&2
+  exit 1
+fi
+cd "$REPO_ROOT"
+
+# Build output
+BUILD_DIR="$REPO_ROOT/.build"
+mkdir -p "$BUILD_DIR"
+OUT_BIN="$BUILD_DIR/oraclepack"
+
+# Default install prefix
+if [[ -z "${PREFIX}" ]]; then
+  case "$(uname -s)" in
+    Darwin)
+      if [[ -w "/usr/local/bin" ]]; then
+        PREFIX="/usr/local/bin"
+      else
+        PREFIX="$HOME/.local/bin"
+      fi
+      ;;
+    *)
+      PREFIX="$HOME/.local/bin"
+      ;;
+  esac
+fi
+
+echo "==> Repo: $REPO_ROOT"
+echo "==> Building: $OUT_BIN"
+echo "==> Installing to: $PREFIX"
+
+command -v go >/dev/null 2>&1 || { echo "Error: go not found in PATH." >&2; exit 1; }
+
+if [[ "$SKIP_TESTS" -eq 0 ]]; then
+  echo "==> go test ./..."
+  go test ./...
+fi
+
+# Match README build target: ./cmd/oraclepack :contentReference[oaicite:0]{index=0}
+go build -o "$OUT_BIN" ./cmd/oraclepack
+
+mkdir -p "$PREFIX"
+
+# Install (overwrite existing)
+if [[ "$USE_SUDO" -eq 1 ]]; then
+  sudo install -m 0755 "$OUT_BIN" "$PREFIX/oraclepack"
+else
+  install -m 0755 "$OUT_BIN" "$PREFIX/oraclepack"
+fi
+
+echo "==> Installed: $PREFIX/oraclepack"
+echo "==> Version (if supported):"
+"$PREFIX/oraclepack" --version 2>/dev/null || true
+
+# Best-effort: refresh shell hash table (won't error if unsupported)
+hash -r 2>/dev/null || true
+```
+
+scripts/tag-release.sh
+```
+# path: scripts/tag-release.sh
+#!/usr/bin/env bash
+set -euo pipefail
+
+read -r -p "Input tag version (e.g., 0.2.0): " version
+version="${version//[[:space:]]/}"
+[[ -n "${version}" ]] || { echo "Error: version cannot be empty." >&2; exit 1; }
+
+tag="v${version}"
+
+git rev-parse -q --verify "refs/tags/${tag}" >/dev/null && {
+  echo "Error: tag ${tag} already exists locally." >&2
+  exit 1
+}
+
+git ls-remote --tags origin "refs/tags/${tag}" | grep -q . && {
+  echo "Error: tag ${tag} already exists on origin." >&2
+  exit 1
+}
+
+git tag "${tag}"
+git push origin "${tag}"
 ```
 
 .config/commands/oracle-pack_v2.toml
@@ -4624,6 +3999,73 @@ echo "    Windows exe:    $WIN_LOCAL_BIN_PATH"
 echo "    Git Bash wrap:  $WIN_GITBASH_WRAPPER_PATH"
 ```
 
+.config/scripts/codefetch_skill.sh
+```
+# path: scripts/codefetch_skill.sh
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'USAGE'
+Usage:
+  bash scripts/codefetch_skill.sh <skill-name> [output-file]
+
+The argument must be the skill directory name under ./skills (no prefix assumptions),
+e.g.:
+  bash scripts/codefetch_skill.sh oraclepack-tickets-pack
+  bash scripts/codefetch_skill.sh tickets-pack
+  bash scripts/codefetch_skill.sh my-skill-name ./out.md
+
+Env overrides:
+  CODEFETCH_THREADS   (default: 5)
+  CODEFETCH_MAXTOKENS (default: 75000)
+USAGE
+}
+
+if [[ "${1:-}" == "" || "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+  usage
+  exit 0
+fi
+
+skill_name="$1"
+threads="${CODEFETCH_THREADS:-5}"
+max_tokens="${CODEFETCH_MAXTOKENS:-75000}"
+
+skill_dir="skills/${skill_name%/}"
+
+if [[ ! -d "$skill_dir" ]]; then
+  echo "Error: skill directory not found: $skill_dir" >&2
+  echo "Expected a folder under ./skills/ named exactly: '$skill_name'" >&2
+  exit 1
+fi
+
+out="${2:-${skill_name}_skill.md}"
+
+include_files=(
+  "${skill_dir}/SKILL.md"
+  "${skill_dir}/assets/**/*"
+  "${skill_dir}/references/**/*"
+  "${skill_dir}/scripts/**/*"
+)
+
+include_files_csv=""
+for pat in "${include_files[@]}"; do
+  if [[ -z "$include_files_csv" ]]; then
+    include_files_csv="$pat"
+  else
+    include_files_csv="${include_files_csv},$pat"
+  fi
+done
+
+codefetch -t "$threads" \
+  --include-dir "$skill_dir" \
+  --include-files "$include_files_csv" \
+  -o "$out" \
+  --max-tokens "$max_tokens"
+
+echo "Wrote: $out"
+```
+
 .config/scripts/install-global.ps1
 ```
 # path: scripts/install-global.ps1
@@ -4889,905 +4331,289 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-.oraclepack/ticketify/_actions.json
+.mypy_cache/3.12/@plugins_snapshot.json
 ```
-{
-  "actions": [
-    {
-      "action_id": "Expose Oraclepack as MCP-A01",
-      "kind": "task",
-      "source_line": 83,
-      "text": "Repository includes README.md, requirements.txt, and `oraclepack_mcp_server` package directory.",
-      "ticket_id": "Expose Oraclepack as MCP",
-      "ticket_path": ".tickets/mcp/Expose Oraclepack as MCP.md"
-    },
-    {
-      "action_id": "Expose Oraclepack as MCP-A02",
-      "kind": "task",
-      "source_line": 84,
-      "text": "Running `python -m oraclepack_mcp_server --transport stdio` is supported (starts server process).",
-      "ticket_id": "Expose Oraclepack as MCP",
-      "ticket_path": ".tickets/mcp/Expose Oraclepack as MCP.md"
-    },
-    {
-      "action_id": "Expose Oraclepack as MCP-A03",
-      "kind": "task",
-      "source_line": 85,
-      "text": "Running `python -m oraclepack_mcp_server --transport streamable-http` is supported (starts server process).",
-      "ticket_id": "Expose Oraclepack as MCP",
-      "ticket_path": ".tickets/mcp/Expose Oraclepack as MCP.md"
-    },
-    {
-      "action_id": "Expose Oraclepack as MCP-A04",
-      "kind": "task",
-      "source_line": 133,
-      "text": "Config loader reads the listed env vars and applies defaults as documented.",
-      "ticket_id": "Expose Oraclepack as MCP",
-      "ticket_path": ".tickets/mcp/Expose Oraclepack as MCP.md"
-    },
-    {
-      "action_id": "Expose Oraclepack as MCP-A05",
-      "kind": "task",
-      "source_line": 134,
-      "text": "Path resolution rejects paths outside allowed roots.",
-      "ticket_id": "Expose Oraclepack as MCP",
-      "ticket_path": ".tickets/mcp/Expose Oraclepack as MCP.md"
-    },
-    {
-      "action_id": "Expose Oraclepack as MCP-A06",
-      "kind": "task",
-      "source_line": 135,
-      "text": "File reads enforce max bytes and indicate truncation.",
-      "ticket_id": "Expose Oraclepack as MCP",
-      "ticket_path": ".tickets/mcp/Expose Oraclepack as MCP.md"
-    },
-    {
-      "action_id": "Expose Oraclepack as MCP-A07",
-      "kind": "task",
-      "source_line": 136,
-      "text": "Exec gating flag is available for run tools to check.",
-      "ticket_id": "Expose Oraclepack as MCP",
-      "ticket_path": ".tickets/mcp/Expose Oraclepack as MCP.md"
-    },
-    {
-      "action_id": "Expose Oraclepack as MCP-A08",
-      "kind": "task",
-      "source_line": 175,
-      "text": "Runner returns: ok, exit_code, duration_s, stdout, stderr, stdout_truncated, stderr_truncated.",
-      "ticket_id": "Expose Oraclepack as MCP",
-      "ticket_path": ".tickets/mcp/Expose Oraclepack as MCP.md"
-    },
-    {
-      "action_id": "Expose Oraclepack as MCP-A09",
-      "kind": "task",
-      "source_line": 176,
-      "text": "Timeout produces exit_code=124 (or equivalent) and includes a timeout message.",
-      "ticket_id": "Expose Oraclepack as MCP",
-      "ticket_path": ".tickets/mcp/Expose Oraclepack as MCP.md"
-    },
-    {
-      "action_id": "Expose Oraclepack as MCP-A10",
-      "kind": "task",
-      "source_line": 177,
-      "text": "Outputs are truncated to configured character limit and flags are set accordingly.",
-      "ticket_id": "Expose Oraclepack as MCP",
-      "ticket_path": ".tickets/mcp/Expose Oraclepack as MCP.md"
-    },
-    {
-      "action_id": "Expose Oraclepack as MCP-A11",
-      "kind": "task",
-      "source_line": 222,
-      "text": "Validation returns ok=false with `missing` when any prefix has no matches.",
-      "ticket_id": "Expose Oraclepack as MCP",
-      "ticket_path": ".tickets/mcp/Expose Oraclepack as MCP.md"
-    },
-    {
-      "action_id": "Expose Oraclepack as MCP-A12",
-      "kind": "task",
-      "source_line": 223,
-      "text": "Validation returns ok=false with `ambiguous` when any prefix has >1 match.",
-      "ticket_id": "Expose Oraclepack as MCP",
-      "ticket_path": ".tickets/mcp/Expose Oraclepack as MCP.md"
-    },
-    {
-      "action_id": "Expose Oraclepack as MCP-A13",
-      "kind": "task",
-      "source_line": 224,
-      "text": "Validation returns ok=true only when exactly one match exists for every prefix 01..20.",
-      "ticket_id": "Expose Oraclepack as MCP",
-      "ticket_path": ".tickets/mcp/Expose Oraclepack as MCP.md"
-    },
-    {
-      "action_id": "Expose Oraclepack as MCP-A14",
-      "kind": "task",
-      "source_line": 225,
-      "text": "Detection supports explicit dir and explicit file resolution and produces an `out_dir`.",
-      "ticket_id": "Expose Oraclepack as MCP",
-      "ticket_path": ".tickets/mcp/Expose Oraclepack as MCP.md"
-    },
-    {
-      "action_id": "Expose Oraclepack as MCP-A15",
-      "kind": "task",
-      "source_line": 226,
-      "text": "Detection supports \u201cauto\u201d and returns deterministic results for the same filesystem state.",
-      "ticket_id": "Expose Oraclepack as MCP",
-      "ticket_path": ".tickets/mcp/Expose Oraclepack as MCP.md"
-    },
-    {
-      "action_id": "Expose Oraclepack as MCP-A16",
-      "kind": "task",
-      "source_line": 276,
-      "text": "All tools listed in the parent ticket are registered and callable.",
-      "ticket_id": "Expose Oraclepack as MCP",
-      "ticket_path": ".tickets/mcp/Expose Oraclepack as MCP.md"
-    },
-    {
-      "action_id": "Expose Oraclepack as MCP-A17",
-      "kind": "task",
-      "source_line": 277,
-      "text": "`oraclepack_read_file` enforces allowed roots and max read bytes.",
-      "ticket_id": "Expose Oraclepack as MCP",
-      "ticket_path": ".tickets/mcp/Expose Oraclepack as MCP.md"
-    },
-    {
-      "action_id": "Expose Oraclepack as MCP-A18",
-      "kind": "task",
-      "source_line": 278,
-      "text": "`oraclepack_run_pack` and `oraclepack_taskify_run_action_pack` refuse execution unless `ORACLEPACK_ENABLE_EXEC=1`.",
-      "ticket_id": "Expose Oraclepack as MCP",
-      "ticket_path": ".tickets/mcp/Expose Oraclepack as MCP.md"
-    },
-    {
-      "action_id": "Expose Oraclepack as MCP-A19",
-      "kind": "task",
-      "source_line": 279,
-      "text": "Response formatter supports markdown and json outputs and includes truncation indicators.",
-      "ticket_id": "Expose Oraclepack as MCP",
-      "ticket_path": ".tickets/mcp/Expose Oraclepack as MCP.md"
-    },
-    {
-      "action_id": "Expose Oraclepack as MCP-A20",
-      "kind": "task",
-      "source_line": 321,
-      "text": "Running with `--transport stdio` is supported and does not interleave logs on stdout.",
-      "ticket_id": "Expose Oraclepack as MCP",
-      "ticket_path": ".tickets/mcp/Expose Oraclepack as MCP.md"
-    },
-    {
-      "action_id": "Expose Oraclepack as MCP-A21",
-      "kind": "task",
-      "source_line": 322,
-      "text": "Running with `--transport streamable-http` includes Origin validation and uses localhost binding + authentication (mechanism documented/implemented).",
-      "ticket_id": "Expose Oraclepack as MCP",
-      "ticket_path": ".tickets/mcp/Expose Oraclepack as MCP.md"
-    },
-    {
-      "action_id": "Expose Oraclepack as MCP-A22",
-      "kind": "task",
-      "source_line": 323,
-      "text": "Validate/list/read tools are annotated as read-only; run tools are annotated as destructive/open-world.",
-      "ticket_id": "Expose Oraclepack as MCP",
-      "ticket_path": ".tickets/mcp/Expose Oraclepack as MCP.md"
-    },
-    {
-      "action_id": "Expose Oraclepack as MCP-A23",
-      "kind": "task",
-      "source_line": 367,
-      "text": "Validation fails with a clear error when the action pack violates the \u201csingle bash fence\u201d constraint.",
-      "ticket_id": "Expose Oraclepack as MCP",
-      "ticket_path": ".tickets/mcp/Expose Oraclepack as MCP.md"
-    },
-    {
-      "action_id": "Expose Oraclepack as MCP-A24",
-      "kind": "task",
-      "source_line": 368,
-      "text": "Validation fails with a clear error when step headers do not meet the stated expectations.",
-      "ticket_id": "Expose Oraclepack as MCP",
-      "ticket_path": ".tickets/mcp/Expose Oraclepack as MCP.md"
-    },
-    {
-      "action_id": "Expose Oraclepack as MCP-A25",
-      "kind": "task",
-      "source_line": 369,
-      "text": "Artifact summarizer reports presence/absence of the example artifacts and returns a readable summary.",
-      "ticket_id": "Expose Oraclepack as MCP",
-      "ticket_path": ".tickets/mcp/Expose Oraclepack as MCP.md"
-    },
-    {
-      "action_id": "Expose Oraclepack as MCP-A26",
-      "kind": "task",
-      "source_line": 370,
-      "text": "Tool outputs are deterministic for the same filesystem state.",
-      "ticket_id": "Expose Oraclepack as MCP",
-      "ticket_path": ".tickets/mcp/Expose Oraclepack as MCP.md"
-    },
-    {
-      "action_id": "MCP Server for Oraclepack-A01",
-      "kind": "task",
-      "source_line": 114,
-      "text": "MCP server starts successfully in both `stdio` and `streamable-http` modes.",
-      "ticket_id": "MCP Server for Oraclepack",
-      "ticket_path": ".tickets/mcp/MCP Server for Oraclepack.md"
-    },
-    {
-      "action_id": "MCP Server for Oraclepack-A02",
-      "kind": "task",
-      "source_line": 115,
-      "text": "All listed tools are exposed with the documented names.",
-      "ticket_id": "MCP Server for Oraclepack",
-      "ticket_path": ".tickets/mcp/MCP Server for Oraclepack.md"
-    },
-    {
-      "action_id": "MCP Server for Oraclepack-A03",
-      "kind": "task",
-      "source_line": 116,
-      "text": "When `ORACLEPACK_ENABLE_EXEC!=1`, run tools refuse to execute and return a clear error; validate/list/read tools still work.",
-      "ticket_id": "MCP Server for Oraclepack",
-      "ticket_path": ".tickets/mcp/MCP Server for Oraclepack.md"
-    },
-    {
-      "action_id": "MCP Server for Oraclepack-A04",
-      "kind": "task",
-      "source_line": 117,
-      "text": "`oraclepack_read_file` rejects paths outside `ORACLEPACK_ALLOWED_ROOTS`.",
-      "ticket_id": "MCP Server for Oraclepack",
-      "ticket_path": ".tickets/mcp/MCP Server for Oraclepack.md"
-    },
-    {
-      "action_id": "MCP Server for Oraclepack-A05",
-      "kind": "task",
-      "source_line": 118,
-      "text": "Stage-2 validation enforces exactly one file per prefix `01`..`20` and returns `missing` and `ambiguous` sets when invalid.",
-      "ticket_id": "MCP Server for Oraclepack",
-      "ticket_path": ".tickets/mcp/MCP Server for Oraclepack.md"
-    },
-    {
-      "action_id": "MCP Server for Oraclepack-A06",
-      "kind": "task",
-      "source_line": 119,
-      "text": "Stage-2 detection resolves out-dir correctly for both:",
-      "ticket_id": "MCP Server for Oraclepack",
-      "ticket_path": ".tickets/mcp/MCP Server for Oraclepack.md"
-    },
-    {
-      "action_id": "MCP Server for Oraclepack-A07",
-      "kind": "task",
-      "source_line": 124,
-      "text": "stdout/stderr truncation and timeouts are enforced on CLI subprocess execution.",
-      "ticket_id": "MCP Server for Oraclepack",
-      "ticket_path": ".tickets/mcp/MCP Server for Oraclepack.md"
-    },
-    {
-      "action_id": "MCP Server for Oraclepack-A08",
-      "kind": "task",
-      "source_line": 125,
-      "text": "Tool annotations are applied as specified for read-only vs destructive tools.",
-      "ticket_id": "MCP Server for Oraclepack",
-      "ticket_path": ".tickets/mcp/MCP Server for Oraclepack.md"
-    }
-  ],
-  "count": 34,
-  "out_dir": ".oraclepack/ticketify",
-  "version": 1
-}
+{}
 ```
 
-.oraclepack/ticketify/_actions.md
+.mypy_cache/3.12/_ast.data.json
 ```
-# Actions (canonical, deterministic)
-
-- [Expose Oraclepack as MCP-A01] (Expose Oraclepack as MCP) Repository includes README.md, requirements.txt, and `oraclepack_mcp_server` package directory.
-- [Expose Oraclepack as MCP-A02] (Expose Oraclepack as MCP) Running `python -m oraclepack_mcp_server --transport stdio` is supported (starts server process).
-- [Expose Oraclepack as MCP-A03] (Expose Oraclepack as MCP) Running `python -m oraclepack_mcp_server --transport streamable-http` is supported (starts server process).
-- [Expose Oraclepack as MCP-A04] (Expose Oraclepack as MCP) Config loader reads the listed env vars and applies defaults as documented.
-- [Expose Oraclepack as MCP-A05] (Expose Oraclepack as MCP) Path resolution rejects paths outside allowed roots.
-- [Expose Oraclepack as MCP-A06] (Expose Oraclepack as MCP) File reads enforce max bytes and indicate truncation.
-- [Expose Oraclepack as MCP-A07] (Expose Oraclepack as MCP) Exec gating flag is available for run tools to check.
-- [Expose Oraclepack as MCP-A08] (Expose Oraclepack as MCP) Runner returns: ok, exit_code, duration_s, stdout, stderr, stdout_truncated, stderr_truncated.
-- [Expose Oraclepack as MCP-A09] (Expose Oraclepack as MCP) Timeout produces exit_code=124 (or equivalent) and includes a timeout message.
-- [Expose Oraclepack as MCP-A10] (Expose Oraclepack as MCP) Outputs are truncated to configured character limit and flags are set accordingly.
-- [Expose Oraclepack as MCP-A11] (Expose Oraclepack as MCP) Validation returns ok=false with `missing` when any prefix has no matches.
-- [Expose Oraclepack as MCP-A12] (Expose Oraclepack as MCP) Validation returns ok=false with `ambiguous` when any prefix has >1 match.
-- [Expose Oraclepack as MCP-A13] (Expose Oraclepack as MCP) Validation returns ok=true only when exactly one match exists for every prefix 01..20.
-- [Expose Oraclepack as MCP-A14] (Expose Oraclepack as MCP) Detection supports explicit dir and explicit file resolution and produces an `out_dir`.
-- [Expose Oraclepack as MCP-A15] (Expose Oraclepack as MCP) Detection supports “auto” and returns deterministic results for the same filesystem state.
-- [Expose Oraclepack as MCP-A16] (Expose Oraclepack as MCP) All tools listed in the parent ticket are registered and callable.
-- [Expose Oraclepack as MCP-A17] (Expose Oraclepack as MCP) `oraclepack_read_file` enforces allowed roots and max read bytes.
-- [Expose Oraclepack as MCP-A18] (Expose Oraclepack as MCP) `oraclepack_run_pack` and `oraclepack_taskify_run_action_pack` refuse execution unless `ORACLEPACK_ENABLE_EXEC=1`.
-- [Expose Oraclepack as MCP-A19] (Expose Oraclepack as MCP) Response formatter supports markdown and json outputs and includes truncation indicators.
-- [Expose Oraclepack as MCP-A20] (Expose Oraclepack as MCP) Running with `--transport stdio` is supported and does not interleave logs on stdout.
-- [Expose Oraclepack as MCP-A21] (Expose Oraclepack as MCP) Running with `--transport streamable-http` includes Origin validation and uses localhost binding + authentication (mechanism documented/implemented).
-- [Expose Oraclepack as MCP-A22] (Expose Oraclepack as MCP) Validate/list/read tools are annotated as read-only; run tools are annotated as destructive/open-world.
-- [Expose Oraclepack as MCP-A23] (Expose Oraclepack as MCP) Validation fails with a clear error when the action pack violates the “single bash fence” constraint.
-- [Expose Oraclepack as MCP-A24] (Expose Oraclepack as MCP) Validation fails with a clear error when step headers do not meet the stated expectations.
-- [Expose Oraclepack as MCP-A25] (Expose Oraclepack as MCP) Artifact summarizer reports presence/absence of the example artifacts and returns a readable summary.
-- [Expose Oraclepack as MCP-A26] (Expose Oraclepack as MCP) Tool outputs are deterministic for the same filesystem state.
-- [MCP Server for Oraclepack-A01] (MCP Server for Oraclepack) MCP server starts successfully in both `stdio` and `streamable-http` modes.
-- [MCP Server for Oraclepack-A02] (MCP Server for Oraclepack) All listed tools are exposed with the documented names.
-- [MCP Server for Oraclepack-A03] (MCP Server for Oraclepack) When `ORACLEPACK_ENABLE_EXEC!=1`, run tools refuse to execute and return a clear error; validate/list/read tools still work.
-- [MCP Server for Oraclepack-A04] (MCP Server for Oraclepack) `oraclepack_read_file` rejects paths outside `ORACLEPACK_ALLOWED_ROOTS`.
-- [MCP Server for Oraclepack-A05] (MCP Server for Oraclepack) Stage-2 validation enforces exactly one file per prefix `01`..`20` and returns `missing` and `ambiguous` sets when invalid.
-- [MCP Server for Oraclepack-A06] (MCP Server for Oraclepack) Stage-2 detection resolves out-dir correctly for both:
-- [MCP Server for Oraclepack-A07] (MCP Server for Oraclepack) stdout/stderr truncation and timeouts are enforced on CLI subprocess execution.
-- [MCP Server for Oraclepack-A08] (MCP Server for Oraclepack) Tool annotations are applied as specified for read-only vs destructive tools.
+{".class":"MypyFile","_fullname":"_ast","future_import_flags":[],"is_partial_stub_package":false,"is_stub":true,"names":{".class":"SymbolTable","AST":{".class":"SymbolTableNode","cross_ref":"ast.AST","kind":"Gdef"},"Add":{".class":"SymbolTableNode","cross_ref":"ast.Add","kind":"Gdef"},"And":{".class":"SymbolTableNode","cross_ref":"ast.And","kind":"Gdef"},"AnnAssign":{".class":"SymbolTableNode","cross_ref":"ast.AnnAssign","kind":"Gdef"},"Assert":{".class":"SymbolTableNode","cross_ref":"ast.Assert","kind":"Gdef"},"Assign":{".class":"SymbolTableNode","cross_ref":"ast.Assign","kind":"Gdef"},"AsyncFor":{".class":"SymbolTableNode","cross_ref":"ast.AsyncFor","kind":"Gdef"},"AsyncFunctionDef":{".class":"SymbolTableNode","cross_ref":"ast.AsyncFunctionDef","kind":"Gdef"},"AsyncWith":{".class":"SymbolTableNode","cross_ref":"ast.AsyncWith","kind":"Gdef"},"Attribute":{".class":"SymbolTableNode","cross_ref":"ast.Attribute","kind":"Gdef"},"AugAssign":{".class":"SymbolTableNode","cross_ref":"ast.AugAssign","kind":"Gdef"},"Await":{".class":"SymbolTableNode","cross_ref":"ast.Await","kind":"Gdef"},"BinOp":{".class":"SymbolTableNode","cross_ref":"ast.BinOp","kind":"Gdef"},"BitAnd":{".class":"SymbolTableNode","cross_ref":"ast.BitAnd","kind":"Gdef"},"BitOr":{".class":"SymbolTableNode","cross_ref":"ast.BitOr","kind":"Gdef"},"BitXor":{".class":"SymbolTableNode","cross_ref":"ast.BitXor","kind":"Gdef"},"BoolOp":{".class":"SymbolTableNode","cross_ref":"ast.BoolOp","kind":"Gdef"},"Break":{".class":"SymbolTableNode","cross_ref":"ast.Break","kind":"Gdef"},"Call":{".class":"SymbolTableNode","cross_ref":"ast.Call","kind":"Gdef"},"ClassDef":{".class":"SymbolTableNode","cross_ref":"ast.ClassDef","kind":"Gdef"},"Compare":{".class":"SymbolTableNode","cross_ref":"ast.Compare","kind":"Gdef"},"Constant":{".class":"SymbolTableNode","cross_ref":"ast.Constant","kind":"Gdef"},"Continue":{".class":"SymbolTableNode","cross_ref":"ast.Continue","kind":"Gdef"},"Del":{".class":"SymbolTableNode","cross_ref":"ast.Del","kind":"Gdef"},"Delete":{".class":"SymbolTableNode","cross_ref":"ast.Delete","kind":"Gdef"},"Dict":{".class":"SymbolTableNode","cross_ref":"ast.Dict","kind":"Gdef"},"DictComp":{".class":"SymbolTableNode","cross_ref":"ast.DictComp","kind":"Gdef"},"Div":{".class":"SymbolTableNode","cross_ref":"ast.Div","kind":"Gdef"},"Eq":{".class":"SymbolTableNode","cross_ref":"ast.Eq","kind":"Gdef"},"ExceptHandler":{".class":"SymbolTableNode","cross_ref":"ast.ExceptHandler","kind":"Gdef"},"Expr":{".class":"SymbolTableNode","cross_ref":"ast.Expr","kind":"Gdef"},"Expression":{".class":"SymbolTableNode","cross_ref":"ast.Expression","kind":"Gdef"},"FloorDiv":{".class":"SymbolTableNode","cross_ref":"ast.FloorDiv","kind":"Gdef"},"For":{".class":"SymbolTableNode","cross_ref":"ast.For","kind":"Gdef"},"FormattedValue":{".class":"SymbolTableNode","cross_ref":"ast.FormattedValue","kind":"Gdef"},"FunctionDef":{".class":"SymbolTableNode","cross_ref":"ast.FunctionDef","kind":"Gdef"},"FunctionType":{".class":"SymbolTableNode","cross_ref":"ast.FunctionType","kind":"Gdef"},"GeneratorExp":{".class":"SymbolTableNode","cross_ref":"ast.GeneratorExp","kind":"Gdef"},"Global":{".class":"SymbolTableNode","cross_ref":"ast.Global","kind":"Gdef"},"Gt":{".class":"SymbolTableNode","cross_ref":"ast.Gt","kind":"Gdef"},"GtE":{".class":"SymbolTableNode","cross_ref":"ast.GtE","kind":"Gdef"},"If":{".class":"SymbolTableNode","cross_ref":"ast.If","kind":"Gdef"},"IfExp":{".class":"SymbolTableNode","cross_ref":"ast.IfExp","kind":"Gdef"},"Import":{".class":"SymbolTableNode","cross_ref":"ast.Import","kind":"Gdef"},"ImportFrom":{".class":"SymbolTableNode","cross_ref":"ast.ImportFrom","kind":"Gdef"},"In":{".class":"SymbolTableNode","cross_ref":"ast.In","kind":"Gdef"},"Interactive":{".class":"SymbolTableNode","cross_ref":"ast.Interactive","kind":"Gdef"},"Invert":{".class":"SymbolTableNode","cross_ref":"ast.Invert","kind":"Gdef"},"Is":{".class":"SymbolTableNode","cross_ref":"ast.Is","kind":"Gdef"},"IsNot":{".class":"SymbolTableNode","cross_ref":"ast.IsNot","kind":"Gdef"},"JoinedStr":{".class":"SymbolTableNode","cross_ref":"ast.JoinedStr","kind":"Gdef"},"LShift":{".class":"SymbolTableNode","cross_ref":"ast.LShift","kind":"Gdef"},"Lambda":{".class":"SymbolTableNode","cross_ref":"ast.Lambda","kind":"Gdef"},"List":{".class":"SymbolTableNode","cross_ref":"ast.List","kind":"Gdef"},"ListComp":{".class":"SymbolTableNode","cross_ref":"ast.ListComp","kind":"Gdef"},"Literal":{".class":"SymbolTableNode","cross_ref":"typing.Literal","kind":"Gdef","module_hidden":true,"module_public":false},"Load":{".class":"SymbolTableNode","cross_ref":"ast.Load","kind":"Gdef"},"Lt":{".class":"SymbolTableNode","cross_ref":"ast.Lt","kind":"Gdef"},"LtE":{".class":"SymbolTableNode","cross_ref":"ast.LtE","kind":"Gdef"},"MatMult":{".class":"SymbolTableNode","cross_ref":"ast.MatMult","kind":"Gdef"},"MatchAs":{".class":"SymbolTableNode","cross_ref":"ast.MatchAs","kind":"Gdef"},"MatchClass":{".class":"SymbolTableNode","cross_ref":"ast.MatchClass","kind":"Gdef"},"MatchMapping":{".class":"SymbolTableNode","cross_ref":"ast.MatchMapping","kind":"Gdef"},"MatchOr":{".class":"SymbolTableNode","cross_ref":"ast.MatchOr","kind":"Gdef"},"MatchSequence":{".class":"SymbolTableNode","cross_ref":"ast.MatchSequence","kind":"Gdef"},"MatchSingleton":{".class":"SymbolTableNode","cross_ref":"ast.MatchSingleton","kind":"Gdef"},"MatchStar":{".class":"SymbolTableNode","cross_ref":"ast.MatchStar","kind":"Gdef"},"MatchValue":{".class":"SymbolTableNode","cross_ref":"ast.MatchValue","kind":"Gdef"},"Mod":{".class":"SymbolTableNode","cross_ref":"ast.Mod","kind":"Gdef"},"Module":{".class":"SymbolTableNode","cross_ref":"ast.Module","kind":"Gdef"},"Mult":{".class":"SymbolTableNode","cross_ref":"ast.Mult","kind":"Gdef"},"Name":{".class":"SymbolTableNode","cross_ref":"ast.Name","kind":"Gdef"},"NamedExpr":{".class":"SymbolTableNode","cross_ref":"ast.NamedExpr","kind":"Gdef"},"Nonlocal":{".class":"SymbolTableNode","cross_ref":"ast.Nonlocal","kind":"Gdef"},"Not":{".class":"SymbolTableNode","cross_ref":"ast.Not","kind":"Gdef"},"NotEq":{".class":"SymbolTableNode","cross_ref":"ast.NotEq","kind":"Gdef"},"NotIn":{".class":"SymbolTableNode","cross_ref":"ast.NotIn","kind":"Gdef"},"Or":{".class":"SymbolTableNode","cross_ref":"ast.Or","kind":"Gdef"},"ParamSpec":{".class":"SymbolTableNode","cross_ref":"ast.ParamSpec","kind":"Gdef"},"Pass":{".class":"SymbolTableNode","cross_ref":"ast.Pass","kind":"Gdef"},"Pow":{".class":"SymbolTableNode","cross_ref":"ast.Pow","kind":"Gdef"},"PyCF_ALLOW_TOP_LEVEL_AWAIT":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"_ast.PyCF_ALLOW_TOP_LEVEL_AWAIT","name":"PyCF_ALLOW_TOP_LEVEL_AWAIT","type":{".class":"LiteralType","fallback":"builtins.int","value":8192}}},"PyCF_ONLY_AST":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"_ast.PyCF_ONLY_AST","name":"PyCF_ONLY_AST","type":{".class":"LiteralType","fallback":"builtins.int","value":1024}}},"PyCF_TYPE_COMMENTS":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"_ast.PyCF_TYPE_COMMENTS","name":"PyCF_TYPE_COMMENTS","type":{".class":"LiteralType","fallback":"builtins.int","value":4096}}},"RShift":{".class":"SymbolTableNode","cross_ref":"ast.RShift","kind":"Gdef"},"Raise":{".class":"SymbolTableNode","cross_ref":"ast.Raise","kind":"Gdef"},"Return":{".class":"SymbolTableNode","cross_ref":"ast.Return","kind":"Gdef"},"Set":{".class":"SymbolTableNode","cross_ref":"ast.Set","kind":"Gdef"},"SetComp":{".class":"SymbolTableNode","cross_ref":"ast.SetComp","kind":"Gdef"},"Slice":{".class":"SymbolTableNode","cross_ref":"ast.Slice","kind":"Gdef"},"Starred":{".class":"SymbolTableNode","cross_ref":"ast.Starred","kind":"Gdef"},"Store":{".class":"SymbolTableNode","cross_ref":"ast.Store","kind":"Gdef"},"Sub":{".class":"SymbolTableNode","cross_ref":"ast.Sub","kind":"Gdef"},"Subscript":{".class":"SymbolTableNode","cross_ref":"ast.Subscript","kind":"Gdef"},"Try":{".class":"SymbolTableNode","cross_ref":"ast.Try","kind":"Gdef"},"TryStar":{".class":"SymbolTableNode","cross_ref":"ast.TryStar","kind":"Gdef"},"Tuple":{".class":"SymbolTableNode","cross_ref":"ast.Tuple","kind":"Gdef"},"TypeIgnore":{".class":"SymbolTableNode","cross_ref":"ast.TypeIgnore","kind":"Gdef"},"TypeVar":{".class":"SymbolTableNode","cross_ref":"ast.TypeVar","kind":"Gdef"},"TypeVarTuple":{".class":"SymbolTableNode","cross_ref":"ast.TypeVarTuple","kind":"Gdef"},"UAdd":{".class":"SymbolTableNode","cross_ref":"ast.UAdd","kind":"Gdef"},"USub":{".class":"SymbolTableNode","cross_ref":"ast.USub","kind":"Gdef"},"UnaryOp":{".class":"SymbolTableNode","cross_ref":"ast.UnaryOp","kind":"Gdef"},"While":{".class":"SymbolTableNode","cross_ref":"ast.While","kind":"Gdef"},"With":{".class":"SymbolTableNode","cross_ref":"ast.With","kind":"Gdef"},"Yield":{".class":"SymbolTableNode","cross_ref":"ast.Yield","kind":"Gdef"},"YieldFrom":{".class":"SymbolTableNode","cross_ref":"ast.YieldFrom","kind":"Gdef"},"__annotations__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"_ast.__annotations__","name":"__annotations__","type":{".class":"Instance","args":["builtins.str",{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":6}],"extra_attrs":null,"type_ref":"builtins.dict"}}},"__doc__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"_ast.__doc__","name":"__doc__","type":"builtins.str"}},"__file__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"_ast.__file__","name":"__file__","type":"builtins.str"}},"__name__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"_ast.__name__","name":"__name__","type":"builtins.str"}},"__package__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"_ast.__package__","name":"__package__","type":"builtins.str"}},"__spec__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"_ast.__spec__","name":"__spec__","type":"_frozen_importlib.ModuleSpec"}},"alias":{".class":"SymbolTableNode","cross_ref":"ast.alias","kind":"Gdef"},"arg":{".class":"SymbolTableNode","cross_ref":"ast.arg","kind":"Gdef"},"arguments":{".class":"SymbolTableNode","cross_ref":"ast.arguments","kind":"Gdef"},"boolop":{".class":"SymbolTableNode","cross_ref":"ast.boolop","kind":"Gdef"},"cmpop":{".class":"SymbolTableNode","cross_ref":"ast.cmpop","kind":"Gdef"},"comprehension":{".class":"SymbolTableNode","cross_ref":"ast.comprehension","kind":"Gdef"},"excepthandler":{".class":"SymbolTableNode","cross_ref":"ast.excepthandler","kind":"Gdef"},"expr":{".class":"SymbolTableNode","cross_ref":"ast.expr","kind":"Gdef"},"expr_context":{".class":"SymbolTableNode","cross_ref":"ast.expr_context","kind":"Gdef"},"keyword":{".class":"SymbolTableNode","cross_ref":"ast.keyword","kind":"Gdef"},"match_case":{".class":"SymbolTableNode","cross_ref":"ast.match_case","kind":"Gdef"},"mod":{".class":"SymbolTableNode","cross_ref":"ast.mod","kind":"Gdef"},"operator":{".class":"SymbolTableNode","cross_ref":"ast.operator","kind":"Gdef"},"pattern":{".class":"SymbolTableNode","cross_ref":"ast.pattern","kind":"Gdef"},"stmt":{".class":"SymbolTableNode","cross_ref":"ast.stmt","kind":"Gdef"},"sys":{".class":"SymbolTableNode","cross_ref":"sys","kind":"Gdef","module_hidden":true,"module_public":false},"type_ignore":{".class":"SymbolTableNode","cross_ref":"ast.type_ignore","kind":"Gdef"},"type_param":{".class":"SymbolTableNode","cross_ref":"ast.type_param","kind":"Gdef"},"unaryop":{".class":"SymbolTableNode","cross_ref":"ast.unaryop","kind":"Gdef"},"withitem":{".class":"SymbolTableNode","cross_ref":"ast.withitem","kind":"Gdef"}},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/_ast.pyi"}
 ```
 
-.oraclepack/ticketify/_tickets_index.json
+.mypy_cache/3.12/_ast.meta.json
 ```
-{
-  "exclude": [],
-  "include": [],
-  "selected_count": 13,
-  "ticket_glob": "**/*.md",
-  "tickets": [
-    {
-      "path": ".tickets/Enable Action Packs Dispatch.md",
-      "sha256": "b8b726b89a30d1e6e9b2148938f99b26886a34e77ca8db2668ddf26e6fcafee2",
-      "summary": "Title:",
-      "ticket_id": "Enable Action Packs Dispatch",
-      "title": "Enable Action Packs Dispatch.md"
-    },
-    {
-      "path": ".tickets/Improving Oraclepack Workflow.md",
-      "sha256": "da209356e6f6002d51d649d40aa5866e4a68eb71a6b2053a83f31694da1ff550",
-      "summary": "Title:",
-      "ticket_id": "Improving Oraclepack Workflow",
-      "title": "Improving Oraclepack Workflow.md"
-    },
-    {
-      "path": ".tickets/Oraclepack Action Pack Integration.md",
-      "sha256": "0c7851bd01c4593ac569fa057221695badcd26571044552b769d01030236f908",
-      "summary": "Parent Ticket:",
-      "ticket_id": "Oraclepack Action Pack Integration",
-      "title": "Oraclepack Action Pack Integration.md"
-    },
-    {
-      "path": ".tickets/Oraclepack Action Pack Issue.md",
-      "sha256": "0a1f86f8d04c301afd93c37beb7971bdfb76bac0e08350aa15446a4044548216",
-      "summary": "Parent Ticket:",
-      "ticket_id": "Oraclepack Action Pack Issue",
-      "title": "Oraclepack Action Pack Issue.md"
-    },
-    {
-      "path": ".tickets/Oraclepack Action Packs.md",
-      "sha256": "b07679a1565f6d9a442c2f6b83e22b98b2225851d97922e9dbbcb1a741985027",
-      "summary": "Parent Ticket:",
-      "ticket_id": "Oraclepack Action Packs",
-      "title": "Oraclepack Action Packs.md"
-    },
-    {
-      "path": ".tickets/Oraclepack Pipeline Improvements.md",
-      "sha256": "7ed628de442d8ce5af8f2d36f6c3101964c267c674bc17add5870cf1e0d692af",
-      "summary": "Title:",
-      "ticket_id": "Oraclepack Pipeline Improvements",
-      "title": "Oraclepack Pipeline Improvements.md"
-    },
-    {
-      "path": ".tickets/Oraclepack Prompt Generator.md",
-      "sha256": "7cabb9f050c77f2380eff628f3229acc48146948ce2e3e145655f93a7833ee8e",
-      "summary": "Parent Ticket:",
-      "ticket_id": "Oraclepack Prompt Generator",
-      "title": "Oraclepack Prompt Generator.md"
-    },
-    {
-      "path": ".tickets/Oraclepack Workflow Enhancement.md",
-      "sha256": "79264d1be3794a024fcd766ce03719710710947f5b25842b8563a505c2e03075",
-      "summary": "Title:",
-      "ticket_id": "Oraclepack Workflow Enhancement",
-      "title": "Oraclepack Workflow Enhancement.md"
-    },
-    {
-      "path": ".tickets/Verbose Payload Rendering TUI.md",
-      "sha256": "377d415a40e5826704164f7e643f63a938ad73e6fdad7795af55edb8fba5613e",
-      "summary": "Title:",
-      "ticket_id": "Verbose Payload Rendering TUI",
-      "title": "Verbose Payload Rendering TUI.md"
-    },
-    {
-      "path": ".tickets/mcp/Expose Oraclepack as MCP.md",
-      "sha256": "09cbecc3c5d2cadbada562a1846844b633e8664ee8fb8d886586924c60c3ce41",
-      "summary": "Parent Ticket:",
-      "ticket_id": "Expose Oraclepack as MCP",
-      "title": "Expose Oraclepack as MCP.md"
-    },
-    {
-      "path": ".tickets/mcp/MCP Server for Oraclepack.md",
-      "sha256": "5ea48e78e04d409404c9817568c5d19e57beea79deaef7e51c2094d83c4eb7a9",
-      "summary": "Title:",
-      "ticket_id": "MCP Server for Oraclepack",
-      "title": "MCP Server for Oraclepack.md"
-    },
-    {
-      "path": ".tickets/mcp/oraclepack-MCP.md",
-      "sha256": "af639b467e419a1efdd7bd8bba6d8b84538d8bb8dea2f961b0000a42d9f5296b",
-      "summary": "Map the existing `oraclepack` CLI capabilities (validate/list/run + flags like `--no-tui`, `--out-dir`, `--oracle-bin`) into MCP tools so an agent can run packs non-interactively and then inspect the resulting state/report/artifacts.",
-      "ticket_id": "oraclepack-MCP",
-      "title": "oraclepack-MCP.md"
-    },
-    {
-      "path": ".tickets/mcp/oraclepack_mcp_server.md",
-      "sha256": "3e885bd168824a8a5488d2dfa0f64a310a27fec9f462b4a7d315489c5f9a490e",
-      "summary": "```text oraclepack-mcp-server/ README.md requirements.txt oraclepack_mcp_server/ __init__.py __main__.py config.py security.py oraclepack_cli.py taskify.py server.py ```",
-      "ticket_id": "oraclepack_mcp_server",
-      "title": "oraclepack-mcp-server (MCP wrapper for oraclepack + taskify helpers)"
-    }
-  ],
-  "tickets_dir": ".tickets",
-  "top_n": 25,
-  "version": 1
-}
+{"data_mtime":1767891128,"dep_lines":[1,2,111,1,1,1,1],"dep_prios":[10,5,5,5,30,30,30],"dependencies":["sys","ast","typing","builtins","_frozen_importlib","_typeshed","abc"],"hash":"506bc583306f4b94d727fb61708c1873cb3b3fdf","id":"_ast","ignore_all":true,"interface_hash":"e1e0fe79f0f27e0c8fe3cce0224f1b06f28f4737","mtime":1762029370,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/_ast.pyi","plugin_data":null,"size":3496,"suppressed":[],"version_id":"1.15.0"}
 ```
 
-.oraclepack/ticketify/ticket-action-pack.md
+.mypy_cache/3.12/_codecs.data.json
 ```
-# Ticket Action Pack (deterministic)
-
-This Action Pack is generated from ticket files and is intended to be runner-ingestible.
-
-Config (resolved at generation time):
-- tickets_dir: .tickets
-- ticket_glob: **/*.md
-- include: 
-- exclude: 
-- top_n: 25
-- out_dir: .oraclepack/ticketify
-- prd_path: .taskmaster/docs/tickets_prd.md
-- mode: backlog
-
-Only one code fence exists in this document (the `bash` block below).
-
-```bash
-# 01)
-# Validate prerequisites and enumerate tickets (fail-fast)
-set -euo pipefail
-if [ ! -d ".tickets" ]; then
-  echo "ERROR: tickets_dir not found: .tickets" >&2
-  exit 2
-fi
-mkdir -p ".oraclepack/ticketify"
-python3 - <<'PY'
-import fnmatch, glob, hashlib, json, os, re, sys
-from pathlib import Path
-
-tickets_dir = ".tickets"
-ticket_glob = "**/*.md"
-include_raw = "".strip()
-exclude_raw = "".strip()
-top_n_raw = "25".strip()
-
-def die(msg, code=2):
-    sys.stderr.write("ERROR: " + msg + "\n")
-    raise SystemExit(code)
-
-try:
-    top_n = int(top_n_raw)
-except Exception:
-    die(f"top_n is not an integer: {top_n_raw!r}")
-if top_n < 1 or top_n > 200:
-    die(f"top_n out of range (1..200): {top_n}")
-
-repo_root = Path(os.getcwd()).resolve()
-
-def norm_rel(p: Path) -> str:
-    rel = p.resolve().relative_to(repo_root)
-    return rel.as_posix()
-
-patterns = [ticket_glob]
-cands = []
-for pat in patterns:
-    cands.extend(glob.glob(str(Path(tickets_dir) / pat), recursive=True))
-
-paths = []
-for c in cands:
-    p = Path(c)
-    if p.is_file():
-        paths.append(p)
-
-if not paths:
-    die(f"no files matched ticket_glob={ticket_glob!r} under {tickets_dir!r}")
-
-rel_paths = [norm_rel(p) for p in paths]
-rel_paths = sorted(set(rel_paths))
-
-includes = [s.strip() for s in include_raw.split(",") if s.strip()] if include_raw and include_raw != "" else []
-excludes = [s.strip() for s in exclude_raw.split(",") if s.strip()] if exclude_raw and exclude_raw != "" else []
-
-def match_any(path: str, pats: list[str]) -> bool:
-    return any(fnmatch.fnmatch(path, pat) for pat in pats)
-
-if includes:
-    rel_paths = [rp for rp in rel_paths if match_any(rp, includes)]
-if excludes:
-    rel_paths = [rp for rp in rel_paths if not match_any(rp, excludes)]
-
-if not rel_paths:
-    die("no tickets remain after include/exclude filtering")
-
-selected = rel_paths[:top_n]
-
-out = {
-    "version": 1,
-    "tickets_dir": tickets_dir,
-    "ticket_glob": ticket_glob,
-    "include": includes,
-    "exclude": excludes,
-    "top_n": top_n,
-    "selected_count": len(selected),
-    "tickets": [],
-}
-
-frontmatter_re = re.compile(r"\A---\s*\n(.*?)\n---\s*\n", re.S)
-kv_re = re.compile(r"^([A-Za-z0-9_-]+)\s*:\s*(.*?)\s*$")
-
-def parse_frontmatter(text: str) -> dict:
-    m = frontmatter_re.match(text)
-    if not m:
-        return {}
-    block = m.group(1)
-    data = {}
-    for line in block.splitlines():
-        line = line.strip()
-        if not line or line.startswith("#"):
-            continue
-        km = kv_re.match(line)
-        if not km:
-            continue
-        k, v = km.group(1), km.group(2)
-        data[k.strip().lower()] = v.strip().strip('"').strip("'")
-    return data
-
-def derive_id(rel_path: str, fm: dict) -> str:
-    for key in ("id", "ticket", "key"):
-        if key in fm and fm[key]:
-            return fm[key]
-    # deterministic fallback: filename without extension
-    return Path(rel_path).name.rsplit(".", 1)[0]
-
-def derive_title(text: str, fm: dict, rel_path: str) -> str:
-    if fm.get("title"):
-        return fm["title"]
-    for line in text.splitlines():
-        if line.startswith("# "):
-            return line[2:].strip()
-    return Path(rel_path).name
-
-def derive_summary(text: str) -> str:
-    lines = []
-    for line in text.splitlines():
-        s = line.strip()
-        if not s:
-            if lines:
-                break
-            continue
-        if s.startswith("#"):
-            continue
-        lines.append(s)
-        if len(" ".join(lines)) >= 240:
-            break
-    return " ".join(lines).strip()
-
-seen_ids = set()
-for rp in selected:
-    abs_path = (repo_root / rp)
-    try:
-        raw = abs_path.read_bytes()
-    except Exception as e:
-        die(f"unreadable ticket: {rp} ({e})")
-    text = raw.decode("utf-8", errors="replace")
-    sha = hashlib.sha256(raw).hexdigest()
-    fm = parse_frontmatter(text)
-    tid = derive_id(rp, fm)
-    if tid in seen_ids:
-        die(f"duplicate derived ticket_id: {tid} (path={rp})")
-    seen_ids.add(tid)
-    out["tickets"].append({
-        "ticket_id": tid,
-        "path": rp,
-        "title": derive_title(text, fm, rp),
-        "summary": derive_summary(text),
-        "sha256": sha,
-    })
-
-index_path = Path(".oraclepack/ticketify") / "_tickets_index.json"
-index_path.write_text(json.dumps(out, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-print(f"Wrote {index_path}")
-PY
-
-# 02)
-# Derive canonical actions from tickets -> _actions.json and _actions.md (deterministic)
-set -euo pipefail
-python3 - <<'PY'
-import hashlib, json, os, re, sys
-from pathlib import Path
-
-repo_root = Path(os.getcwd()).resolve()
-out_dir = Path(".oraclepack/ticketify")
-index_path = out_dir / "_tickets_index.json"
-actions_json_path = out_dir / "_actions.json"
-actions_md_path = out_dir / "_actions.md"
-
-def die(msg, code=2):
-    sys.stderr.write("ERROR: " + msg + "\n")
-    raise SystemExit(code)
-
-if not index_path.is_file():
-    die(f"missing index file: {index_path}")
-
-index = json.loads(index_path.read_text(encoding="utf-8"))
-tickets = index.get("tickets", [])
-if not tickets:
-    die("index contains zero tickets")
-
-task_item_re = re.compile(r"^\s*[-*]\s+\[( |x|X)\]\s+(.*\S)\s*$")
-ac_heading_re = re.compile(r"^\s{0,3}#{2,6}\s+Acceptance Criteria\s*$", re.I)
-bullet_re = re.compile(r"^\s*[-*]\s+(.*\S)\s*$")
-
-actions = []
-for t in tickets:
-    rp = t["path"]
-    tid = t["ticket_id"]
-    abs_path = (repo_root / rp)
-    raw = abs_path.read_text(encoding="utf-8", errors="replace").splitlines()
-    in_ac = False
-    for i, line in enumerate(raw, start=1):
-        m = task_item_re.match(line)
-        if m:
-            actions.append({
-                "ticket_id": tid,
-                "ticket_path": rp,
-                "source_line": i,
-                "kind": "task",
-                "text": m.group(2).strip(),
-            })
-            continue
-        if ac_heading_re.match(line):
-            in_ac = True
-            continue
-        if in_ac:
-            if line.strip().startswith("#"):
-                in_ac = False
-                continue
-            bm = bullet_re.match(line)
-            if bm:
-                actions.append({
-                    "ticket_id": tid,
-                    "ticket_path": rp,
-                    "source_line": i,
-                    "kind": "acceptance",
-                    "text": bm.group(1).strip(),
-                })
-
-# stable ordering: by ticket_path then source_line then text
-actions.sort(key=lambda a: (a["ticket_path"], a["source_line"], a["text"]))
-
-# assign stable action_id per ticket
-per_ticket = {}
-for a in actions:
-    per_ticket.setdefault(a["ticket_id"], []).append(a)
-
-final = []
-for tid in sorted(per_ticket.keys()):
-    items = per_ticket[tid]
-    for idx, a in enumerate(items, start=1):
-        a2 = dict(a)
-        a2["action_id"] = f"{tid}-A{idx:02d}"
-        final.append(a2)
-
-payload = {
-    "version": 1,
-    "out_dir": str(out_dir.as_posix()),
-    "count": len(final),
-    "actions": final,
-}
-
-actions_json_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-
-lines = []
-lines.append("# Actions (canonical, deterministic)")
-lines.append("")
-for a in final:
-    lines.append(f"- [{a['action_id']}] ({a['ticket_id']}) {a['text']}")
-actions_md_path.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
-
-print(f"Wrote {actions_json_path}")
-print(f"Wrote {actions_md_path}")
-PY
-
-# 03)
-# Generate Task Master PRD (deterministic) -> .taskmaster/docs/tickets_prd.md
-set -euo pipefail
-mkdir -p "$(python3 - <<'PY'
-from pathlib import Path
-print(Path(".taskmaster/docs/tickets_prd.md").parent.as_posix())
-PY
-)"
-python3 - <<'PY'
-import json, os, sys
-from pathlib import Path
-
-out_dir = Path(".oraclepack/ticketify")
-index_path = out_dir / "_tickets_index.json"
-actions_path = out_dir / "_actions.json"
-prd_path = Path(".taskmaster/docs/tickets_prd.md")
-
-def die(msg, code=2):
-    sys.stderr.write("ERROR: " + msg + "\n")
-    raise SystemExit(code)
-
-if not index_path.is_file():
-    die(f"missing index file: {index_path}")
-if not actions_path.is_file():
-    die(f"missing actions file: {actions_path}")
-
-index = json.loads(index_path.read_text(encoding="utf-8"))
-actions = json.loads(actions_path.read_text(encoding="utf-8"))
-tickets = index.get("tickets", [])
-acts = actions.get("actions", [])
-
-lines = []
-lines.append("# Product Requirements Document (from tickets)")
-lines.append("")
-lines.append("## Overview")
-lines.append("This PRD is deterministically derived from repository ticket Markdown files.")
-lines.append("")
-lines.append("## Goals")
-lines.append("- Convert ticket intent into an actionable, trackable task plan.")
-lines.append("")
-lines.append("## Non-goals")
-lines.append("- Introducing undocumented scope beyond what is present in tickets.")
-lines.append("")
-lines.append("## Ticket Inventory")
-for t in tickets:
-    lines.append(f"- [{t['ticket_id']}] {t['title']} ({t['path']})")
-lines.append("")
-lines.append("## Requirements (by ticket)")
-for t in tickets:
-    lines.append(f"### {t['ticket_id']}: {t['title']}")
-    if t.get("summary"):
-        lines.append(t["summary"])
-    lines.append("")
-lines.append("## Derived Actions")
-for a in acts:
-    lines.append(f"- {a['action_id']}: {a['text']} (ticket {a['ticket_id']})")
-lines.append("")
-lines.append("## Acceptance Criteria")
-lines.append("- All derived actions are implemented and validated per ticket intent.")
-lines.append("")
-lines.append("## Open Questions")
-lines.append("- TODO: fill unknowns discovered during implementation.")
-lines.append("")
-
-prd_path.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
-print(f"Wrote {prd_path}")
-PY
-
-# 04)
-# (Mode-dependent) Generate pipelines/autopilot docs (deterministic, minimal)
-set -euo pipefail
-python3 - <<'PY'
-from pathlib import Path
-
-mode = "backlog".strip()
-out_dir = Path(".oraclepack/ticketify")
-out_dir.mkdir(parents=True, exist_ok=True)
-
-if mode == "pipelines":
-    p = out_dir / "pipelines.md"
-    p.write_text(
-        "# Pipelines (draft)\n\n" 
-        "Deterministic stub. Replace with concrete pipeline definitions as needed.\n",
-        encoding="utf-8",
-    )
-    print(f"Wrote {p}")
-elif mode == "autopilot":
-    p = out_dir / "autopilot.md"
-    p.write_text(
-        "# Autopilot (guarded)\n\n" 
-        "This is a deterministic stub entrypoint.\n" 
-        "Non-destructive by default. Requires explicit operator review before any execution.\n",
-        encoding="utf-8",
-    )
-    print(f"Wrote {p}")
-else:
-    # backlog or unknown -> no-op
-    pass
-PY
-
-# 05)
-# Task Master: parse PRD (fail-fast if task-master missing)
-set -euo pipefail
-if ! command -v task-master >/dev/null 2>&1;
-  then
-  echo "ERROR: task-master not found on PATH; cannot parse PRD" >&2
-  exit 3
-fi
-task-master parse-prd ".taskmaster/docs/tickets_prd.md"
-
-# 06)
-# Task Master: analyze complexity -> .oraclepack/ticketify/tm-complexity.json (fallback if --output unsupported)
-set -euo pipefail
-if task-master analyze-complexity --output ".oraclepack/ticketify/tm-complexity.json";
-  then
-  echo "Wrote .oraclepack/ticketify/tm-complexity.json"
-else
-  task-master analyze-complexity > ".oraclepack/ticketify/tm-complexity.json"
-  echo "Wrote .oraclepack/ticketify/tm-complexity.json (stdout fallback)"
-fi
-
-# 07)
-# Task Master: expand all tasks
-set -euo pipefail
-task-master expand --all
-
-# 08)
-# Review generated artifacts (no-op guidance step)
-set -euo pipefail
-echo "Review: .oraclepack/ticketify/_tickets_index.json"
-echo "Review: .oraclepack/ticketify/_actions.json"
-echo "Review: .oraclepack/ticketify/_actions.md"
-echo "Review: .taskmaster/docs/tickets_prd.md"
-echo "Review: .oraclepack/ticketify/tm-complexity.json"
-
-# 09)
-# Select next implementation target (no-op guidance step)
-set -euo pipefail
-echo "Select the next highest-value action from .oraclepack/ticketify/_actions.md and implement it."
-
-# 10)
-# Implementation step placeholder
-set -euo pipefail
-echo "TODO: Implement selected action(s). Ensure changes are scoped to ticket intent."
-
-# 11)
-# Verification step placeholder
-set -euo pipefail
-echo "TODO: Add/Run tests or checks relevant to implemented action(s)."
-
-# 12)
-# Documentation step placeholder
-set -euo pipefail
-echo "TODO: Update docs/notes linked to implemented action(s)."
-
-# 13)
-# Regression check placeholder
-set -euo pipefail
-echo "TODO: Run regressions appropriate for the repo."
-
-# 14)
-# Re-sync Task Master tasks placeholder
-set -euo pipefail
-echo "TODO: If tasks drifted, re-run task-master analyze/expand as needed (operator-driven)."
-
-# 15)
-# Validate determinism placeholder
-set -euo pipefail
-echo "TODO: Re-run steps 01-03 and confirm _tickets_index.json/_actions.json are stable for unchanged tickets."
-
-# 16)
-# Prepare PR/changeset placeholder
-set -euo pipefail
-echo "TODO: Prepare a PR with clear mapping to ticket IDs."
-
-# 17)
-# Final review placeholder
-set -euo pipefail
-echo "TODO: Perform final review against ticket acceptance criteria."
-
-# 18)
-# Release/merge placeholder
-set -euo pipefail
-echo "TODO: Merge/release per repo policy."
-
-# 19)
-# Post-merge validation placeholder
-set -euo pipefail
-echo "TODO: Validate post-merge behavior."
-
-# 20)
-# Close-out placeholder
-set -euo pipefail
-echo "TODO: Close tickets / update status and attach produced artifacts if required."
+[TRUNCATED]
 ```
+
+.mypy_cache/3.12/_codecs.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[4,1,2,3,5,6,1,1,1,1,1],"dep_prios":[5,10,10,5,5,5,5,30,30,30,30],"dependencies":["collections.abc","codecs","sys","_typeshed","typing","typing_extensions","builtins","_collections_abc","_frozen_importlib","abc","types"],"hash":"9c92db538a425ec561b85a564f567dc0c6ba2074","id":"_codecs","ignore_all":true,"interface_hash":"eecf14067db0d10d08b11ef98975cab0fdfde1de","mtime":1762029370,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/_codecs.pyi","plugin_data":null,"size":7059,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/_collections_abc.data.json
+```
+[TRUNCATED]
+```
+
+.mypy_cache/3.12/_collections_abc.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[1,2,3,4,1,1,1],"dep_prios":[10,5,5,5,5,30,30],"dependencies":["sys","abc","types","typing","builtins","_frozen_importlib","_typeshed"],"hash":"a526dac2ef1f80d9e0a33f11f80df105cf4939ab","id":"_collections_abc","ignore_all":true,"interface_hash":"39730ebfe5eab9ed5f32e8c85361048d6cdc1db0","mtime":1762029370,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/_collections_abc.pyi","plugin_data":null,"size":3077,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/_frozen_importlib.data.json
+```
+[TRUNCATED]
+```
+
+.mypy_cache/3.12/_frozen_importlib.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[1,2,5,6,1,3,4,8,1,1,1,1],"dep_prios":[10,10,5,5,20,10,5,5,5,30,30,30],"dependencies":["importlib.abc","importlib.machinery","_typeshed.importlib","collections.abc","importlib","sys","types","typing","builtins","_typeshed","abc","importlib._abc"],"hash":"d9e040a3e2921454ce5f15891fc32cf3fa65a284","id":"_frozen_importlib","ignore_all":true,"interface_hash":"9023a3591eca6a160f77eba0bf2745eb17b308d7","mtime":1762029370,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/_frozen_importlib.pyi","plugin_data":null,"size":4041,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/_frozen_importlib_external.data.json
+```
+[TRUNCATED]
+```
+
+.mypy_cache/3.12/_frozen_importlib_external.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[3,4,8,9,11,16,1,2,3,5,6,7,12,13,1,1,1,1,1,1,1],"dep_prios":[10,5,5,5,5,10,10,10,20,10,10,5,5,5,5,30,30,30,30,30,30],"dependencies":["importlib.abc","importlib.machinery","_typeshed.importlib","collections.abc","importlib.metadata","importlib.readers","_ast","_io","importlib","sys","types","_typeshed","typing","typing_extensions","builtins","_collections_abc","_frozen_importlib","abc","ast","importlib._abc","os"],"hash":"f10b55cab201631dcc95f81f2303997322e740c8","id":"_frozen_importlib_external","ignore_all":true,"interface_hash":"bba2c39f9641e4859e9aca9f5628b5d84163ed24","mtime":1762029370,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/_frozen_importlib_external.pyi","plugin_data":null,"size":8117,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/_io.data.json
+```
+[TRUNCATED]
+```
+
+.mypy_cache/3.12/_io.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[5,1,2,3,4,6,7,8,9,10,1,1,1],"dep_prios":[5,10,10,10,5,5,5,5,5,5,30,30,30],"dependencies":["collections.abc","builtins","codecs","sys","_typeshed","io","os","types","typing","typing_extensions","_collections_abc","_frozen_importlib","abc"],"hash":"6ea7c4de7cc0a01b4b38f647b5ea7b18b7569797","id":"_io","ignore_all":true,"interface_hash":"364b66e416a6d98ac8a274d52120dbe013adf38b","mtime":1762029370,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/_io.pyi","plugin_data":null,"size":9807,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/_sitebuiltins.data.json
+```
+{".class":"MypyFile","_fullname":"_sitebuiltins","future_import_flags":[],"is_partial_stub_package":false,"is_stub":true,"names":{".class":"SymbolTable","ClassVar":{".class":"SymbolTableNode","cross_ref":"typing.ClassVar","kind":"Gdef","module_hidden":true,"module_public":false},"Iterable":{".class":"SymbolTableNode","cross_ref":"typing.Iterable","kind":"Gdef","module_hidden":true,"module_public":false},"Literal":{".class":"SymbolTableNode","cross_ref":"typing.Literal","kind":"Gdef","module_hidden":true,"module_public":false},"NoReturn":{".class":"SymbolTableNode","cross_ref":"typing.NoReturn","kind":"Gdef","module_hidden":true,"module_public":false},"Quitter":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["builtins.object"],"dataclass_transform_spec":null,"declared_metaclass":null,"defn":{".class":"ClassDef","fullname":"_sitebuiltins.Quitter","name":"Quitter","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":[],"fullname":"_sitebuiltins.Quitter","has_param_spec_type":false,"metaclass_type":null,"metadata":{},"module_name":"_sitebuiltins","mro":["_sitebuiltins.Quitter","builtins.object"],"names":{".class":"SymbolTable","__call__":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,1],"arg_names":["self","code"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"_sitebuiltins.Quitter.__call__","name":"__call__","type":{".class":"CallableType","arg_kinds":[0,1],"arg_names":["self","code"],"arg_types":["_sitebuiltins.Quitter",{".class":"TypeAliasType","args":[],"type_ref":"sys._ExitCode"}],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"__call__ of Quitter","ret_type":{".class":"UninhabitedType"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"__init__":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0,0],"arg_names":["self","name","eof"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"_sitebuiltins.Quitter.__init__","name":"__init__","type":{".class":"CallableType","arg_kinds":[0,0,0],"arg_names":["self","name","eof"],"arg_types":["_sitebuiltins.Quitter","builtins.str","builtins.str"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"__init__ of Quitter","ret_type":{".class":"NoneType"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"eof":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"Var","flags":["is_initialized_in_class","is_ready"],"fullname":"_sitebuiltins.Quitter.eof","name":"eof","type":"builtins.str"}},"name":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"Var","flags":["is_initialized_in_class","is_ready"],"fullname":"_sitebuiltins.Quitter.name","name":"name","type":"builtins.str"}}},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"_Helper":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["builtins.object"],"dataclass_transform_spec":null,"declared_metaclass":null,"defn":{".class":"ClassDef","fullname":"_sitebuiltins._Helper","name":"_Helper","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":[],"fullname":"_sitebuiltins._Helper","has_param_spec_type":false,"metaclass_type":null,"metadata":{},"module_name":"_sitebuiltins","mro":["_sitebuiltins._Helper","builtins.object"],"names":{".class":"SymbolTable","__call__":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,1],"arg_names":["self","request"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"_sitebuiltins._Helper.__call__","name":"__call__","type":{".class":"CallableType","arg_kinds":[0,1],"arg_names":["self","request"],"arg_types":["_sitebuiltins._Helper","builtins.object"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"__call__ of _Helper","ret_type":{".class":"NoneType"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}}},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"_Printer":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["builtins.object"],"dataclass_transform_spec":null,"declared_metaclass":null,"defn":{".class":"ClassDef","fullname":"_sitebuiltins._Printer","name":"_Printer","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":[],"fullname":"_sitebuiltins._Printer","has_param_spec_type":false,"metaclass_type":null,"metadata":{},"module_name":"_sitebuiltins","mro":["_sitebuiltins._Printer","builtins.object"],"names":{".class":"SymbolTable","MAXLINES":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"Var","flags":["is_initialized_in_class","is_classvar","is_ready"],"fullname":"_sitebuiltins._Printer.MAXLINES","name":"MAXLINES","type":{".class":"LiteralType","fallback":"builtins.int","value":23}}},"__call__":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0],"arg_names":["self"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"_sitebuiltins._Printer.__call__","name":"__call__","type":{".class":"CallableType","arg_kinds":[0],"arg_names":["self"],"arg_types":["_sitebuiltins._Printer"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"__call__ of _Printer","ret_type":{".class":"NoneType"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"__init__":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0,0,1,1],"arg_names":["self","name","data","files","dirs"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"_sitebuiltins._Printer.__init__","name":"__init__","type":{".class":"CallableType","arg_kinds":[0,0,0,1,1],"arg_names":["self","name","data","files","dirs"],"arg_types":["_sitebuiltins._Printer","builtins.str","builtins.str",{".class":"Instance","args":["builtins.str"],"extra_attrs":null,"type_ref":"typing.Iterable"},{".class":"Instance","args":["builtins.str"],"extra_attrs":null,"type_ref":"typing.Iterable"}],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"__init__ of _Printer","ret_type":{".class":"NoneType"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}}},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"__annotations__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"_sitebuiltins.__annotations__","name":"__annotations__","type":{".class":"Instance","args":["builtins.str",{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":6}],"extra_attrs":null,"type_ref":"builtins.dict"}}},"__doc__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"_sitebuiltins.__doc__","name":"__doc__","type":"builtins.str"}},"__file__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"_sitebuiltins.__file__","name":"__file__","type":"builtins.str"}},"__name__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"_sitebuiltins.__name__","name":"__name__","type":"builtins.str"}},"__package__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"_sitebuiltins.__package__","name":"__package__","type":"builtins.str"}},"__spec__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"_sitebuiltins.__spec__","name":"__spec__","type":"_frozen_importlib.ModuleSpec"}},"sys":{".class":"SymbolTableNode","cross_ref":"sys","kind":"Gdef","module_hidden":true,"module_public":false}},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/_sitebuiltins.pyi"}
+```
+
+.mypy_cache/3.12/_sitebuiltins.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[2,1,3,1,1,1,1],"dep_prios":[5,10,5,5,30,30,30],"dependencies":["collections.abc","sys","typing","builtins","_frozen_importlib","abc","types"],"hash":"e6e5c5ce8260e3c2b7a40d1e32263187611481a2","id":"_sitebuiltins","ignore_all":true,"interface_hash":"6f82dacd8544441dbe6130eb979252b332573206","mtime":1762029370,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/_sitebuiltins.pyi","plugin_data":null,"size":538,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/abc.data.json
+```
+[TRUNCATED]
+```
+
+.mypy_cache/3.12/abc.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[4,1,2,5,6,1,1,1],"dep_prios":[5,5,10,5,5,5,30,30],"dependencies":["collections.abc","_typeshed","sys","typing","typing_extensions","builtins","_frozen_importlib","types"],"hash":"14708309acc87f4adb93786d9401ce31406810f8","id":"abc","ignore_all":true,"interface_hash":"867bd30f794b447a6c20ef9d7f921c15e747c9d0","mtime":1762029370,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/abc.pyi","plugin_data":null,"size":1987,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/ast.data.json
+```
+[TRUNCATED]
+```
+
+.mypy_cache/3.12/ast.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[10,1,2,3,4,9,11,1,1,1,1,1],"dep_prios":[5,10,10,5,5,5,5,5,30,30,30,30],"dependencies":["collections.abc","os","sys","typing_extensions","_ast","_typeshed","typing","builtins","_collections_abc","_frozen_importlib","abc","types"],"hash":"dfa11a65941431bf51cf670e28eb10030e60ddd8","id":"ast","ignore_all":true,"interface_hash":"5ef5962d6692a37b72588527bbc7266083f8dcbf","mtime":1762029370,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/ast.pyi","plugin_data":null,"size":76400,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/builtins.data.json
+```
+[TRUNCATED]
+```
+
+.mypy_cache/3.12/builtins.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[35,2,3,4,5,6,7,36,41,64,1,1,1,1,1],"dep_prios":[5,10,10,5,10,5,5,5,5,5,30,30,30,30,30],"dependencies":["collections.abc","_ast","_sitebuiltins","_typeshed","sys","types","_collections_abc","io","typing","typing_extensions","_frozen_importlib","_io","abc","ast","os"],"hash":"a2bc8bd0e6b5c7dc17c677a2b83dbeeea086e711","id":"builtins","ignore_all":true,"interface_hash":"8a0846ad1633f1735e0ab66ad823f8b3093b2d1e","mtime":1762029370,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/builtins.pyi","plugin_data":null,"size":84991,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/codecs.data.json
+```
+[TRUNCATED]
+```
+
+.mypy_cache/3.12/codecs.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[5,1,2,3,4,6,7,1,1,1],"dep_prios":[5,10,5,5,5,5,5,5,30,30],"dependencies":["collections.abc","types","_codecs","_typeshed","abc","typing","typing_extensions","builtins","_collections_abc","_frozen_importlib"],"hash":"fc1bb845512e1d3e65dd68d3a4118b64c63c3a6e","id":"codecs","ignore_all":true,"interface_hash":"fdbbd2e445a3aca2dff4411135a927790b89d1a0","mtime":1762029370,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/codecs.pyi","plugin_data":null,"size":12145,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/contextlib.data.json
+```
+[TRUNCATED]
+```
+
+.mypy_cache/3.12/contextlib.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[5,1,2,3,6,7,8,1,1,1],"dep_prios":[5,5,10,5,5,5,5,5,30,30],"dependencies":["collections.abc","abc","sys","_typeshed","types","typing","typing_extensions","builtins","_frozen_importlib","os"],"hash":"9ee0e3fda1c79c605a49fe44a06ac62a0cf6c555","id":"contextlib","ignore_all":true,"interface_hash":"418e3b5354f1b311b3a105168879662984ee8847","mtime":1762029370,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/contextlib.pyi","plugin_data":null,"size":9313,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/dataclasses.data.json
+```
+[TRUNCATED]
+```
+
+.mypy_cache/3.12/dataclasses.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[6,1,2,3,4,5,7,8,1,1],"dep_prios":[5,10,10,5,5,5,5,5,30,30],"dependencies":["collections.abc","enum","sys","types","_typeshed","builtins","typing","typing_extensions","_frozen_importlib","abc"],"hash":"1e1bf1eb2d24f667845171b68771b4abda159e53","id":"dataclasses","ignore_all":true,"interface_hash":"91b86cae1b4522d53824fad463e29460c03cf85a","mtime":1762029370,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/dataclasses.pyi","plugin_data":null,"size":10126,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/enum.data.json
+```
+[TRUNCATED]
+```
+
+.mypy_cache/3.12/enum.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[6,1,2,3,5,7,8,1,1],"dep_prios":[5,5,10,10,5,5,5,30,30],"dependencies":["collections.abc","_typeshed","sys","types","builtins","typing","typing_extensions","_frozen_importlib","abc"],"hash":"8d5c0cd8657b5fa3d633d49b0b7b2ea3df2083b0","id":"enum","ignore_all":true,"interface_hash":"1dd29b048e0b67ef917d1c353f69af8fe844107c","mtime":1762029371,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/enum.pyi","plugin_data":null,"size":12074,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/genericpath.data.json
+```
+[TRUNCATED]
+```
+
+.mypy_cache/3.12/genericpath.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[4,1,2,3,5,6,1,1,1],"dep_prios":[5,10,10,5,5,5,5,30,30],"dependencies":["collections.abc","os","sys","_typeshed","typing","typing_extensions","builtins","_frozen_importlib","abc"],"hash":"a8607d6c88e26a860182960264fbb6690ff9ee58","id":"genericpath","ignore_all":true,"interface_hash":"110e39a376f73c60da654b31a36d318ea56a3f2e","mtime":1762029371,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/genericpath.pyi","plugin_data":null,"size":2203,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/io.data.json
+```
+{".class":"MypyFile","_fullname":"io","future_import_flags":[],"is_partial_stub_package":false,"is_stub":true,"names":{".class":"SymbolTable","BlockingIOError":{".class":"SymbolTableNode","cross_ref":"_io.BlockingIOError","kind":"Gdef"},"BufferedIOBase":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["_io._BufferedIOBase","io.IOBase"],"dataclass_transform_spec":null,"declared_metaclass":null,"defn":{".class":"ClassDef","fullname":"io.BufferedIOBase","name":"BufferedIOBase","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":[],"fullname":"io.BufferedIOBase","has_param_spec_type":false,"metaclass_type":"abc.ABCMeta","metadata":{},"module_name":"io","mro":["io.BufferedIOBase","_io._BufferedIOBase","io.IOBase","_io._IOBase","builtins.object"],"names":{".class":"SymbolTable"},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"BufferedRWPair":{".class":"SymbolTableNode","cross_ref":"_io.BufferedRWPair","kind":"Gdef"},"BufferedRandom":{".class":"SymbolTableNode","cross_ref":"_io.BufferedRandom","kind":"Gdef"},"BufferedReader":{".class":"SymbolTableNode","cross_ref":"_io.BufferedReader","kind":"Gdef"},"BufferedWriter":{".class":"SymbolTableNode","cross_ref":"_io.BufferedWriter","kind":"Gdef"},"BytesIO":{".class":"SymbolTableNode","cross_ref":"_io.BytesIO","kind":"Gdef"},"DEFAULT_BUFFER_SIZE":{".class":"SymbolTableNode","cross_ref":"_io.DEFAULT_BUFFER_SIZE","kind":"Gdef"},"FileIO":{".class":"SymbolTableNode","cross_ref":"_io.FileIO","kind":"Gdef"},"Final":{".class":"SymbolTableNode","cross_ref":"typing.Final","kind":"Gdef","module_hidden":true,"module_public":false},"IOBase":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["_io._IOBase"],"dataclass_transform_spec":null,"declared_metaclass":"abc.ABCMeta","defn":{".class":"ClassDef","fullname":"io.IOBase","name":"IOBase","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":[],"fullname":"io.IOBase","has_param_spec_type":false,"metaclass_type":"abc.ABCMeta","metadata":{},"module_name":"io","mro":["io.IOBase","_io._IOBase","builtins.object"],"names":{".class":"SymbolTable"},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"IncrementalNewlineDecoder":{".class":"SymbolTableNode","cross_ref":"_io.IncrementalNewlineDecoder","kind":"Gdef"},"RawIOBase":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["_io._RawIOBase","io.IOBase"],"dataclass_transform_spec":null,"declared_metaclass":null,"defn":{".class":"ClassDef","fullname":"io.RawIOBase","name":"RawIOBase","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":[],"fullname":"io.RawIOBase","has_param_spec_type":false,"metaclass_type":"abc.ABCMeta","metadata":{},"module_name":"io","mro":["io.RawIOBase","_io._RawIOBase","io.IOBase","_io._IOBase","builtins.object"],"names":{".class":"SymbolTable"},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"SEEK_CUR":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","final_value":1,"flags":["is_final","is_ready","is_inferred","has_explicit_value"],"fullname":"io.SEEK_CUR","name":"SEEK_CUR","type":{".class":"Instance","args":[],"extra_attrs":null,"last_known_value":{".class":"LiteralType","fallback":"builtins.int","value":1},"type_ref":"builtins.int"}}},"SEEK_END":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","final_value":2,"flags":["is_final","is_ready","is_inferred","has_explicit_value"],"fullname":"io.SEEK_END","name":"SEEK_END","type":{".class":"Instance","args":[],"extra_attrs":null,"last_known_value":{".class":"LiteralType","fallback":"builtins.int","value":2},"type_ref":"builtins.int"}}},"SEEK_SET":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","final_value":0,"flags":["is_final","is_ready","is_inferred","has_explicit_value"],"fullname":"io.SEEK_SET","name":"SEEK_SET","type":{".class":"Instance","args":[],"extra_attrs":null,"last_known_value":{".class":"LiteralType","fallback":"builtins.int","value":0},"type_ref":"builtins.int"}}},"StringIO":{".class":"SymbolTableNode","cross_ref":"_io.StringIO","kind":"Gdef"},"TextIOBase":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["_io._TextIOBase","io.IOBase"],"dataclass_transform_spec":null,"declared_metaclass":null,"defn":{".class":"ClassDef","fullname":"io.TextIOBase","name":"TextIOBase","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":[],"fullname":"io.TextIOBase","has_param_spec_type":false,"metaclass_type":"abc.ABCMeta","metadata":{},"module_name":"io","mro":["io.TextIOBase","_io._TextIOBase","io.IOBase","_io._IOBase","builtins.object"],"names":{".class":"SymbolTable"},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"TextIOWrapper":{".class":"SymbolTableNode","cross_ref":"_io.TextIOWrapper","kind":"Gdef"},"UnsupportedOperation":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["builtins.OSError","builtins.ValueError"],"dataclass_transform_spec":null,"declared_metaclass":null,"defn":{".class":"ClassDef","fullname":"io.UnsupportedOperation","name":"UnsupportedOperation","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":[],"fullname":"io.UnsupportedOperation","has_param_spec_type":false,"metaclass_type":null,"metadata":{},"module_name":"io","mro":["io.UnsupportedOperation","builtins.OSError","builtins.ValueError","builtins.Exception","builtins.BaseException","builtins.object"],"names":{".class":"SymbolTable"},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"_BufferedIOBase":{".class":"SymbolTableNode","cross_ref":"_io._BufferedIOBase","kind":"Gdef","module_hidden":true,"module_public":false},"_IOBase":{".class":"SymbolTableNode","cross_ref":"_io._IOBase","kind":"Gdef","module_hidden":true,"module_public":false},"_RawIOBase":{".class":"SymbolTableNode","cross_ref":"_io._RawIOBase","kind":"Gdef","module_hidden":true,"module_public":false},"_TextIOBase":{".class":"SymbolTableNode","cross_ref":"_io._TextIOBase","kind":"Gdef","module_hidden":true,"module_public":false},"_WrappedBuffer":{".class":"SymbolTableNode","cross_ref":"_io._WrappedBuffer","kind":"Gdef","module_public":false},"__all__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_inferred","has_explicit_value"],"fullname":"io.__all__","name":"__all__","type":{".class":"Instance","args":["builtins.str"],"extra_attrs":null,"type_ref":"builtins.list"}}},"__annotations__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"io.__annotations__","name":"__annotations__","type":{".class":"Instance","args":["builtins.str",{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":6}],"extra_attrs":null,"type_ref":"builtins.dict"}}},"__doc__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"io.__doc__","name":"__doc__","type":"builtins.str"}},"__file__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"io.__file__","name":"__file__","type":"builtins.str"}},"__name__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"io.__name__","name":"__name__","type":"builtins.str"}},"__package__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"io.__package__","name":"__package__","type":"builtins.str"}},"__spec__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"io.__spec__","name":"__spec__","type":"_frozen_importlib.ModuleSpec"}},"abc":{".class":"SymbolTableNode","cross_ref":"abc","kind":"Gdef","module_hidden":true,"module_public":false},"open":{".class":"SymbolTableNode","cross_ref":"_io.open","kind":"Gdef"},"open_code":{".class":"SymbolTableNode","cross_ref":"_io.open_code","kind":"Gdef"},"sys":{".class":"SymbolTableNode","cross_ref":"sys","kind":"Gdef","module_hidden":true,"module_public":false},"text_encoding":{".class":"SymbolTableNode","cross_ref":"_io.text_encoding","kind":"Gdef"}},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/io.pyi"}
+```
+
+.mypy_cache/3.12/io.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[1,2,3,23,1,1,1,1],"dep_prios":[10,10,5,5,5,30,30,30],"dependencies":["abc","sys","_io","typing","builtins","_frozen_importlib","_typeshed","types"],"hash":"ab68068e8f03aa8f1a21951a150e926cbb8af3c4","id":"io","ignore_all":true,"interface_hash":"f2a4ed95a7355fee22968cabb3fd4e92358c357a","mtime":1762029371,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/io.pyi","plugin_data":null,"size":1494,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/pathlib.data.json
+```
+[TRUNCATED]
+```
+
+.mypy_cache/3.12/pathlib.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[14,1,2,3,15,16,18,19,1,1,1,1,1],"dep_prios":[5,10,5,5,5,5,5,5,5,30,30,30,30],"dependencies":["collections.abc","sys","types","_typeshed","io","os","typing","typing_extensions","builtins","_collections_abc","_frozen_importlib","_io","abc"],"hash":"b850216cb60fc148412e847e53b6a7c1cecf7698","id":"pathlib","ignore_all":true,"interface_hash":"6fd40b8be1ff483efb9e92d046685d146efbedb7","mtime":1762029371,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/pathlib.pyi","plugin_data":null,"size":11886,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/posixpath.data.json
+```
+[TRUNCATED]
+```
+
+.mypy_cache/3.12/posixpath.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[3,1,2,4,20,21,22,1,1,1],"dep_prios":[5,10,5,5,5,5,5,5,30,30],"dependencies":["collections.abc","sys","_typeshed","genericpath","os","typing","typing_extensions","builtins","_frozen_importlib","abc"],"hash":"e8a6f0db23a10ee4e66ec15b39654e4de26d03e8","id":"posixpath","ignore_all":true,"interface_hash":"29fabbd38e99dbbce5d499b7a3fff98d1be13406","mtime":1762029371,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/posixpath.pyi","plugin_data":null,"size":4811,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/re.data.json
+```
+[TRUNCATED]
+```
+
+.mypy_cache/3.12/re.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[6,1,2,3,4,5,7,8,11,1,1,1,1],"dep_prios":[5,10,10,10,10,5,5,5,5,5,30,30,30],"dependencies":["collections.abc","enum","sre_compile","sre_constants","sys","_typeshed","typing","typing_extensions","types","builtins","_collections_abc","_frozen_importlib","abc"],"hash":"0c2dfe7fe0c5030932745ea7e19113ab6ad5cd6a","id":"re","ignore_all":true,"interface_hash":"b3937fc378491b0dcc6c0fa4ac578b3d06a6aa46","mtime":1762029371,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/re.pyi","plugin_data":null,"size":11818,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/resource.data.json
+```
+[TRUNCATED]
+```
+
+.mypy_cache/3.12/resource.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[1,2,3,1,1,1,1],"dep_prios":[10,5,5,5,30,30,30],"dependencies":["sys","_typeshed","typing","builtins","_frozen_importlib","abc","types"],"hash":"f1c5466c4351866284685531b61198656dc3906b","id":"resource","ignore_all":true,"interface_hash":"680163ba76a34705652fbd59a057fcc2e43f86be","mtime":1762029371,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/resource.pyi","plugin_data":null,"size":2804,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/sre_compile.data.json
+```
+{".class":"MypyFile","_fullname":"sre_compile","future_import_flags":[],"is_partial_stub_package":false,"is_stub":true,"names":{".class":"SymbolTable","ANY":{".class":"SymbolTableNode","cross_ref":"sre_constants.ANY","kind":"Gdef"},"ANY_ALL":{".class":"SymbolTableNode","cross_ref":"sre_constants.ANY_ALL","kind":"Gdef"},"ASSERT":{".class":"SymbolTableNode","cross_ref":"sre_constants.ASSERT","kind":"Gdef"},"ASSERT_NOT":{".class":"SymbolTableNode","cross_ref":"sre_constants.ASSERT_NOT","kind":"Gdef"},"AT":{".class":"SymbolTableNode","cross_ref":"sre_constants.AT","kind":"Gdef"},"ATCODES":{".class":"SymbolTableNode","cross_ref":"sre_constants.ATCODES","kind":"Gdef"},"ATOMIC_GROUP":{".class":"SymbolTableNode","cross_ref":"sre_constants.ATOMIC_GROUP","kind":"Gdef"},"AT_BEGINNING":{".class":"SymbolTableNode","cross_ref":"sre_constants.AT_BEGINNING","kind":"Gdef"},"AT_BEGINNING_LINE":{".class":"SymbolTableNode","cross_ref":"sre_constants.AT_BEGINNING_LINE","kind":"Gdef"},"AT_BEGINNING_STRING":{".class":"SymbolTableNode","cross_ref":"sre_constants.AT_BEGINNING_STRING","kind":"Gdef"},"AT_BOUNDARY":{".class":"SymbolTableNode","cross_ref":"sre_constants.AT_BOUNDARY","kind":"Gdef"},"AT_END":{".class":"SymbolTableNode","cross_ref":"sre_constants.AT_END","kind":"Gdef"},"AT_END_LINE":{".class":"SymbolTableNode","cross_ref":"sre_constants.AT_END_LINE","kind":"Gdef"},"AT_END_STRING":{".class":"SymbolTableNode","cross_ref":"sre_constants.AT_END_STRING","kind":"Gdef"},"AT_LOCALE":{".class":"SymbolTableNode","cross_ref":"sre_constants.AT_LOCALE","kind":"Gdef"},"AT_LOC_BOUNDARY":{".class":"SymbolTableNode","cross_ref":"sre_constants.AT_LOC_BOUNDARY","kind":"Gdef"},"AT_LOC_NON_BOUNDARY":{".class":"SymbolTableNode","cross_ref":"sre_constants.AT_LOC_NON_BOUNDARY","kind":"Gdef"},"AT_MULTILINE":{".class":"SymbolTableNode","cross_ref":"sre_constants.AT_MULTILINE","kind":"Gdef"},"AT_NON_BOUNDARY":{".class":"SymbolTableNode","cross_ref":"sre_constants.AT_NON_BOUNDARY","kind":"Gdef"},"AT_UNICODE":{".class":"SymbolTableNode","cross_ref":"sre_constants.AT_UNICODE","kind":"Gdef"},"AT_UNI_BOUNDARY":{".class":"SymbolTableNode","cross_ref":"sre_constants.AT_UNI_BOUNDARY","kind":"Gdef"},"AT_UNI_NON_BOUNDARY":{".class":"SymbolTableNode","cross_ref":"sre_constants.AT_UNI_NON_BOUNDARY","kind":"Gdef"},"Any":{".class":"SymbolTableNode","cross_ref":"typing.Any","kind":"Gdef","module_hidden":true,"module_public":false},"BIGCHARSET":{".class":"SymbolTableNode","cross_ref":"sre_constants.BIGCHARSET","kind":"Gdef"},"BRANCH":{".class":"SymbolTableNode","cross_ref":"sre_constants.BRANCH","kind":"Gdef"},"CATEGORY":{".class":"SymbolTableNode","cross_ref":"sre_constants.CATEGORY","kind":"Gdef"},"CATEGORY_DIGIT":{".class":"SymbolTableNode","cross_ref":"sre_constants.CATEGORY_DIGIT","kind":"Gdef"},"CATEGORY_LINEBREAK":{".class":"SymbolTableNode","cross_ref":"sre_constants.CATEGORY_LINEBREAK","kind":"Gdef"},"CATEGORY_LOC_NOT_WORD":{".class":"SymbolTableNode","cross_ref":"sre_constants.CATEGORY_LOC_NOT_WORD","kind":"Gdef"},"CATEGORY_LOC_WORD":{".class":"SymbolTableNode","cross_ref":"sre_constants.CATEGORY_LOC_WORD","kind":"Gdef"},"CATEGORY_NOT_DIGIT":{".class":"SymbolTableNode","cross_ref":"sre_constants.CATEGORY_NOT_DIGIT","kind":"Gdef"},"CATEGORY_NOT_LINEBREAK":{".class":"SymbolTableNode","cross_ref":"sre_constants.CATEGORY_NOT_LINEBREAK","kind":"Gdef"},"CATEGORY_NOT_SPACE":{".class":"SymbolTableNode","cross_ref":"sre_constants.CATEGORY_NOT_SPACE","kind":"Gdef"},"CATEGORY_NOT_WORD":{".class":"SymbolTableNode","cross_ref":"sre_constants.CATEGORY_NOT_WORD","kind":"Gdef"},"CATEGORY_SPACE":{".class":"SymbolTableNode","cross_ref":"sre_constants.CATEGORY_SPACE","kind":"Gdef"},"CATEGORY_UNI_DIGIT":{".class":"SymbolTableNode","cross_ref":"sre_constants.CATEGORY_UNI_DIGIT","kind":"Gdef"},"CATEGORY_UNI_LINEBREAK":{".class":"SymbolTableNode","cross_ref":"sre_constants.CATEGORY_UNI_LINEBREAK","kind":"Gdef"},"CATEGORY_UNI_NOT_DIGIT":{".class":"SymbolTableNode","cross_ref":"sre_constants.CATEGORY_UNI_NOT_DIGIT","kind":"Gdef"},"CATEGORY_UNI_NOT_LINEBREAK":{".class":"SymbolTableNode","cross_ref":"sre_constants.CATEGORY_UNI_NOT_LINEBREAK","kind":"Gdef"},"CATEGORY_UNI_NOT_SPACE":{".class":"SymbolTableNode","cross_ref":"sre_constants.CATEGORY_UNI_NOT_SPACE","kind":"Gdef"},"CATEGORY_UNI_NOT_WORD":{".class":"SymbolTableNode","cross_ref":"sre_constants.CATEGORY_UNI_NOT_WORD","kind":"Gdef"},"CATEGORY_UNI_SPACE":{".class":"SymbolTableNode","cross_ref":"sre_constants.CATEGORY_UNI_SPACE","kind":"Gdef"},"CATEGORY_UNI_WORD":{".class":"SymbolTableNode","cross_ref":"sre_constants.CATEGORY_UNI_WORD","kind":"Gdef"},"CATEGORY_WORD":{".class":"SymbolTableNode","cross_ref":"sre_constants.CATEGORY_WORD","kind":"Gdef"},"CHARSET":{".class":"SymbolTableNode","cross_ref":"sre_constants.CHARSET","kind":"Gdef"},"CHCODES":{".class":"SymbolTableNode","cross_ref":"sre_constants.CHCODES","kind":"Gdef"},"CH_LOCALE":{".class":"SymbolTableNode","cross_ref":"sre_constants.CH_LOCALE","kind":"Gdef"},"CH_UNICODE":{".class":"SymbolTableNode","cross_ref":"sre_constants.CH_UNICODE","kind":"Gdef"},"FAILURE":{".class":"SymbolTableNode","cross_ref":"sre_constants.FAILURE","kind":"Gdef"},"GROUPREF":{".class":"SymbolTableNode","cross_ref":"sre_constants.GROUPREF","kind":"Gdef"},"GROUPREF_EXISTS":{".class":"SymbolTableNode","cross_ref":"sre_constants.GROUPREF_EXISTS","kind":"Gdef"},"GROUPREF_IGNORE":{".class":"SymbolTableNode","cross_ref":"sre_constants.GROUPREF_IGNORE","kind":"Gdef"},"GROUPREF_LOC_IGNORE":{".class":"SymbolTableNode","cross_ref":"sre_constants.GROUPREF_LOC_IGNORE","kind":"Gdef"},"GROUPREF_UNI_IGNORE":{".class":"SymbolTableNode","cross_ref":"sre_constants.GROUPREF_UNI_IGNORE","kind":"Gdef"},"IN":{".class":"SymbolTableNode","cross_ref":"sre_constants.IN","kind":"Gdef"},"INFO":{".class":"SymbolTableNode","cross_ref":"sre_constants.INFO","kind":"Gdef"},"IN_IGNORE":{".class":"SymbolTableNode","cross_ref":"sre_constants.IN_IGNORE","kind":"Gdef"},"IN_LOC_IGNORE":{".class":"SymbolTableNode","cross_ref":"sre_constants.IN_LOC_IGNORE","kind":"Gdef"},"IN_UNI_IGNORE":{".class":"SymbolTableNode","cross_ref":"sre_constants.IN_UNI_IGNORE","kind":"Gdef"},"JUMP":{".class":"SymbolTableNode","cross_ref":"sre_constants.JUMP","kind":"Gdef"},"LITERAL":{".class":"SymbolTableNode","cross_ref":"sre_constants.LITERAL","kind":"Gdef"},"LITERAL_IGNORE":{".class":"SymbolTableNode","cross_ref":"sre_constants.LITERAL_IGNORE","kind":"Gdef"},"LITERAL_LOC_IGNORE":{".class":"SymbolTableNode","cross_ref":"sre_constants.LITERAL_LOC_IGNORE","kind":"Gdef"},"LITERAL_UNI_IGNORE":{".class":"SymbolTableNode","cross_ref":"sre_constants.LITERAL_UNI_IGNORE","kind":"Gdef"},"MAGIC":{".class":"SymbolTableNode","cross_ref":"sre_constants.MAGIC","kind":"Gdef"},"MARK":{".class":"SymbolTableNode","cross_ref":"sre_constants.MARK","kind":"Gdef"},"MAXCODE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_compile.MAXCODE","name":"MAXCODE","type":"builtins.int"}},"MAXGROUPS":{".class":"SymbolTableNode","cross_ref":"sre_constants.MAXGROUPS","kind":"Gdef"},"MAXREPEAT":{".class":"SymbolTableNode","cross_ref":"sre_constants.MAXREPEAT","kind":"Gdef"},"MAX_REPEAT":{".class":"SymbolTableNode","cross_ref":"sre_constants.MAX_REPEAT","kind":"Gdef"},"MAX_UNTIL":{".class":"SymbolTableNode","cross_ref":"sre_constants.MAX_UNTIL","kind":"Gdef"},"MIN_REPEAT":{".class":"SymbolTableNode","cross_ref":"sre_constants.MIN_REPEAT","kind":"Gdef"},"MIN_REPEAT_ONE":{".class":"SymbolTableNode","cross_ref":"sre_constants.MIN_REPEAT_ONE","kind":"Gdef"},"MIN_UNTIL":{".class":"SymbolTableNode","cross_ref":"sre_constants.MIN_UNTIL","kind":"Gdef"},"NEGATE":{".class":"SymbolTableNode","cross_ref":"sre_constants.NEGATE","kind":"Gdef"},"NOT_LITERAL":{".class":"SymbolTableNode","cross_ref":"sre_constants.NOT_LITERAL","kind":"Gdef"},"NOT_LITERAL_IGNORE":{".class":"SymbolTableNode","cross_ref":"sre_constants.NOT_LITERAL_IGNORE","kind":"Gdef"},"NOT_LITERAL_LOC_IGNORE":{".class":"SymbolTableNode","cross_ref":"sre_constants.NOT_LITERAL_LOC_IGNORE","kind":"Gdef"},"NOT_LITERAL_UNI_IGNORE":{".class":"SymbolTableNode","cross_ref":"sre_constants.NOT_LITERAL_UNI_IGNORE","kind":"Gdef"},"OPCODES":{".class":"SymbolTableNode","cross_ref":"sre_constants.OPCODES","kind":"Gdef"},"OP_IGNORE":{".class":"SymbolTableNode","cross_ref":"sre_constants.OP_IGNORE","kind":"Gdef"},"OP_LOCALE_IGNORE":{".class":"SymbolTableNode","cross_ref":"sre_constants.OP_LOCALE_IGNORE","kind":"Gdef"},"OP_UNICODE_IGNORE":{".class":"SymbolTableNode","cross_ref":"sre_constants.OP_UNICODE_IGNORE","kind":"Gdef"},"POSSESSIVE_REPEAT":{".class":"SymbolTableNode","cross_ref":"sre_constants.POSSESSIVE_REPEAT","kind":"Gdef"},"POSSESSIVE_REPEAT_ONE":{".class":"SymbolTableNode","cross_ref":"sre_constants.POSSESSIVE_REPEAT_ONE","kind":"Gdef"},"Pattern":{".class":"SymbolTableNode","cross_ref":"re.Pattern","kind":"Gdef","module_hidden":true,"module_public":false},"RANGE":{".class":"SymbolTableNode","cross_ref":"sre_constants.RANGE","kind":"Gdef"},"RANGE_UNI_IGNORE":{".class":"SymbolTableNode","cross_ref":"sre_constants.RANGE_UNI_IGNORE","kind":"Gdef"},"REPEAT":{".class":"SymbolTableNode","cross_ref":"sre_constants.REPEAT","kind":"Gdef"},"REPEAT_ONE":{".class":"SymbolTableNode","cross_ref":"sre_constants.REPEAT_ONE","kind":"Gdef"},"SRE_FLAG_ASCII":{".class":"SymbolTableNode","cross_ref":"sre_constants.SRE_FLAG_ASCII","kind":"Gdef"},"SRE_FLAG_DEBUG":{".class":"SymbolTableNode","cross_ref":"sre_constants.SRE_FLAG_DEBUG","kind":"Gdef"},"SRE_FLAG_DOTALL":{".class":"SymbolTableNode","cross_ref":"sre_constants.SRE_FLAG_DOTALL","kind":"Gdef"},"SRE_FLAG_IGNORECASE":{".class":"SymbolTableNode","cross_ref":"sre_constants.SRE_FLAG_IGNORECASE","kind":"Gdef"},"SRE_FLAG_LOCALE":{".class":"SymbolTableNode","cross_ref":"sre_constants.SRE_FLAG_LOCALE","kind":"Gdef"},"SRE_FLAG_MULTILINE":{".class":"SymbolTableNode","cross_ref":"sre_constants.SRE_FLAG_MULTILINE","kind":"Gdef"},"SRE_FLAG_TEMPLATE":{".class":"SymbolTableNode","cross_ref":"sre_constants.SRE_FLAG_TEMPLATE","kind":"Gdef"},"SRE_FLAG_UNICODE":{".class":"SymbolTableNode","cross_ref":"sre_constants.SRE_FLAG_UNICODE","kind":"Gdef"},"SRE_FLAG_VERBOSE":{".class":"SymbolTableNode","cross_ref":"sre_constants.SRE_FLAG_VERBOSE","kind":"Gdef"},"SRE_INFO_CHARSET":{".class":"SymbolTableNode","cross_ref":"sre_constants.SRE_INFO_CHARSET","kind":"Gdef"},"SRE_INFO_LITERAL":{".class":"SymbolTableNode","cross_ref":"sre_constants.SRE_INFO_LITERAL","kind":"Gdef"},"SRE_INFO_PREFIX":{".class":"SymbolTableNode","cross_ref":"sre_constants.SRE_INFO_PREFIX","kind":"Gdef"},"SUBPATTERN":{".class":"SymbolTableNode","cross_ref":"sre_constants.SUBPATTERN","kind":"Gdef"},"SUCCESS":{".class":"SymbolTableNode","cross_ref":"sre_constants.SUCCESS","kind":"Gdef"},"SubPattern":{".class":"SymbolTableNode","cross_ref":"sre_parse.SubPattern","kind":"Gdef","module_hidden":true,"module_public":false},"_NamedIntConstant":{".class":"SymbolTableNode","cross_ref":"sre_constants._NamedIntConstant","kind":"Gdef","module_hidden":true,"module_public":false},"__annotations__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_compile.__annotations__","name":"__annotations__","type":{".class":"Instance","args":["builtins.str",{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":6}],"extra_attrs":null,"type_ref":"builtins.dict"}}},"__doc__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_compile.__doc__","name":"__doc__","type":"builtins.str"}},"__file__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_compile.__file__","name":"__file__","type":"builtins.str"}},"__name__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_compile.__name__","name":"__name__","type":"builtins.str"}},"__package__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_compile.__package__","name":"__package__","type":"builtins.str"}},"__spec__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_compile.__spec__","name":"__spec__","type":"_frozen_importlib.ModuleSpec"}},"compile":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,1],"arg_names":["p","flags"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"sre_compile.compile","name":"compile","type":{".class":"CallableType","arg_kinds":[0,1],"arg_names":["p","flags"],"arg_types":[{".class":"UnionType","items":["builtins.str","builtins.bytes","sre_parse.SubPattern"],"uses_pep604_syntax":true},"builtins.int"],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"compile","ret_type":{".class":"Instance","args":[{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":2}],"extra_attrs":null,"type_ref":"re.Pattern"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"dis":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0],"arg_names":["code"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"sre_compile.dis","name":"dis","type":{".class":"CallableType","arg_kinds":[0],"arg_names":["code"],"arg_types":[{".class":"Instance","args":["sre_constants._NamedIntConstant"],"extra_attrs":null,"type_ref":"builtins.list"}],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"dis","ret_type":{".class":"NoneType"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"error":{".class":"SymbolTableNode","cross_ref":"re.error","kind":"Gdef"},"isstring":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0],"arg_names":["obj"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"sre_compile.isstring","name":"isstring","type":{".class":"CallableType","arg_kinds":[0],"arg_names":["obj"],"arg_types":[{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":2}],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"isstring","ret_type":"builtins.bool","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}}},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/sre_compile.pyi"}
+```
+
+.mypy_cache/3.12/sre_compile.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[1,2,4,5,1,1,1],"dep_prios":[5,5,5,5,5,30,30],"dependencies":["re","sre_constants","sre_parse","typing","builtins","_frozen_importlib","abc"],"hash":"314498570402673c11acd537a3e6edacc0ed0b05","id":"sre_compile","ignore_all":true,"interface_hash":"6ae360fcfc473ad49a5acf1f29f700e6d9221a8a","mtime":1762029371,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/sre_compile.pyi","plugin_data":null,"size":332,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/sre_constants.data.json
+```
+{".class":"MypyFile","_fullname":"sre_constants","future_import_flags":[],"is_partial_stub_package":false,"is_stub":true,"names":{".class":"SymbolTable","ANY":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.ANY","name":"ANY","type":"sre_constants._NamedIntConstant"}},"ANY_ALL":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.ANY_ALL","name":"ANY_ALL","type":"sre_constants._NamedIntConstant"}},"ASSERT":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.ASSERT","name":"ASSERT","type":"sre_constants._NamedIntConstant"}},"ASSERT_NOT":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.ASSERT_NOT","name":"ASSERT_NOT","type":"sre_constants._NamedIntConstant"}},"AT":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.AT","name":"AT","type":"sre_constants._NamedIntConstant"}},"ATCODES":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.ATCODES","name":"ATCODES","type":{".class":"Instance","args":["sre_constants._NamedIntConstant"],"extra_attrs":null,"type_ref":"builtins.list"}}},"ATOMIC_GROUP":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.ATOMIC_GROUP","name":"ATOMIC_GROUP","type":"sre_constants._NamedIntConstant"}},"AT_BEGINNING":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.AT_BEGINNING","name":"AT_BEGINNING","type":"sre_constants._NamedIntConstant"}},"AT_BEGINNING_LINE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.AT_BEGINNING_LINE","name":"AT_BEGINNING_LINE","type":"sre_constants._NamedIntConstant"}},"AT_BEGINNING_STRING":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.AT_BEGINNING_STRING","name":"AT_BEGINNING_STRING","type":"sre_constants._NamedIntConstant"}},"AT_BOUNDARY":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.AT_BOUNDARY","name":"AT_BOUNDARY","type":"sre_constants._NamedIntConstant"}},"AT_END":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.AT_END","name":"AT_END","type":"sre_constants._NamedIntConstant"}},"AT_END_LINE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.AT_END_LINE","name":"AT_END_LINE","type":"sre_constants._NamedIntConstant"}},"AT_END_STRING":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.AT_END_STRING","name":"AT_END_STRING","type":"sre_constants._NamedIntConstant"}},"AT_LOCALE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.AT_LOCALE","name":"AT_LOCALE","type":{".class":"Instance","args":["sre_constants._NamedIntConstant","sre_constants._NamedIntConstant"],"extra_attrs":null,"type_ref":"builtins.dict"}}},"AT_LOC_BOUNDARY":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.AT_LOC_BOUNDARY","name":"AT_LOC_BOUNDARY","type":"sre_constants._NamedIntConstant"}},"AT_LOC_NON_BOUNDARY":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.AT_LOC_NON_BOUNDARY","name":"AT_LOC_NON_BOUNDARY","type":"sre_constants._NamedIntConstant"}},"AT_MULTILINE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.AT_MULTILINE","name":"AT_MULTILINE","type":{".class":"Instance","args":["sre_constants._NamedIntConstant","sre_constants._NamedIntConstant"],"extra_attrs":null,"type_ref":"builtins.dict"}}},"AT_NON_BOUNDARY":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.AT_NON_BOUNDARY","name":"AT_NON_BOUNDARY","type":"sre_constants._NamedIntConstant"}},"AT_UNICODE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.AT_UNICODE","name":"AT_UNICODE","type":{".class":"Instance","args":["sre_constants._NamedIntConstant","sre_constants._NamedIntConstant"],"extra_attrs":null,"type_ref":"builtins.dict"}}},"AT_UNI_BOUNDARY":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.AT_UNI_BOUNDARY","name":"AT_UNI_BOUNDARY","type":"sre_constants._NamedIntConstant"}},"AT_UNI_NON_BOUNDARY":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.AT_UNI_NON_BOUNDARY","name":"AT_UNI_NON_BOUNDARY","type":"sre_constants._NamedIntConstant"}},"Any":{".class":"SymbolTableNode","cross_ref":"typing.Any","kind":"Gdef","module_hidden":true,"module_public":false},"BIGCHARSET":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.BIGCHARSET","name":"BIGCHARSET","type":"sre_constants._NamedIntConstant"}},"BRANCH":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.BRANCH","name":"BRANCH","type":"sre_constants._NamedIntConstant"}},"CATEGORY":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.CATEGORY","name":"CATEGORY","type":"sre_constants._NamedIntConstant"}},"CATEGORY_DIGIT":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.CATEGORY_DIGIT","name":"CATEGORY_DIGIT","type":"sre_constants._NamedIntConstant"}},"CATEGORY_LINEBREAK":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.CATEGORY_LINEBREAK","name":"CATEGORY_LINEBREAK","type":"sre_constants._NamedIntConstant"}},"CATEGORY_LOC_NOT_WORD":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.CATEGORY_LOC_NOT_WORD","name":"CATEGORY_LOC_NOT_WORD","type":"sre_constants._NamedIntConstant"}},"CATEGORY_LOC_WORD":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.CATEGORY_LOC_WORD","name":"CATEGORY_LOC_WORD","type":"sre_constants._NamedIntConstant"}},"CATEGORY_NOT_DIGIT":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.CATEGORY_NOT_DIGIT","name":"CATEGORY_NOT_DIGIT","type":"sre_constants._NamedIntConstant"}},"CATEGORY_NOT_LINEBREAK":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.CATEGORY_NOT_LINEBREAK","name":"CATEGORY_NOT_LINEBREAK","type":"sre_constants._NamedIntConstant"}},"CATEGORY_NOT_SPACE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.CATEGORY_NOT_SPACE","name":"CATEGORY_NOT_SPACE","type":"sre_constants._NamedIntConstant"}},"CATEGORY_NOT_WORD":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.CATEGORY_NOT_WORD","name":"CATEGORY_NOT_WORD","type":"sre_constants._NamedIntConstant"}},"CATEGORY_SPACE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.CATEGORY_SPACE","name":"CATEGORY_SPACE","type":"sre_constants._NamedIntConstant"}},"CATEGORY_UNI_DIGIT":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.CATEGORY_UNI_DIGIT","name":"CATEGORY_UNI_DIGIT","type":"sre_constants._NamedIntConstant"}},"CATEGORY_UNI_LINEBREAK":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.CATEGORY_UNI_LINEBREAK","name":"CATEGORY_UNI_LINEBREAK","type":"sre_constants._NamedIntConstant"}},"CATEGORY_UNI_NOT_DIGIT":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.CATEGORY_UNI_NOT_DIGIT","name":"CATEGORY_UNI_NOT_DIGIT","type":"sre_constants._NamedIntConstant"}},"CATEGORY_UNI_NOT_LINEBREAK":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.CATEGORY_UNI_NOT_LINEBREAK","name":"CATEGORY_UNI_NOT_LINEBREAK","type":"sre_constants._NamedIntConstant"}},"CATEGORY_UNI_NOT_SPACE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.CATEGORY_UNI_NOT_SPACE","name":"CATEGORY_UNI_NOT_SPACE","type":"sre_constants._NamedIntConstant"}},"CATEGORY_UNI_NOT_WORD":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.CATEGORY_UNI_NOT_WORD","name":"CATEGORY_UNI_NOT_WORD","type":"sre_constants._NamedIntConstant"}},"CATEGORY_UNI_SPACE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.CATEGORY_UNI_SPACE","name":"CATEGORY_UNI_SPACE","type":"sre_constants._NamedIntConstant"}},"CATEGORY_UNI_WORD":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.CATEGORY_UNI_WORD","name":"CATEGORY_UNI_WORD","type":"sre_constants._NamedIntConstant"}},"CATEGORY_WORD":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.CATEGORY_WORD","name":"CATEGORY_WORD","type":"sre_constants._NamedIntConstant"}},"CHARSET":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.CHARSET","name":"CHARSET","type":"sre_constants._NamedIntConstant"}},"CHCODES":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.CHCODES","name":"CHCODES","type":{".class":"Instance","args":["sre_constants._NamedIntConstant"],"extra_attrs":null,"type_ref":"builtins.list"}}},"CH_LOCALE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.CH_LOCALE","name":"CH_LOCALE","type":{".class":"Instance","args":["sre_constants._NamedIntConstant","sre_constants._NamedIntConstant"],"extra_attrs":null,"type_ref":"builtins.dict"}}},"CH_UNICODE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.CH_UNICODE","name":"CH_UNICODE","type":{".class":"Instance","args":["sre_constants._NamedIntConstant","sre_constants._NamedIntConstant"],"extra_attrs":null,"type_ref":"builtins.dict"}}},"FAILURE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.FAILURE","name":"FAILURE","type":"sre_constants._NamedIntConstant"}},"GROUPREF":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.GROUPREF","name":"GROUPREF","type":"sre_constants._NamedIntConstant"}},"GROUPREF_EXISTS":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.GROUPREF_EXISTS","name":"GROUPREF_EXISTS","type":"sre_constants._NamedIntConstant"}},"GROUPREF_IGNORE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.GROUPREF_IGNORE","name":"GROUPREF_IGNORE","type":"sre_constants._NamedIntConstant"}},"GROUPREF_LOC_IGNORE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.GROUPREF_LOC_IGNORE","name":"GROUPREF_LOC_IGNORE","type":"sre_constants._NamedIntConstant"}},"GROUPREF_UNI_IGNORE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.GROUPREF_UNI_IGNORE","name":"GROUPREF_UNI_IGNORE","type":"sre_constants._NamedIntConstant"}},"IN":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.IN","name":"IN","type":"sre_constants._NamedIntConstant"}},"INFO":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.INFO","name":"INFO","type":"sre_constants._NamedIntConstant"}},"IN_IGNORE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.IN_IGNORE","name":"IN_IGNORE","type":"sre_constants._NamedIntConstant"}},"IN_LOC_IGNORE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.IN_LOC_IGNORE","name":"IN_LOC_IGNORE","type":"sre_constants._NamedIntConstant"}},"IN_UNI_IGNORE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.IN_UNI_IGNORE","name":"IN_UNI_IGNORE","type":"sre_constants._NamedIntConstant"}},"JUMP":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.JUMP","name":"JUMP","type":"sre_constants._NamedIntConstant"}},"LITERAL":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.LITERAL","name":"LITERAL","type":"sre_constants._NamedIntConstant"}},"LITERAL_IGNORE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.LITERAL_IGNORE","name":"LITERAL_IGNORE","type":"sre_constants._NamedIntConstant"}},"LITERAL_LOC_IGNORE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.LITERAL_LOC_IGNORE","name":"LITERAL_LOC_IGNORE","type":"sre_constants._NamedIntConstant"}},"LITERAL_UNI_IGNORE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.LITERAL_UNI_IGNORE","name":"LITERAL_UNI_IGNORE","type":"sre_constants._NamedIntConstant"}},"MAGIC":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.MAGIC","name":"MAGIC","type":"builtins.int"}},"MARK":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.MARK","name":"MARK","type":"sre_constants._NamedIntConstant"}},"MAXGROUPS":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.MAXGROUPS","name":"MAXGROUPS","type":"builtins.int"}},"MAXREPEAT":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.MAXREPEAT","name":"MAXREPEAT","type":"sre_constants._NamedIntConstant"}},"MAX_REPEAT":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.MAX_REPEAT","name":"MAX_REPEAT","type":"sre_constants._NamedIntConstant"}},"MAX_UNTIL":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.MAX_UNTIL","name":"MAX_UNTIL","type":"sre_constants._NamedIntConstant"}},"MIN_REPEAT":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.MIN_REPEAT","name":"MIN_REPEAT","type":"sre_constants._NamedIntConstant"}},"MIN_REPEAT_ONE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.MIN_REPEAT_ONE","name":"MIN_REPEAT_ONE","type":"sre_constants._NamedIntConstant"}},"MIN_UNTIL":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.MIN_UNTIL","name":"MIN_UNTIL","type":"sre_constants._NamedIntConstant"}},"NEGATE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.NEGATE","name":"NEGATE","type":"sre_constants._NamedIntConstant"}},"NOT_LITERAL":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.NOT_LITERAL","name":"NOT_LITERAL","type":"sre_constants._NamedIntConstant"}},"NOT_LITERAL_IGNORE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.NOT_LITERAL_IGNORE","name":"NOT_LITERAL_IGNORE","type":"sre_constants._NamedIntConstant"}},"NOT_LITERAL_LOC_IGNORE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.NOT_LITERAL_LOC_IGNORE","name":"NOT_LITERAL_LOC_IGNORE","type":"sre_constants._NamedIntConstant"}},"NOT_LITERAL_UNI_IGNORE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.NOT_LITERAL_UNI_IGNORE","name":"NOT_LITERAL_UNI_IGNORE","type":"sre_constants._NamedIntConstant"}},"OPCODES":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.OPCODES","name":"OPCODES","type":{".class":"Instance","args":["sre_constants._NamedIntConstant"],"extra_attrs":null,"type_ref":"builtins.list"}}},"OP_IGNORE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.OP_IGNORE","name":"OP_IGNORE","type":{".class":"Instance","args":["sre_constants._NamedIntConstant","sre_constants._NamedIntConstant"],"extra_attrs":null,"type_ref":"builtins.dict"}}},"OP_LOCALE_IGNORE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.OP_LOCALE_IGNORE","name":"OP_LOCALE_IGNORE","type":{".class":"Instance","args":["sre_constants._NamedIntConstant","sre_constants._NamedIntConstant"],"extra_attrs":null,"type_ref":"builtins.dict"}}},"OP_UNICODE_IGNORE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.OP_UNICODE_IGNORE","name":"OP_UNICODE_IGNORE","type":{".class":"Instance","args":["sre_constants._NamedIntConstant","sre_constants._NamedIntConstant"],"extra_attrs":null,"type_ref":"builtins.dict"}}},"POSSESSIVE_REPEAT":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.POSSESSIVE_REPEAT","name":"POSSESSIVE_REPEAT","type":"sre_constants._NamedIntConstant"}},"POSSESSIVE_REPEAT_ONE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.POSSESSIVE_REPEAT_ONE","name":"POSSESSIVE_REPEAT_ONE","type":"sre_constants._NamedIntConstant"}},"RANGE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.RANGE","name":"RANGE","type":"sre_constants._NamedIntConstant"}},"RANGE_UNI_IGNORE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.RANGE_UNI_IGNORE","name":"RANGE_UNI_IGNORE","type":"sre_constants._NamedIntConstant"}},"REPEAT":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.REPEAT","name":"REPEAT","type":"sre_constants._NamedIntConstant"}},"REPEAT_ONE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.REPEAT_ONE","name":"REPEAT_ONE","type":"sre_constants._NamedIntConstant"}},"SRE_FLAG_ASCII":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.SRE_FLAG_ASCII","name":"SRE_FLAG_ASCII","type":"builtins.int"}},"SRE_FLAG_DEBUG":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.SRE_FLAG_DEBUG","name":"SRE_FLAG_DEBUG","type":"builtins.int"}},"SRE_FLAG_DOTALL":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.SRE_FLAG_DOTALL","name":"SRE_FLAG_DOTALL","type":"builtins.int"}},"SRE_FLAG_IGNORECASE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.SRE_FLAG_IGNORECASE","name":"SRE_FLAG_IGNORECASE","type":"builtins.int"}},"SRE_FLAG_LOCALE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.SRE_FLAG_LOCALE","name":"SRE_FLAG_LOCALE","type":"builtins.int"}},"SRE_FLAG_MULTILINE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.SRE_FLAG_MULTILINE","name":"SRE_FLAG_MULTILINE","type":"builtins.int"}},"SRE_FLAG_TEMPLATE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.SRE_FLAG_TEMPLATE","name":"SRE_FLAG_TEMPLATE","type":"builtins.int"}},"SRE_FLAG_UNICODE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.SRE_FLAG_UNICODE","name":"SRE_FLAG_UNICODE","type":"builtins.int"}},"SRE_FLAG_VERBOSE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.SRE_FLAG_VERBOSE","name":"SRE_FLAG_VERBOSE","type":"builtins.int"}},"SRE_INFO_CHARSET":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.SRE_INFO_CHARSET","name":"SRE_INFO_CHARSET","type":"builtins.int"}},"SRE_INFO_LITERAL":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.SRE_INFO_LITERAL","name":"SRE_INFO_LITERAL","type":"builtins.int"}},"SRE_INFO_PREFIX":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.SRE_INFO_PREFIX","name":"SRE_INFO_PREFIX","type":"builtins.int"}},"SUBPATTERN":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.SUBPATTERN","name":"SUBPATTERN","type":"sre_constants._NamedIntConstant"}},"SUCCESS":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.SUCCESS","name":"SUCCESS","type":"sre_constants._NamedIntConstant"}},"Self":{".class":"SymbolTableNode","cross_ref":"typing.Self","kind":"Gdef","module_hidden":true,"module_public":false},"_NamedIntConstant":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["builtins.int"],"dataclass_transform_spec":null,"declared_metaclass":null,"defn":{".class":"ClassDef","fullname":"sre_constants._NamedIntConstant","name":"_NamedIntConstant","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":[],"fullname":"sre_constants._NamedIntConstant","has_param_spec_type":false,"metaclass_type":null,"metadata":{},"module_name":"sre_constants","mro":["sre_constants._NamedIntConstant","builtins.int","builtins.object"],"names":{".class":"SymbolTable","__new__":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0,0],"arg_names":["cls","value","name"],"dataclass_transform_spec":null,"deprecated":null,"flags":["is_static"],"fullname":"sre_constants._NamedIntConstant.__new__","name":"__new__","type":{".class":"CallableType","arg_kinds":[0,0,0],"arg_names":["cls","value","name"],"arg_types":[{".class":"TypeType","item":{".class":"TypeVarType","default":{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":4},"fullname":"sre_constants._NamedIntConstant.Self","id":0,"name":"Self","namespace":"","upper_bound":"sre_constants._NamedIntConstant","values":[],"variance":0}},"builtins.int","builtins.str"],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"__new__ of _NamedIntConstant","ret_type":{".class":"TypeVarType","default":{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":4},"fullname":"sre_constants._NamedIntConstant.Self","id":0,"name":"Self","namespace":"","upper_bound":"sre_constants._NamedIntConstant","values":[],"variance":0},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[{".class":"TypeVarType","default":{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":4},"fullname":"sre_constants._NamedIntConstant.Self","id":0,"name":"Self","namespace":"","upper_bound":"sre_constants._NamedIntConstant","values":[],"variance":0}]}}},"name":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"Var","flags":["is_initialized_in_class","is_ready"],"fullname":"sre_constants._NamedIntConstant.name","name":"name","type":{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":2}}}},"self_type":{".class":"TypeVarType","default":{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":4},"fullname":"sre_constants._NamedIntConstant.Self","id":0,"name":"Self","namespace":"","upper_bound":"sre_constants._NamedIntConstant","values":[],"variance":0},"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"__annotations__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.__annotations__","name":"__annotations__","type":{".class":"Instance","args":["builtins.str",{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":6}],"extra_attrs":null,"type_ref":"builtins.dict"}}},"__doc__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.__doc__","name":"__doc__","type":"builtins.str"}},"__file__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.__file__","name":"__file__","type":"builtins.str"}},"__name__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.__name__","name":"__name__","type":"builtins.str"}},"__package__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.__package__","name":"__package__","type":"builtins.str"}},"__spec__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.__spec__","name":"__spec__","type":"_frozen_importlib.ModuleSpec"}},"error":{".class":"SymbolTableNode","cross_ref":"re.error","kind":"Gdef"},"sys":{".class":"SymbolTableNode","cross_ref":"sys","kind":"Gdef","module_hidden":true,"module_public":false}},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/sre_constants.pyi"}
+```
+
+.mypy_cache/3.12/sre_constants.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[1,2,3,4,1,1,1,1,1],"dep_prios":[10,5,5,5,5,30,30,30,30],"dependencies":["sys","re","typing","typing_extensions","builtins","_frozen_importlib","_typeshed","abc","types"],"hash":"102fc8e029497208490afa8b349e1096ae3d13f0","id":"sre_constants","ignore_all":true,"interface_hash":"a85862109251d51e0df99641eb952760d89521f8","mtime":1762029371,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/sre_constants.pyi","plugin_data":null,"size":3824,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/sre_parse.data.json
+```
+[TRUNCATED]
+```
+
+.mypy_cache/3.12/sre_parse.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[2,1,3,4,6,7,1,1,1,1,1],"dep_prios":[5,10,5,5,5,5,5,30,30,30,30],"dependencies":["collections.abc","sys","re","sre_constants","typing","typing_extensions","builtins","_frozen_importlib","_typeshed","abc","types"],"hash":"7e80d862e8bb8db9c0d0cde7d14c059a4dadf512","id":"sre_parse","ignore_all":true,"interface_hash":"24903b0328fdfde56a4ebd33d55ebd340e774eb9","mtime":1762029371,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/sre_parse.pyi","plugin_data":null,"size":3790,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/subprocess.data.json
+```
+[TRUNCATED]
+```
+
+.mypy_cache/3.12/subprocess.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[3,1,2,4,5,6,1,1,1,1,1],"dep_prios":[5,10,5,5,5,5,5,30,30,30,30],"dependencies":["collections.abc","sys","_typeshed","types","typing","typing_extensions","builtins","_collections_abc","_frozen_importlib","abc","os"],"hash":"356127252f67b15f1bff9c9620ce387765741335","id":"subprocess","ignore_all":true,"interface_hash":"4b088b9c4c7b54b4e22dca1854303a8e8d361419","mtime":1762029371,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/subprocess.pyi","plugin_data":null,"size":91357,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/test.data.json
+```
+{".class":"MypyFile","_fullname":"test","future_import_flags":[],"is_partial_stub_package":false,"is_stub":false,"names":{".class":"SymbolTable","__annotations__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"test.__annotations__","name":"__annotations__","type":{".class":"Instance","args":["builtins.str",{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":6}],"extra_attrs":null,"type_ref":"builtins.dict"}}},"__doc__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"test.__doc__","name":"__doc__","type":"builtins.str"}},"__file__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"test.__file__","name":"__file__","type":"builtins.str"}},"__name__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"test.__name__","name":"__name__","type":"builtins.str"}},"__package__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"test.__package__","name":"__package__","type":"builtins.str"}},"__spec__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"test.__spec__","name":"__spec__","type":"_frozen_importlib.ModuleSpec"}}},"path":"/home/user/projects/temp/oraclepack/docs/test.py"}
+```
+
+.mypy_cache/3.12/test.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[1,1,1,1],"dep_prios":[5,30,30,30],"dependencies":["builtins","_frozen_importlib","abc","typing"],"hash":"da39a3ee5e6b4b0d3255bfef95601890afd80709","id":"test","ignore_all":false,"interface_hash":"d7a601d9828617323d61d3f9ed3e690fe2152856","mtime":1767891124,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/projects/temp/oraclepack/docs/test.py","plugin_data":null,"size":0,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/types.data.json
+```
+[TRUNCATED]
+```
+
+.mypy_cache/3.12/types.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[3,4,17,1,2,20,21,663,1,1],"dep_prios":[5,5,5,10,5,5,5,5,30,30],"dependencies":["_typeshed.importlib","collections.abc","importlib.machinery","sys","_typeshed","typing","typing_extensions","builtins","_frozen_importlib","abc"],"hash":"ee4ded2c420ddf7b9278d6721987e28f3bd5c89d","id":"types","ignore_all":true,"interface_hash":"da681320cbef8ef523aaaf72c94025b17f6521e9","mtime":1762029371,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/types.pyi","plugin_data":null,"size":22884,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/typing.data.json
+```
+[TRUNCATED]
+```
+
+.mypy_cache/3.12/typing.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[5,6,7,8,9,10,11,12,499,1,1],"dep_prios":[10,10,5,5,5,5,5,5,5,5,30],"dependencies":["collections","sys","typing_extensions","_collections_abc","_typeshed","abc","re","types","contextlib","builtins","_frozen_importlib"],"hash":"1850e3dd2e43ae76f25c8c4ac58581fb9f659a15","id":"typing","ignore_all":true,"interface_hash":"51f7ddd6d73e871d8cd779dad688f9deac6d02f5","mtime":1762029371,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/typing.pyi","plugin_data":null,"size":37819,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/typing_extensions.data.json
+```
+[TRUNCATED]
+```
+
+.mypy_cache/3.12/typing_extensions.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[376,3,4,5,6,7,8,69,1,1],"dep_prios":[5,10,10,5,5,5,5,5,5,30],"dependencies":["collections.abc","abc","sys","typing","_collections_abc","_typeshed","contextlib","types","builtins","_frozen_importlib"],"hash":"8b004565f89c760413260f9c21b7d4add31f1bb7","id":"typing_extensions","ignore_all":true,"interface_hash":"313ba102aea969904af9ee75975fe896e1526675","mtime":1762029371,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/typing_extensions.pyi","plugin_data":null,"size":17919,"suppressed":[],"version_id":"1.15.0"}
 ```
 
 .tickets/PRD-TUI/Oraclepack TUI Integration.md
@@ -9541,158 +8367,7 @@ async def oraclepack_taskify_validate_stage2(params: TaskifyValidateStage2Input)
         lines += [f"  - {m}" for m in report["missing"]]
     if report["ambiguous"]:
         lines.append("- **ambiguous**:")
-        for k, v in report["ambiguous"].items():
-            lines.append(f"  - {k}: {v}")
-    if report["selected"]:
-        lines.append("- **selected**:")
-        for k in sorted(report["selected"].keys()):
-            lines.append(f"  - {k}: {report['selected'][k]}")
-    return "\n".join(lines)
-
-
-@mcp.tool(
-    name="oraclepack_taskify_validate_action_pack",
-    annotations={
-        "title": "Validate Stage-3 Action Pack structure",
-        "readOnlyHint": True,
-        "destructiveHint": False,
-        "idempotentHint": True,
-        "openWorldHint": False,
-    },
-)
-async def oraclepack_taskify_validate_action_pack(params: TaskifyValidateActionPackInput) -> Any:
-    pack_path = resolve_under_roots(Path(params.pack_path), cfg.allowed_roots)
-    if not pack_path.is_file():
-        raise FileNotFoundError(f"pack not found: {pack_path}")
-
-    report = validate_action_pack(pack_path)
-    if params.response_format == ResponseFormat.json:
-        return report
-
-    lines = [f"# Action Pack validation: `{pack_path}`", ""]
-    lines.append(f"- **ok**: {report['ok']}")
-    lines.append(f"- **step_count**: {report['step_count']}")
-    if report["errors"]:
-        lines.append("- **errors**:")
-        lines += [f"  - {e}" for e in report["errors"]]
-    return "\n".join(lines)
-
-
-@mcp.tool(
-    name="oraclepack_taskify_artifacts_summary",
-    annotations={
-        "title": "Summarize expected Stage-3 artifacts",
-        "readOnlyHint": True,
-        "destructiveHint": False,
-        "idempotentHint": True,
-        "openWorldHint": False,
-    },
-)
-async def oraclepack_taskify_artifacts_summary(params: TaskifyArtifactsSummaryInput) -> Any:
-    out_dir = resolve_under_roots(Path(params.out_dir), cfg.allowed_roots)
-
-    # Known artifacts from the skill
-    expected = {
-        "actions_json": out_dir / "_actions.json",
-        "actions_md": out_dir / "_actions.md",
-        "tm_complexity": out_dir / "tm-complexity.json",
-        "prd": Path(cfg.workdir) / ".taskmaster" / "docs" / "oracle-actions-prd.md",
-        "pipelines_doc": Path(cfg.workdir) / "docs" / "oracle-actions-pipelines.md",
-        "taskmaster_tasks_local": Path(cfg.workdir) / "tasks.json",
-        "taskmaster_tasks_dot": Path(cfg.workdir) / ".taskmaster" / "tasks.json",
-    }
-
-    found: dict[str, str] = {}
-    missing: dict[str, str] = {}
-    for k, p in expected.items():
-        # Some paths may not be under allowed_roots; report as "not allowed" rather than crashing.
-        try:
-            p2 = resolve_under_roots(p, cfg.allowed_roots)
-        except PathNotAllowedError:
-            missing[k] = f"not allowed by ORACLEPACK_ALLOWED_ROOTS: {p}"
-            continue
-
-        if p2.exists():
-            found[k] = str(p2)
-        else:
-            missing[k] = str(p2)
-
-    payload = {"out_dir": str(out_dir), "found": found, "missing": missing}
-
-    if params.response_format == ResponseFormat.json:
-        return payload
-
-    lines = [f"# Stage-3 artifacts summary: `{out_dir}`", ""]
-    if found:
-        lines.append("## found")
-        for k, v in found.items():
-            lines.append(f"- **{k}**: `{v}`")
-    if missing:
-        lines.append("\n## missing")
-        for k, v in missing.items():
-            lines.append(f"- **{k}**: `{v}`")
-    return "\n".join(lines)
-
-
-@mcp.tool(
-    name="oraclepack_taskify_run_action_pack",
-    annotations={
-        "title": "Run a Stage-3 Action Pack via oraclepack",
-        "readOnlyHint": False,
-        "destructiveHint": True,
-        "idempotentHint": False,
-        "openWorldHint": True,
-    },
-)
-async def oraclepack_taskify_run_action_pack(params: TaskifyRunActionPackInput) -> Any:
-    _ensure_exec_enabled()
-
-    pack_path = resolve_under_roots(Path(params.pack_path), cfg.allowed_roots)
-
-    # Validate pack structure before executing
-    v = validate_action_pack(pack_path)
-    if not v["ok"]:
-        raise ValueError(f"Refusing to execute invalid Action Pack: {json.dumps(v, indent=2)}")
-
-    argv: list[str] = [cfg.oraclepack_bin]
-    argv += ["--no-tui"]
-    if params.out_dir:
-        out_dir = resolve_under_roots(Path(params.out_dir), cfg.allowed_roots)
-        argv += ["--out-dir", str(out_dir)]
-
-    argv += ["run", "--yes", "--run-all", "--stop-on-fail", "true", str(pack_path)]
-
-    result = await run_cmd(argv, cwd=cfg.workdir, timeout_s=params.timeout_s, env={}, character_limit=cfg.character_limit)
-    return _format_cmd_result(result, params.response_format)
-```
-
-```python
-# path: oraclepack-mcp-server/oraclepack_mcp_server/__main__.py
-from __future__ import annotations
-
-import argparse
-
-from .server import mcp
-
-
-def main() -> None:
-    parser = argparse.ArgumentParser(description="oraclepack MCP server")
-    parser.add_argument(
-        "--transport",
-        default="stdio",
-        choices=["stdio", "streamable-http"],
-        help="MCP transport (stdio or streamable-http)",
-    )
-    args = parser.parse_args()
-
-    # The official Python SDK supports stdio and streamable-http transports.
-    mcp.run(transport=args.transport)
-
-
-if __name__ == "__main__":
-    main()
-```
-
+[TRUNCATED]
 ```
 
 .tickets/other/Oraclepack Pipeline Improvements.md
@@ -10838,754 +9513,6 @@ Labels (optional):
 * go
 
 ---
-```
-
-docs/oracle-questions-2026-01-07/01-contracts-interfaces-surface.md
-```
-1) Direct answer (1–6 bullets, evidence-cited)
-
-Primary public interface #1: CLI root command oraclepack (Cobra)
-
-Inputs: persistent flags
-
---no-tui (bool, default false) to disable TUI
-
---oracle-bin (string, default "oracle") path to oracle binary
-
---out-dir / -o (string, default "") output directory for step execution
-
-Outputs: process exit code is mapped via errors.ExitCode(err) when rootCmd.Execute() fails.
-
-Defined in: internal/cli/root.go (root command + persistent flags + Execute error handling).
-
-Primary public interface #2: CLI command validate [pack.md]
-
-Inputs: one positional arg pack.md (cobra.ExactArgs(1)), passed as app.Config{PackPath: args[0]}
-
-Outputs: on success prints Pack is valid.; on failure returns an error from a.LoadPack() (then surfaced by root Execute path).
-
-Defined in: internal/cli/cmds.go (validate command + wiring into root).
-
-Primary public interface #3: CLI command list [pack.md]
-
-Inputs: one positional arg pack.md (cobra.ExactArgs(1)), passed as app.Config{PackPath: args[0]}
-
-Outputs: prints one line per step: "<step.ID>: <step.OriginalLine>", iterating a.Pack.Steps.
-
-Defined in: internal/cli/cmds.go (list command + wiring into root).
-
-Primary public interface #4: “oracle-pack” Markdown contract (pack file)
-
-Inputs (implied by CLI): a Markdown file path (pack.md) that can be loaded by a.LoadPack() from app.New(cfg) where cfg.PackPath is set.
-
-Outputs (observable via list): the parsed pack must produce a.Pack.Steps, and each step must at least have fields ID and OriginalLine (since they’re printed).
-
-Where defined in code: only the usage is shown in internal/cli/cmds.go; the actual contract/schema + parser are in the internal/app package (not included in the provided files).
-
-2) Risks/unknowns (bullets)
-
-Additional CLI commands/flags may exist in other internal/cli/*.go files; only validate and list are visible here.
-
-The actual oracle-pack Markdown schema (required headings, step syntax, validation rules, parsing behavior, versioning) is not visible; we only know LoadPack() yields Pack.Steps[] with ID and OriginalLine.
-
-Exit-code mapping and error taxonomy depend on internal/errors (only referenced, not shown).
-
---oracle-bin / --out-dir are declared at root-level but not used in the shown commands; actual execution interface likely exists in other commands not included.
-
-3) Next smallest concrete experiment (exactly one action)
-
-Run a repo-wide search for the contract types and parser entrypoints: rg -n "type Pack|type Step|LoadPack\\(|PackPath|OriginalLine" internal/ to locate the canonical oracle-pack Markdown schema definitions.
-
-4) If evidence is insufficient, missing file/path pattern(s) to attach next
-
-internal/app/*.go (especially files defining Config, New, LoadPack, and any Pack / Step structs)
-
-internal/errors/*.go (to confirm public error*
-```
-
-docs/oracle-questions-2026-01-07/02-contracts-interfaces-integration.md
-```
-1) Direct answer (top integration points, minimal defining files/locations)
-
-Shell execution boundary (runs arbitrary scripts via OS process execution)
-
-Integration: os/exec launches a shell with -lc (login shell semantics), sets working dir, env, and streams stdout/stderr. This is the core “external system” boundary for running everything.
-
-Contract/config: RunnerOptions{Shell, WorkDir, Env, OracleFlags, Overrides, ChatGPTURL} → Runner (constructed in NewRunner).
-
-Defined in: internal/exec/runner.go (NewRunner, RunPrelude, RunStep, run). Evidence: exec.CommandContext(ctx, r.Shell, "-lc", script), cmd.Dir = r.WorkDir, cmd.Env = r.Env, cmd.Stdout/Stderr = logWriter.
-
-Oracle CLI invocation boundary (flag injection + per-step overrides + optional dry-run validation)
-
-Integration: Oracle commands are expected to appear inside step code; runner injects flags into those commands before execution, and validation can run oracle --dry-run summary for overridden steps.
-
-Contract/config: baseline Runner.OracleFlags + optional overrides.RuntimeOverrides (scoped by step.ID) + optional ChatGPTURL mapped into flags (ApplyChatGPTURL); validation is scoped by over.ApplyToSteps[step.ID].
-
-Defined in:
-
-internal/exec/runner.go (RunStep: ApplyChatGPTURL, Overrides.EffectiveFlags, InjectFlags).
-
-internal/exec/oracle_validate.go (ValidateOverrides: ExtractOracleInvocations, --dry-run summary, execDryRun).
-
-Note: The actual parsing/injection logic lives elsewhere (functions referenced but not shown): ExtractOracleInvocations, InjectFlags, ApplyChatGPTURL.
-
-Environment-variable boundary (inherit + append + PATH propagation during validation)
-
-Integration: Environment is inherited from the parent process and extended with caller-provided entries; validation explicitly re-exports PATH into the command string to ensure the shell sees it.
-
-Contract/config: RunnerOptions.Env merged with os.Environ(); findEnvValue(env, "PATH") drives PATH export behavior in dry-run validation.
-
-Defined in:
-
-internal/exec/runner.go (NewRunner: Env: append(os.Environ(), opts.Env...)).
-
-internal/exec/oracle_validate.go (env := append(os.Environ(), opts.Env...), execDryRun PATH export + quoting via shellQuote).
-
-Filesystem outputs boundary (working directory as the implicit artifact root)
-
-Integration: All script execution happens with cmd.Dir = r.WorkDir, so any relative file reads/writes done by steps land under that directory (and any output directories are created by the scripts themselves).
-
-Contract/config: RunnerOptions.WorkDir / Runner.WorkDir.
-
-Defined in: internal/exec/runner.go (run: cmd.Dir = r.WorkDir), plus va
-```
-
-docs/oracle-questions-2026-01-07/03-invariants-domain.md
-```
-1) Direct answer (1–8 bullets, evidence-cited)
-
-Pack must contain a fenced ```bash ... ``` code block (the pack is parsed only from that block).
-Enforced: Parse() searches bashFenceRegex and errors if none found (no bash code block found).
-Not enforced / edge: if multiple bash blocks exist, only the first match is used (FindSubmatch), others are ignored.
-Evidence: bashFenceRegex = ... "```bash\n(.*?)\n```" and if match == nil ... return ... ErrInvalidPack in internal/pack/parser.go.
-
-Steps are defined only by Markdown-style headers inside the bash block, and must start with # + a 2-digit step id plus an accepted separator.
-Enforced (implicitly by parsing): step boundaries are recognized only when stepHeaderRegex matches a line; everything else is either prelude (before first step) or step body.
-Invariants implied: step IDs must be exactly two digits (\d{2}) and separator must be one of ), —, or - (with whitespace variants).
-Evidence: stepHeaderRegex = regexp.MustCompile(^#\s*(\d{2})(?:\)|[\s]+[—-])) and the headerMatch := ...; if len(headerMatch) > 1 { ... } logic in internal/pack/parser.go.
-
-All lines before the first step header become “Prelude”; all lines after step parsing begins are assigned to the current step’s Code.
-Enforced: inSteps toggles true at first header; before that lines go to preludeLines; after that lines append to currentStep.Code.
-Should be considered: any configuration intended for metadata extraction must appear in the prelude, or it won’t be discovered.
-Evidence: var preludeLines []string; var inSteps bool + if inSteps { currentStep.Code += ... } else { preludeLines = append(...) } and pack.Prelude.Code = strings.Join(preludeLines, "\n") in internal/pack/parser.go.
-
-At least one step is required for a valid pack.
-Enforced: Validate() rejects packs with len(p.Steps) == 0. Note: Parse() itself does not call Validate()—caller must.
-Evidence: if len(p.Steps) == 0 { return ... ErrInvalidPack } in internal/pack/parser.go.
-
-Step numbers must be positive, unique, and sequential starting at 1 in the encountered order (i.e., the file order is the order).
-Enforced: Validate() checks step.Number > 0, no duplicates (seen map), and step.Number == i+1. This implies the first step must be 01 (because 00 parses to 0 and fails).
-Evidence: seen := make(map[int]bool) + duplicate check + if step.Number != i+1 { ... sequential starting from 1 ... } in internal/pack/parser.go.
-
-Metadata invariants: out_dir=... and --write-output are derived only from the Prelude, with strict-ish patterns.
-Enforced (extraction behavior): DeriveMetadata() looks only at p.Prelude.Code; out_dir must match ^out_dir=... with no spaces around =, and --write-output is a simple substring/regex presence test.
-Not enforced: packs can place these in steps and still “work” at runtime, but metadata will be wrong; multiple out_dir= lines are not resolved explicitly (first match_
-```
-
-docs/oracle-questions-2026-01-07/04-invariants-validation.md
-```
-1) Direct answer (validation boundaries + likely gaps)
-
-Pack parse/structural validation happens in App.LoadPack(): it reads the pack file, calls pack.Parse(data), then p.Validate() and fails fast on any error (internal/app/app.go:LoadPack).
-
-Boundary: “bytes on disk” → “in-memory Pack that is considered valid enough to run.”
-
-Parse-time validation is minimal and mostly syntactic: pack.Parse() rejects packs without a fenced ```bash block (bashFenceRegex) and only recognizes steps whose headers match stepHeaderRegex (internal/pack/parser.go:Parse).
-
-Gap: a Markdown pack can be “accepted” but silently miss intended steps if headers don’t match the regex (e.g., # 1 - ... vs # 01 - ...), leading to Validate() failing later with “at least one step is required” or producing an unexpected step set.
-
-Pack semantic validation is narrow (step numbering only): Pack.Validate() enforces: at least one step, positive numbers, no duplicates, and sequential numbering starting from 1 in parse order (internal/pack/parser.go:Validate).
-
-Gap: it does not validate step code presence/emptiness, command safety, required prelude directives, or cross-step dependencies—so many “bad” packs pass validation and fail at runtime.
-
-Metadata extraction happens without validation: after parsing, DeriveMetadata() extracts out_dir=... and --write-output from the prelude using regexes (internal/pack/parser.go:DeriveMetadata).
-
-Gap: extracted OutDir is not validated for emptiness, path traversal, or consistency with CLI overrides (it’s just a string captured by regex).
-
-Config resolution validation is effectively “filesystem-only”: App.Prepare() resolves outDir by precedence CLI cfg.OutDir > pack p.OutDir > ".", then only validates by attempting os.MkdirAll(outDir, 0755) (internal/app/app.go:Prepare).
-
-Gap: there’s no validation of other config fields here (PackPath, StatePath, ROIMode values, ROIThreshold range, etc.), so invalid config can survive until deeper runtime code.
-
-State validation boundary is weak and can mask corruption: App.LoadState() on Resume tries state.LoadState(...); if it errors, it silently falls back to a fresh RunState{SchemaVersion:1, StepStatuses: map[...]} (internal/app/app.go:LoadState).
-
-Most likely inconsistent-state gap: partial outputs on disk + corrupted/old state file ⇒ the system “resumes” from an empty state and may rerun steps unexpectedly or skip intended recovery paths.
-
-Runtime checks shown are limited to environment shaping: Prepare() appends out_dir=<resolved> into Runner.Env but does not persist the resolved outDir back into Config/State, and does not de-dup/override existing out_dir entries (internal/app/app.go:Prepare).
-
-Gap: scripts may see multiple out_dir values depending on how Runner.Env is constructed elsewhere; plus “where outputs went” is not recorded in state, increasing resume/report inconsistency risk.
-
-Parser robustness gap that can cause silent truncation: pack.Parse() uses bufio.Scanner but does not call scanner.Err() after the scan loop, nor increase the scanner buffer (internal/pack/parser.go:Parse).
-
-Likely inconsistent-state failure mode: long lines in bash blocks can exceed Scanner’s token lim
-```
-
-docs/oracle-questions-2026-01-07/05-caching-state-layers.md
-```
-Direct answer (1–8 bullets, evidence-cited)
-
-Persisted run-state file (RunState JSON)
-
-What it is: A single JSON document representing an oracle-pack run: schema version, pack hash, start time, per-step status map, ROI settings, and warnings. (internal/state/types.go: RunState{SchemaVersion, PackHash, StartTime, StepStatuses, ROIThreshold, ROIMode, Warnings})
-
-Lifecycle (as implemented in this package): In-memory RunState is serialized to disk and later deserialized back into memory. (internal/state/persist.go: SaveStateAtomic, LoadState)
-
-Read/write points: Writes via SaveStateAtomic(path, state); reads via LoadState(path). (internal/state/persist.go)
-
-Per-step status tracking (StepStatus)
-
-What it is: A per-step record with state machine values pending|running|success|failed|skipped, plus exit code, timestamps, and error string. (internal/state/types.go: type Status, constants; StepStatus{Status, ExitCode, StartedAt, EndedAt, Error})
-
-Lifecycle (represented, not enforced here): A step typically transitions pending → running → (success|failed) or pending → skipped; timestamps support “running window” and duration computations. The code shown defines the model but not the transition logic. (internal/state/types.go)
-
-Run warnings (non-fatal notes)
-
-What it is: Structured warnings attached to run state, scoped and optionally tied to a specific step and line/token. (internal/state/types.go: Warning{Scope, StepID, Line, Token, Message}; RunState.Warnings)
-
-Lifecycle / read/write: Persisted as part of RunState JSON alongside statuses. (internal/state/types.go; internal/state/persist.go)
-
-Atomic persistence mechanism
-
-What it does: Writes path + ".tmp" then renames to path, removing the temp file on rename failure. (internal/state/persist.go: tempPath := path + ".tmp", os.WriteFile, os.Rename, os.Remove)
-
-Operational behavior: Output is pretty-printed JSON (json.MarshalIndent) which aids debugging but can be larger/slower than compact JSON. (internal/state/persist.go)
-
-State “identity” / cache key fields
-
-What it is: PackHash suggests the run state is intended to be tied to a specific pack content hash, likely to detect “pack changed vs. old state”. (internal/state/types.go: RunState.PackHash)
-
-Lifecycle: The code provided stores the value but does not validate it during load; any reconciliation logic must be elsewhere. (internal/state/types.go; internal/state/persist.go)
-
-Risks/unknowns (bullets)
-
-Unknown where state is created/updated. The snippets define the data model and persistence, but not when StepStatuses are initialized, advanced, or saved (e.g., after each step, only at end, on error). That logic is likely in the executor/runner layer, not shown.
-
-Missing “no state yet” behavior. LoadState returns an error when the state file does not exist ("state file not found"), which may force callers to treat “first run” as an error unless they special-case it. (internal/state/persist.go: os.IsNotExist(err))
-
-Map key ambiguity. StepStatuses map[string]StepStatus does not guarantee ordering; the key format (step ID? label?) and collision rules are unknown without the parser/runner code that populates it. (internal/state/types.go)
-
-Cross-platform atomicity. os.Rename(tempPath, path) may not overwrite an existing destination file on some p
-```
-
-docs/oracle-questions-2026-01-07/06-caching-state-consistency.md
-```
-1) Direct answer (top consistency risks + knobs)
-
-Silent state-write failures → persisted state can lag in-memory indefinitely. saveState() discards errors (_ = state.SaveStateAtomic(...)), so the run can proceed while the on-disk state remains stale. Evidence: internal/app/run.go: saveState().
-
-Non-transactional step transitions (RUNNING → SUCCESS/FAILED) can leave “stuck RUNNING” on disk. Each step does: set StatusRunning + saveState(), then later set EndedAt + final status + saveState(); any crash or write failure between these creates divergence (disk shows RUNNING; memory/report show final). Evidence: internal/app/run.go: RunPlain() loop setting StatusRunning then later StatusFailed/StatusSuccess.
-
-Warnings can be persisted out of sync with step status. recordWarnings() drains and appends warnings and immediately calls saveState(); it runs after RunStep but before the final status save, so the state file can contain warnings from a step while still showing that step as RUNNING if the later status save fails. Evidence: internal/app/run.go: recordWarnings() + call sites around RunStep.
-
-ROI-based skipping is not reflected in persisted state/report as “skipped”. ROI filter continues before writing any StepStatus; yet the state model has StatusSkipped available. This makes outputs inconsistent with console logs (“Skipping step…”) and loses auditability. Evidence: internal/app/run.go: ROIThreshold/ROIMode filter continues + internal/state/types.go: StatusSkipped exists.
-
-StartTime is not guaranteed to flush. StartTime is set in-memory (if IsZero() { StartTime = time.Now() }) but there’s no immediate saveState(); if there are zero steps (and no warnings) you can generate a report with the updated StartTime while the persisted state file never updates. Evidence: internal/app/run.go: StartTime set; finalize() can run without any prior save.
-
-Report write success is claimed even if the write fails. finalize() ignores json.MarshalIndent and os.WriteFile errors and prints “Report written to …” unconditionally, so report output can be missing/partial while stdout says it exists. Evidence: internal/app/run.go: finalize().
-
-Resume behavior depends on persisted success markers and can misbehave with stale state. Resume skips only when StepStatuses[step.ID].Status == success; if state saves fail, already-completed steps can rerun (or previously-successful steps might not be recognized). Evidence: internal/app/run.go: resume check.
-
-State behavior knobs/configs (observable here):
-
-Config.StatePath: enables/disables persisted run state (saveState() is a no-op if empty). Evidence: internal/app/run.go: saveState().
-
-Config.ReportPath: enables/disables report writing. Evidence: internal/app/run.go: finalize().
-
-Config.StopOnFail: controls early termination path (still calls finalize() on failure). Evidence: internal/app/run.go: StopOnFail branch.
-
-Config.ROIThreshold + Config.ROIMode: controls skip filter semantics (“under” is strict <; otherwise >=). Evidence: internal/app/run.go: ROI filter.
-
-2) Risks/unknowns
-
-Atomicity guarantees are unknown. state.SaveStateAtomic is assumed to be atomic, but wi
-```
-
-docs/oracle-questions-2026-01-07/07-background-jobs-discovery.md
-```
-1) Direct answer (1–8 bullets, evidence-cited)
-
-No explicit background jobs/workers/scheduled tasks are defined in internal/app/run.go. The execution model is a single synchronous control flow in (*App).RunPlain: optional prelude, then a for-loop over steps, each executed via a.Runner.RunStep(...), followed by state updates and writes. Evidence: RunPlain(...) calls RunPrelude(...) and RunStep(...) inline (no goroutines, tickers, or async constructs shown).
-
-Triggers: Only direct, immediate calls from RunPlain (prelude runs if a.Pack.Prelude.Code != ""; steps run when they pass ROI/resume filters). Evidence: prelude conditional and for _, step := range a.Pack.Steps { ... err := a.Runner.RunStep(...) ... }.
-
-Payloads: The “work” payload is the current step (&step) and out writer passed into Runner.RunStep, plus the prelude (&a.Pack.Prelude). Evidence: a.Runner.RunPrelude(ctx, &a.Pack.Prelude, out) and a.Runner.RunStep(ctx, &step, out).
-
-Retries: No retry loop/backoff exists here. The only “try again” behavior is manual restart/resume: successful steps are skipped on subsequent runs. Evidence: resume check if s, ok := a.State.StepStatuses[step.ID]; ok && s.Status == state.StatusSuccess { ... continue }.
-
-Idempotency: “At-least-once with resume-skip on success” at the step level. Steps are marked running, persisted, then marked success/failed and persisted; rerun skips StatusSuccess steps. Evidence: status set to StatusRunning + a.saveState(), then on success sets StatusSuccess + a.saveState(), and skip logic above.
-
-Scheduled behavior: None (no timers/cron). The only time usage is stamping StartTime, StartedAt, EndedAt via time.Now(). Evidence: a.State.StartTime = time.Now(), StartedAt: time.Now(), status.EndedAt = time.Now().
-
-2) Risks/unknowns
-
-a.Runner.RunPrelude, a.Runner.RunStep, and a.Runner.DrainWarnings() could hide concurrency (goroutines, worker pools, background process supervision) inside internal/exec or other packages; this file alone cannot confirm that.
-
-state.SaveStateAtomic(...) could include locking/FS semantics or side effects relevant to “background-like” behavior (e.g., fsync patterns), though it is still invoked synchronously here.
-
-CLI/TUI entrypoints may spawn background refreshers (status polling, UI redraw loops) outside run.go.
-
-3) Next smallest concrete experiment (exactly one action)
-
-Run a repo-wide search for background/scheduling primitives:
-rg -n --hidden "time\.NewTicker|time\.AfterFunc|cron|scheduler|worker|goroutine|go\s+func|errgroup|WaitGroup|queue|async" internal/
-
-4) If evidence is insufficient, missing file/path pattern(s) to attach next
-
-internal/exec/**/*.go (especially internal/exec/runner.go and any process-management helpers)
-
-internal/cli/**/*.go (entrypoints/TUI loops can introduce background refresh/polling)
-
-internal/state/**/*.go (e.g., SaveStateAtomic implementation)
-```
-
-docs/oracle-questions-2026-01-07/08-background-jobs-reliability.md
-```
-1) Direct answer (1–8 bullets, evidence-cited)
-
-No dedicated background job system is evident in the Go code shown (no queue/worker process, scheduler, or job runner). The primary execution path appears to be a synchronous CLI (Cobra) that runs work inline rather than enqueuing background tasks. Evidence: CLI entry is Cobra-based with flags (internal/cli/root.go), and execution uses context + os/exec to run an external command (internal/exec/runner.go).
-
-Because there’s no background job substrate, classic reliability controls (DLQ/dead-lettering, queue backoff policies, concurrency limits, reprocessing UI) are not implemented as first-class “background work” features—failures would surface as immediate CLI errors rather than being quarantined/retried by a worker. Evidence: inline execution model suggested by os/exec runner (internal/exec/runner.go) and lack of worker constructs in the CLI surface (internal/cli/root.go).
-
-What does exist is “run reliability” via status/state tracking, which is the closest analogue to reprocessing controls: the system models step/run outcomes with explicit statuses (pending/running/success/failed/skipped). Evidence: Status* constants in internal/state/types.go.
-
-State/report paths are configurable at the app level, which suggests persistence of outcomes to disk (useful for restart/manual re-run), but this is not the same as automated retries/backoff. Evidence: app-wide config includes StatePath and Report... fields (internal/app/app.go), and run orchestration imports internal/state + internal/report (internal/app/run.go snippet).
-
-Concurrency limiting is implicitly “1 run = 1 process” (single CLI invocation) unless internal/app/run.go spawns goroutines (not shown). No explicit worker pool/limit controls are visible in the provided excerpts. Evidence: only synchronous CLI + runner excerpts provided (internal/cli/root.go, internal/exec/runner.go, partial internal/app/run.go).
-
-2) Risks/unknowns (bullets)
-
-internal/app/run.go is truncated; it could still spawn goroutines, use tickers, or implement internal retry/backoff that isn’t visible in the snippet.
-
-The persistence semantics (when state is flushed, atomicity, resume behavior) can’t be confirmed without the full implementations of internal/state/* and internal/report/*.
-
-There may be background work outside the shown files (e.g., separate cmd/* binaries, build tags, or a different package) that wasn’t included in the excerpts.
-
-3) Next smallest concrete experiment (exactly one action)
-
-Run a repo-wide search for background-work primitives and libraries, e.g. rg -n "(time\\.NewTicker|time\\.Tick|cron|scheduler|queue|worker|goroutine|go\\s+func|asynq|machinery|temporal|celery|bull)" .
-
-4) If evidence is insufficient, exact missing file/path pattern(s) to attach next
-
-internal/app/run.go (full file)
-
-internal/state/*.go
-
-internal/report/*.go
-
-cmd/** and internal/cli/*.go (full set, not snippets)
-
-Any directories named or resembling jobs/, worker/, background/, scheduler/, queue/, cron/ (if present)
-```
-
-docs/oracle-questions-2026-01-07/09-observability-signals.md
-```
-1) Direct answer (observability + correlation identifiers)
-
-Primary structured observability output is the run “report”: internal/report/GenerateReport(s *state.RunState, packName string) *ReportV1 builds a ReportV1 containing PackInfo{Name, Hash}, GeneratedAt, per-step results (Steps: []StepReport), and a Summary with counts + total duration. (Evidence: internal/report/generate.go, GenerateReport populating PackInfo, Steps, Summary.)
-
-Per-step signals captured (and thus observable via the report) include: StepReport.ID (step identifier), Status, ExitCode, Duration/DurationMs, and Error. These are derived from RunState.StepStatuses map[string]StepStatus and each StepStatus’s timestamps/exit code/error. (Evidence: internal/report/generate.go builds StepReport from the for id, status := range s.StepStatuses loop; internal/state/types.go defines RunState.StepStatuses and StepStatus fields.)
-
-Warnings are first-class, structured observability signals: RunState.Warnings []Warning are copied into report.Warnings with fields {Scope, StepID, Line, Token, Message}. (Evidence: internal/state/types.go defines Warning; internal/report/generate.go copies s.Warnings into report.Warnings.)
-
-Primary correlation identifiers across components (based on what’s present in state/report):
-
-pack_hash: RunState.PackHash and ReportV1.PackInfo.Hash (ties a run to a specific pack content). (Evidence: internal/state/types.go PackHash; internal/report/generate.go assigns Hash: s.PackHash.)
-
-step_id: the map key in RunState.StepStatuses and StepReport.ID; also optionally present on warnings (Warning.StepID). This is the main join key between step execution, step status, and warnings. (Evidence: internal/state/types.go StepStatuses map[string]StepStatus, Warning.StepID; internal/report/generate.go uses loop variable id → StepReport.ID.)
-
-start_time / generated_at: RunState.StartTime and ReportV1.GeneratedAt provide coarse run-level temporal correlation (e.g., match logs/events by time window). (Evidence: internal/state/types.go StartTime; internal/report/generate.go sets GeneratedAt: time.Now().)
-
-There is no explicit “run_id”/trace id in the provided state/report schema; correlation appears to rely on (pack_hash, start_time) + step IDs, rather than a stable UUID. (Evidence: internal/state/types.go RunState fields shown do not include a run identifier other than PackHash/StartTime.)
-
-Log lines: no logging primitives (log.*, fmt.Printf, etc.) are shown in the provided generate.go or state/types.go, so log-based observability and log correlation keys cannot be confirmed from these files alone. (Evidence: the provided snippets contain only struct composition / time math.)
-
-2) Risks / unknowns
-
-Run correlation fragility: without a dedicated run_id, correlating across components (state file writes, executor output, CLI output, report artifacts) will be brittle when multiple runs share the same pack hash or occur close in time.
-
-Non-deterministic step ordering in reports: iterating for id, status := range s.StepStatuses over a Go map yields randomized order, which can create noisy diffs and make “compare reports across runs” harder.
-
-Missing visibility into logging: cannot verify
-```
-
-docs/oracle-questions-2026-01-07/10-observability-gaps.md
-```
-1) Direct answer (1–8 bullets, evidence-cited)
-
-No correlation IDs in execution logs, so step output cannot be tied back to a step/run reliably. run() wires cmd.Stdout/cmd.Stderr directly to logWriter with no prefix/header/trailer, and it receives no stepID/runID to stamp lines (run(ctx, script, logWriter) only gets the script + writer). Evidence: RunPrelude/RunStep call r.run(ctx, script, logWriter); run() sets cmd.Stdout = logWriter and cmd.Stderr = logWriter and emits no logs of its own. (internal/exec/runner.go: RunPrelude, RunStep, run)
-
-Key decision points are silent (missing “what config did we actually use?” logs). Shell defaulting (/bin/bash), override application, ChatGPTURL flag application, and flag injection happen without any structured record, making misconfig/debugging difficult. Evidence: NewRunner defaults Shell; RunStep conditionally calls Overrides.EffectiveFlags(...) and ApplyChatGPTURL(...), then InjectFlags(...), with no logging. (internal/exec/runner.go: NewRunner, RunStep)
-
-Errors lose high-value context (step, command, exit code, duration). On failure, run() returns fmt.Errorf("%w: %v", errors.ErrExecutionFailed, err) (or ctx.Err()), which preserves a category but omits step ID, elapsed time, and process exit code/signal—often the first things needed to diagnose. Evidence: run() error path and wrapping; error taxonomy only maps categories to exit codes. (internal/exec/runner.go: run; internal/errors/errors.go: ExitCode)
-
-Sanitizer warnings are emitted as human text only and are not emitted at “decision boundaries.” Warnings are printed as a single formatted line and accumulated in-memory, but there’s no summary count per step/run, no machine-parseable form, and no “this step was sanitized” header at step start/end. Evidence: recordWarnings prints fmt.Fprintf(... "⚠ oraclepack: sanitized label ...") and appends to r.warnings; DrainWarnings() returns them but nothing here enforces they’re logged/serialized elsewhere. (internal/exec/runner.go: recordWarnings, DrainWarnings)
-
-No run/step outcome metrics exist at the point where the outcome is known. The runner is the natural place to emit: step_success/step_failure counts, durations, and warning counts; currently it emits none. Evidence: run() measures no time and publishes no counters; it only runs the command and returns error/nil. (internal/exec/runner.go: run)
-
-Smallest, highest-leverage additions (minimal surface area):
-
-Add a tiny correlation context passed into run() (at least step_id, optionally run_id) and emit two boundary lines: step.start and step.end (include duration_ms, status, exit_code if available). This alone makes raw stdout/stderr interpretable. (Hook point: RunPrelude/RunStep just before/after r.run(...); data already present: s.ID in RunStep.) (internal/exec/runner.go: RunStep, run)
-
-On error, detect *exec.ExitError and include exit_code/`s_*
-```
-
-docs/oracle-questions-2026-01-07/11-permissions-model.md
-```
-Direct answer (1–8 bullets, evidence-cited)
-
-No first-class permission model is evident in the provided code: none of the shown entrypoints/config/state types include a notion of user identity, roles, scopes, ACLs, or authorization checks (e.g., the CLI root command only defines local flags like noTUI, oracleBin, outDir). Evidence: internal/cli/root.go (flag surface only; no auth/identity inputs shown).
-
-Execution appears to be “whoever can run the CLI can do everything the CLI does.” The runner shells out to an external binary and interacts with the local filesystem; no gating by role/scope is shown. Evidence: internal/exec/runner.go (uses os/exec + os without any authz hooks shown).
-
-“Who can do what” is therefore effectively determined by OS-level permissions and environment constraints, not by application-level RBAC/ACL logic. Evidence: internal/app/app.go (config is paths like PackPath/StatePath/Report…; no policy/role configuration shown) + internal/app/run.go (reads/writes JSON/state/report to local paths; no authz shown).
-
-Any real access control is likely delegated to external dependencies (e.g., the invoked oracle binary and filesystem permissions), not implemented in oraclepack itself, based on the visible integration boundary. Evidence: internal/exec/runner.go (external command invocation) + internal/report/generate.go (report generation from run state; no authz metadata).
-
-Minimal set of files that encode “who can do what” (based on what’s been provided)
-
-None (no app-level permission model is shown in the provided files). Practically, behavior is governed by:
-
-OS user permissions (read/write/execute) for the invoked binary and directories (PackPath, StatePath, report/output dirs). Evidence: internal/app/app.go, internal/app/run.go.
-
-External tool behavior (the oracle binary). Evidence: internal/exec/runner.go.
-
-Risks/unknowns (bullets)
-
-The repository may contain an unshared permissions/auth subsystem (e.g., internal/auth/*, HTTP server middleware, policy engine) that wasn’t included in the snippets.
-
-The external oracle binary may implement its own authn/authz, which would materially change the true permission model even if oraclepack itself has none.
-
-There may be implicit “permissions” via overrides/config resolution (e.g., internal/overrides) that constrain execution; not enough code was provided to verify.
-
-Next smallest concrete experiment (exactly one action)
-
-Run a repo-wide search for authorization primitives: rg -n "(rbac|role|roles|scope|scopes|acl|permission|authorize|authn|authz|oauth|jwt|policy|casbin)" .
-
-If evidence is insufficient, name the exact missing file/path pattern(s) to attach next
-
-internal/**/auth*.go
-
-internal/**/perm*.go
-
-internal/**/{rbac,acl,policy}*.go
-
-internal/**/middleware*.go
-
-internal/**/http*/**/*.go and/or internal/**/server*/**/*.go
-
-cmd/** (any additional CLIs/entrypoints beyond internal/cli/root.go)
-
-Any config/schema files that might define roles/scopes (e.g., **/*config*.*, **/*schema*.*, **/*policy*.*)
-```
-
-docs/oracle-questions-2026-01-07/12-permissions-enforcement.md
-```
-1) Direct answer (1–8 bullets, evidence-cited)
-
-There is no explicit permission enforcement layer in the surfaced code (no authn/authz context, no roles/scopes/ACL objects, no guards/middleware imports). The CLI entrypoint is Cobra-based with flag globals (noTUI, oracleBin, outDir) and does not introduce any identity/permission concept. Evidence: internal/cli/root.go snippet shows only Cobra + basic flags; no auth-related imports/types.
-
-Effective “permissions” are the OS user’s privileges at runtime. The system executes external commands via os/exec, so whatever the current process user can do (filesystem, network, process execution) the tool can do. Evidence: internal/exec/runner.go imports and uses os/exec and os.
-
-Primary enforcement chokepoint is the execution boundary (Runner) — but it enforces execution, not authorization. If you need “who can run what,” the only practical choke is where commands are spawned (and where env/args are assembled). Evidence: internal/exec/runner.go is the dedicated Runner module and pulls overrides.
-
-Pack parsing enables embedding runnable shell content; there is no shown policy layer restricting it. The parser extracts bash fenced blocks (regex), which strongly implies step payloads can contain shell scripts. **Evidence:** `internal/pack/parser.go` defines `bashFenceRegex = ... bash\n(.*?)\n``` ...`.
-
-State/report generation has no permission gates; it simply materializes outputs. So any caller who can run the CLI can cause state/report writes wherever configured. Evidence: internal/report/generate.go constructs a report from RunState; internal/app/app.go config includes StatePath/Report… fields (from snippet) with no auth checks.
-
-Likely bypass risks are “configuration-as-authority” rather than missing middleware. If a caller can control oracleBin, pack content, overrides, output/state paths, they effectively control what runs and where it writes—without an authorization decision point. Evidence: internal/cli/root.go exposes oracleBin/outDir; internal/exec/runner.go consumes overrides + executes commands; internal/pack/parser.go extracts bash payloads.
-
-Inconsistent pattern: business logic lives in internal/app/*, but enforcement is absent at service-layer boundaries. There’s no “service-layer check” because there’s no identity/claims passed through app -> exec -> filesystem; everything is implicitly trusted input. Evidence: internal/app/app.go wires exec, pack, state with no auth context types.
-
-2) Risks/unknowns (bullets)
-
-Unknown whether any permission checks exist elsewhere (e.g., an HTTP server, MCP server wrapper, or API layer not included in the snippets). If those exist, they may be the real enforcement point.
-
-Unknown how overrides are applied (env var allow/deny lists, argument escaping, path validation). internal/overrides/* was referenced but not provided.
-
-Unknown whether pack execution is sandboxed (chroot, containers, seccomp, allowlisted commands). Nothing in the provided snippets suggests sandboxing, but absence of evidence isn’t proof.
-
-Unknown whether state/output paths are validated (path traversal, writing outside workspace, overwriting). Config shows paths, but validation code wasn’t included.
-
-3) Next smallest concrete experiment (exactly one action)
-
-Run a repo-wide search to locate any authz/authn/permission enforcement and all chokepoints where requests/commands enter:
-
-bash
-Copy code
-rg -n --hidden --no-ignore-vcs "(auth|authz|authorize|authorization|permission|rbac|acl|role|scope|policy|guard|middleware|claims|principal|subject|tenant)" .
-
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next
-
-Attach any of the following if they exist (these are the most likely places where enforcement would live, and we haven’
-```
-
-docs/oracle-questions-2026-01-07/13-migrations-schema.md
-```
-1) Direct answer (1–8 bullets, evidence-cited)
-
-State schema has an explicit version field but no migration logic is implemented. RunState includes SchemaVersion int \json:"schema_version"`ininternal/state/types.go, but internal/state/persist.go::LoadStatesimplyjson.Unmarshals into RunStateand returns it without checking or upgradingSchemaVersion`.
-
-Evidence: internal/state/types.go (RunState.SchemaVersion) and internal/state/persist.go (LoadState unmarshal + return; no branching on version).
-
-State evolution currently relies on Go JSON’s “additive compatibility” behavior. New optional fields like ROIThreshold, ROIMode, and Warnings are tagged omitempty in internal/state/types.go, meaning:
-
-older state files missing these fields will still load (they default to zero values),
-
-newer state files with extra fields would be ignored by older binaries (Go encoding/json ignores unknown fields by default).
-
-Evidence: internal/state/types.go JSON tags on ROIThreshold, ROIMode, Warnings.
-
-There is no tooling or “migration runner” in the shown code paths. The persistence layer only provides atomic write + read (SaveStateAtomic, LoadState) and does not do version stamping, backfills, or transforms.
-
-Evidence: internal/state/persist.go contains only marshal/write/rename and read/unmarshal.
-
-Practical implication: only additive changes are safe; renames/removals are breaking. Because no upgrade step exists, any future schema changes that rename/remove fields, change meaning, or change requiredness will either silently degrade (defaults) or break logic downstream.
-
-Where migrations would be applied (natural chokepoint): internal/state/persist.go::LoadState (or the caller immediately after it) is the obvious place to:
-
-read → unmarshal
-
-check SchemaVersion against a CurrentSchemaVersion constant
-
-run sequential migrations migrateV1toV2, migrateV2toV3, etc.
-
-set SchemaVersion = CurrentSchemaVersion
-
-optionally rewrite the upgraded file via SaveStateAtomic
-
-Evidence for chokepoint existence: LoadState/SaveStateAtomic are the only provided persistence entry points in internal/state/persist.go.
-
-Report format evolution cannot be confirmed from the provided snippets. Earlier context shows GenerateReport returns a *ReportV1, which suggests intent to version report structures by type name, but there’s no evidence (in the snippets here) of report persistence, report version fields, or report migrations.
-
-Evidence: internal/report/generate.go shows GenerateReport(...) *ReportV1 (from prior snippet), but no internal/report/*.go definitions/persistence were provided here.
-
-2) Risks/unknowns
-
-Unknown whether SchemaVersion is ever set/non-zero (e.g., on initial state creation), and what the “current” version is meant to be (no constant or assignment shown).
-
-Unknown whether there is any hidden migration handling in the caller (likely internal/app/run.go or similar) before/after LoadState.
-
-Unknown report persistence/read path (where report files are written/read, whether a version field exists, whether multiple report versions are supported).
-
-Unknown whether pack/config/overrides have versioning (separate from state schema; not shown in the provided files).
-
-3) Next smallest concrete experiment (exactly one action)
-
-Run and paste the output of:
-rg -n "SchemaVersion|schema_version|CurrentSchema|migrat(e|ion)|ReportV[0-9]|report_version" internal/
-
-4) If evidence is insufficient, exact missing file/path pattern(s) to attach next
-
-internal/report/*.go (especially the file defining ReportV1 and any report write/read functions)
-
-internal/app/run.go (or whichever file calls state.LoadState / state.SaveStateAtomic, and whi
-```
-
-docs/oracle-questions-2026-01-07/14-migrations-compat.md
-```
-1) Direct answer (backward/forward compatibility expectations; where ensured vs risky)
-
-Run state is explicitly versioned; expectation is “migrate-by-version when needed.” RunState carries SchemaVersion int \json:"schema_version"`which is the primary hook for backward/forward compatibility across persisted state formats. Evidence:internal/state/types.go (RunState.SchemaVersion`).
-
-State schema is designed to be additive (backward-compatible) via optional fields. Fields like ROIThreshold, ROIMode, and Warnings are tagged omitempty, implying they can be absent in older saved state and should default safely in newer code. Evidence: internal/state/types.go (ROIThreshold ...omitempty, ROIMode ...omitempty, Warnings ...omitempty).
-
-Forward compatibility for state/report within Go likely relies on default encoding/json behavior (unknown fields ignored). The structs are plain JSON-tagged types with no visible strict decoding controls here; in Go, older binaries typically ignore new fields when unmarshalling (unless DisallowUnknownFields is used elsewhere). Evidence: presence of standard JSON tags across structs in internal/state/types.go and internal/report/types.go (no strictness shown).
-
-Report schema is implicitly versioned by type name, not by an on-the-wire version field (riskier for evolvability). The report root type is ReportV1, but there is no schema_version/report_version JSON field on ReportV1. This suggests compatibility depends on file naming/conventions or external knowledge, not self-describing payloads. Evidence: internal/report/types.go (type ReportV1 struct { ... } with no version field).
-
-Report is partially “consumer-friendly” via redundant duration fields, suggesting an evolution/compat strategy. Summary.TotalDuration (a time.Duration) is paired with TotalDurationMs int64, and StepReport.Duration is paired with DurationMs int64. This looks like an intentional compatibility measure for consumers that can’t/won’t parse Go time.Duration encoding. Evidence: internal/report/types.go (TotalDuration + TotalDurationMs, Duration + DurationMs).
-
-Two distinct Warning types exist (state vs report), duplicating schema; compatibility depends on keeping them in lockstep. Both packages define Warning with the same JSON fields; this is currently compatible, but any future divergence becomes a schema drift risk. Evidence: internal/state/types.go type Warning struct { Scope, StepID, Line, Token, Message } and internal/report/types.go type Warning struct { ...same fields... }.
-
-Map-based step status storage is tolerant of step additions but sensitive to step ID churn. RunState.StepStatuses map[string]StepStatus supports new step IDs appearing over time, but renames/removals can break continuity of resumed/inspected runs unless migration logic remaps keys. Evidence: internal/state/types.go (StepStatuses map[string]StepStatus).
-
-2) Risks/unknowns
-
-Unknown whether reads/writes are strict or tolerant. If any loader uses json.Decoder.DisallowUnknownFields(), forward compatibility (new fields read by old binaries) will break. Missing evidence: state/report load code.
-
-No visible migration dispatcher. SchemaVersion exists, but we don’t see code that applies migrations on read (or stamps versions on write), so rollback/upgrade safety is unproven from the provided files alone.
-
-Report payload is not self-describing. Without a report_version, consumers can’t robustly branch on schema, making forward/backward compatibility brittle as ReportV2 emerges.
-
-G
-```
-
-docs/oracle-questions-2026-01-07/15-ux-flows-primary.md
-```
-1) Direct answer (primary TUI user/operator flows, mapped to components + key state transitions)
-
-App entry → TUI boot (CLI “run” command): internal/cli/run.go loads/initializes app (pack, runner, state), then constructs tui.Model via tui.NewModel(a.Pack, a.Runner, a.State, cfg.StatePath, cfg.ROIThreshold, cfg.ROIMode, runAll) and runs Bubble Tea (tea.NewProgram(..., tea.WithAltScreen())). The --run-all flag is passed as autoRun into the TUI model. (internal/cli/run.go: runCmd.RunE; internal/tui/tui.go: NewModel, Init)
-
-Browse/select steps (default “Steps” screen): Primary UI is list.Model (left) + viewport.Model (right preview). Selection changes update preview content via setListPreviewContent(newID) when not running and viewState == ViewSteps. (internal/tui/tui.go: Model.View, Update list handling, setListPreviewContent, selectedItemID)
-
-Run a single selected step (“Enter”): From ViewSteps, pressing Enter sets running=true, viewState=ViewRunning, runAll=false, clears logLines, and triggers runStep(stepID) + waitForLogs() + spinner.Tick. Completion arrives as FinishedMsg{Err,...}; success sets running=false, viewState=ViewDone; failure sets err, running=false, runAll=false, viewState=ViewDone. (internal/tui/tui.go: Update key "enter", runStep, waitForLogs, FinishedMsg handler)
-
-Run all filtered steps sequentially (“a”) + auto-run on init: Pressing a in ViewSteps (when not running) sets running=true, viewState=ViewRunning, runAll=true, currentIdx=0, selects first filtered list item, then executes runStep(firstID). On each FinishedMsg success while runAll=true, it increments currentIdx, selects next item, and calls runStep(nextID) until exhausted, then sets running=false, runAll=false, viewState=ViewDone. Auto-run uses the same path via StartAutoRunMsg emitted from Init() when autoRun is true. (internal/tui/tui.go: Update key "a", StartAutoRunMsg handling, FinishedMsg sequential logic; Init)
-
-ROI filtering flow (“f” and “m”):
-
-f enters filter input modal: isFiltering=true, filterInput.Focus(), view switches to centered modal via View() (still viewState remains Steps, but UI is driven by isFiltering). Enter parses float, updates roiThreshold, calls refreshList(), and persists into state (m.state.ROIThreshold, m.state.ROIMode) via state.SaveStateAtomic. Esc cancels.
-
-m toggles roiMode between "under" and "over", refreshes list, persists state.
-This directly changes what “run all” iterates over because it uses m.list.Items() (filtered). (internal/tui/tui.go: Update keys "f", "m", refreshList, persistFilterState, View modal branches)
-
-Step preview (“v”) with wrap/copy/back: v sets previewID, viewState=ViewStepPreview, resets viewport offset, and renders Markdown (render.RenderMarkdown) into the viewport. In preview: t toggles wrap (previewWrap) and re-renders; c copies step plain text (clipboard fallback writes to file); b/esc returns to ViewSteps and restores list preview. (internal/tui/tui.go: Update key "v", `ViewSte
-```
-
-docs/oracle-questions-2026-01-07/16-ux-flows-edgecases.md
-```
-1) Direct answer (top edge cases / gotchas, where handled vs missing)
-
-Cancel is “hard cancel” everywhere, with no confirm and no “go back one step” on Esc: OverridesFlowModel.Update maps "esc" directly to OverridesCancelledMsg{} regardless of wizard step; there’s no “Are you sure?” or “Back” on Esc. (Handled: cancel exit path exists; Missing: confirm/discard + step-back on Esc.) (OverridesFlowModel.Update: case "esc": ... OverridesCancelledMsg{})
-
-Back navigation conflicts with normal text editing / list filtering: the parent model binds "backspace" (and "shift+tab") to step-back (m.step--) whenever m.step > OverridesFlags. If StepsPickerModel (and/or confirm UI) uses inputs or list filtering, Backspace is commonly needed for editing—this will unexpectedly navigate back instead. (Missing: scoped key handling / focus-aware routing.) (OverridesFlowModel.Update: case "shift+tab", "backspace": if m.step > OverridesFlags { m.step-- })
-
-Next navigation conflicts with child controls: the parent captures "enter" and "tab" to advance steps (or trigger validation on confirm). If the list widgets use Enter/Tab for selection, filtering, or focus, those interactions can be overridden by step progression. (Missing: “only advance when not filtering / not editing” guard, or explicit Next button/key distinct from list controls.) (OverridesFlowModel.Update: case "enter", "tab": ... m.step++)
-
-Validation failures are displayed, but recovery UX is minimal: confirm step handles ValidationResultMsg by setting confirm.validating=false, storing confirm.errors, and setting a short errMsg (“N validation errors detected.”). It does not automatically move the user back to the step that likely caused the errors, nor does it highlight which selection caused which validation error (depends on OverridesConfirmModel.View, not shown). (Handled: error surfaced; Missing: guided remediation / jump-back.) (OverridesFlowModel.Update: case ValidationResultMsg: ... m.confirm.errors = v.Errors ... errMsg ... return m, nil)
-
-Validation can hang indefinitely (no timeout/cancel), making the UI feel frozen: validateCmd uses context.Background() and calls exec.ValidateOverrides(...) with no deadline and no cancel path. While confirm.validating prevents duplicate submissions, there’s no way to abort a stuck validation. (Missing: context timeout + Esc to cancel validation.) (validateCmd: exec.ValidateOverrides(context.Background(), ...))
-
-Baseline flags appear incorrectly wired into the flags picker (likely a functional bug): NewOverridesFlowModel constructs flags: NewFlagsPickerModel(nil) even though it has a baseline argument and separately stores baseline: exec.ApplyChatGPTURL(baseline, ...). This means flags that are already in baseline won’t be marked (base) / [*], won’t auto-check, and won’t be protected from toggling. (Missing: pass the baseline into NewFlagsPickerModel(baseline).) (NewOverridesFlowModel: NewFlagsPickerModel(nil) vs stored baseline: ...)
-
-Users cannot remove baseline flags (only add): currentOverrides() sets RemovedFlags: nil always, and FlagsPickerModel.SelectedFlags() only returns selected flags where !fi.IsBaseline. Even if you wanted removal, there’s no path in the
-```
-
-docs/oracle-questions-2026-01-07/17-failure-modes-taxonomy.md
-```
-1) Direct answer (failure-mode taxonomy; where classified/handled; what’s surfaced)
-
-Precondition / lifecycle failures (internal “programmer error” / wrong call order): RunPlain hard-fails if a.Pack == nil or a.State == nil with plain fmt.Errorf("pack not loaded") / "state not loaded". These are not classified into internal/errors sentinel types, so callers will likely treat them as generic failures. (Evidence: internal/app/run.go:RunPlain)
-
-Prelude execution failures (treated as fatal): If Pack.Prelude.Code != "", it runs a.Runner.RunPrelude(...); on error it records warnings, then returns fmt.Errorf("prelude failed: %w", err) without writing a report (no finalize() call on this path). (Evidence: internal/app/run.go:RunPlain)
-
-Step execution failures (classified at the step-status layer, optionally fatal at the run layer):
-
-Before executing a step, state is set to StatusRunning with StartedAt, then persisted via a.saveState().
-
-On RunStep error: step status becomes StatusFailed, status.Error = err.Error(), state is persisted, and:
-
-if StopOnFail is true: finalize() runs and RunPlain returns the underlying err;
-
-otherwise it continues to the next step.
-This is the core “execution failed” mode in practice. (Evidence: internal/app/run.go:RunPlain)
-
-“Stop-on-fail” semantics create two user-visible failure shapes: with StopOnFail=true, the run returns immediately on the first failed step (after writing the report); with StopOnFail=false, the run returns nil even if one or more steps failed, relying on state/report for operators to discover failures. (Evidence: internal/app/run.go:RunPlain)
-
-Skips are treated as non-fail outcomes, but are not consistently represented in state:
-
-ROI-based skips print Skipping step... and continue without writing any step status (no StatusSkipped assignment here).
-
-Resume-based skips require an existing StatusSuccess entry; they print and continue leaving the prior success intact.
-Result: reports/operators may not be able to distinguish “intentionally skipped by ROI filter” vs “never attempted / missing status” unless report generation infers it elsewhere. (Evidence: internal/app/run.go:RunPlain)
-
-Warnings are a parallel channel, not failures: recordWarnings() drains runner warnings and appends them to a.State.Warnings, then persists state. They are not printed directly by App (beyond whatever the runner prints), so visibility is primarily via persisted state/report. (Evidence: internal/app/run.go:recordWarnings, saveState)
-
-State persistence failures are explicitly ignored (silent data-loss risk): saveState() discards errors from state.SaveStateAtomic(...) via _ = .... If state writes fail, the run proceeds and operators may later see stale/missing progress. (Evidence: internal/app/run.go:saveState)
-
-Report generation / write failures are explicitly ignored, but success is always announced: finalize() discards errors from json.MarshalIndent(...) and os.WriteFile(...), yet always prints Report written to ... when ReportPath != "". This can falsely signal success to operators even when no report was produced. (Evidence: internal/app/run.go:finalize)
-
-System-wide error classification exists, but RunPlain largely relies on upstream to use it: internal/errors/errors.go defines sentinel errors (ErrInvalidPack, ErrExecutionFailed, ErrConfigInvalid) and an ExitCode(err) mapping using `errors.Is(
-```
-
-docs/oracle-questions-2026-01-07/18-failure-modes-resilience.md
-```
-1) Direct answer (resilience mechanisms; gaps; where configured)
-
-Script “label line” sanitization exists and is applied to both preludes and steps. SanitizeScript converts single-token, label-shaped lines into echo "<token>" to avoid accidental command execution (e.g., a bare Setup line). This is invoked from Runner.RunPrelude and Runner.RunStep before execution. (internal/exec/sanitize.go: SanitizeScript; internal/exec/runner.go: RunPrelude, RunStep)
-
-Sanitization is deliberately scoped to reduce false positives. It skips blank lines and comments (#...), skips anything inside heredocs (tracks start via heredocStartToken and ignores lines until the terminator), and only rewrites lines where strings.Fields(trimmed) yields exactly 1 field. (internal/exec/sanitize.go: SanitizeScript, heredocStartToken)
-
-Sanitization avoids rewriting real shell constructs and real executables. Tokens are rewritten only if they match labelTokenRegex (^[A-Za-z][A-Za-z0-9_-]*$), are not shell builtins/keywords, and are not found on $PATH (osexec.LookPath(token) must fail). (internal/exec/sanitize.go: labelTokenRegex, shellBuiltins, shellKeywords, LookPath check)
-
-Sanitization produces explicit warnings and they are surfaced at least to the run log stream. Warnings are stored on the runner and also written to logWriter as ⚠ oraclepack: sanitized label ..., and can be retrieved via DrainWarnings(). (internal/exec/runner.go: recordWarnings, DrainWarnings)
-
-Execution is cancellation-aware via context. exec.CommandContext(ctx, ...) is used; on failure, if ctx.Err() != nil it returns the context error directly. This is a resilience mechanism for user cancel / deadline propagation. (internal/exec/runner.go: run)
-
-Execution errors are wrapped with a sentinel classification. Non-context execution errors return fmt.Errorf("%w: %v", errors.ErrExecutionFailed, err), enabling upstream code to recognize “execution failed” as a class. (internal/exec/runner.go: run)
-
-Configurable execution knobs exist, but they’re mostly “wiring,” not resilience policies. RunnerOptions configures Shell (default /bin/bash), WorkDir, Env (appended to os.Environ()), OracleFlags, Overrides, and ChatGPTURL. These influence behavior but do not add retries/limits/strict-mode by themselves. (internal/exec/runner.go: RunnerOptions, NewRunner)
-
-Critical path gap: “stop-on-fail” within a script is not enforced. The runner executes bash -lc <script> without forcing set -e / -euo pipefail. So a failing command earlier in a script may not fail the step unless the script author ensured it (depends on the script). This is a major resilience gap for “partial failure looks like success.” (internal/exec/runner.go: run uses r.Shell, "-lc", script)
-
-Critical path gap: sanitization misses common “label + trailing comment” patterns. Because only len(fields) == 1 is sanitized, a line like Setup # do thing becomes two fields and is not rewritten; bash will attempt to execute Setup and fail (or worse, execute if Setup exists on PATH). (internal/exec/sanitize.go: Fields/len(fields) != 1 early-continue)
-
-Critical path gap: environment
-```
-
-docs/oracle-questions-2026-01-07/19-feature-flags-inventory.md
-```
-Direct answer (inventory + where defined/evaluated/documented)
-
-Runtime “flag override” mechanism exists via RuntimeOverrides: you can append flags, remove flags, and inject a ChatGPT URL (as --chatgpt-url) at runtime. Defined in internal/overrides/types.go as AddedFlags, RemovedFlags, and ChatGPTURL. (internal/overrides/types.go: RuntimeOverrides)
-
-Per-step targeting exists via ApplyToSteps: a set keyed by step ID that determines which steps the overrides apply to. Defined in internal/overrides/types.go as ApplyToSteps map[string]bool with comment indicating “If empty, applies to none.” (internal/overrides/types.go: RuntimeOverrides.ApplyToSteps)
-
-TUI exposes a curated list of toggleable “Oracle Flags” (feature-flag-like user controls):
---files-report, --render, --render-plain, --copy, --wait. Defined in internal/tui/overrides_flags.go in curated := []FlagItem{...}. (internal/tui/overrides_flags.go: curated)
-
-Baseline vs. user-selected behavior is enforced: baseline flags are pre-selected and cannot be toggled off; only non-baseline flags can be toggled with spacebar. Defined/evaluated in NewFlagsPickerModel (baseline set, IsBaseline, initial Selected) and Update (toggle only if !item.IsBaseline). (internal/tui/overrides_flags.go: NewFlagsPickerModel, Update)
-
-UI-level “documentation” exists for these flags via the Desc field displayed alongside each curated flag (e.g., “Show per-file token usage”, “Print assembled markdown bundle”). Implemented in flagsDelegate.Render. (internal/tui/overrides_flags.go: FlagItem.Desc, Render)
-
-Discoverability control exists in the TUI via filtering: the list enables filtering (l.SetFilteringEnabled(true)), which is a UX control for narrowing/selecting flags (not ROI, but “runtime control”). (internal/tui/overrides_flags.go: SetFilteringEnabled(true))
-
-Selection output is explicitly “delta-only”: SelectedFlags() returns only flags that are selected and not baseline, i.e., the override payload is “changes from baseline,” which is consistent with safe rollout semantics. (internal/tui/overrides_flags.go: SelectedFlags)
-
-Risks/unknowns
-
-Where overrides are actually applied/evaluated is not shown in the provided snippets (i.e., where AddedFlags/RemovedFlags/ChatGPTURL/ApplyToSteps mutate the final oracle CLI invocation per step).
-
-ROI filtering is not evidenced in the provided files; if it exists, it’s elsewhere (selection of steps by ROI, filtering packs/steps, etc.).
-
-Documentation scope is currently “in-TUI only” for curated flags; no evidence here of CLI --help docs, README references, or pack schema docs for these controls.
-
-Next smallest concrete experiment (exactly one action)
-
-Run: rg -n "RuntimeOverrides|AddedFlags|RemovedFlags|ChatGPTURL|ApplyToSteps|--chatgpt-url|ROI|roi" internal/ and attach the matching snippets (especially any code that builds the exec command / selects steps).
-
-If evidence is insufficient, attach these missing file/path pattern(s) next
-
-internal/overrides/*.go (anything beyond types.go, especially functions that apply overrides)
-
-The portion(s) of internal/exec/runner.go (or related exec builder) that incorporate overrides into the command/args
-
-Any step-selection or filtering logic files, likely under: internal/app/*.go, internal/pack/*.go, internal/tui/*flow*.go (for ROI or step filtering)
-```
-
-docs/oracle-questions-2026-01-07/20-feature-flags-rollout.md
-```
-## 1) Direct answer (flag/rollout lifecycle, evidence-cited)
-
-* **Selection is an explicit, user-supplied “diff” over baseline flags**: runtime overrides are modeled as `AddedFlags`, `RemovedFlags`, and an optional `ChatGPTURL` injection (`--chatgpt-url <url>`). Evidence: `internal/overrides/types.go` (`RuntimeOverrides` fields) and `internal/overrides/merge.go` (injection logic in `EffectiveFlags`).
-* **Targeting is allowlist-by-step and defaults to “off”**: overrides apply only when `ApplyToSteps[stepID] == true`; if `ApplyToSteps` is `nil` (or the step key is absent/false), the baseline flags are returned unchanged. Evidence: `internal/overrides/merge.go` early-return guard in `EffectiveFlags`; `internal/overrides/types.go` comment “If empty, applies to none.”
-* **Application happens at flag-materialization time, per step**: the lifecycle is “start from baseline → remove exact-match flags → append added flags → optionally append `--chatgpt-url <ChatGPTURL>`”. Evidence: `internal/overrides/merge.go` (`removed` map filter, then `append(r.AddedFlags...)`, then URL injection).
-* **Validation is not implemented in the shown override module**: there is no validation method or error path in `RuntimeOverrides` or `EffectiveFlags`; invalid flags, conflicting flags, malformed URLs, or nonexistent step IDs are not rejected here. Evidence: `internal/overrides/types.go` contains only fields; `internal/overrides/merge.go` is pure transformation with no errors/validation.
-* **Retirement is purely process-driven with current code**: there is no TTL/expiry, metadata, audit, or “unused override” detection in the override types/merge logic. Evidence: `internal/overrides/types.go` has no lifecycle metadata; `internal/overrides/merge.go` has no tracking/telemetry hooks.
-
-**Minimum guardrails to prevent “flag debt” (smallest set that actually closes the main failure modes):**
-
-* **Central validation gate** before any run: validate (a) every `ApplyToSteps` key exists in the pack’s step IDs, (b) flags conform to an allowlisted pattern (e.g., `^--[a-z0-9-]+(=.*)?$`), (c) no duplicates/conflicts after merge (e.g., two `--model` variants), and (d) `ChatGPTURL` is a valid URL. (Missing today in `types.go`/`merge.go`.)
-* **Add lifecycle metadata** to each override bundle: `owner`, `reason`, `created_at`, `expires_at` (or `ttl_days`), and `issue/link`. Enforce “expired overrides fail closed.” (Not present today in `RuntimeOverrides`.)
-* **Auditability**: emit a structured record per step of `{baseline_flags, removed, added, url_injected, effective_flags}` so operators can see what actually happened and spot stale overrides. (Nothing in `EffectiveFlags` records decisions.)
-* **Retirement enforcement**: CI/test-time lints that fail if (a) overrides have expired, (b) an override hasn’t been applied to any step in N runs, or (c) overrides reference removed steps/flags. (No mechanism exists in the shown code; must be added around it.)
-* **Prefer semantic removal** (optional but high leverage): today removal is exact-string match (`removed[flag]`), which doesn’t catch `--flag=value` vs `--flag` variants and encourages drift/debt. Either normalize flags or support key-based removal. Evidence of exact-match removal: `internal/overrides/merge.go` baseline filter uses `removed[flag]` only.
-
-## 2) Risks/unknowns
-
-* **Where overrides are created/loaded/persisted is not shown**, so it’s unclear whether any validation exists upstream (TUI wizard, config loader, etc.) or whether overrides can be injected via environment/CLI.
-* **No evidence of observability/logging around overrides**: if something breaks due to an override, operators may not be able to quickly attribute the effective flag set to the override bundle.
-* **Exact-match removal is brittle** and can lead to long-lived “ineffective” `RemovedFlags` entries (flag debt), because they silently don’t remove anything when baseline formatting changes. Evidence: `internal/overrides/merge.go`.
-* **No conflict resolution**: if baseline already includes a flag that `AddedFlags` adds again, the effective list can contain duplicates, and downstream flag parsing semantics may become ambiguous. Evidence: `internal/overrides/merge.go` simply appends.
-
-## 3) Next smallest concrete experiment (exactly one action)
-
-* **Add `(*RuntimeOverrides) Validate(stepIDs []string) error` and call it once before execution begins**, rejecting unknown step IDs, malformed flags, duplicates/conflicts, and invalid `ChatGPTURL`; include a unit test table for the edge cases above.
-
-## 4) If evidence is insufficient, exact missing file/path pattern(s) to attach next
-
-* `internal/tui/overrides_flow.go` (how users select/serialize overrides)
-* `internal/exec/runner.go` (where `EffectiveFlags` is invoked and how effective flags are executed/logged)
-* Any override config IO paths, e.g. `internal/overrides/*.go` beyond `types.go`/`merge.go`, and any config structs/files such as `internal/app/*.go`, `internal/pack/*.go`, or `internal/config/*.go` that load/store runtime overrides
 ```
 
 internal/app/app.go
@@ -17493,6 +15420,278 @@ def test_detect_stage2_auto(tmp_path, monkeypatch):
     assert mode == "auto"
 ```
 
+skills/oraclepack-pipeline-improver/SKILL.md
+```
+---
+name: oraclepack-pipeline-improver
+description: Improve an oraclepack (Go wrapper around @steipete/oracle) pipeline by specifying/implementing deterministic validate→run→actionize behavior:strict pack validation, run manifests, stable run directories, resume/rerun semantics, concurrency/backoff, optional caching, and a Stage 3 “Actionizer” that converts 20 oracle outputs into actionable engineering work artifacts.
+metadata:
+  short-description: Deterministic oraclepack validate/run/actionize pipeline spec + implementation rails
+---
+
+## Quick start
+
+Use this skill when the user wants to:
+
+- make oraclepack runs deterministic and resume-safe,
+- add a strict validator and machine-readable outputs,
+- add Stage 3 “actionize” to convert the 20 question outputs into an actionable backlog/change plan,
+- make the pipeline CI-friendly and path-safe.
+
+Interpret the user’s free-text `{{args}}` as the target subset (validate/run/actionize/caching/CI) plus any paths to focus on.
+
+If repo context or current CLI behavior is missing, write **Unknown/TODO** and proceed with a spec-first answer.
+
+## Workflow
+
+### 1) Establish “observed vs proposed”
+
+1. List what inputs are available (repo files, current CLI help text, sample pack md, run output dirs).
+2. Split all statements into:
+   - **Observed** (backed by provided evidence),
+   - **Proposed** (the target contract to implement),
+   - **Unknown/TODO** (needs files/flags not provided).
+
+### 2) Define the target pipeline contract (deterministic by default)
+
+Produce a concrete contract for:
+
+- `oraclepack validate` (strict + JSON output),
+- `oraclepack run` (stable run dir + `run.json`/`steps.json` + outputs + resume/rerun),
+- `oraclepack actionize` (reads run dir and produces `actionizer/` artifacts),
+- CI mode behavior (non-interactive, structured logs, policy-driven exit codes),
+- Path safety for output writing.
+
+Use:
+
+- references/cli-contract.md
+- references/run-manifest-spec.md
+- references/actionizer-spec.md
+
+### 3) Map contract → implementation deltas (minimal, additive, backward-compatible)
+
+1. Identify current commands/flags and current on-disk layout (Observed).
+2. Propose additive changes:
+   - new flags and new subcommands should not break existing pack schema without an explicit migration path,
+   - new on-disk outputs should be in `.oraclepack/runs/<pack_id>/...` without removing legacy output locations (unless requested).
+3. For each proposed change, specify:
+   - code touchpoints (files/modules: **Unknown** if repo not provided),
+   - acceptance tests and fixtures,
+   - failure modes and user-visible error messages.
+
+### 4) Stage 1 prompt shaping (pack generation) to help Stage 3 parse reliably
+
+If the workflow includes Stage 1 pack generation:
+
+- propose embedding **mini-metadata inside each prompt** (does not change pack schema),
+- keep metadata parseable and consistent.
+
+Use references/stage1-prompt-metadata.md.
+
+### 5) Produce final deliverables (spec + plan, optionally code)
+
+Deliverables should be:
+
+1. **Pipeline contract** (validate/run/actionize + CI + safety).
+2. **On-disk schemas** (`run.json`, `steps.json`, `normalized.jsonl`, `backlog.md`, `change-plan.md`).
+3. **Acceptance criteria** and a minimal test plan.
+4. **Implementation plan** (ordered steps, smallest shippable increments).
+5. If code context is provided and the user wants implementation: output concrete file edits + new files.
+
+## Output contract
+
+Unless the user asks for something else, output a single Markdown report with:
+
+- **Scope** (what parts of validate/run/actionize/CI/caching are included)
+- **Observed current behavior** (or **Unknown**)
+- **Proposed contract** (link to reference sections where applicable)
+- **Disk layout + schemas**
+- **Acceptance criteria**
+- **Implementation plan** (phased; smallest first)
+- **Risks / unknowns**
+- **Missing inputs** (exact paths/flags/help output needed)
+
+If asked to generate templates, use the assets:
+
+- assets/backlog-template.md
+- assets/change-plan-template.md
+- assets/normalized.example.jsonl
+
+## Failure modes
+
+- Missing repo / CLI help / sample run dirs → mark **Unknown** and provide a spec-first response.
+- Missing definitions for CI thresholds / policies → include **TODO** defaults and clearly label them as policy choices.
+- Any “current behavior” claim without evidence → downgrade to **Unknown**.
+
+## Invocation examples
+
+1) Add strict validator + JSON output:
+
+- `$oraclepack-pipeline-improver Add oraclepack validate --strict --json; define schema checks and CI gating exit codes`
+
+1) Deterministic run dir + resume/rerun:
+
+- `$oraclepack-pipeline-improver Specify .oraclepack/runs/<pack_id>/ layout, run.json/steps.json, resume default, --rerun failed|all|01,03`
+
+1) Concurrency + backoff policy:
+
+- `$oraclepack-pipeline-improver Add --max-parallel N and transient error retry budget/backoff rules`
+
+1) Stage 3 Actionizer:
+
+- `$oraclepack-pipeline-improver Implement oraclepack actionize; generate normalized.jsonl + backlog.md + change-plan.md with stable IDs`
+
+1) CI mode:
+
+- `$oraclepack-pipeline-improver Provide run --ci --non-interactive --json-log and actionize --ci; policy-driven exit codes`
+
+1) Stage 1 prompt metadata shaping:
+
+- `$oraclepack-pipeline-improver Add prompt-embedded metadata (QuestionId/Category/Reference/ExpectedArtifacts) without changing pack schema`
+```
+
+skills/oraclepack-tickets-pack/SKILL.md
+```
+---
+name: oraclepack-tickets-pack
+description: Generate a runner-ingestible oraclepack Stage-1 question pack (single Markdown doc) driven by `.tickets/` content. Exactly one ```bash fence, exactly 20 steps (01..20), strict ROI header tokens, deterministic ticket bundling, minimal per-step attachments, coverage check.
+metadata:
+  short-description: Ticket-driven Stage-1 oraclepack pack generator + validators
+---
+
+# oraclepack-tickets-pack (Stage 1)
+
+## Purpose
+
+Produce a **ticket-driven** oraclepack Stage-1 pack (Markdown) that is **runner-ingestible** and **schema-compatible** with existing oraclepack pack format.
+
+The generated pack’s questions and minimal attachments are guided primarily by a deterministic **ticket bundle** built from `.tickets/` (or explicit ticket paths).
+
+## Use when
+
+- You have tickets stored under `.tickets/` (or you can provide explicit ticket file paths), and you want a strict 20-step oraclepack Stage-1 question pack that:
+  - references tickets as the primary context in every step
+  - uses minimal attachments per step
+  - preserves existing oraclepack Markdown pack schema (backward compatible)
+
+## Hard requirements (output contract)
+
+The produced pack (single Markdown file) MUST satisfy:
+
+1) **Schema safety / compatibility**
+- Do not break the existing oraclepack Markdown pack schema.
+- Exactly **one** fenced code block labeled `bash` in the entire document.
+- No other fenced code blocks anywhere (no additional ``` fences).
+
+1) **Runner-ingestible strictness**
+- Exactly **20** steps inside the single `bash` fence.
+- Steps are numbered **01..20** in order.
+- Each step header starts with `# NN)` and includes the strict header tokens in the header line:
+  - `ROI= ... impact= ... confidence= ... effort= ... horizon= ... category= ... reference= ...`
+- Every step includes:
+  - `--write-output "<out_dir>/<nn>-<slug>.md"`
+- Steps must be **self-contained** and must **not rely on shell variables created in previous steps**.
+
+1) **Attachment minimization**
+- Default **0–2 native attachments per step**.
+- Each step should normally attach:
+  - `-f "<ticket_bundle_path>"` (primary context)
+  - plus at most **one** additional repo file when needed
+- If `extra_files` are provided, append them **literally**, but keep the step’s native attachments ≤2.
+
+1) **Path safety**
+- `--write-output` destinations must be deterministic and must not escape `out_dir` (no `..` traversal).
+- No absolute write paths.
+
+1) **Determinism**
+- Ticket discovery ordering must be stable:
+  - lexicographic ordering only
+  - no timestamps / mtimes used for selection
+
+The pack MUST end with a **Coverage check** section listing all 10 categories as `OK` or `Missing(<step ids>)`.
+
+## Inputs (do not ask follow-ups)
+
+Parse the user’s trailing text as whitespace-separated `KEY=value` tokens (last-one-wins). Unknown keys ignored.
+
+Supported keys (defaults in parentheses):
+
+- `codebase_name` (`Unknown`)
+- `out_dir` (`docs/oracle-questions-YYYY-MM-DD`)
+- `oracle_cmd` (`oracle`)
+- `oracle_flags` (`--files-report`)
+- `extra_files` (empty; appended literally)
+- `ticket_root` (`.tickets`)
+- `ticket_glob` (`**/*.md` relative to `ticket_root`)
+- `ticket_paths` (optional; comma-separated explicit ticket files; if present, ignore `ticket_glob`)
+- `ticket_bundle_path` (`<out_dir>/_tickets_bundle.md`)
+- `mode` (`tickets`; reserved)
+
+Notes:
+- `YYYY-MM-DD` is computed at pack generation time for default `out_dir`.
+- If oracle flag support is uncertain (engine/model/etc), **omit unsupported flags**; never invent flags.
+
+## Workflow (deterministic)
+
+1) Read:
+- `references/ticket-bundling.md` (how to build the bundle deterministically)
+- `references/attachment-minimization.md` (attachment limits + extra_files handling)
+
+1) Render a pack by starting from:
+- `references/tickets-pack-template.md`
+
+1) Resolve args deterministically:
+- Fill placeholders for `out_dir`, `ticket_root`, `ticket_glob`, `ticket_paths`, `ticket_bundle_path`, `oracle_cmd`, `oracle_flags`, `extra_files`.
+- Ensure ticket selection and concatenation are lexicographically stable.
+
+1) Ensure the 20 steps are **ticket-scoped**:
+- Use the fixed 10 categories (2 steps per category):
+  - contracts/interfaces
+  - invariants
+  - caching/state
+  - background jobs
+  - observability
+  - permissions
+  - migrations
+  - UX flows
+  - failure modes
+  - feature flags
+- Each step prompt must explicitly reference the **ticket bundle** as primary context.
+- Each step prompt must include the mandatory Answer format (4 parts).
+
+1) Validate output:
+- `python3 skills/oraclepack-tickets-pack/scripts/validate_pack.py <pack.md>`
+- Optional attachment lint:
+- `python3 skills/oraclepack-tickets-pack/scripts/lint_attachments.py <pack.md>`
+
+## Failure behavior (must be encoded into the generated pack)
+
+- `ticket_root` missing OR no tickets matched:
+  - Still generate the pack.
+  - Prelude must write a clear warning into the ticket bundle and emit a clear stderr message.
+  - Step 01 prompt must request: “which ticket paths to attach next” (exact missing file/path pattern(s)).
+
+- Oracle flag uncertainty:
+  - Omit unsupported flags.
+  - Never invent flags.
+
+- Output path ambiguity:
+  - Validator must catch missing `--write-output`, invalid numbering, invalid headers, missing coverage check, or unsafe write paths.
+
+## Deliverables
+
+This skill produces:
+- One runner-ingestible Stage-1 oraclepack pack (single Markdown doc) that passes `scripts/validate_pack.py`.
+
+## Reference assets
+
+- Template pack: `references/tickets-pack-template.md`
+- Ticket bundling: `references/ticket-bundling.md`
+- Attachment rules: `references/attachment-minimization.md`
+- Validator: `scripts/validate_pack.py`
+- Optional linter: `scripts/lint_attachments.py`
+```
+
 .config/mcp/mcp-builder/SKILL.md
 ```
 ---
@@ -18013,6 +16212,136 @@ Important: if the environment does not provide a compatible `tm autopilot`, Step
 - `$oraclepack-taskify out_dir=oracle-out extra_files=README.md,package.json`
 ```
 
+.config/skills/oraclepack-pipeline-improver/SKILL.md
+```
+---
+name: oraclepack-pipeline-improver
+description: Improve an oraclepack (Go wrapper around @steipete/oracle) pipeline by specifying/implementing deterministic validate→run→actionize behavior:strict pack validation, run manifests, stable run directories, resume/rerun semantics, concurrency/backoff, optional caching, and a Stage 3 “Actionizer” that converts 20 oracle outputs into actionable engineering work artifacts.
+metadata:
+  short-description: Deterministic oraclepack validate/run/actionize pipeline spec + implementation rails
+---
+
+## Quick start
+
+Use this skill when the user wants to:
+
+- make oraclepack runs deterministic and resume-safe,
+- add a strict validator and machine-readable outputs,
+- add Stage 3 “actionize” to convert the 20 question outputs into an actionable backlog/change plan,
+- make the pipeline CI-friendly and path-safe.
+
+Interpret the user’s free-text `{{args}}` as the target subset (validate/run/actionize/caching/CI) plus any paths to focus on.
+
+If repo context or current CLI behavior is missing, write **Unknown/TODO** and proceed with a spec-first answer.
+
+## Workflow
+
+### 1) Establish “observed vs proposed”
+
+1. List what inputs are available (repo files, current CLI help text, sample pack md, run output dirs).
+2. Split all statements into:
+   - **Observed** (backed by provided evidence),
+   - **Proposed** (the target contract to implement),
+   - **Unknown/TODO** (needs files/flags not provided).
+
+### 2) Define the target pipeline contract (deterministic by default)
+
+Produce a concrete contract for:
+
+- `oraclepack validate` (strict + JSON output),
+- `oraclepack run` (stable run dir + `run.json`/`steps.json` + outputs + resume/rerun),
+- `oraclepack actionize` (reads run dir and produces `actionizer/` artifacts),
+- CI mode behavior (non-interactive, structured logs, policy-driven exit codes),
+- Path safety for output writing.
+
+Use:
+
+- references/cli-contract.md
+- references/run-manifest-spec.md
+- references/actionizer-spec.md
+
+### 3) Map contract → implementation deltas (minimal, additive, backward-compatible)
+
+1. Identify current commands/flags and current on-disk layout (Observed).
+2. Propose additive changes:
+   - new flags and new subcommands should not break existing pack schema without an explicit migration path,
+   - new on-disk outputs should be in `.oraclepack/runs/<pack_id>/...` without removing legacy output locations (unless requested).
+3. For each proposed change, specify:
+   - code touchpoints (files/modules: **Unknown** if repo not provided),
+   - acceptance tests and fixtures,
+   - failure modes and user-visible error messages.
+
+### 4) Stage 1 prompt shaping (pack generation) to help Stage 3 parse reliably
+
+If the workflow includes Stage 1 pack generation:
+
+- propose embedding **mini-metadata inside each prompt** (does not change pack schema),
+- keep metadata parseable and consistent.
+
+Use references/stage1-prompt-metadata.md.
+
+### 5) Produce final deliverables (spec + plan, optionally code)
+
+Deliverables should be:
+
+1. **Pipeline contract** (validate/run/actionize + CI + safety).
+2. **On-disk schemas** (`run.json`, `steps.json`, `normalized.jsonl`, `backlog.md`, `change-plan.md`).
+3. **Acceptance criteria** and a minimal test plan.
+4. **Implementation plan** (ordered steps, smallest shippable increments).
+5. If code context is provided and the user wants implementation: output concrete file edits + new files.
+
+## Output contract
+
+Unless the user asks for something else, output a single Markdown report with:
+
+- **Scope** (what parts of validate/run/actionize/CI/caching are included)
+- **Observed current behavior** (or **Unknown**)
+- **Proposed contract** (link to reference sections where applicable)
+- **Disk layout + schemas**
+- **Acceptance criteria**
+- **Implementation plan** (phased; smallest first)
+- **Risks / unknowns**
+- **Missing inputs** (exact paths/flags/help output needed)
+
+If asked to generate templates, use the assets:
+
+- assets/backlog-template.md
+- assets/change-plan-template.md
+- assets/normalized.example.jsonl
+
+## Failure modes
+
+- Missing repo / CLI help / sample run dirs → mark **Unknown** and provide a spec-first response.
+- Missing definitions for CI thresholds / policies → include **TODO** defaults and clearly label them as policy choices.
+- Any “current behavior” claim without evidence → downgrade to **Unknown**.
+
+## Invocation examples
+
+1) Add strict validator + JSON output:
+
+- `$oraclepack-pipeline-improver Add oraclepack validate --strict --json; define schema checks and CI gating exit codes`
+
+1) Deterministic run dir + resume/rerun:
+
+- `$oraclepack-pipeline-improver Specify .oraclepack/runs/<pack_id>/ layout, run.json/steps.json, resume default, --rerun failed|all|01,03`
+
+1) Concurrency + backoff policy:
+
+- `$oraclepack-pipeline-improver Add --max-parallel N and transient error retry budget/backoff rules`
+
+1) Stage 3 Actionizer:
+
+- `$oraclepack-pipeline-improver Implement oraclepack actionize; generate normalized.jsonl + backlog.md + change-plan.md with stable IDs`
+
+1) CI mode:
+
+- `$oraclepack-pipeline-improver Provide run --ci --non-interactive --json-log and actionize --ci; policy-driven exit codes`
+
+1) Stage 1 prompt metadata shaping:
+
+- `$oraclepack-pipeline-improver Add prompt-embedded metadata (QuestionId/Category/Reference/ExpectedArtifacts) without changing pack schema`
+```
+
 .config/skills/oraclepack-tickets-pack/SKILL.md
 ```
 ---
@@ -18153,6 +16482,1963 @@ This skill produces:
 - Attachment rules: `references/attachment-minimization.md`
 - Validator: `scripts/validate_pack.py`
 - Optional linter: `scripts/lint_attachments.py`
+```
+
+.mypy_cache/3.12/_typeshed/__init__.data.json
+```
+[TRUNCATED]
+```
+
+.mypy_cache/3.12/_typeshed/__init__.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[6,5,7,8,9,10,25,359,1,1,1,1],"dep_prios":[5,10,5,5,5,5,5,5,5,30,30,30],"dependencies":["collections.abc","sys","dataclasses","os","types","typing","typing_extensions","enum","builtins","_collections_abc","_frozen_importlib","abc"],"hash":"f49a3cc3dd65130625c84369013c885ffadf7721","id":"_typeshed","ignore_all":true,"interface_hash":"e0e8aca9a074a0f8216d2398b0c0be14ed255e97","mtime":1762029370,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/_typeshed/__init__.pyi","plugin_data":null,"size":12192,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/_typeshed/importlib.data.json
+```
+{".class":"MypyFile","_fullname":"_typeshed.importlib","future_import_flags":[],"is_partial_stub_package":false,"is_stub":true,"names":{".class":"SymbolTable","LoaderProtocol":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["builtins.object"],"dataclass_transform_spec":null,"declared_metaclass":null,"defn":{".class":"ClassDef","fullname":"_typeshed.importlib.LoaderProtocol","name":"LoaderProtocol","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":["is_protocol"],"fullname":"_typeshed.importlib.LoaderProtocol","has_param_spec_type":false,"metaclass_type":"abc.ABCMeta","metadata":{},"module_name":"_typeshed.importlib","mro":["_typeshed.importlib.LoaderProtocol","builtins.object"],"names":{".class":"SymbolTable","load_module":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0],"arg_names":[null,null],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"_typeshed.importlib.LoaderProtocol.load_module","name":"load_module","type":{".class":"CallableType","arg_kinds":[0,0],"arg_names":[null,null],"arg_types":["_typeshed.importlib.LoaderProtocol","builtins.str"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"load_module of LoaderProtocol","ret_type":"types.ModuleType","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}}},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"MetaPathFinderProtocol":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["builtins.object"],"dataclass_transform_spec":null,"declared_metaclass":null,"defn":{".class":"ClassDef","fullname":"_typeshed.importlib.MetaPathFinderProtocol","name":"MetaPathFinderProtocol","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":["is_protocol"],"fullname":"_typeshed.importlib.MetaPathFinderProtocol","has_param_spec_type":false,"metaclass_type":"abc.ABCMeta","metadata":{},"module_name":"_typeshed.importlib","mro":["_typeshed.importlib.MetaPathFinderProtocol","builtins.object"],"names":{".class":"SymbolTable","find_spec":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0,0,1],"arg_names":[null,null,null,null],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"_typeshed.importlib.MetaPathFinderProtocol.find_spec","name":"find_spec","type":{".class":"CallableType","arg_kinds":[0,0,0,1],"arg_names":[null,null,null,null],"arg_types":["_typeshed.importlib.MetaPathFinderProtocol","builtins.str",{".class":"UnionType","items":[{".class":"Instance","args":["builtins.str"],"extra_attrs":null,"type_ref":"typing.Sequence"},{".class":"NoneType"}],"uses_pep604_syntax":true},{".class":"UnionType","items":["types.ModuleType",{".class":"NoneType"}],"uses_pep604_syntax":true}],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"find_spec of MetaPathFinderProtocol","ret_type":{".class":"UnionType","items":["_frozen_importlib.ModuleSpec",{".class":"NoneType"}],"uses_pep604_syntax":true},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}}},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"ModuleSpec":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib.ModuleSpec","kind":"Gdef","module_hidden":true,"module_public":false},"ModuleType":{".class":"SymbolTableNode","cross_ref":"types.ModuleType","kind":"Gdef","module_hidden":true,"module_public":false},"PathEntryFinderProtocol":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["builtins.object"],"dataclass_transform_spec":null,"declared_metaclass":null,"defn":{".class":"ClassDef","fullname":"_typeshed.importlib.PathEntryFinderProtocol","name":"PathEntryFinderProtocol","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":["is_protocol"],"fullname":"_typeshed.importlib.PathEntryFinderProtocol","has_param_spec_type":false,"metaclass_type":"abc.ABCMeta","metadata":{},"module_name":"_typeshed.importlib","mro":["_typeshed.importlib.PathEntryFinderProtocol","builtins.object"],"names":{".class":"SymbolTable","find_spec":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0,1],"arg_names":[null,null,null],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"_typeshed.importlib.PathEntryFinderProtocol.find_spec","name":"find_spec","type":{".class":"CallableType","arg_kinds":[0,0,1],"arg_names":[null,null,null],"arg_types":["_typeshed.importlib.PathEntryFinderProtocol","builtins.str",{".class":"UnionType","items":["types.ModuleType",{".class":"NoneType"}],"uses_pep604_syntax":true}],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"find_spec of PathEntryFinderProtocol","ret_type":{".class":"UnionType","items":["_frozen_importlib.ModuleSpec",{".class":"NoneType"}],"uses_pep604_syntax":true},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}}},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"Protocol":{".class":"SymbolTableNode","cross_ref":"typing.Protocol","kind":"Gdef","module_hidden":true,"module_public":false},"Sequence":{".class":"SymbolTableNode","cross_ref":"typing.Sequence","kind":"Gdef","module_hidden":true,"module_public":false},"__all__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_inferred","has_explicit_value"],"fullname":"_typeshed.importlib.__all__","name":"__all__","type":{".class":"Instance","args":["builtins.str"],"extra_attrs":null,"type_ref":"builtins.list"}}},"__annotations__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"_typeshed.importlib.__annotations__","name":"__annotations__","type":{".class":"Instance","args":["builtins.str",{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":6}],"extra_attrs":null,"type_ref":"builtins.dict"}}},"__doc__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"_typeshed.importlib.__doc__","name":"__doc__","type":"builtins.str"}},"__file__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"_typeshed.importlib.__file__","name":"__file__","type":"builtins.str"}},"__name__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"_typeshed.importlib.__name__","name":"__name__","type":"builtins.str"}},"__package__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"_typeshed.importlib.__package__","name":"__package__","type":"builtins.str"}},"__spec__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"_typeshed.importlib.__spec__","name":"__spec__","type":"_frozen_importlib.ModuleSpec"}}},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/_typeshed/importlib.pyi"}
+```
+
+.mypy_cache/3.12/_typeshed/importlib.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[4,5,6,7,1,1,1],"dep_prios":[5,5,5,5,5,30,30],"dependencies":["collections.abc","importlib.machinery","types","typing","builtins","_frozen_importlib","abc"],"hash":"a2a3b405bbd03e0ac3627d81baaeecc3e007fe72","id":"_typeshed.importlib","ignore_all":true,"interface_hash":"537e7c797de9306d6cde8960f7eeacc51a3d0ed3","mtime":1762029370,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/_typeshed/importlib.pyi","plugin_data":null,"size":727,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/collections/__init__.data.json
+```
+[TRUNCATED]
+```
+
+.mypy_cache/3.12/collections/__init__.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[11,1,2,3,4,5,8,1,1,1],"dep_prios":[5,10,5,5,5,5,5,5,30,30],"dependencies":["collections.abc","sys","_collections_abc","_typeshed","typing","typing_extensions","types","builtins","_frozen_importlib","abc"],"hash":"a5b235c5d5497f4bd19e862e356cc28be6cc8952","id":"collections","ignore_all":true,"interface_hash":"ec5af74a84a0e7244dc9c8a0c775a1e8dc2ed55d","mtime":1762029370,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/collections/__init__.pyi","plugin_data":null,"size":23581,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/collections/abc.data.json
+```
+{".class":"MypyFile","_fullname":"collections.abc","future_import_flags":[],"is_partial_stub_package":false,"is_stub":true,"names":{".class":"SymbolTable","AsyncGenerator":{".class":"SymbolTableNode","cross_ref":"typing.AsyncGenerator","kind":"Gdef"},"AsyncIterable":{".class":"SymbolTableNode","cross_ref":"typing.AsyncIterable","kind":"Gdef"},"AsyncIterator":{".class":"SymbolTableNode","cross_ref":"typing.AsyncIterator","kind":"Gdef"},"Awaitable":{".class":"SymbolTableNode","cross_ref":"typing.Awaitable","kind":"Gdef"},"Buffer":{".class":"SymbolTableNode","cross_ref":"_collections_abc.Buffer","kind":"Gdef"},"ByteString":{".class":"SymbolTableNode","cross_ref":"typing.ByteString","kind":"Gdef"},"Callable":{".class":"SymbolTableNode","cross_ref":"typing.Callable","kind":"Gdef"},"Collection":{".class":"SymbolTableNode","cross_ref":"typing.Collection","kind":"Gdef"},"Container":{".class":"SymbolTableNode","cross_ref":"typing.Container","kind":"Gdef"},"Coroutine":{".class":"SymbolTableNode","cross_ref":"typing.Coroutine","kind":"Gdef"},"Generator":{".class":"SymbolTableNode","cross_ref":"typing.Generator","kind":"Gdef"},"Hashable":{".class":"SymbolTableNode","cross_ref":"typing.Hashable","kind":"Gdef"},"ItemsView":{".class":"SymbolTableNode","cross_ref":"typing.ItemsView","kind":"Gdef"},"Iterable":{".class":"SymbolTableNode","cross_ref":"typing.Iterable","kind":"Gdef"},"Iterator":{".class":"SymbolTableNode","cross_ref":"typing.Iterator","kind":"Gdef"},"KeysView":{".class":"SymbolTableNode","cross_ref":"typing.KeysView","kind":"Gdef"},"Mapping":{".class":"SymbolTableNode","cross_ref":"typing.Mapping","kind":"Gdef"},"MappingView":{".class":"SymbolTableNode","cross_ref":"typing.MappingView","kind":"Gdef"},"MutableMapping":{".class":"SymbolTableNode","cross_ref":"typing.MutableMapping","kind":"Gdef"},"MutableSequence":{".class":"SymbolTableNode","cross_ref":"typing.MutableSequence","kind":"Gdef"},"MutableSet":{".class":"SymbolTableNode","cross_ref":"typing.MutableSet","kind":"Gdef"},"Reversible":{".class":"SymbolTableNode","cross_ref":"typing.Reversible","kind":"Gdef"},"Sequence":{".class":"SymbolTableNode","cross_ref":"typing.Sequence","kind":"Gdef"},"Set":{".class":"SymbolTableNode","cross_ref":"typing.AbstractSet","kind":"Gdef"},"Sized":{".class":"SymbolTableNode","cross_ref":"typing.Sized","kind":"Gdef"},"ValuesView":{".class":"SymbolTableNode","cross_ref":"typing.ValuesView","kind":"Gdef"},"__all__":{".class":"SymbolTableNode","cross_ref":"_collections_abc.__all__","kind":"Gdef","module_public":false},"__annotations__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"collections.abc.__annotations__","name":"__annotations__","type":{".class":"Instance","args":["builtins.str",{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":6}],"extra_attrs":null,"type_ref":"builtins.dict"}}},"__doc__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"collections.abc.__doc__","name":"__doc__","type":"builtins.str"}},"__file__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"collections.abc.__file__","name":"__file__","type":"builtins.str"}},"__name__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"collections.abc.__name__","name":"__name__","type":"builtins.str"}},"__package__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"collections.abc.__package__","name":"__package__","type":"builtins.str"}},"__spec__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"collections.abc.__spec__","name":"__spec__","type":"_frozen_importlib.ModuleSpec"}}},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/collections/abc.pyi"}
+```
+
+.mypy_cache/3.12/collections/abc.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[1,1,1,1,1],"dep_prios":[5,5,30,30,30],"dependencies":["_collections_abc","builtins","_frozen_importlib","abc","typing"],"hash":"b533e3bac0da22e9dc59fd0341a2de22ba566c4b","id":"collections.abc","ignore_all":true,"interface_hash":"0a835857d00a605356d4831091f66b795d38403d","mtime":1762029370,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/collections/abc.pyi","plugin_data":null,"size":79,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/email/__init__.data.json
+```
+{".class":"MypyFile","_fullname":"email","future_import_flags":[],"is_partial_stub_package":false,"is_stub":true,"names":{".class":"SymbolTable","Callable":{".class":"SymbolTableNode","cross_ref":"typing.Callable","kind":"Gdef","module_hidden":true,"module_public":false},"IO":{".class":"SymbolTableNode","cross_ref":"typing.IO","kind":"Gdef","module_hidden":true,"module_public":false},"Message":{".class":"SymbolTableNode","cross_ref":"email.message.Message","kind":"Gdef","module_hidden":true,"module_public":false},"Policy":{".class":"SymbolTableNode","cross_ref":"email._policybase.Policy","kind":"Gdef","module_hidden":true,"module_public":false},"TypeAlias":{".class":"SymbolTableNode","cross_ref":"typing.TypeAlias","kind":"Gdef","module_hidden":true,"module_public":false},"_ParamType":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"TypeAlias","alias_tvars":[],"column":0,"fullname":"email._ParamType","line":31,"no_args":false,"normalized":false,"python_3_12_type_alias":false,"target":{".class":"UnionType","items":["builtins.str",{".class":"TupleType","implicit":false,"items":[{".class":"UnionType","items":["builtins.str",{".class":"NoneType"}],"uses_pep604_syntax":true},{".class":"UnionType","items":["builtins.str",{".class":"NoneType"}],"uses_pep604_syntax":true},"builtins.str"],"partial_fallback":{".class":"Instance","args":[{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":6}],"extra_attrs":null,"type_ref":"builtins.tuple"}}],"uses_pep604_syntax":true}}},"_ParamsType":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"TypeAlias","alias_tvars":[],"column":0,"fullname":"email._ParamsType","line":32,"no_args":false,"normalized":false,"python_3_12_type_alias":false,"target":{".class":"UnionType","items":["builtins.str",{".class":"NoneType"},{".class":"TupleType","implicit":false,"items":["builtins.str",{".class":"UnionType","items":["builtins.str",{".class":"NoneType"}],"uses_pep604_syntax":true},"builtins.str"],"partial_fallback":{".class":"Instance","args":[{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":6}],"extra_attrs":null,"type_ref":"builtins.tuple"}}],"uses_pep604_syntax":true}}},"__all__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_inferred","has_explicit_value"],"fullname":"email.__all__","name":"__all__","type":{".class":"Instance","args":["builtins.str"],"extra_attrs":null,"type_ref":"builtins.list"}}},"__annotations__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"email.__annotations__","name":"__annotations__","type":{".class":"Instance","args":["builtins.str",{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":6}],"extra_attrs":null,"type_ref":"builtins.dict"}}},"__doc__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"email.__doc__","name":"__doc__","type":"builtins.str"}},"__file__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"email.__file__","name":"__file__","type":"builtins.str"}},"__name__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"email.__name__","name":"__name__","type":"builtins.str"}},"__package__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"email.__package__","name":"__package__","type":"builtins.str"}},"__path__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"email.__path__","name":"__path__","type":{".class":"Instance","args":["builtins.str"],"extra_attrs":null,"type_ref":"builtins.list"}}},"__spec__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"email.__spec__","name":"__spec__","type":"_frozen_importlib.ModuleSpec"}},"message_from_binary_file":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,1,5],"arg_names":["fp","_class","policy"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"email.message_from_binary_file","name":"message_from_binary_file","type":{".class":"CallableType","arg_kinds":[0,1,5],"arg_names":["fp","_class","policy"],"arg_types":[{".class":"Instance","args":["builtins.bytes"],"extra_attrs":null,"type_ref":"typing.IO"},{".class":"CallableType","arg_kinds":[],"arg_names":[],"arg_types":[],"bound_args":[],"def_extras":{},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":null,"ret_type":{".class":"Instance","args":["builtins.str","builtins.str"],"extra_attrs":null,"type_ref":"email.message.Message"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]},{".class":"Instance","args":[{".class":"Instance","args":["builtins.str","builtins.str"],"extra_attrs":null,"type_ref":"email.message.Message"}],"extra_attrs":null,"type_ref":"email._policybase.Policy"}],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"message_from_binary_file","ret_type":{".class":"Instance","args":["builtins.str","builtins.str"],"extra_attrs":null,"type_ref":"email.message.Message"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"message_from_bytes":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,1,5],"arg_names":["s","_class","policy"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"email.message_from_bytes","name":"message_from_bytes","type":{".class":"CallableType","arg_kinds":[0,1,5],"arg_names":["s","_class","policy"],"arg_types":[{".class":"UnionType","items":["builtins.bytes","builtins.bytearray"],"uses_pep604_syntax":true},{".class":"CallableType","arg_kinds":[],"arg_names":[],"arg_types":[],"bound_args":[],"def_extras":{},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":null,"ret_type":{".class":"Instance","args":["builtins.str","builtins.str"],"extra_attrs":null,"type_ref":"email.message.Message"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]},{".class":"Instance","args":[{".class":"Instance","args":["builtins.str","builtins.str"],"extra_attrs":null,"type_ref":"email.message.Message"}],"extra_attrs":null,"type_ref":"email._policybase.Policy"}],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"message_from_bytes","ret_type":{".class":"Instance","args":["builtins.str","builtins.str"],"extra_attrs":null,"type_ref":"email.message.Message"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"message_from_file":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,1,5],"arg_names":["fp","_class","policy"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"email.message_from_file","name":"message_from_file","type":{".class":"CallableType","arg_kinds":[0,1,5],"arg_names":["fp","_class","policy"],"arg_types":[{".class":"Instance","args":["builtins.str"],"extra_attrs":null,"type_ref":"typing.IO"},{".class":"CallableType","arg_kinds":[],"arg_names":[],"arg_types":[],"bound_args":[],"def_extras":{},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":null,"ret_type":{".class":"Instance","args":["builtins.str","builtins.str"],"extra_attrs":null,"type_ref":"email.message.Message"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]},{".class":"Instance","args":[{".class":"Instance","args":["builtins.str","builtins.str"],"extra_attrs":null,"type_ref":"email.message.Message"}],"extra_attrs":null,"type_ref":"email._policybase.Policy"}],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"message_from_file","ret_type":{".class":"Instance","args":["builtins.str","builtins.str"],"extra_attrs":null,"type_ref":"email.message.Message"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"message_from_string":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,1,5],"arg_names":["s","_class","policy"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"email.message_from_string","name":"message_from_string","type":{".class":"CallableType","arg_kinds":[0,1,5],"arg_names":["s","_class","policy"],"arg_types":["builtins.str",{".class":"CallableType","arg_kinds":[],"arg_names":[],"arg_types":[],"bound_args":[],"def_extras":{},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":null,"ret_type":{".class":"Instance","args":["builtins.str","builtins.str"],"extra_attrs":null,"type_ref":"email.message.Message"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]},{".class":"Instance","args":[{".class":"Instance","args":["builtins.str","builtins.str"],"extra_attrs":null,"type_ref":"email.message.Message"}],"extra_attrs":null,"type_ref":"email._policybase.Policy"}],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"message_from_string","ret_type":{".class":"Instance","args":["builtins.str","builtins.str"],"extra_attrs":null,"type_ref":"email.message.Message"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}}},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/email/__init__.pyi"}
+```
+
+.mypy_cache/3.12/email/__init__.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[1,2,3,4,5,1,1,1,1,1],"dep_prios":[5,5,5,5,5,5,30,30,30,30],"dependencies":["collections.abc","email.message","email.policy","typing","typing_extensions","builtins","_frozen_importlib","abc","email._policybase","types"],"hash":"caecefbbbf09ce84b396b0013bced4c891a76f88","id":"email","ignore_all":true,"interface_hash":"06d780800431b8e9b7e8f2979d3d373329ff5fde","mtime":1762029370,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/email/__init__.pyi","plugin_data":null,"size":1977,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/email/_policybase.data.json
+```
+[TRUNCATED]
+```
+
+.mypy_cache/3.12/email/_policybase.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[2,3,4,1,5,6,1,1,1],"dep_prios":[5,5,5,5,5,5,5,30,30],"dependencies":["email.errors","email.header","email.message","abc","typing","typing_extensions","builtins","_frozen_importlib","types"],"hash":"72180d54339bec1be169396e7679e646d9e44e3b","id":"email._policybase","ignore_all":true,"interface_hash":"1f4121bea771eb2aaadb7366df4090996f1e79ad","mtime":1762029370,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/email/_policybase.pyi","plugin_data":null,"size":3060,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/email/charset.data.json
+```
+{".class":"MypyFile","_fullname":"email.charset","future_import_flags":[],"is_partial_stub_package":false,"is_stub":true,"names":{".class":"SymbolTable","BASE64":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_final","is_ready"],"fullname":"email.charset.BASE64","name":"BASE64","type":"builtins.int"}},"Callable":{".class":"SymbolTableNode","cross_ref":"typing.Callable","kind":"Gdef","module_hidden":true,"module_public":false},"Charset":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["builtins.object"],"dataclass_transform_spec":null,"declared_metaclass":null,"defn":{".class":"ClassDef","fullname":"email.charset.Charset","name":"Charset","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":[],"fullname":"email.charset.Charset","has_param_spec_type":false,"metaclass_type":null,"metadata":{},"module_name":"email.charset","mro":["email.charset.Charset","builtins.object"],"names":{".class":"SymbolTable","__eq__":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0],"arg_names":[null,null],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"email.charset.Charset.__eq__","name":"__eq__","type":{".class":"CallableType","arg_kinds":[0,0],"arg_names":[null,null],"arg_types":["email.charset.Charset","builtins.object"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"__eq__ of Charset","ret_type":"builtins.bool","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"__hash__":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"Var","flags":["is_initialized_in_class","is_classvar","is_ready"],"fullname":"email.charset.Charset.__hash__","name":"__hash__","type":{".class":"NoneType"}}},"__init__":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,1],"arg_names":["self","input_charset"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"email.charset.Charset.__init__","name":"__init__","type":{".class":"CallableType","arg_kinds":[0,1],"arg_names":["self","input_charset"],"arg_types":["email.charset.Charset","builtins.str"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"__init__ of Charset","ret_type":{".class":"NoneType"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"__ne__":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0],"arg_names":[null,null],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"email.charset.Charset.__ne__","name":"__ne__","type":{".class":"CallableType","arg_kinds":[0,0],"arg_names":[null,null],"arg_types":["email.charset.Charset","builtins.object"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"__ne__ of Charset","ret_type":"builtins.bool","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"body_encode":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"OverloadedFuncDef","deprecated":null,"flags":[],"fullname":"email.charset.Charset.body_encode","impl":null,"items":[{".class":"Decorator","func":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0],"arg_names":["self","string"],"dataclass_transform_spec":null,"deprecated":null,"flags":["is_overload","is_decorated"],"fullname":"email.charset.Charset.body_encode","name":"body_encode","type":{".class":"CallableType","arg_kinds":[0,0],"arg_names":["self","string"],"arg_types":["email.charset.Charset",{".class":"NoneType"}],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"body_encode of Charset","ret_type":{".class":"NoneType"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}},"is_overload":true,"var":{".class":"Var","flags":["is_ready","is_inferred"],"fullname":"email.charset.Charset.body_encode","name":"body_encode","type":{".class":"CallableType","arg_kinds":[0,0],"arg_names":["self","string"],"arg_types":["email.charset.Charset",{".class":"NoneType"}],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"body_encode of Charset","ret_type":{".class":"NoneType"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},{".class":"Decorator","func":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0],"arg_names":["self","string"],"dataclass_transform_spec":null,"deprecated":null,"flags":["is_overload","is_decorated"],"fullname":"email.charset.Charset.body_encode","name":"body_encode","type":{".class":"CallableType","arg_kinds":[0,0],"arg_names":["self","string"],"arg_types":["email.charset.Charset",{".class":"UnionType","items":["builtins.str","builtins.bytes"],"uses_pep604_syntax":true}],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"body_encode of Charset","ret_type":"builtins.str","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}},"is_overload":true,"var":{".class":"Var","flags":["is_ready","is_inferred"],"fullname":"email.charset.Charset.body_encode","name":"body_encode","type":{".class":"CallableType","arg_kinds":[0,0],"arg_names":["self","string"],"arg_types":["email.charset.Charset",{".class":"UnionType","items":["builtins.str","builtins.bytes"],"uses_pep604_syntax":true}],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"body_encode of Charset","ret_type":"builtins.str","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}}],"type":{".class":"Overloaded","items":[{".class":"CallableType","arg_kinds":[0,0],"arg_names":["self","string"],"arg_types":["email.charset.Charset",{".class":"NoneType"}],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"body_encode of Charset","ret_type":{".class":"NoneType"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]},{".class":"CallableType","arg_kinds":[0,0],"arg_names":["self","string"],"arg_types":["email.charset.Charset",{".class":"UnionType","items":["builtins.str","builtins.bytes"],"uses_pep604_syntax":true}],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"body_encode of Charset","ret_type":"builtins.str","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}]}}},"body_encoding":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"Var","flags":["is_initialized_in_class","is_ready"],"fullname":"email.charset.Charset.body_encoding","name":"body_encoding","type":"builtins.int"}},"get_body_encoding":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0],"arg_names":["self"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"email.charset.Charset.get_body_encoding","name":"get_body_encoding","type":{".class":"CallableType","arg_kinds":[0],"arg_names":["self"],"arg_types":["email.charset.Charset"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"get_body_encoding of Charset","ret_type":{".class":"UnionType","items":["builtins.str",{".class":"CallableType","arg_kinds":[0],"arg_names":[null],"arg_types":[{".class":"Instance","args":["builtins.str","builtins.str"],"extra_attrs":null,"type_ref":"email.message.Message"}],"bound_args":[],"def_extras":{},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":null,"ret_type":{".class":"NoneType"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}],"uses_pep604_syntax":true},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"get_output_charset":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0],"arg_names":["self"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"email.charset.Charset.get_output_charset","name":"get_output_charset","type":{".class":"CallableType","arg_kinds":[0],"arg_names":["self"],"arg_types":["email.charset.Charset"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"get_output_charset of Charset","ret_type":{".class":"UnionType","items":["builtins.str",{".class":"NoneType"}],"uses_pep604_syntax":true},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"header_encode":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0],"arg_names":["self","string"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"email.charset.Charset.header_encode","name":"header_encode","type":{".class":"CallableType","arg_kinds":[0,0],"arg_names":["self","string"],"arg_types":["email.charset.Charset","builtins.str"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"header_encode of Charset","ret_type":"builtins.str","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"header_encode_lines":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0,0],"arg_names":["self","string","maxlengths"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"email.charset.Charset.header_encode_lines","name":"header_encode_lines","type":{".class":"CallableType","arg_kinds":[0,0,0],"arg_names":["self","string","maxlengths"],"arg_types":["email.charset.Charset","builtins.str",{".class":"Instance","args":["builtins.int"],"extra_attrs":null,"type_ref":"typing.Iterator"}],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"header_encode_lines of Charset","ret_type":{".class":"Instance","args":[{".class":"UnionType","items":["builtins.str",{".class":"NoneType"}],"uses_pep604_syntax":true}],"extra_attrs":null,"type_ref":"builtins.list"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"header_encoding":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"Var","flags":["is_initialized_in_class","is_ready"],"fullname":"email.charset.Charset.header_encoding","name":"header_encoding","type":"builtins.int"}},"input_charset":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"Var","flags":["is_initialized_in_class","is_ready"],"fullname":"email.charset.Charset.input_charset","name":"input_charset","type":"builtins.str"}},"input_codec":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"Var","flags":["is_initialized_in_class","is_ready"],"fullname":"email.charset.Charset.input_codec","name":"input_codec","type":{".class":"UnionType","items":["builtins.str",{".class":"NoneType"}],"uses_pep604_syntax":true}}},"output_charset":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"Var","flags":["is_initialized_in_class","is_ready"],"fullname":"email.charset.Charset.output_charset","name":"output_charset","type":{".class":"UnionType","items":["builtins.str",{".class":"NoneType"}],"uses_pep604_syntax":true}}},"output_codec":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"Var","flags":["is_initialized_in_class","is_ready"],"fullname":"email.charset.Charset.output_codec","name":"output_codec","type":{".class":"UnionType","items":["builtins.str",{".class":"NoneType"}],"uses_pep604_syntax":true}}}},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"ClassVar":{".class":"SymbolTableNode","cross_ref":"typing.ClassVar","kind":"Gdef","module_hidden":true,"module_public":false},"Final":{".class":"SymbolTableNode","cross_ref":"typing.Final","kind":"Gdef","module_hidden":true,"module_public":false},"Iterator":{".class":"SymbolTableNode","cross_ref":"typing.Iterator","kind":"Gdef","module_hidden":true,"module_public":false},"Message":{".class":"SymbolTableNode","cross_ref":"email.message.Message","kind":"Gdef","module_hidden":true,"module_public":false},"QP":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_final","is_ready"],"fullname":"email.charset.QP","name":"QP","type":"builtins.int"}},"SHORTEST":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_final","is_ready"],"fullname":"email.charset.SHORTEST","name":"SHORTEST","type":"builtins.int"}},"__all__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_inferred","has_explicit_value"],"fullname":"email.charset.__all__","name":"__all__","type":{".class":"Instance","args":["builtins.str"],"extra_attrs":null,"type_ref":"builtins.list"}}},"__annotations__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"email.charset.__annotations__","name":"__annotations__","type":{".class":"Instance","args":["builtins.str",{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":6}],"extra_attrs":null,"type_ref":"builtins.dict"}}},"__doc__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"email.charset.__doc__","name":"__doc__","type":"builtins.str"}},"__file__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"email.charset.__file__","name":"__file__","type":"builtins.str"}},"__name__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"email.charset.__name__","name":"__name__","type":"builtins.str"}},"__package__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"email.charset.__package__","name":"__package__","type":"builtins.str"}},"__spec__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"email.charset.__spec__","name":"__spec__","type":"_frozen_importlib.ModuleSpec"}},"add_alias":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0],"arg_names":["alias","canonical"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"email.charset.add_alias","name":"add_alias","type":{".class":"CallableType","arg_kinds":[0,0],"arg_names":["alias","canonical"],"arg_types":["builtins.str","builtins.str"],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"add_alias","ret_type":{".class":"NoneType"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"add_charset":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,1,1,1],"arg_names":["charset","header_enc","body_enc","output_charset"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"email.charset.add_charset","name":"add_charset","type":{".class":"CallableType","arg_kinds":[0,1,1,1],"arg_names":["charset","header_enc","body_enc","output_charset"],"arg_types":["builtins.str",{".class":"UnionType","items":["builtins.int",{".class":"NoneType"}],"uses_pep604_syntax":true},{".class":"UnionType","items":["builtins.int",{".class":"NoneType"}],"uses_pep604_syntax":true},{".class":"UnionType","items":["builtins.str",{".class":"NoneType"}],"uses_pep604_syntax":true}],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"add_charset","ret_type":{".class":"NoneType"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"add_codec":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0],"arg_names":["charset","codecname"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"email.charset.add_codec","name":"add_codec","type":{".class":"CallableType","arg_kinds":[0,0],"arg_names":["charset","codecname"],"arg_types":["builtins.str","builtins.str"],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"add_codec","ret_type":{".class":"NoneType"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"overload":{".class":"SymbolTableNode","cross_ref":"typing.overload","kind":"Gdef","module_hidden":true,"module_public":false}},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/email/charset.pyi"}
+```
+
+.mypy_cache/3.12/email/charset.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[1,2,3,1,1,1,1],"dep_prios":[5,5,5,5,30,30,30],"dependencies":["collections.abc","email.message","typing","builtins","_frozen_importlib","abc","types"],"hash":"386b4196b21159aecbb306f8e3eb5cd5837ec6d5","id":"email.charset","ignore_all":true,"interface_hash":"6543ca193bc958a6dcbdb7259bf10e32c2ea7638","mtime":1762029370,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/email/charset.pyi","plugin_data":null,"size":1369,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/email/contentmanager.data.json
+```
+{".class":"MypyFile","_fullname":"email.contentmanager","future_import_flags":[],"is_partial_stub_package":false,"is_stub":true,"names":{".class":"SymbolTable","Any":{".class":"SymbolTableNode","cross_ref":"typing.Any","kind":"Gdef","module_hidden":true,"module_public":false},"Callable":{".class":"SymbolTableNode","cross_ref":"typing.Callable","kind":"Gdef","module_hidden":true,"module_public":false},"ContentManager":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["builtins.object"],"dataclass_transform_spec":null,"declared_metaclass":null,"defn":{".class":"ClassDef","fullname":"email.contentmanager.ContentManager","name":"ContentManager","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":[],"fullname":"email.contentmanager.ContentManager","has_param_spec_type":false,"metaclass_type":null,"metadata":{},"module_name":"email.contentmanager","mro":["email.contentmanager.ContentManager","builtins.object"],"names":{".class":"SymbolTable","add_get_handler":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0,0],"arg_names":["self","key","handler"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"email.contentmanager.ContentManager.add_get_handler","name":"add_get_handler","type":{".class":"CallableType","arg_kinds":[0,0,0],"arg_names":["self","key","handler"],"arg_types":["email.contentmanager.ContentManager","builtins.str",{".class":"CallableType","arg_kinds":[2,4],"arg_names":[null,null],"arg_types":[{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":2},{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":2}],"bound_args":[],"def_extras":{},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":true,"name":null,"ret_type":{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":2},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"add_get_handler of ContentManager","ret_type":{".class":"NoneType"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"add_set_handler":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0,0],"arg_names":["self","typekey","handler"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"email.contentmanager.ContentManager.add_set_handler","name":"add_set_handler","type":{".class":"CallableType","arg_kinds":[0,0,0],"arg_names":["self","typekey","handler"],"arg_types":["email.contentmanager.ContentManager","builtins.type",{".class":"CallableType","arg_kinds":[2,4],"arg_names":[null,null],"arg_types":[{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":2},{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":2}],"bound_args":[],"def_extras":{},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":true,"name":null,"ret_type":{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":2},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"add_set_handler of ContentManager","ret_type":{".class":"NoneType"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"get_content":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0,2,4],"arg_names":["self","msg","args","kw"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"email.contentmanager.ContentManager.get_content","name":"get_content","type":{".class":"CallableType","arg_kinds":[0,0,2,4],"arg_names":["self","msg","args","kw"],"arg_types":["email.contentmanager.ContentManager",{".class":"Instance","args":["builtins.str","builtins.str"],"extra_attrs":null,"type_ref":"email.message.Message"},{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":2},{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":2}],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"get_content of ContentManager","ret_type":{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":2},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"set_content":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0,0,2,4],"arg_names":["self","msg","obj","args","kw"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"email.contentmanager.ContentManager.set_content","name":"set_content","type":{".class":"CallableType","arg_kinds":[0,0,0,2,4],"arg_names":["self","msg","obj","args","kw"],"arg_types":["email.contentmanager.ContentManager",{".class":"Instance","args":["builtins.str","builtins.str"],"extra_attrs":null,"type_ref":"email.message.Message"},{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":2},{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":2},{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":2}],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"set_content of ContentManager","ret_type":{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":2},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}}},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"Message":{".class":"SymbolTableNode","cross_ref":"email.message.Message","kind":"Gdef","module_hidden":true,"module_public":false},"__annotations__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"email.contentmanager.__annotations__","name":"__annotations__","type":{".class":"Instance","args":["builtins.str",{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":6}],"extra_attrs":null,"type_ref":"builtins.dict"}}},"__doc__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"email.contentmanager.__doc__","name":"__doc__","type":"builtins.str"}},"__file__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"email.contentmanager.__file__","name":"__file__","type":"builtins.str"}},"__name__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"email.contentmanager.__name__","name":"__name__","type":"builtins.str"}},"__package__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"email.contentmanager.__package__","name":"__package__","type":"builtins.str"}},"__spec__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"email.contentmanager.__spec__","name":"__spec__","type":"_frozen_importlib.ModuleSpec"}},"raw_data_manager":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"email.contentmanager.raw_data_manager","name":"raw_data_manager","type":"email.contentmanager.ContentManager"}}},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/email/contentmanager.pyi"}
+```
+
+.mypy_cache/3.12/email/contentmanager.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[1,2,3,1,1,1,1],"dep_prios":[5,5,5,5,30,30,30],"dependencies":["collections.abc","email.message","typing","builtins","_frozen_importlib","abc","types"],"hash":"77dff546b3fbaac675acbd4270bbc061cd03c899","id":"email.contentmanager","ignore_all":true,"interface_hash":"c1209b7227502fd7da4336ef71be36f8fd71ca04","mtime":1762029370,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/email/contentmanager.pyi","plugin_data":null,"size":480,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/email/errors.data.json
+```
+{".class":"MypyFile","_fullname":"email.errors","future_import_flags":[],"is_partial_stub_package":false,"is_stub":true,"names":{".class":"SymbolTable","BoundaryError":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["email.errors.MessageParseError"],"dataclass_transform_spec":null,"declared_metaclass":null,"defn":{".class":"ClassDef","fullname":"email.errors.BoundaryError","name":"BoundaryError","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":[],"fullname":"email.errors.BoundaryError","has_param_spec_type":false,"metaclass_type":null,"metadata":{},"module_name":"email.errors","mro":["email.errors.BoundaryError","email.errors.MessageParseError","email.errors.MessageError","builtins.Exception","builtins.BaseException","builtins.object"],"names":{".class":"SymbolTable"},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"CharsetError":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["email.errors.MessageError"],"dataclass_transform_spec":null,"declared_metaclass":null,"defn":{".class":"ClassDef","fullname":"email.errors.CharsetError","name":"CharsetError","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":[],"fullname":"email.errors.CharsetError","has_param_spec_type":false,"metaclass_type":null,"metadata":{},"module_name":"email.errors","mro":["email.errors.CharsetError","email.errors.MessageError","builtins.Exception","builtins.BaseException","builtins.object"],"names":{".class":"SymbolTable"},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"CloseBoundaryNotFoundDefect":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["email.errors.MessageDefect"],"dataclass_transform_spec":null,"declared_metaclass":null,"defn":{".class":"ClassDef","fullname":"email.errors.CloseBoundaryNotFoundDefect","name":"CloseBoundaryNotFoundDefect","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":[],"fullname":"email.errors.CloseBoundaryNotFoundDefect","has_param_spec_type":false,"metaclass_type":null,"metadata":{},"module_name":"email.errors","mro":["email.errors.CloseBoundaryNotFoundDefect","email.errors.MessageDefect","builtins.ValueError","builtins.Exception","builtins.BaseException","builtins.object"],"names":{".class":"SymbolTable"},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"FirstHeaderLineIsContinuationDefect":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["email.errors.MessageDefect"],"dataclass_transform_spec":null,"declared_metaclass":null,"defn":{".class":"ClassDef","fullname":"email.errors.FirstHeaderLineIsContinuationDefect","name":"FirstHeaderLineIsContinuationDefect","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":[],"fullname":"email.errors.FirstHeaderLineIsContinuationDefect","has_param_spec_type":false,"metaclass_type":null,"metadata":{},"module_name":"email.errors","mro":["email.errors.FirstHeaderLineIsContinuationDefect","email.errors.MessageDefect","builtins.ValueError","builtins.Exception","builtins.BaseException","builtins.object"],"names":{".class":"SymbolTable"},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"HeaderDefect":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["email.errors.MessageDefect"],"dataclass_transform_spec":null,"declared_metaclass":null,"defn":{".class":"ClassDef","fullname":"email.errors.HeaderDefect","name":"HeaderDefect","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":[],"fullname":"email.errors.HeaderDefect","has_param_spec_type":false,"metaclass_type":null,"metadata":{},"module_name":"email.errors","mro":["email.errors.HeaderDefect","email.errors.MessageDefect","builtins.ValueError","builtins.Exception","builtins.BaseException","builtins.object"],"names":{".class":"SymbolTable"},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"HeaderMissingRequiredValue":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["email.errors.HeaderDefect"],"dataclass_transform_spec":null,"declared_metaclass":null,"defn":{".class":"ClassDef","fullname":"email.errors.HeaderMissingRequiredValue","name":"HeaderMissingRequiredValue","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":[],"fullname":"email.errors.HeaderMissingRequiredValue","has_param_spec_type":false,"metaclass_type":null,"metadata":{},"module_name":"email.errors","mro":["email.errors.HeaderMissingRequiredValue","email.errors.HeaderDefect","email.errors.MessageDefect","builtins.ValueError","builtins.Exception","builtins.BaseException","builtins.object"],"names":{".class":"SymbolTable"},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"HeaderParseError":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["email.errors.MessageParseError"],"dataclass_transform_spec":null,"declared_metaclass":null,"defn":{".class":"ClassDef","fullname":"email.errors.HeaderParseError","name":"HeaderParseError","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":[],"fullname":"email.errors.HeaderParseError","has_param_spec_type":false,"metaclass_type":null,"metadata":{},"module_name":"email.errors","mro":["email.errors.HeaderParseError","email.errors.MessageParseError","email.errors.MessageError","builtins.Exception","builtins.BaseException","builtins.object"],"names":{".class":"SymbolTable"},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"HeaderWriteError":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["email.errors.MessageError"],"dataclass_transform_spec":null,"declared_metaclass":null,"defn":{".class":"ClassDef","fullname":"email.errors.HeaderWriteError","name":"HeaderWriteError","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":[],"fullname":"email.errors.HeaderWriteError","has_param_spec_type":false,"metaclass_type":null,"metadata":{},"module_name":"email.errors","mro":["email.errors.HeaderWriteError","email.errors.MessageError","builtins.Exception","builtins.BaseException","builtins.object"],"names":{".class":"SymbolTable"},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"InvalidBase64CharactersDefect":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["email.errors.MessageDefect"],"dataclass_transform_spec":null,"declared_metaclass":null,"defn":{".class":"ClassDef","fullname":"email.errors.InvalidBase64CharactersDefect","name":"InvalidBase64CharactersDefect","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":[],"fullname":"email.errors.InvalidBase64CharactersDefect","has_param_spec_type":false,"metaclass_type":null,"metadata":{},"module_name":"email.errors","mro":["email.errors.InvalidBase64CharactersDefect","email.errors.MessageDefect","builtins.ValueError","builtins.Exception","builtins.BaseException","builtins.object"],"names":{".class":"SymbolTable"},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"InvalidBase64LengthDefect":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["email.errors.MessageDefect"],"dataclass_transform_spec":null,"declared_metaclass":null,"defn":{".class":"ClassDef","fullname":"email.errors.InvalidBase64LengthDefect","name":"InvalidBase64LengthDefect","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":[],"fullname":"email.errors.InvalidBase64LengthDefect","has_param_spec_type":false,"metaclass_type":null,"metadata":{},"module_name":"email.errors","mro":["email.errors.InvalidBase64LengthDefect","email.errors.MessageDefect","builtins.ValueError","builtins.Exception","builtins.BaseException","builtins.object"],"names":{".class":"SymbolTable"},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"InvalidBase64PaddingDefect":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["email.errors.MessageDefect"],"dataclass_transform_spec":null,"declared_metaclass":null,"defn":{".class":"ClassDef","fullname":"email.errors.InvalidBase64PaddingDefect","name":"InvalidBase64PaddingDefect","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":[],"fullname":"email.errors.InvalidBase64PaddingDefect","has_param_spec_type":false,"metaclass_type":null,"metadata":{},"module_name":"email.errors","mro":["email.errors.InvalidBase64PaddingDefect","email.errors.MessageDefect","builtins.ValueError","builtins.Exception","builtins.BaseException","builtins.object"],"names":{".class":"SymbolTable"},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"InvalidDateDefect":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["email.errors.HeaderDefect"],"dataclass_transform_spec":null,"declared_metaclass":null,"defn":{".class":"ClassDef","fullname":"email.errors.InvalidDateDefect","name":"InvalidDateDefect","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":[],"fullname":"email.errors.InvalidDateDefect","has_param_spec_type":false,"metaclass_type":null,"metadata":{},"module_name":"email.errors","mro":["email.errors.InvalidDateDefect","email.errors.HeaderDefect","email.errors.MessageDefect","builtins.ValueError","builtins.Exception","builtins.BaseException","builtins.object"],"names":{".class":"SymbolTable"},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"InvalidHeaderDefect":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["email.errors.HeaderDefect"],"dataclass_transform_spec":null,"declared_metaclass":null,"defn":{".class":"ClassDef","fullname":"email.errors.InvalidHeaderDefect","name":"InvalidHeaderDefect","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":[],"fullname":"email.errors.InvalidHeaderDefect","has_param_spec_type":false,"metaclass_type":null,"metadata":{},"module_name":"email.errors","mro":["email.errors.InvalidHeaderDefect","email.errors.HeaderDefect","email.errors.MessageDefect","builtins.ValueError","builtins.Exception","builtins.BaseException","builtins.object"],"names":{".class":"SymbolTable"},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"InvalidMultipartContentTransferEncodingDefect":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["email.errors.MessageDefect"],"dataclass_transform_spec":null,"declared_metaclass":null,"defn":{".class":"ClassDef","fullname":"email.errors.InvalidMultipartContentTransferEncodingDefect","name":"InvalidMultipartContentTransferEncodingDefect","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":[],"fullname":"email.errors.InvalidMultipartContentTransferEncodingDefect","has_param_spec_type":false,"metaclass_type":null,"metadata":{},"module_name":"email.errors","mro":["email.errors.InvalidMultipartContentTransferEncodingDefect","email.errors.MessageDefect","builtins.ValueError","builtins.Exception","builtins.BaseException","builtins.object"],"names":{".class":"SymbolTable"},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"MalformedHeaderDefect":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeAlias","alias_tvars":[],"column":0,"fullname":"email.errors.MalformedHeaderDefect","line":29,"no_args":true,"normalized":false,"python_3_12_type_alias":false,"target":"email.errors.MissingHeaderBodySeparatorDefect"}},"MessageDefect":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["builtins.ValueError"],"dataclass_transform_spec":null,"declared_metaclass":null,"defn":{".class":"ClassDef","fullname":"email.errors.MessageDefect","name":"MessageDefect","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":[],"fullname":"email.errors.MessageDefect","has_param_spec_type":false,"metaclass_type":null,"metadata":{},"module_name":"email.errors","mro":["email.errors.MessageDefect","builtins.ValueError","builtins.Exception","builtins.BaseException","builtins.object"],"names":{".class":"SymbolTable","__init__":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,1],"arg_names":["self","line"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"email.errors.MessageDefect.__init__","name":"__init__","type":{".class":"CallableType","arg_kinds":[0,1],"arg_names":["self","line"],"arg_types":["email.errors.MessageDefect",{".class":"UnionType","items":["builtins.str",{".class":"NoneType"}],"uses_pep604_syntax":true}],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"__init__ of MessageDefect","ret_type":{".class":"NoneType"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}}},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"MessageError":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["builtins.Exception"],"dataclass_transform_spec":null,"declared_metaclass":null,"defn":{".class":"ClassDef","fullname":"email.errors.MessageError","name":"MessageError","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":[],"fullname":"email.errors.MessageError","has_param_spec_type":false,"metaclass_type":null,"metadata":{},"module_name":"email.errors","mro":["email.errors.MessageError","builtins.Exception","builtins.BaseException","builtins.object"],"names":{".class":"SymbolTable"},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"MessageParseError":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["email.errors.MessageError"],"dataclass_transform_spec":null,"declared_metaclass":null,"defn":{".class":"ClassDef","fullname":"email.errors.MessageParseError","name":"MessageParseError","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":[],"fullname":"email.errors.MessageParseError","has_param_spec_type":false,"metaclass_type":null,"metadata":{},"module_name":"email.errors","mro":["email.errors.MessageParseError","email.errors.MessageError","builtins.Exception","builtins.BaseException","builtins.object"],"names":{".class":"SymbolTable"},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"MisplacedEnvelopeHeaderDefect":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["email.errors.MessageDefect"],"dataclass_transform_spec":null,"declared_metaclass":null,"defn":{".class":"ClassDef","fullname":"email.errors.MisplacedEnvelopeHeaderDefect","name":"MisplacedEnvelopeHeaderDefect","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":[],"fullname":"email.errors.MisplacedEnvelopeHeaderDefect","has_param_spec_type":false,"metaclass_type":null,"metadata":{},"module_name":"email.errors","mro":["email.errors.MisplacedEnvelopeHeaderDefect","email.errors.MessageDefect","builtins.ValueError","builtins.Exception","builtins.BaseException","builtins.object"],"names":{".class":"SymbolTable"},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"MissingHeaderBodySeparatorDefect":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["email.errors.MessageDefect"],"dataclass_transform_spec":null,"declared_metaclass":null,"defn":{".class":"ClassDef","fullname":"email.errors.MissingHeaderBodySeparatorDefect","name":"MissingHeaderBodySeparatorDefect","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":[],"fullname":"email.errors.MissingHeaderBodySeparatorDefect","has_param_spec_type":false,"metaclass_type":null,"metadata":{},"module_name":"email.errors","mro":["email.errors.MissingHeaderBodySeparatorDefect","email.errors.MessageDefect","builtins.ValueError","builtins.Exception","builtins.BaseException","builtins.object"],"names":{".class":"SymbolTable"},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"MultipartConversionError":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["email.errors.MessageError","builtins.TypeError"],"dataclass_transform_spec":null,"declared_metaclass":null,"defn":{".class":"ClassDef","fullname":"email.errors.MultipartConversionError","name":"MultipartConversionError","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":[],"fullname":"email.errors.MultipartConversionError","has_param_spec_type":false,"metaclass_type":null,"metadata":{},"module_name":"email.errors","mro":["email.errors.MultipartConversionError","email.errors.MessageError","builtins.TypeError","builtins.Exception","builtins.BaseException","builtins.object"],"names":{".class":"SymbolTable"},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"MultipartInvariantViolationDefect":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["email.errors.MessageDefect"],"dataclass_transform_spec":null,"declared_metaclass":null,"defn":{".class":"ClassDef","fullname":"email.errors.MultipartInvariantViolationDefect","name":"MultipartInvariantViolationDefect","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":[],"fullname":"email.errors.MultipartInvariantViolationDefect","has_param_spec_type":false,"metaclass_type":null,"metadata":{},"module_name":"email.errors","mro":["email.errors.MultipartInvariantViolationDefect","email.errors.MessageDefect","builtins.ValueError","builtins.Exception","builtins.BaseException","builtins.object"],"names":{".class":"SymbolTable"},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"NoBoundaryInMultipartDefect":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["email.errors.MessageDefect"],"dataclass_transform_spec":null,"declared_metaclass":null,"defn":{".class":"ClassDef","fullname":"email.errors.NoBoundaryInMultipartDefect","name":"NoBoundaryInMultipartDefect","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":[],"fullname":"email.errors.NoBoundaryInMultipartDefect","has_param_spec_type":false,"metaclass_type":null,"metadata":{},"module_name":"email.errors","mro":["email.errors.NoBoundaryInMultipartDefect","email.errors.MessageDefect","builtins.ValueError","builtins.Exception","builtins.BaseException","builtins.object"],"names":{".class":"SymbolTable"},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"NonASCIILocalPartDefect":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["email.errors.HeaderDefect"],"dataclass_transform_spec":null,"declared_metaclass":null,"defn":{".class":"ClassDef","fullname":"email.errors.NonASCIILocalPartDefect","name":"NonASCIILocalPartDefect","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":[],"fullname":"email.errors.NonASCIILocalPartDefect","has_param_spec_type":false,"metaclass_type":null,"metadata":{},"module_name":"email.errors","mro":["email.errors.NonASCIILocalPartDefect","email.errors.HeaderDefect","email.errors.MessageDefect","builtins.ValueError","builtins.Exception","builtins.BaseException","builtins.object"],"names":{".class":"SymbolTable"},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"NonPrintableDefect":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["email.errors.HeaderDefect"],"dataclass_transform_spec":null,"declared_metaclass":null,"defn":{".class":"ClassDef","fullname":"email.errors.NonPrintableDefect","name":"NonPrintableDefect","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":[],"fullname":"email.errors.NonPrintableDefect","has_param_spec_type":false,"metaclass_type":null,"metadata":{},"module_name":"email.errors","mro":["email.errors.NonPrintableDefect","email.errors.HeaderDefect","email.errors.MessageDefect","builtins.ValueError","builtins.Exception","builtins.BaseException","builtins.object"],"names":{".class":"SymbolTable","__init__":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0],"arg_names":["self","non_printables"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"email.errors.NonPrintableDefect.__init__","name":"__init__","type":{".class":"CallableType","arg_kinds":[0,0],"arg_names":["self","non_printables"],"arg_types":["email.errors.NonPrintableDefect",{".class":"UnionType","items":["builtins.str",{".class":"NoneType"}],"uses_pep604_syntax":true}],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"__init__ of NonPrintableDefect","ret_type":{".class":"NoneType"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}}},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"ObsoleteHeaderDefect":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["email.errors.HeaderDefect"],"dataclass_transform_spec":null,"declared_metaclass":null,"defn":{".class":"ClassDef","fullname":"email.errors.ObsoleteHeaderDefect","name":"ObsoleteHeaderDefect","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":[],"fullname":"email.errors.ObsoleteHeaderDefect","has_param_spec_type":false,"metaclass_type":null,"metadata":{},"module_name":"email.errors","mro":["email.errors.ObsoleteHeaderDefect","email.errors.HeaderDefect","email.errors.MessageDefect","builtins.ValueError","builtins.Exception","builtins.BaseException","builtins.object"],"names":{".class":"SymbolTable"},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"StartBoundaryNotFoundDefect":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["email.errors.MessageDefect"],"dataclass_transform_spec":null,"declared_metaclass":null,"defn":{".class":"ClassDef","fullname":"email.errors.StartBoundaryNotFoundDefect","name":"StartBoundaryNotFoundDefect","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":[],"fullname":"email.errors.StartBoundaryNotFoundDefect","has_param_spec_type":false,"metaclass_type":null,"metadata":{},"module_name":"email.errors","mro":["email.errors.StartBoundaryNotFoundDefect","email.errors.MessageDefect","builtins.ValueError","builtins.Exception","builtins.BaseException","builtins.object"],"names":{".class":"SymbolTable"},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"UndecodableBytesDefect":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["email.errors.MessageDefect"],"dataclass_transform_spec":null,"declared_metaclass":null,"defn":{".class":"ClassDef","fullname":"email.errors.UndecodableBytesDefect","name":"UndecodableBytesDefect","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":[],"fullname":"email.errors.UndecodableBytesDefect","has_param_spec_type":false,"metaclass_type":null,"metadata":{},"module_name":"email.errors","mro":["email.errors.UndecodableBytesDefect","email.errors.MessageDefect","builtins.ValueError","builtins.Exception","builtins.BaseException","builtins.object"],"names":{".class":"SymbolTable"},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"__annotations__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"email.errors.__annotations__","name":"__annotations__","type":{".class":"Instance","args":["builtins.str",{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":6}],"extra_attrs":null,"type_ref":"builtins.dict"}}},"__doc__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"email.errors.__doc__","name":"__doc__","type":"builtins.str"}},"__file__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"email.errors.__file__","name":"__file__","type":"builtins.str"}},"__name__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"email.errors.__name__","name":"__name__","type":"builtins.str"}},"__package__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"email.errors.__package__","name":"__package__","type":"builtins.str"}},"__spec__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"email.errors.__spec__","name":"__spec__","type":"_frozen_importlib.ModuleSpec"}},"sys":{".class":"SymbolTableNode","cross_ref":"sys","kind":"Gdef","module_hidden":true,"module_public":false}},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/email/errors.pyi"}
+```
+
+.mypy_cache/3.12/email/errors.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[1,1,1,1,1,1,1],"dep_prios":[10,5,30,30,30,30,30],"dependencies":["sys","builtins","_frozen_importlib","_typeshed","abc","types","typing"],"hash":"7b86e1bd4be0c84d6eae4f72b0ee53542bfb65bd","id":"email.errors","ignore_all":true,"interface_hash":"87776d47f9e982a4af00e66ee65b42d54a887d2e","mtime":1762029370,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/email/errors.pyi","plugin_data":null,"size":1635,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/email/header.data.json
+```
+{".class":"MypyFile","_fullname":"email.header","future_import_flags":[],"is_partial_stub_package":false,"is_stub":true,"names":{".class":"SymbolTable","Any":{".class":"SymbolTableNode","cross_ref":"typing.Any","kind":"Gdef","module_hidden":true,"module_public":false},"Charset":{".class":"SymbolTableNode","cross_ref":"email.charset.Charset","kind":"Gdef","module_hidden":true,"module_public":false},"ClassVar":{".class":"SymbolTableNode","cross_ref":"typing.ClassVar","kind":"Gdef","module_hidden":true,"module_public":false},"Header":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["builtins.object"],"dataclass_transform_spec":null,"declared_metaclass":null,"defn":{".class":"ClassDef","fullname":"email.header.Header","name":"Header","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":[],"fullname":"email.header.Header","has_param_spec_type":false,"metaclass_type":null,"metadata":{},"module_name":"email.header","mro":["email.header.Header","builtins.object"],"names":{".class":"SymbolTable","__eq__":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0],"arg_names":[null,null],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"email.header.Header.__eq__","name":"__eq__","type":{".class":"CallableType","arg_kinds":[0,0],"arg_names":[null,null],"arg_types":["email.header.Header","builtins.object"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"__eq__ of Header","ret_type":"builtins.bool","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"__hash__":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"Var","flags":["is_initialized_in_class","is_classvar","is_ready"],"fullname":"email.header.Header.__hash__","name":"__hash__","type":{".class":"NoneType"}}},"__init__":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,1,1,1,1,1,1],"arg_names":["self","s","charset","maxlinelen","header_name","continuation_ws","errors"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"email.header.Header.__init__","name":"__init__","type":{".class":"CallableType","arg_kinds":[0,1,1,1,1,1,1],"arg_names":["self","s","charset","maxlinelen","header_name","continuation_ws","errors"],"arg_types":["email.header.Header",{".class":"UnionType","items":["builtins.bytes","builtins.bytearray","builtins.str",{".class":"NoneType"}],"uses_pep604_syntax":true},{".class":"UnionType","items":["email.charset.Charset","builtins.str",{".class":"NoneType"}],"uses_pep604_syntax":true},{".class":"UnionType","items":["builtins.int",{".class":"NoneType"}],"uses_pep604_syntax":true},{".class":"UnionType","items":["builtins.str",{".class":"NoneType"}],"uses_pep604_syntax":true},"builtins.str","builtins.str"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"__init__ of Header","ret_type":{".class":"NoneType"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"__ne__":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0],"arg_names":[null,null],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"email.header.Header.__ne__","name":"__ne__","type":{".class":"CallableType","arg_kinds":[0,0],"arg_names":[null,null],"arg_types":["email.header.Header","builtins.object"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"__ne__ of Header","ret_type":"builtins.bool","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"append":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0,1,1],"arg_names":["self","s","charset","errors"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"email.header.Header.append","name":"append","type":{".class":"CallableType","arg_kinds":[0,0,1,1],"arg_names":["self","s","charset","errors"],"arg_types":["email.header.Header",{".class":"UnionType","items":["builtins.bytes","builtins.bytearray","builtins.str"],"uses_pep604_syntax":true},{".class":"UnionType","items":["email.charset.Charset","builtins.str",{".class":"NoneType"}],"uses_pep604_syntax":true},"builtins.str"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"append of Header","ret_type":{".class":"NoneType"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"encode":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,1,1,1],"arg_names":["self","splitchars","maxlinelen","linesep"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"email.header.Header.encode","name":"encode","type":{".class":"CallableType","arg_kinds":[0,1,1,1],"arg_names":["self","splitchars","maxlinelen","linesep"],"arg_types":["email.header.Header","builtins.str",{".class":"UnionType","items":["builtins.int",{".class":"NoneType"}],"uses_pep604_syntax":true},"builtins.str"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"encode of Header","ret_type":"builtins.str","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}}},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"Iterable":{".class":"SymbolTableNode","cross_ref":"typing.Iterable","kind":"Gdef","module_hidden":true,"module_public":false},"__all__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_inferred","has_explicit_value"],"fullname":"email.header.__all__","name":"__all__","type":{".class":"Instance","args":["builtins.str"],"extra_attrs":null,"type_ref":"builtins.list"}}},"__annotations__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"email.header.__annotations__","name":"__annotations__","type":{".class":"Instance","args":["builtins.str",{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":6}],"extra_attrs":null,"type_ref":"builtins.dict"}}},"__doc__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"email.header.__doc__","name":"__doc__","type":"builtins.str"}},"__file__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"email.header.__file__","name":"__file__","type":"builtins.str"}},"__name__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"email.header.__name__","name":"__name__","type":"builtins.str"}},"__package__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"email.header.__package__","name":"__package__","type":"builtins.str"}},"__spec__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"email.header.__spec__","name":"__spec__","type":"_frozen_importlib.ModuleSpec"}},"decode_header":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0],"arg_names":["header"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"email.header.decode_header","name":"decode_header","type":{".class":"CallableType","arg_kinds":[0],"arg_names":["header"],"arg_types":[{".class":"UnionType","items":["email.header.Header","builtins.str"],"uses_pep604_syntax":true}],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"decode_header","ret_type":{".class":"Instance","args":[{".class":"TupleType","implicit":false,"items":[{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":2},{".class":"UnionType","items":[{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":2},{".class":"NoneType"}],"uses_pep604_syntax":true}],"partial_fallback":{".class":"Instance","args":[{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":6}],"extra_attrs":null,"type_ref":"builtins.tuple"}}],"extra_attrs":null,"type_ref":"builtins.list"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"make_header":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,1,1,1],"arg_names":["decoded_seq","maxlinelen","header_name","continuation_ws"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"email.header.make_header","name":"make_header","type":{".class":"CallableType","arg_kinds":[0,1,1,1],"arg_names":["decoded_seq","maxlinelen","header_name","continuation_ws"],"arg_types":[{".class":"Instance","args":[{".class":"TupleType","implicit":false,"items":[{".class":"UnionType","items":["builtins.bytes","builtins.bytearray","builtins.str"],"uses_pep604_syntax":true},{".class":"UnionType","items":["builtins.str",{".class":"NoneType"}],"uses_pep604_syntax":true}],"partial_fallback":{".class":"Instance","args":[{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":6}],"extra_attrs":null,"type_ref":"builtins.tuple"}}],"extra_attrs":null,"type_ref":"typing.Iterable"},{".class":"UnionType","items":["builtins.int",{".class":"NoneType"}],"uses_pep604_syntax":true},{".class":"UnionType","items":["builtins.str",{".class":"NoneType"}],"uses_pep604_syntax":true},"builtins.str"],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"make_header","ret_type":"email.header.Header","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}}},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/email/header.pyi"}
+```
+
+.mypy_cache/3.12/email/header.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[1,2,3,1,1,1,1],"dep_prios":[5,5,5,5,30,30,30],"dependencies":["collections.abc","email.charset","typing","builtins","_frozen_importlib","abc","types"],"hash":"bdb289cae018f6186c3ab8204bfca2649f40a90a","id":"email.header","ignore_all":true,"interface_hash":"89cf77fb539896833008e81b8a6bb5b90970166f","mtime":1762029370,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/email/header.pyi","plugin_data":null,"size":1332,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/email/message.data.json
+```
+[TRUNCATED]
+```
+
+.mypy_cache/3.12/email/message.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[2,4,5,6,7,1,3,8,9,1,1,1,1,1],"dep_prios":[5,5,5,5,5,5,5,5,5,5,30,30,30,30],"dependencies":["collections.abc","email.charset","email.contentmanager","email.errors","email.policy","_typeshed","email","typing","typing_extensions","builtins","_frozen_importlib","abc","email._policybase","types"],"hash":"93a10ff1414dcd3a960124748a7ab9d4a99358af","id":"email.message","ignore_all":true,"interface_hash":"439b224c7014268c7ccfbfb65ee359e9ffb739cf","mtime":1762029370,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/email/message.pyi","plugin_data":null,"size":8976,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/email/policy.data.json
+```
+[TRUNCATED]
+```
+
+.mypy_cache/3.12/email/policy.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[1,2,3,4,5,6,1,1,1,1],"dep_prios":[5,5,5,5,5,5,5,30,30,30],"dependencies":["collections.abc","email._policybase","email.contentmanager","email.message","typing","typing_extensions","builtins","_frozen_importlib","abc","types"],"hash":"3e9ef188686de06c51666ef86d0cf6242ccf1995","id":"email.policy","ignore_all":true,"interface_hash":"f315c50ebd654c9f54e0a3943fa0768668516f2d","mtime":1762029370,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/email/policy.pyi","plugin_data":null,"size":2910,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/importlib/__init__.data.json
+```
+{".class":"MypyFile","_fullname":"importlib","future_import_flags":[],"is_partial_stub_package":false,"is_stub":true,"names":{".class":"SymbolTable","Loader":{".class":"SymbolTableNode","cross_ref":"importlib._abc.Loader","kind":"Gdef","module_hidden":true,"module_public":false},"ModuleType":{".class":"SymbolTableNode","cross_ref":"types.ModuleType","kind":"Gdef","module_hidden":true,"module_public":false},"__all__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_inferred","has_explicit_value"],"fullname":"importlib.__all__","name":"__all__","type":{".class":"Instance","args":["builtins.str"],"extra_attrs":null,"type_ref":"builtins.list"}}},"__annotations__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.__annotations__","name":"__annotations__","type":{".class":"Instance","args":["builtins.str",{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":6}],"extra_attrs":null,"type_ref":"builtins.dict"}}},"__doc__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.__doc__","name":"__doc__","type":"builtins.str"}},"__file__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.__file__","name":"__file__","type":"builtins.str"}},"__import__":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib.__import__","kind":"Gdef"},"__name__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.__name__","name":"__name__","type":"builtins.str"}},"__package__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.__package__","name":"__package__","type":"builtins.str"}},"__path__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.__path__","name":"__path__","type":{".class":"Instance","args":["builtins.str"],"extra_attrs":null,"type_ref":"builtins.list"}}},"__spec__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.__spec__","name":"__spec__","type":"_frozen_importlib.ModuleSpec"}},"import_module":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,1],"arg_names":["name","package"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.import_module","name":"import_module","type":{".class":"CallableType","arg_kinds":[0,1],"arg_names":["name","package"],"arg_types":["builtins.str",{".class":"UnionType","items":["builtins.str",{".class":"NoneType"}],"uses_pep604_syntax":true}],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"import_module","ret_type":"types.ModuleType","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"invalidate_caches":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[],"arg_names":[],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.invalidate_caches","name":"invalidate_caches","type":{".class":"CallableType","arg_kinds":[],"arg_names":[],"arg_types":[],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"invalidate_caches","ret_type":{".class":"NoneType"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"reload":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0],"arg_names":["module"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.reload","name":"reload","type":{".class":"CallableType","arg_kinds":[0],"arg_names":["module"],"arg_types":["types.ModuleType"],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"reload","ret_type":"types.ModuleType","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"sys":{".class":"SymbolTableNode","cross_ref":"sys","kind":"Gdef","module_hidden":true,"module_public":false}},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/importlib/__init__.pyi"}
+```
+
+.mypy_cache/3.12/importlib/__init__.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[2,3,1,4,1,1,1,1,1],"dep_prios":[5,5,10,5,5,30,30,30,30],"dependencies":["importlib._bootstrap","importlib.abc","sys","types","builtins","_frozen_importlib","_typeshed","abc","typing"],"hash":"696eed73d030a0492323852b916bb4655325693b","id":"importlib","ignore_all":true,"interface_hash":"2f6b9e91b142fb668e81bf14198347e7189c5a60","mtime":1762029371,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/importlib/__init__.pyi","plugin_data":null,"size":569,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/importlib/_abc.data.json
+```
+{".class":"MypyFile","_fullname":"importlib._abc","future_import_flags":[],"is_partial_stub_package":false,"is_stub":true,"names":{".class":"SymbolTable","ABCMeta":{".class":"SymbolTableNode","cross_ref":"abc.ABCMeta","kind":"Gdef","module_hidden":true,"module_public":false},"Loader":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["builtins.object"],"dataclass_transform_spec":null,"declared_metaclass":"abc.ABCMeta","defn":{".class":"ClassDef","fullname":"importlib._abc.Loader","name":"Loader","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":[],"fullname":"importlib._abc.Loader","has_param_spec_type":false,"metaclass_type":"abc.ABCMeta","metadata":{},"module_name":"importlib._abc","mro":["importlib._abc.Loader","builtins.object"],"names":{".class":"SymbolTable","create_module":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0],"arg_names":["self","spec"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib._abc.Loader.create_module","name":"create_module","type":{".class":"CallableType","arg_kinds":[0,0],"arg_names":["self","spec"],"arg_types":["importlib._abc.Loader","_frozen_importlib.ModuleSpec"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"create_module of Loader","ret_type":{".class":"UnionType","items":["types.ModuleType",{".class":"NoneType"}],"uses_pep604_syntax":true},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"exec_module":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0],"arg_names":["self","module"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib._abc.Loader.exec_module","name":"exec_module","type":{".class":"CallableType","arg_kinds":[0,0],"arg_names":["self","module"],"arg_types":["importlib._abc.Loader","types.ModuleType"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"exec_module of Loader","ret_type":{".class":"NoneType"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"load_module":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0],"arg_names":["self","fullname"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib._abc.Loader.load_module","name":"load_module","type":{".class":"CallableType","arg_kinds":[0,0],"arg_names":["self","fullname"],"arg_types":["importlib._abc.Loader","builtins.str"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"load_module of Loader","ret_type":"types.ModuleType","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}}},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"ModuleSpec":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib.ModuleSpec","kind":"Gdef","module_hidden":true,"module_public":false},"__annotations__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib._abc.__annotations__","name":"__annotations__","type":{".class":"Instance","args":["builtins.str",{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":6}],"extra_attrs":null,"type_ref":"builtins.dict"}}},"__doc__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib._abc.__doc__","name":"__doc__","type":"builtins.str"}},"__file__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib._abc.__file__","name":"__file__","type":"builtins.str"}},"__name__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib._abc.__name__","name":"__name__","type":"builtins.str"}},"__package__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib._abc.__package__","name":"__package__","type":"builtins.str"}},"__spec__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib._abc.__spec__","name":"__spec__","type":"_frozen_importlib.ModuleSpec"}},"sys":{".class":"SymbolTableNode","cross_ref":"sys","kind":"Gdef","module_hidden":true,"module_public":false},"types":{".class":"SymbolTableNode","cross_ref":"types","kind":"Gdef","module_hidden":true,"module_public":false}},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/importlib/_abc.pyi"}
+```
+
+.mypy_cache/3.12/importlib/_abc.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[4,1,2,3,1,1,1,1],"dep_prios":[5,10,10,5,5,30,30,30],"dependencies":["importlib.machinery","sys","types","abc","builtins","_frozen_importlib","_typeshed","typing"],"hash":"0d42dcd951013ab41bdf924bf5ec37f00714a257","id":"importlib._abc","ignore_all":true,"interface_hash":"679f0dfcb9881dfe1fb70a5710f8c36fa5434f0b","mtime":1762029371,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/importlib/_abc.pyi","plugin_data":null,"size":609,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/importlib/_bootstrap.data.json
+```
+{".class":"MypyFile","_fullname":"importlib._bootstrap","future_import_flags":[],"is_partial_stub_package":false,"is_stub":true,"names":{".class":"SymbolTable","BuiltinImporter":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib.BuiltinImporter","kind":"Gdef"},"FrozenImporter":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib.FrozenImporter","kind":"Gdef"},"ModuleSpec":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib.ModuleSpec","kind":"Gdef"},"__annotations__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib._bootstrap.__annotations__","name":"__annotations__","type":{".class":"Instance","args":["builtins.str",{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":6}],"extra_attrs":null,"type_ref":"builtins.dict"}}},"__doc__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib._bootstrap.__doc__","name":"__doc__","type":"builtins.str"}},"__file__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib._bootstrap.__file__","name":"__file__","type":"builtins.str"}},"__import__":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib.__import__","kind":"Gdef"},"__name__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib._bootstrap.__name__","name":"__name__","type":"builtins.str"}},"__package__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib._bootstrap.__package__","name":"__package__","type":"builtins.str"}},"__spec__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib._bootstrap.__spec__","name":"__spec__","type":"_frozen_importlib.ModuleSpec"}},"_init_module_attrs":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib._init_module_attrs","kind":"Gdef"},"module_from_spec":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib.module_from_spec","kind":"Gdef"},"spec_from_loader":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib.spec_from_loader","kind":"Gdef"}},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/importlib/_bootstrap.pyi"}
+```
+
+.mypy_cache/3.12/importlib/_bootstrap.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[1,1,1,1],"dep_prios":[5,5,30,30],"dependencies":["_frozen_importlib","builtins","abc","typing"],"hash":"91c3b137c6c392ec8ff0705874f87160198ae9af","id":"importlib._bootstrap","ignore_all":true,"interface_hash":"359042224562ef4fe5a1ba87464aa3c2c1b1616c","mtime":1762029371,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/importlib/_bootstrap.pyi","plugin_data":null,"size":129,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/importlib/_bootstrap_external.data.json
+```
+{".class":"MypyFile","_fullname":"importlib._bootstrap_external","future_import_flags":[],"is_partial_stub_package":false,"is_stub":true,"names":{".class":"SymbolTable","BYTECODE_SUFFIXES":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.BYTECODE_SUFFIXES","kind":"Gdef"},"DEBUG_BYTECODE_SUFFIXES":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.DEBUG_BYTECODE_SUFFIXES","kind":"Gdef"},"EXTENSION_SUFFIXES":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.EXTENSION_SUFFIXES","kind":"Gdef"},"ExtensionFileLoader":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.ExtensionFileLoader","kind":"Gdef"},"FileFinder":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.FileFinder","kind":"Gdef"},"FileLoader":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.FileLoader","kind":"Gdef"},"MAGIC_NUMBER":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.MAGIC_NUMBER","kind":"Gdef"},"NamespaceLoader":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.NamespaceLoader","kind":"Gdef"},"OPTIMIZED_BYTECODE_SUFFIXES":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.OPTIMIZED_BYTECODE_SUFFIXES","kind":"Gdef"},"PathFinder":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.PathFinder","kind":"Gdef"},"SOURCE_SUFFIXES":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.SOURCE_SUFFIXES","kind":"Gdef"},"SourceFileLoader":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.SourceFileLoader","kind":"Gdef"},"SourceLoader":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.SourceLoader","kind":"Gdef"},"SourcelessFileLoader":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.SourcelessFileLoader","kind":"Gdef"},"WindowsRegistryFinder":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.WindowsRegistryFinder","kind":"Gdef"},"_NamespaceLoader":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external._NamespaceLoader","kind":"Gdef"},"__annotations__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib._bootstrap_external.__annotations__","name":"__annotations__","type":{".class":"Instance","args":["builtins.str",{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":6}],"extra_attrs":null,"type_ref":"builtins.dict"}}},"__doc__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib._bootstrap_external.__doc__","name":"__doc__","type":"builtins.str"}},"__file__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib._bootstrap_external.__file__","name":"__file__","type":"builtins.str"}},"__name__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib._bootstrap_external.__name__","name":"__name__","type":"builtins.str"}},"__package__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib._bootstrap_external.__package__","name":"__package__","type":"builtins.str"}},"__spec__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib._bootstrap_external.__spec__","name":"__spec__","type":"_frozen_importlib.ModuleSpec"}},"cache_from_source":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.cache_from_source","kind":"Gdef"},"decode_source":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.decode_source","kind":"Gdef"},"path_sep":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.path_sep","kind":"Gdef"},"path_sep_tuple":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.path_sep_tuple","kind":"Gdef"},"path_separators":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.path_separators","kind":"Gdef"},"source_from_cache":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.source_from_cache","kind":"Gdef"},"spec_from_file_location":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.spec_from_file_location","kind":"Gdef"}},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/importlib/_bootstrap_external.pyi"}
+```
+
+.mypy_cache/3.12/importlib/_bootstrap_external.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[1,1,1,1,1],"dep_prios":[5,5,30,30,30],"dependencies":["_frozen_importlib_external","builtins","_frozen_importlib","abc","typing"],"hash":"68022b896ef0de6f8da7d6c9d4d434abd95c0da6","id":"importlib._bootstrap_external","ignore_all":true,"interface_hash":"29e4625cfe94a51fc807e0b0cc0d848246201dc4","mtime":1762029371,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/importlib/_bootstrap_external.pyi","plugin_data":null,"size":117,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/importlib/abc.data.json
+```
+[TRUNCATED]
+```
+
+.mypy_cache/3.12/importlib/abc.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[6,7,8,28,1,2,3,4,5,7,9,10,1,1,1,1,1,1,1],"dep_prios":[5,10,5,5,10,10,10,5,5,20,5,5,5,30,30,30,30,30,30],"dependencies":["collections.abc","importlib._bootstrap_external","importlib.machinery","importlib._abc","_ast","sys","types","_typeshed","abc","importlib","io","typing","builtins","_collections_abc","_frozen_importlib","_frozen_importlib_external","_io","ast","os"],"hash":"1cb0e78eb5b401e80f23dcaa5278ea291f53e7dc","id":"importlib.abc","ignore_all":true,"interface_hash":"4d824e1682260fe00c898198ef9162a97549eb07","mtime":1762029371,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/importlib/abc.pyi","plugin_data":null,"size":7123,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/importlib/machinery.data.json
+```
+{".class":"MypyFile","_fullname":"importlib.machinery","future_import_flags":[],"is_partial_stub_package":false,"is_stub":true,"names":{".class":"SymbolTable","BYTECODE_SUFFIXES":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.BYTECODE_SUFFIXES","kind":"Gdef"},"BuiltinImporter":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib.BuiltinImporter","kind":"Gdef"},"DEBUG_BYTECODE_SUFFIXES":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.DEBUG_BYTECODE_SUFFIXES","kind":"Gdef"},"EXTENSION_SUFFIXES":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.EXTENSION_SUFFIXES","kind":"Gdef"},"ExtensionFileLoader":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.ExtensionFileLoader","kind":"Gdef"},"FileFinder":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.FileFinder","kind":"Gdef"},"FrozenImporter":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib.FrozenImporter","kind":"Gdef"},"ModuleSpec":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib.ModuleSpec","kind":"Gdef"},"NamespaceLoader":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.NamespaceLoader","kind":"Gdef"},"OPTIMIZED_BYTECODE_SUFFIXES":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.OPTIMIZED_BYTECODE_SUFFIXES","kind":"Gdef"},"PathFinder":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.PathFinder","kind":"Gdef"},"SOURCE_SUFFIXES":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.SOURCE_SUFFIXES","kind":"Gdef"},"SourceFileLoader":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.SourceFileLoader","kind":"Gdef"},"SourcelessFileLoader":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.SourcelessFileLoader","kind":"Gdef"},"WindowsRegistryFinder":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.WindowsRegistryFinder","kind":"Gdef"},"__annotations__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.machinery.__annotations__","name":"__annotations__","type":{".class":"Instance","args":["builtins.str",{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":6}],"extra_attrs":null,"type_ref":"builtins.dict"}}},"__doc__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.machinery.__doc__","name":"__doc__","type":"builtins.str"}},"__file__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.machinery.__file__","name":"__file__","type":"builtins.str"}},"__name__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.machinery.__name__","name":"__name__","type":"builtins.str"}},"__package__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.machinery.__package__","name":"__package__","type":"builtins.str"}},"__spec__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.machinery.__spec__","name":"__spec__","type":"_frozen_importlib.ModuleSpec"}},"all_suffixes":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[],"arg_names":[],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.machinery.all_suffixes","name":"all_suffixes","type":{".class":"CallableType","arg_kinds":[],"arg_names":[],"arg_types":[],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"all_suffixes","ret_type":{".class":"Instance","args":["builtins.str"],"extra_attrs":null,"type_ref":"builtins.list"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"sys":{".class":"SymbolTableNode","cross_ref":"sys","kind":"Gdef","module_hidden":true,"module_public":false}},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/importlib/machinery.pyi"}
+```
+
+.mypy_cache/3.12/importlib/machinery.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[2,3,1,1,1,1,1,1],"dep_prios":[5,5,10,5,30,30,30,30],"dependencies":["importlib._bootstrap","importlib._bootstrap_external","sys","builtins","_frozen_importlib","_typeshed","abc","typing"],"hash":"a306f9942e253d05433d97fbf1113fd4f35bdb58","id":"importlib.machinery","ignore_all":true,"interface_hash":"e008efc8995a7c3798e9267cf617f11c6cac286e","mtime":1762029371,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/importlib/machinery.pyi","plugin_data":null,"size":839,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/importlib/readers.data.json
+```
+{".class":"MypyFile","_fullname":"importlib.readers","future_import_flags":[],"is_partial_stub_package":false,"is_stub":true,"names":{".class":"SymbolTable","BufferedReader":{".class":"SymbolTableNode","cross_ref":"_io.BufferedReader","kind":"Gdef","module_hidden":true,"module_public":false},"FileReader":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["importlib.abc.TraversableResources"],"dataclass_transform_spec":null,"declared_metaclass":null,"defn":{".class":"ClassDef","fullname":"importlib.readers.FileReader","name":"FileReader","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":[],"fullname":"importlib.readers.FileReader","has_param_spec_type":false,"metaclass_type":"abc.ABCMeta","metadata":{},"module_name":"importlib.readers","mro":["importlib.readers.FileReader","importlib.abc.TraversableResources","importlib.abc.ResourceReader","builtins.object"],"names":{".class":"SymbolTable","__init__":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0],"arg_names":["self","loader"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.readers.FileReader.__init__","name":"__init__","type":{".class":"CallableType","arg_kinds":[0,0],"arg_names":["self","loader"],"arg_types":["importlib.readers.FileReader",{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":1}],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"__init__ of FileReader","ret_type":{".class":"NoneType"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"files":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0],"arg_names":["self"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.readers.FileReader.files","name":"files","type":{".class":"CallableType","arg_kinds":[0],"arg_names":["self"],"arg_types":["importlib.readers.FileReader"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"files of FileReader","ret_type":"pathlib.Path","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"path":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"Var","flags":["is_initialized_in_class","is_ready"],"fullname":"importlib.readers.FileReader.path","name":"path","type":"pathlib.Path"}},"resource_path":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0],"arg_names":["self","resource"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.readers.FileReader.resource_path","name":"resource_path","type":{".class":"CallableType","arg_kinds":[0,0],"arg_names":["self","resource"],"arg_types":["importlib.readers.FileReader",{".class":"TypeAliasType","args":[],"type_ref":"_typeshed.StrPath"}],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"resource_path of FileReader","ret_type":"builtins.str","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}}},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"Incomplete":{".class":"SymbolTableNode","cross_ref":"_typeshed.Incomplete","kind":"Gdef","module_hidden":true,"module_public":false},"Iterable":{".class":"SymbolTableNode","cross_ref":"typing.Iterable","kind":"Gdef","module_hidden":true,"module_public":false},"Iterator":{".class":"SymbolTableNode","cross_ref":"typing.Iterator","kind":"Gdef","module_hidden":true,"module_public":false},"Literal":{".class":"SymbolTableNode","cross_ref":"typing.Literal","kind":"Gdef","module_hidden":true,"module_public":false},"MultiplexedPath":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["importlib.abc.Traversable"],"dataclass_transform_spec":null,"declared_metaclass":null,"defn":{".class":"ClassDef","fullname":"importlib.readers.MultiplexedPath","name":"MultiplexedPath","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":[],"fullname":"importlib.readers.MultiplexedPath","has_param_spec_type":false,"metaclass_type":"abc.ABCMeta","metadata":{},"module_name":"importlib.readers","mro":["importlib.readers.MultiplexedPath","importlib.abc.Traversable","builtins.object"],"names":{".class":"SymbolTable","__init__":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,2],"arg_names":["self","paths"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.readers.MultiplexedPath.__init__","name":"__init__","type":{".class":"CallableType","arg_kinds":[0,2],"arg_names":["self","paths"],"arg_types":["importlib.readers.MultiplexedPath","importlib.abc.Traversable"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"__init__ of MultiplexedPath","ret_type":{".class":"NoneType"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"is_dir":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0],"arg_names":["self"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.readers.MultiplexedPath.is_dir","name":"is_dir","type":{".class":"CallableType","arg_kinds":[0],"arg_names":["self"],"arg_types":["importlib.readers.MultiplexedPath"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"is_dir of MultiplexedPath","ret_type":{".class":"LiteralType","fallback":"builtins.bool","value":true},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"is_file":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0],"arg_names":["self"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.readers.MultiplexedPath.is_file","name":"is_file","type":{".class":"CallableType","arg_kinds":[0],"arg_names":["self"],"arg_types":["importlib.readers.MultiplexedPath"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"is_file of MultiplexedPath","ret_type":{".class":"LiteralType","fallback":"builtins.bool","value":false},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"iterdir":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0],"arg_names":["self"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.readers.MultiplexedPath.iterdir","name":"iterdir","type":{".class":"CallableType","arg_kinds":[0],"arg_names":["self"],"arg_types":["importlib.readers.MultiplexedPath"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"iterdir of MultiplexedPath","ret_type":{".class":"Instance","args":["importlib.abc.Traversable"],"extra_attrs":null,"type_ref":"typing.Iterator"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"joinpath":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,2],"arg_names":["self","descendants"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.readers.MultiplexedPath.joinpath","name":"joinpath","type":{".class":"CallableType","arg_kinds":[0,2],"arg_names":["self","descendants"],"arg_types":["importlib.readers.MultiplexedPath","builtins.str"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"joinpath of MultiplexedPath","ret_type":"importlib.abc.Traversable","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"name":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"Decorator","func":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0],"arg_names":["self"],"dataclass_transform_spec":null,"deprecated":null,"flags":["is_property","is_decorated"],"fullname":"importlib.readers.MultiplexedPath.name","name":"name","type":{".class":"CallableType","arg_kinds":[0],"arg_names":["self"],"arg_types":["importlib.readers.MultiplexedPath"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"name of MultiplexedPath","ret_type":"builtins.str","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}},"is_overload":false,"var":{".class":"Var","flags":["is_initialized_in_class","is_property","is_ready","is_inferred"],"fullname":"importlib.readers.MultiplexedPath.name","name":"name","type":{".class":"CallableType","arg_kinds":[0],"arg_names":["self"],"arg_types":["importlib.readers.MultiplexedPath"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"name of MultiplexedPath","ret_type":"builtins.str","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}}},"open":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,2,4],"arg_names":["self","args","kwargs"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.readers.MultiplexedPath.open","name":"open","type":{".class":"CallableType","arg_kinds":[0,2,4],"arg_names":["self","args","kwargs"],"arg_types":["importlib.readers.MultiplexedPath",{".class":"UninhabitedType"},{".class":"UninhabitedType"}],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"open of MultiplexedPath","ret_type":{".class":"UninhabitedType"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"read_bytes":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0],"arg_names":["self"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.readers.MultiplexedPath.read_bytes","name":"read_bytes","type":{".class":"CallableType","arg_kinds":[0],"arg_names":["self"],"arg_types":["importlib.readers.MultiplexedPath"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"read_bytes of MultiplexedPath","ret_type":{".class":"UninhabitedType"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"read_text":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,2,4],"arg_names":["self","args","kwargs"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.readers.MultiplexedPath.read_text","name":"read_text","type":{".class":"CallableType","arg_kinds":[0,2,4],"arg_names":["self","args","kwargs"],"arg_types":["importlib.readers.MultiplexedPath",{".class":"UninhabitedType"},{".class":"UninhabitedType"}],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"read_text of MultiplexedPath","ret_type":{".class":"UninhabitedType"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}}},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"NamespaceReader":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["importlib.abc.TraversableResources"],"dataclass_transform_spec":null,"declared_metaclass":null,"defn":{".class":"ClassDef","fullname":"importlib.readers.NamespaceReader","name":"NamespaceReader","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":[],"fullname":"importlib.readers.NamespaceReader","has_param_spec_type":false,"metaclass_type":"abc.ABCMeta","metadata":{},"module_name":"importlib.readers","mro":["importlib.readers.NamespaceReader","importlib.abc.TraversableResources","importlib.abc.ResourceReader","builtins.object"],"names":{".class":"SymbolTable","__init__":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0],"arg_names":["self","namespace_path"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.readers.NamespaceReader.__init__","name":"__init__","type":{".class":"CallableType","arg_kinds":[0,0],"arg_names":["self","namespace_path"],"arg_types":["importlib.readers.NamespaceReader",{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":1}],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"__init__ of NamespaceReader","ret_type":{".class":"NoneType"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"files":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0],"arg_names":["self"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.readers.NamespaceReader.files","name":"files","type":{".class":"CallableType","arg_kinds":[0],"arg_names":["self"],"arg_types":["importlib.readers.NamespaceReader"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"files of NamespaceReader","ret_type":"importlib.readers.MultiplexedPath","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"path":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"Var","flags":["is_initialized_in_class","is_ready"],"fullname":"importlib.readers.NamespaceReader.path","name":"path","type":"importlib.readers.MultiplexedPath"}},"resource_path":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0],"arg_names":["self","resource"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.readers.NamespaceReader.resource_path","name":"resource_path","type":{".class":"CallableType","arg_kinds":[0,0],"arg_names":["self","resource"],"arg_types":["importlib.readers.NamespaceReader","builtins.str"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"resource_path of NamespaceReader","ret_type":"builtins.str","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}}},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"Never":{".class":"SymbolTableNode","cross_ref":"typing.Never","kind":"Gdef","module_hidden":true,"module_public":false},"NoReturn":{".class":"SymbolTableNode","cross_ref":"typing.NoReturn","kind":"Gdef","module_hidden":true,"module_public":false},"StrPath":{".class":"SymbolTableNode","cross_ref":"_typeshed.StrPath","kind":"Gdef","module_hidden":true,"module_public":false},"TypeVar":{".class":"SymbolTableNode","cross_ref":"typing.TypeVar","kind":"Gdef","module_hidden":true,"module_public":false},"ZipReader":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["importlib.abc.TraversableResources"],"dataclass_transform_spec":null,"declared_metaclass":null,"defn":{".class":"ClassDef","fullname":"importlib.readers.ZipReader","name":"ZipReader","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":[],"fullname":"importlib.readers.ZipReader","has_param_spec_type":false,"metaclass_type":"abc.ABCMeta","metadata":{},"module_name":"importlib.readers","mro":["importlib.readers.ZipReader","importlib.abc.TraversableResources","importlib.abc.ResourceReader","builtins.object"],"names":{".class":"SymbolTable","__init__":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0,0],"arg_names":["self","loader","module"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.readers.ZipReader.__init__","name":"__init__","type":{".class":"CallableType","arg_kinds":[0,0,0],"arg_names":["self","loader","module"],"arg_types":["importlib.readers.ZipReader",{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":1},"builtins.str"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"__init__ of ZipReader","ret_type":{".class":"NoneType"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"archive":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"Var","flags":["is_initialized_in_class","is_ready"],"fullname":"importlib.readers.ZipReader.archive","name":"archive","type":{".class":"TypeAliasType","args":[],"type_ref":"_typeshed.Incomplete"}}},"files":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0],"arg_names":["self"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.readers.ZipReader.files","name":"files","type":{".class":"CallableType","arg_kinds":[0],"arg_names":["self"],"arg_types":["importlib.readers.ZipReader"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"files of ZipReader","ret_type":"zipfile._path.Path","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"is_resource":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0],"arg_names":["self","path"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.readers.ZipReader.is_resource","name":"is_resource","type":{".class":"CallableType","arg_kinds":[0,0],"arg_names":["self","path"],"arg_types":["importlib.readers.ZipReader",{".class":"TypeAliasType","args":[],"type_ref":"_typeshed.StrPath"}],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"is_resource of ZipReader","ret_type":"builtins.bool","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"open_resource":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0],"arg_names":["self","resource"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.readers.ZipReader.open_resource","name":"open_resource","type":{".class":"CallableType","arg_kinds":[0,0],"arg_names":["self","resource"],"arg_types":["importlib.readers.ZipReader","builtins.str"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"open_resource of ZipReader","ret_type":"_io.BufferedReader","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"prefix":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"Var","flags":["is_initialized_in_class","is_ready"],"fullname":"importlib.readers.ZipReader.prefix","name":"prefix","type":"builtins.str"}}},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"__all__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_inferred","has_explicit_value"],"fullname":"importlib.readers.__all__","name":"__all__","type":{".class":"Instance","args":["builtins.str"],"extra_attrs":null,"type_ref":"builtins.list"}}},"__annotations__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.readers.__annotations__","name":"__annotations__","type":{".class":"Instance","args":["builtins.str",{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":6}],"extra_attrs":null,"type_ref":"builtins.dict"}}},"__doc__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.readers.__doc__","name":"__doc__","type":"builtins.str"}},"__file__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.readers.__file__","name":"__file__","type":"builtins.str"}},"__name__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.readers.__name__","name":"__name__","type":"builtins.str"}},"__package__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.readers.__package__","name":"__package__","type":"builtins.str"}},"__spec__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.readers.__spec__","name":"__spec__","type":"_frozen_importlib.ModuleSpec"}},"abc":{".class":"SymbolTableNode","cross_ref":"importlib.resources.abc","kind":"Gdef","module_hidden":true,"module_public":false},"pathlib":{".class":"SymbolTableNode","cross_ref":"pathlib","kind":"Gdef","module_hidden":true,"module_public":false},"sys":{".class":"SymbolTableNode","cross_ref":"sys","kind":"Gdef","module_hidden":true,"module_public":false},"zipfile":{".class":"SymbolTableNode","cross_ref":"zipfile","kind":"Gdef","module_hidden":true,"module_public":false}},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/importlib/readers.pyi"}
+```
+
+.mypy_cache/3.12/importlib/readers.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[15,9,15,5,6,7,8,10,11,12,15,1,1,1,1,1,1,1,1],"dep_prios":[10,5,20,10,10,10,5,5,5,5,20,5,30,30,30,30,30,30,30],"dependencies":["importlib.resources.abc","collections.abc","importlib.resources","pathlib","sys","zipfile","_typeshed","io","typing","typing_extensions","importlib","builtins","_frozen_importlib","_io","abc","importlib.abc","os","types","zipfile._path"],"hash":"5527c48630fb2b623985ff211aabecfaba9fa570","id":"importlib.readers","ignore_all":true,"interface_hash":"195c3fcc79e512613b09739f7a932b24537778c6","mtime":1762029371,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/importlib/readers.pyi","plugin_data":null,"size":2584,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/os/__init__.data.json
+```
+[TRUNCATED]
+```
+
+.mypy_cache/3.12/os/__init__.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[24,45,1,2,22,23,25,26,27,28,43,1474,1,1,1],"dep_prios":[5,10,10,5,5,5,5,5,5,5,5,5,30,30,30],"dependencies":["collections.abc","os.path","sys","_typeshed","abc","builtins","io","subprocess","types","typing","typing_extensions","resource","_collections_abc","_frozen_importlib","_io"],"hash":"ee1429bacfc7be2ddf5126ca8dbcaf4259be8b08","id":"os","ignore_all":true,"interface_hash":"b3ddd77543c8487cefcdbb74b905ca8b05169a0f","mtime":1762029371,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/os/__init__.pyi","plugin_data":null,"size":53027,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/os/path.data.json
+```
+{".class":"MypyFile","_fullname":"os.path","future_import_flags":[],"is_partial_stub_package":false,"is_stub":true,"names":{".class":"SymbolTable","__all__":{".class":"SymbolTableNode","cross_ref":"posixpath.__all__","kind":"Gdef","module_public":false},"__annotations__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"os.path.__annotations__","name":"__annotations__","type":{".class":"Instance","args":["builtins.str",{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":6}],"extra_attrs":null,"type_ref":"builtins.dict"}}},"__doc__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"os.path.__doc__","name":"__doc__","type":"builtins.str"}},"__file__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"os.path.__file__","name":"__file__","type":"builtins.str"}},"__name__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"os.path.__name__","name":"__name__","type":"builtins.str"}},"__package__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"os.path.__package__","name":"__package__","type":"builtins.str"}},"__spec__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"os.path.__spec__","name":"__spec__","type":"_frozen_importlib.ModuleSpec"}},"abspath":{".class":"SymbolTableNode","cross_ref":"posixpath.abspath","kind":"Gdef"},"altsep":{".class":"SymbolTableNode","cross_ref":"posixpath.altsep","kind":"Gdef"},"basename":{".class":"SymbolTableNode","cross_ref":"posixpath.basename","kind":"Gdef"},"commonpath":{".class":"SymbolTableNode","cross_ref":"posixpath.commonpath","kind":"Gdef"},"commonprefix":{".class":"SymbolTableNode","cross_ref":"genericpath.commonprefix","kind":"Gdef"},"curdir":{".class":"SymbolTableNode","cross_ref":"posixpath.curdir","kind":"Gdef"},"defpath":{".class":"SymbolTableNode","cross_ref":"posixpath.defpath","kind":"Gdef"},"devnull":{".class":"SymbolTableNode","cross_ref":"posixpath.devnull","kind":"Gdef"},"dirname":{".class":"SymbolTableNode","cross_ref":"posixpath.dirname","kind":"Gdef"},"exists":{".class":"SymbolTableNode","cross_ref":"genericpath.exists","kind":"Gdef"},"expanduser":{".class":"SymbolTableNode","cross_ref":"posixpath.expanduser","kind":"Gdef"},"expandvars":{".class":"SymbolTableNode","cross_ref":"posixpath.expandvars","kind":"Gdef"},"extsep":{".class":"SymbolTableNode","cross_ref":"posixpath.extsep","kind":"Gdef"},"getatime":{".class":"SymbolTableNode","cross_ref":"genericpath.getatime","kind":"Gdef"},"getctime":{".class":"SymbolTableNode","cross_ref":"genericpath.getctime","kind":"Gdef"},"getmtime":{".class":"SymbolTableNode","cross_ref":"genericpath.getmtime","kind":"Gdef"},"getsize":{".class":"SymbolTableNode","cross_ref":"genericpath.getsize","kind":"Gdef"},"isabs":{".class":"SymbolTableNode","cross_ref":"posixpath.isabs","kind":"Gdef"},"isdir":{".class":"SymbolTableNode","cross_ref":"genericpath.isdir","kind":"Gdef"},"isfile":{".class":"SymbolTableNode","cross_ref":"genericpath.isfile","kind":"Gdef"},"isjunction":{".class":"SymbolTableNode","cross_ref":"posixpath.isjunction","kind":"Gdef"},"islink":{".class":"SymbolTableNode","cross_ref":"posixpath.islink","kind":"Gdef"},"ismount":{".class":"SymbolTableNode","cross_ref":"posixpath.ismount","kind":"Gdef"},"join":{".class":"SymbolTableNode","cross_ref":"posixpath.join","kind":"Gdef"},"lexists":{".class":"SymbolTableNode","cross_ref":"posixpath.lexists","kind":"Gdef"},"normcase":{".class":"SymbolTableNode","cross_ref":"posixpath.normcase","kind":"Gdef"},"normpath":{".class":"SymbolTableNode","cross_ref":"posixpath.normpath","kind":"Gdef"},"pardir":{".class":"SymbolTableNode","cross_ref":"posixpath.pardir","kind":"Gdef"},"pathsep":{".class":"SymbolTableNode","cross_ref":"posixpath.pathsep","kind":"Gdef"},"realpath":{".class":"SymbolTableNode","cross_ref":"posixpath.realpath","kind":"Gdef"},"relpath":{".class":"SymbolTableNode","cross_ref":"posixpath.relpath","kind":"Gdef"},"samefile":{".class":"SymbolTableNode","cross_ref":"genericpath.samefile","kind":"Gdef"},"sameopenfile":{".class":"SymbolTableNode","cross_ref":"genericpath.sameopenfile","kind":"Gdef"},"samestat":{".class":"SymbolTableNode","cross_ref":"genericpath.samestat","kind":"Gdef"},"sep":{".class":"SymbolTableNode","cross_ref":"posixpath.sep","kind":"Gdef"},"split":{".class":"SymbolTableNode","cross_ref":"posixpath.split","kind":"Gdef"},"splitdrive":{".class":"SymbolTableNode","cross_ref":"posixpath.splitdrive","kind":"Gdef"},"splitext":{".class":"SymbolTableNode","cross_ref":"posixpath.splitext","kind":"Gdef"},"splitroot":{".class":"SymbolTableNode","cross_ref":"posixpath.splitroot","kind":"Gdef"},"supports_unicode_filenames":{".class":"SymbolTableNode","cross_ref":"posixpath.supports_unicode_filenames","kind":"Gdef"},"sys":{".class":"SymbolTableNode","cross_ref":"sys","kind":"Gdef","module_hidden":true,"module_public":false}},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/os/path.pyi"}
+```
+
+.mypy_cache/3.12/os/path.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[1,7,1,1,1,1],"dep_prios":[10,5,5,30,30,30],"dependencies":["sys","posixpath","builtins","_frozen_importlib","abc","typing"],"hash":"34bb419f07129617e5c6e8405231794a2c12ca8b","id":"os.path","ignore_all":true,"interface_hash":"2bf874c2368e0dd571bf589f09ee8b709d580ff4","mtime":1762029371,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/os/path.pyi","plugin_data":null,"size":186,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/sys/__init__.data.json
+```
+[TRUNCATED]
+```
+
+.mypy_cache/3.12/sys/__init__.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[3,5,477,2,4,6,7,8,9,1,1,1],"dep_prios":[5,5,10,5,5,5,5,5,5,30,30,30],"dependencies":["_typeshed.importlib","collections.abc","sys._monitoring","_typeshed","builtins","io","types","typing","typing_extensions","_frozen_importlib","_io","abc"],"hash":"136a19c3028a0080673e5416d508539bad4268e8","id":"sys","ignore_all":true,"interface_hash":"d0209a8115a6ae73f9e572a868470862d25d2e08","mtime":1762029371,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/sys/__init__.pyi","plugin_data":null,"size":15906,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/sys/_monitoring.data.json
+```
+{".class":"MypyFile","_fullname":"sys._monitoring","future_import_flags":[],"is_partial_stub_package":false,"is_stub":true,"names":{".class":"SymbolTable","Any":{".class":"SymbolTableNode","cross_ref":"typing.Any","kind":"Gdef","module_hidden":true,"module_public":false},"COVERAGE_ID":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sys._monitoring.COVERAGE_ID","name":"COVERAGE_ID","type":"builtins.int"}},"Callable":{".class":"SymbolTableNode","cross_ref":"typing.Callable","kind":"Gdef","module_hidden":true,"module_public":false},"CodeType":{".class":"SymbolTableNode","cross_ref":"types.CodeType","kind":"Gdef","module_hidden":true,"module_public":false},"DEBUGGER_ID":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sys._monitoring.DEBUGGER_ID","name":"DEBUGGER_ID","type":"builtins.int"}},"DISABLE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sys._monitoring.DISABLE","name":"DISABLE","type":"builtins.object"}},"MISSING":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sys._monitoring.MISSING","name":"MISSING","type":"builtins.object"}},"OPTIMIZER_ID":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sys._monitoring.OPTIMIZER_ID","name":"OPTIMIZER_ID","type":"builtins.int"}},"PROFILER_ID":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sys._monitoring.PROFILER_ID","name":"PROFILER_ID","type":"builtins.int"}},"__annotations__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sys._monitoring.__annotations__","name":"__annotations__","type":{".class":"Instance","args":["builtins.str",{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":6}],"extra_attrs":null,"type_ref":"builtins.dict"}}},"__doc__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sys._monitoring.__doc__","name":"__doc__","type":"builtins.str"}},"__file__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sys._monitoring.__file__","name":"__file__","type":"builtins.str"}},"__name__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sys._monitoring.__name__","name":"__name__","type":"builtins.str"}},"__package__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sys._monitoring.__package__","name":"__package__","type":"builtins.str"}},"__spec__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sys._monitoring.__spec__","name":"__spec__","type":"_frozen_importlib.ModuleSpec"}},"_events":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["builtins.object"],"dataclass_transform_spec":null,"declared_metaclass":null,"defn":{".class":"ClassDef","fullname":"sys._monitoring._events","name":"_events","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":[],"fullname":"sys._monitoring._events","has_param_spec_type":false,"metaclass_type":null,"metadata":{},"module_name":"sys._monitoring","mro":["sys._monitoring._events","builtins.object"],"names":{".class":"SymbolTable","BRANCH":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"Var","flags":["is_initialized_in_class","is_ready"],"fullname":"sys._monitoring._events.BRANCH","name":"BRANCH","type":"builtins.int"}},"CALL":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"Var","flags":["is_initialized_in_class","is_ready"],"fullname":"sys._monitoring._events.CALL","name":"CALL","type":"builtins.int"}},"C_RAISE":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"Var","flags":["is_initialized_in_class","is_ready"],"fullname":"sys._monitoring._events.C_RAISE","name":"C_RAISE","type":"builtins.int"}},"C_RETURN":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"Var","flags":["is_initialized_in_class","is_ready"],"fullname":"sys._monitoring._events.C_RETURN","name":"C_RETURN","type":"builtins.int"}},"EXCEPTION_HANDLED":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"Var","flags":["is_initialized_in_class","is_ready"],"fullname":"sys._monitoring._events.EXCEPTION_HANDLED","name":"EXCEPTION_HANDLED","type":"builtins.int"}},"INSTRUCTION":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"Var","flags":["is_initialized_in_class","is_ready"],"fullname":"sys._monitoring._events.INSTRUCTION","name":"INSTRUCTION","type":"builtins.int"}},"JUMP":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"Var","flags":["is_initialized_in_class","is_ready"],"fullname":"sys._monitoring._events.JUMP","name":"JUMP","type":"builtins.int"}},"LINE":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"Var","flags":["is_initialized_in_class","is_ready"],"fullname":"sys._monitoring._events.LINE","name":"LINE","type":"builtins.int"}},"NO_EVENTS":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"Var","flags":["is_initialized_in_class","is_ready"],"fullname":"sys._monitoring._events.NO_EVENTS","name":"NO_EVENTS","type":"builtins.int"}},"PY_RESUME":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"Var","flags":["is_initialized_in_class","is_ready"],"fullname":"sys._monitoring._events.PY_RESUME","name":"PY_RESUME","type":"builtins.int"}},"PY_RETURN":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"Var","flags":["is_initialized_in_class","is_ready"],"fullname":"sys._monitoring._events.PY_RETURN","name":"PY_RETURN","type":"builtins.int"}},"PY_START":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"Var","flags":["is_initialized_in_class","is_ready"],"fullname":"sys._monitoring._events.PY_START","name":"PY_START","type":"builtins.int"}},"PY_THROW":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"Var","flags":["is_initialized_in_class","is_ready"],"fullname":"sys._monitoring._events.PY_THROW","name":"PY_THROW","type":"builtins.int"}},"PY_UNWIND":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"Var","flags":["is_initialized_in_class","is_ready"],"fullname":"sys._monitoring._events.PY_UNWIND","name":"PY_UNWIND","type":"builtins.int"}},"PY_YIELD":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"Var","flags":["is_initialized_in_class","is_ready"],"fullname":"sys._monitoring._events.PY_YIELD","name":"PY_YIELD","type":"builtins.int"}},"RAISE":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"Var","flags":["is_initialized_in_class","is_ready"],"fullname":"sys._monitoring._events.RAISE","name":"RAISE","type":"builtins.int"}},"RERAISE":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"Var","flags":["is_initialized_in_class","is_ready"],"fullname":"sys._monitoring._events.RERAISE","name":"RERAISE","type":"builtins.int"}},"STOP_ITERATION":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"Var","flags":["is_initialized_in_class","is_ready"],"fullname":"sys._monitoring._events.STOP_ITERATION","name":"STOP_ITERATION","type":"builtins.int"}}},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"events":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sys._monitoring.events","name":"events","type":"sys._monitoring._events"}},"free_tool_id":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0],"arg_names":[null],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"sys._monitoring.free_tool_id","name":"free_tool_id","type":{".class":"CallableType","arg_kinds":[0],"arg_names":[null],"arg_types":["builtins.int"],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"free_tool_id","ret_type":{".class":"NoneType"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"get_events":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0],"arg_names":[null],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"sys._monitoring.get_events","name":"get_events","type":{".class":"CallableType","arg_kinds":[0],"arg_names":[null],"arg_types":["builtins.int"],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"get_events","ret_type":"builtins.int","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"get_local_events":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0],"arg_names":[null,null],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"sys._monitoring.get_local_events","name":"get_local_events","type":{".class":"CallableType","arg_kinds":[0,0],"arg_names":[null,null],"arg_types":["builtins.int","types.CodeType"],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"get_local_events","ret_type":"builtins.int","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"get_tool":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0],"arg_names":[null],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"sys._monitoring.get_tool","name":"get_tool","type":{".class":"CallableType","arg_kinds":[0],"arg_names":[null],"arg_types":["builtins.int"],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"get_tool","ret_type":{".class":"UnionType","items":["builtins.str",{".class":"NoneType"}],"uses_pep604_syntax":true},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"register_callback":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0,0],"arg_names":[null,null,null],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"sys._monitoring.register_callback","name":"register_callback","type":{".class":"CallableType","arg_kinds":[0,0,0],"arg_names":[null,null,null],"arg_types":["builtins.int","builtins.int",{".class":"UnionType","items":[{".class":"CallableType","arg_kinds":[2,4],"arg_names":[null,null],"arg_types":[{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":2},{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":2}],"bound_args":[],"def_extras":{},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":true,"name":null,"ret_type":{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":2},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]},{".class":"NoneType"}],"uses_pep604_syntax":true}],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"register_callback","ret_type":{".class":"UnionType","items":[{".class":"CallableType","arg_kinds":[2,4],"arg_names":[null,null],"arg_types":[{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":2},{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":2}],"bound_args":[],"def_extras":{},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":true,"name":null,"ret_type":{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":2},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]},{".class":"NoneType"}],"uses_pep604_syntax":true},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"restart_events":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[],"arg_names":[],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"sys._monitoring.restart_events","name":"restart_events","type":{".class":"CallableType","arg_kinds":[],"arg_names":[],"arg_types":[],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"restart_events","ret_type":{".class":"NoneType"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"set_events":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0],"arg_names":[null,null],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"sys._monitoring.set_events","name":"set_events","type":{".class":"CallableType","arg_kinds":[0,0],"arg_names":[null,null],"arg_types":["builtins.int","builtins.int"],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"set_events","ret_type":{".class":"NoneType"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"set_local_events":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0,0],"arg_names":[null,null,null],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"sys._monitoring.set_local_events","name":"set_local_events","type":{".class":"CallableType","arg_kinds":[0,0,0],"arg_names":[null,null,null],"arg_types":["builtins.int","types.CodeType","builtins.int"],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"set_local_events","ret_type":"builtins.int","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"use_tool_id":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0],"arg_names":[null,null],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"sys._monitoring.use_tool_id","name":"use_tool_id","type":{".class":"CallableType","arg_kinds":[0,0],"arg_names":[null,null],"arg_types":["builtins.int","builtins.str"],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"use_tool_id","ret_type":{".class":"NoneType"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}}},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/sys/_monitoring.pyi"}
+```
+
+.mypy_cache/3.12/sys/_monitoring.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[8,9,10,1,1,1],"dep_prios":[5,5,5,5,30,30],"dependencies":["collections.abc","types","typing","builtins","_frozen_importlib","abc"],"hash":"6538719a3d28b7c044c8633b6b63602a46909534","id":"sys._monitoring","ignore_all":true,"interface_hash":"2e6e0e725b23ceaf1da62c8641e7d9c8b87570bb","mtime":1762029371,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/sys/_monitoring.pyi","plugin_data":null,"size":1492,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/zipfile/__init__.data.json
+```
+[TRUNCATED]
+```
+
+.mypy_cache/3.12/zipfile/__init__.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[4,293,1,2,3,6,7,8,9,1,1,1,1,1],"dep_prios":[5,5,5,10,5,5,5,5,5,5,30,30,30,30],"dependencies":["collections.abc","zipfile._path","io","sys","_typeshed","os","types","typing","typing_extensions","builtins","_collections_abc","_frozen_importlib","_io","abc"],"hash":"8fc6699ae0c00ae6b83f2797cf0e4e82c9c29e8d","id":"zipfile","ignore_all":true,"interface_hash":"1b8099e3947a81abb54f0573215cb799da70bee4","mtime":1762029371,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/zipfile/__init__.pyi","plugin_data":null,"size":12704,"suppressed":[],"version_id":"1.15.0"}
+```
+
+skills/oraclepack-pipeline-improver/references/actionizer-spec.md
+```
+<!-- # path: oraclepack-pipeline-improver/references/actionizer-spec.md -->
+# Stage 3 “Actionizer” spec (proposed)
+
+Goal: deterministically convert the 20 outputs of a run into actionable engineering work artifacts, without duplicating work on reruns.
+
+## Inputs
+
+- `.oraclepack/runs/<pack_id>/run.json`
+- `.oraclepack/runs/<pack_id>/steps.json`
+- `.oraclepack/runs/<pack_id>/outputs/*`
+
+## Processing pipeline (deterministic)
+
+1) **Load** run + steps + outputs
+- If any output is missing, mark that step as `missing_output` in normalization.
+
+2) **Normalize** each step output into a stable record
+- Extract (when present):
+  - question metadata (QuestionId/Category/Reference/ExpectedArtifacts),
+  - recommended actions,
+  - evidence anchors (paths, symbols, commands),
+  - unknowns / missing inputs.
+- Classify:
+  - `actionable` (clear tasks),
+  - `blocked` (missing evidence prevents action),
+  - `conflict` (contradictory requirements/answers),
+  - `noop` (no action required).
+
+3) **Deduplicate** tasks across steps
+- Use stable task IDs derived from `pack_hash` + a stable task key (e.g., normalized title + target path).
+- Reruns must produce byte-identical outputs when inputs unchanged.
+
+4) **Generate** three core artifacts:
+- `normalized.jsonl` (machine-readable records)
+- `backlog.md` (human-prioritized tasks)
+- `change-plan.md` (ordered implementation plan, smallest-first)
+
+5) Optional exports:
+- `github-issues.json` (issue objects; exact schema TODO/Unknown)
+- `taskmaster.json` (taskmaster-style import; exact schema TODO/Unknown)
+
+## Output files
+
+### A) `actionizer/normalized.jsonl`
+
+One JSON object per line.
+
+**Proposed record fields:**
+- `pack_id` (string)
+- `pack_hash` (string)
+- `step_id` (string `"01"`..`"20"`)
+- `task_id` (string; stable)
+- `title` (string)
+- `status` (enum: `actionable` | `blocked` | `conflict` | `noop`)
+- `category` (string | null)
+- `reference` (string | null)
+- `expected_artifacts` (string[] | null)
+- `actions` (string[]) — concrete “do X” items
+- `evidence` (object)
+  - `paths` (string[])
+  - `symbols` (string[])
+  - `commands` (string[])
+- `notes` (string[])
+- `missing_inputs` (string[])
+
+### B) `actionizer/backlog.md`
+
+Use assets/backlog-template.md as the base.
+
+Rules:
+- Group by category (if present), else by subsystem (inferred from reference paths).
+- Include blocked/conflict items explicitly with “what evidence is needed”.
+
+### C) `actionizer/change-plan.md`
+
+Use assets/change-plan-template.md as the base.
+
+Rules:
+- Ordered, smallest shippable increments first.
+- Each step includes acceptance criteria and “done when…” checks.
+- If CI gating thresholds exist, include them; else mark TODO.
+
+## Handling blocked/conflict outputs
+
+- `blocked` must include a **single next smallest experiment** (one action) to obtain missing evidence.
+- `conflict` must include:
+  - conflicting statements,
+  - what file/path/log is needed to resolve,
+  - a proposed resolution strategy (flagged as Proposed).
+
+## Idempotency / stability requirements
+
+- Stable IDs (required):
+  - deterministic function of `pack_hash` + `step_id` + normalized title (or similar stable key).
+- Reruns:
+  - must not duplicate tasks,
+  - must regenerate byte-identical artifacts if inputs unchanged.
+```
+
+skills/oraclepack-pipeline-improver/references/cli-contract.md
+```
+<!-- # path: oraclepack-pipeline-improver/references/cli-contract.md -->
+# oraclepack CLI contract (proposed)
+
+This document is the target CLI behavior to implement. If the current repo differs, treat that as **Observed** and this as **Proposed**.
+
+## Commands
+
+### 1) `oraclepack validate`
+
+**Goal:** Deterministically validate a pack file and (optionally) emit machine-readable results.
+
+**Proposed:**
+- `oraclepack validate <pack.md> [--strict] [--json]`
+
+**--strict checks (proposed minimum):**
+- Exactly **20** oracle invocations.
+- No schema drift vs expected pack format (**exact schema rules: TODO/Unknown** unless provided).
+- Each question has required fields present (as enforceable in current schema; else **TODO**).
+- Stable ordering checks (if applicable): ROI desc, effort asc (only if the pack uses those fields; else skip).
+
+**--json output (proposed):**
+- Print a single JSON object to stdout (or to a specified file if supported; **TODO**).
+- Include `ok: boolean`, `errors: []`, `warnings: []`, and per-question metadata when parseable.
+
+### 2) `oraclepack run`
+
+**Goal:** Execute the 20 steps into a deterministic run directory with resumable semantics.
+
+**Proposed:**
+- `oraclepack run <pack.md> [--max-parallel N] [--resume] [--rerun all|failed|01,03,07] [--ci] [--non-interactive] [--json-log]`
+
+**Run dir (proposed):**
+- Create: `.oraclepack/runs/<pack_id>/`
+- Emit at least:
+  - `.oraclepack/runs/<pack_id>/run.json`
+  - `.oraclepack/runs/<pack_id>/steps.json`
+  - `.oraclepack/runs/<pack_id>/outputs/` (20 files; naming convention below)
+  - `.oraclepack/runs/<pack_id>/logs/` (optional)
+
+**pack_id (proposed):**
+- `YYYY-MM-DD__<gitshort>__<packhash8>`
+- If git SHA unavailable: use `nogit` for `<gitshort>`.
+
+**Output naming (proposed):**
+- Prefer deterministic: `outputs/01.md` ... `outputs/20.md`
+- If a stable QuestionId exists: optionally include in filename, but do not break determinism.
+
+**Resume/rerun (proposed):**
+- Resume is default if the run dir already exists:
+  - skip steps already marked `ok` with matching output hash.
+- `--rerun failed` reruns only failed steps.
+- `--rerun all` reruns all steps.
+- `--rerun 01,03,07` reruns specified step IDs.
+
+**Concurrency (proposed):**
+- `--max-parallel N` bounds parallel provider calls.
+- Optional: per-provider caps via config (**TODO/Unknown**: config format).
+
+**Transient errors (proposed):**
+- Implement exponential backoff + jitter on retryable errors (e.g., 429/503) up to a retry budget.
+- Persist retry counts/outcomes into `steps.json`.
+
+### 3) `oraclepack actionize`
+
+**Goal:** Convert run outputs into actionable engineering work artifacts.
+
+**Proposed:**
+- `oraclepack actionize --run-dir .oraclepack/runs/<pack_id> [--ci]`
+
+**Inputs:**
+- `run.json`, `steps.json`
+- `outputs/` (20 outputs)
+
+**Outputs:**
+- `.oraclepack/runs/<pack_id>/actionizer/normalized.jsonl`
+- `.oraclepack/runs/<pack_id>/actionizer/backlog.md`
+- `.oraclepack/runs/<pack_id>/actionizer/change-plan.md`
+- Optional:
+  - `.oraclepack/runs/<pack_id>/actionizer/github-issues.json`
+  - `.oraclepack/runs/<pack_id>/actionizer/taskmaster.json`
+
+## CI mode (proposed)
+
+- `oraclepack run --ci --non-interactive --json-log`
+- `oraclepack actionize --ci`
+
+**Behavior (proposed):**
+- No TUI interaction.
+- Structured logs enabled (JSONL or JSON objects; **TODO/Unknown** exact format).
+- Exit codes are policy-driven:
+  - validation failures → non-zero
+  - run failures exceeding retry budget → non-zero
+  - optional policy thresholds (completion rate, action yield) → **TODO/Unknown** threshold values.
+
+## Security / path safety (proposed)
+
+- Prevent any output flag (including legacy `--write-output` if present) from writing outside the intended run directory.
+- Reject path traversal (e.g., `..`) and absolute paths when writing within `.oraclepack/runs/<pack_id>/...`.
+```
+
+skills/oraclepack-pipeline-improver/references/run-manifest-spec.md
+```
+<!-- # path: oraclepack-pipeline-improver/references/run-manifest-spec.md -->
+# Run manifest spec (proposed)
+
+This defines the minimum content for run artifacts to enable traceability, resume/rerun, and Stage 3 processing.
+
+## `.oraclepack/runs/<pack_id>/run.json`
+
+**Required fields (proposed minimum):**
+- `pack_id` (string)
+- `pack_path` (string)
+- `pack_hash` (string; full hash)
+- `created_at` (RFC3339 string)
+- `git_sha` (string | null)
+- `oraclepack_version` (string | TODO if not available)
+- `oracle_version` (string | TODO if not available)
+- `max_parallel` (number | null)
+- `ci` (boolean)
+- `providers` (object | TODO if not available)
+- `models` (object | TODO if not available)
+
+**Notes:**
+- If any value cannot be derived, set it to `null` and record a `warnings[]` entry rather than inventing it.
+
+## `.oraclepack/runs/<pack_id>/steps.json`
+
+Represent steps as an array of 20 items ordered by `step_id`.
+
+**Per-step fields (proposed minimum):**
+- `step_id` (string `"01"`..`"20"`)
+- `question_id` (string | null) — if present in the pack/prompt metadata
+- `category` (string | null)
+- `reference` (string | null)
+- `invocation_hash` (string) — hash of canonical invocation inputs (prompt + attachments + provider/model knobs)
+- `output_path` (string)
+- `output_hash` (string | null)
+- `status` (enum: `pending` | `ok` | `failed` | `skipped`)
+- `attempts` (number)
+- `last_error` (string | null)
+- `started_at` (RFC3339 string | null)
+- `finished_at` (RFC3339 string | null)
+
+## Hashing (proposed)
+
+### `pack_hash`
+- Compute from a canonical representation of the pack file:
+  - normalize line endings,
+  - remove non-semantic whitespace if safe (TODO/Unknown: exact pack grammar),
+  - hash the resulting bytes.
+
+### `invocation_hash`
+- Compute from:
+  - prompt text (including embedded mini-metadata),
+  - attachment file contents (hash of contents, not just paths),
+  - provider + model identifiers,
+  - deterministic knobs (temperature, etc.) if applicable.
+
+If attachment content hashing cannot be performed, record **Unknown/TODO** and do not enable caching based on incomplete inputs.
+```
+
+skills/oraclepack-pipeline-improver/references/stage1-prompt-metadata.md
+```
+<!-- # path: oraclepack-pipeline-improver/references/stage1-prompt-metadata.md -->
+# Stage 1 prompt-embedded metadata (proposed)
+
+Goal: improve downstream parsing for Stage 2/3 without changing the oracle pack schema.
+
+## Constraints
+
+- Do not change the pack’s structural schema unless an explicit migration path is provided.
+- Embed metadata inside the prompt text (the `-p` payload) in a parseable, consistent format.
+
+## Recommended metadata block (inside the prompt)
+
+Add at the *very top* of each prompt:
+
+```
+
+[oraclepack-meta]
+QuestionId: 07
+Category: permissions
+Reference: src/server/auth/middleware.ts
+ExpectedArtifacts:
+
+* src/server/auth/**
+* docs/plans/...
+  [/oraclepack-meta]
+
+```
+
+## Parsing rules (deterministic)
+
+- The block starts with `[oraclepack-meta]` and ends with `[/oraclepack-meta]`.
+- Keys are case-sensitive as shown.
+- Multi-line lists are allowed for `ExpectedArtifacts`.
+- If any key is missing, treat it as `null` and continue.
+
+## Minimal required keys (recommended)
+
+- QuestionId
+- Category
+- Reference
+- ExpectedArtifacts (optional but recommended)
+
+If the Stage 1 generator cannot produce these, it should write `Unknown` values explicitly rather than omitting keys.
+```
+
+skills/oraclepack-tickets-pack/scripts/lint_attachments.py
+```
+import argparse
+import re
+import sys
+from dataclasses import dataclass
+from pathlib import Path
+from typing import List, Tuple
+
+
+@dataclass
+class Step:
+    n: str
+    header: str
+    lines: List[str]
+
+
+def _read_text(path: Path) -> str:
+    try:
+        return path.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        return path.read_text(encoding="utf-8", errors="replace")
+
+
+def _extract_bash_fence(lines: List[str]) -> List[str]:
+    fence_idxs = [i for i, ln in enumerate(lines) if ln.startswith("```")]
+    if len(fence_idxs) != 2:
+        raise ValueError(f"Expected exactly one fenced block (2 fence lines). Found {len(fence_idxs)}.")
+    open_i, close_i = fence_idxs
+    if lines[open_i].rstrip("\n") != "```bash":
+        raise ValueError("Opening fence must be exactly ```bash.")
+    if lines[close_i].rstrip("\n") != "```":
+        raise ValueError("Closing fence must be exactly ```.")
+    return [ln.rstrip("\n") for ln in lines[open_i + 1 : close_i]]
+
+
+def _parse_steps(fence_lines: List[str]) -> List[Step]:
+    header_re = re.compile(r"^#\s*(\d{2})\)\s+")
+    header_idxs: List[Tuple[int, str]] = []
+    for i, ln in enumerate(fence_lines):
+        m = header_re.match(ln)
+        if m:
+            header_idxs.append((i, m.group(1)))
+
+    if not header_idxs:
+        raise ValueError("No step headers found inside bash fence.")
+
+    steps: List[Step] = []
+    for idx, (start_i, n) in enumerate(header_idxs):
+        end_i = header_idxs[idx + 1][0] if idx + 1 < len(header_idxs) else len(fence_lines)
+        block = fence_lines[start_i:end_i]
+        steps.append(Step(n=n, header=block[0], lines=block))
+    return steps
+
+
+def _count_native_attachments(step: Step) -> int:
+    """
+    Counts -f/--file occurrences excluding:
+      - comment lines
+      - the literal extra_files line (immediately following the marker comment)
+    """
+    count = 0
+    ignore_next_nonempty = False
+
+    for ln in step.lines[1:]:
+        s = ln.strip()
+        if not s:
+            continue
+
+        # Detect extra_files marker comment; ignore next non-empty line.
+        if s.startswith("#") and "extra_files appended literally" in s.lower():
+            ignore_next_nonempty = True
+            continue
+
+        if ignore_next_nonempty:
+            # Skip counting attachments on the extra_files line itself.
+            ignore_next_nonempty = False
+            continue
+
+        if s.startswith("#"):
+            continue
+
+        count += len(re.findall(r"(?<!\S)(-f|--file)(?!\S)", ln))
+    return count
+
+def lint(path: Path) -> None:
+    raw = _read_text(path)
+    lines = raw.splitlines(True)
+    fence = _extract_bash_fence(lines)
+    steps = _parse_steps(fence)
+
+    errors: List[str] = []
+    for step in steps:
+        native = _count_native_attachments(step)
+        if native > 2:
+            errors.append(
+                f"Step {step.n}: has {native} native attachments; must be <= 2 (ticket bundle + at most one repo file)."
+            )
+
+    if errors:
+        for e in errors:
+            print(f"[ERROR] {e}", file=sys.stderr)
+        sys.exit(1)
+
+    print("[OK] Attachment lint passed (native attachments <= 2 per step; extra_files line excluded).")
+
+def main() -> None:
+    p = argparse.ArgumentParser(
+        description="Lint ticket-driven oraclepack Stage-1 packs for native attachments (<=2 per step, excluding literal extra_files line)."
+    )
+    p.add_argument("pack_path", help="Path to the Markdown pack file")
+    args = p.parse_args()
+
+    path = Path(args.pack_path)
+    if not path.exists():
+        print(f"[ERROR] File not found: {path}", file=sys.stderr)
+        sys.exit(1)
+
+    lint(path)
+
+
+if __name__ == "__main__":
+    main()
+```
+
+skills/oraclepack-tickets-pack/scripts/validate_pack.py
+```
+import argparse
+import re
+import sys
+from dataclasses import dataclass
+from pathlib import Path, PurePosixPath
+from typing import Dict, List, Tuple
+
+
+ALLOWED_CATEGORIES = [
+    "contracts/interfaces",
+    "invariants",
+    "caching/state",
+    "background jobs",
+    "observability",
+    "permissions",
+    "migrations",
+    "UX flows",
+    "failure modes",
+    "feature flags",
+]
+
+# Required header tokens, in strict order.
+HEADER_TOKEN_ORDER = [
+    "ROI=",
+    "impact=",
+    "confidence=",
+    "effort=",
+    "horizon=",
+    "category=",
+    "reference=",
+]
+
+
+@dataclass
+class Step:
+    n: str
+    header_line_no: int  # 1-based within fence
+    header_line: str
+    block_lines: List[str]
+
+
+def _fail(errors: List[str]) -> None:
+    for e in errors:
+        print(f"[ERROR] {e}", file=sys.stderr)
+    sys.exit(1)
+
+
+def _read_text(path: Path) -> str:
+    try:
+        return path.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        return path.read_text(encoding="utf-8", errors="replace")
+
+
+def _extract_single_bash_fence(lines: List[str]) -> Tuple[int, int, List[str], List[str]]:
+    """
+    Enforces:
+      - exactly one fenced code block labeled bash
+      - no other fences anywhere
+      - opening fence line must be exactly ```bash
+      - closing fence line must be exactly ```
+    """
+    fence_locs = [i for i, ln in enumerate(lines) if re.match(r"^```", ln)]
+    if len(fence_locs) != 2:
+        # Show all fence-like lines to help debugging.
+        details = []
+        for i, ln in enumerate(lines):
+            if re.match(r"^```", ln):
+                details.append(f"line {i+1}: {ln.rstrip()}")
+        raise ValueError(
+            f"Expected exactly one fenced code block (2 fence lines), found {len(fence_locs)} fence line(s). "
+            + ("Fences: " + "; ".join(details) if details else "")
+        )
+
+    open_i, close_i = fence_locs
+    if lines[open_i].rstrip("\n") != "```bash":
+        raise ValueError("Opening fence must be exactly ```bash on its own line (no spaces).")
+    if lines[close_i].rstrip("\n") != "```":
+        raise ValueError("Closing fence must be exactly ``` on its own line (no spaces).")
+    if close_i <= open_i:
+        raise ValueError("Closing fence appears before opening fence.")
+
+    fence_lines = lines[open_i + 1 : close_i]
+    outside_lines = lines[:open_i] + lines[close_i + 1 :]
+    return open_i, close_i, fence_lines, outside_lines
+
+
+def _parse_steps(fence_lines: List[str]) -> List[Step]:
+    header_re = re.compile(r"^#\s*(\d{2})\)\s+")
+    header_idxs: List[Tuple[int, str]] = []
+    for i, ln in enumerate(fence_lines):
+        m = header_re.match(ln)
+        if m:
+            header_idxs.append((i, m.group(1)))
+
+    if len(header_idxs) != 20:
+        raise ValueError(f"Expected exactly 20 step headers inside bash fence, found {len(header_idxs)}.")
+
+    expected = [f"{i:02d}" for i in range(1, 21)]
+    got = [n for _, n in header_idxs]
+    if got != expected:
+        raise ValueError(f"Step numbering must be sequential 01..20. Got: {got}")
+
+    steps: List[Step] = []
+    for idx, (start_i, n) in enumerate(header_idxs):
+        end_i = header_idxs[idx + 1][0] if idx + 1 < len(header_idxs) else len(fence_lines)
+        block = fence_lines[start_i:end_i]
+        steps.append(
+            Step(
+                n=n,
+                header_line_no=start_i + 1,
+                header_line=block[0].rstrip("\n"),
+                block_lines=[b.rstrip("\n") for b in block],
+            )
+        )
+    return steps
+
+
+def _header_token_positions(header: str) -> Dict[str, int]:
+    pos: Dict[str, int] = {}
+    for t in HEADER_TOKEN_ORDER:
+        pos[t] = header.find(t)
+    return pos
+
+
+def _parse_category_value(header: str) -> str:
+    if "category=" not in header:
+        return ""
+    after = header.split("category=", 1)[1]
+    # Category ends at the start of " reference=" (strict contract).
+    end = after.find(" reference=")
+    if end == -1:
+        # As a fallback, try other token starts, though contract expects reference= last.
+        for token in [" ROI=", " impact=", " confidence=", " effort=", " horizon="]:
+            p = after.find(token)
+            if p != -1:
+                end = p if end == -1 else min(end, p)
+    if end == -1:
+        cat = after.strip()
+    else:
+        cat = after[:end].strip()
+    return cat
+
+
+def _has_nonempty_scalar(header: str, key: str) -> bool:
+    # scalar value ends at next whitespace
+    m = re.search(rf"\b{re.escape(key)}=([^\s]+)", header)
+    return bool(m and m.group(1).strip())
+
+
+def _validate_header(step: Step, errors: List[str]) -> None:
+    header = step.header_line
+
+    # Strict start.
+    if not re.match(rf"^#\s*{re.escape(step.n)}\)\s+", header):
+        errors.append(f"Step {step.n}: header must start with '# {step.n})'. Got: {header}")
+
+    # Tokens must appear in strict order.
+    pos = _header_token_positions(header)
+    for t, p in pos.items():
+        if p == -1:
+            errors.append(f"Step {step.n}: missing required token '{t}' in header: {header}")
+
+    # Order check (only if all present).
+    if all(p != -1 for p in pos.values()):
+        last = -1
+        for t in HEADER_TOKEN_ORDER:
+            if pos[t] <= last:
+                errors.append(
+                    f"Step {step.n}: token '{t}' is out of order in header. "
+                    f"Expected order: {' '.join(HEADER_TOKEN_ORDER)}. Got: {header}"
+                )
+                break
+            last = pos[t]
+
+    # Non-empty values.
+    if not _has_nonempty_scalar(header, "ROI"):
+        errors.append(f"Step {step.n}: missing/empty ROI= value in header: {header}")
+    for k in ["impact", "confidence", "effort", "horizon", "reference"]:
+        if not _has_nonempty_scalar(header, k):
+            errors.append(f"Step {step.n}: missing/empty {k}= value in header: {header}")
+
+    cat_val = _parse_category_value(header)
+    if not cat_val:
+        errors.append(f"Step {step.n}: missing/empty category= value in header: {header}")
+    elif cat_val not in ALLOWED_CATEGORIES:
+        errors.append(
+            f"Step {step.n}: invalid category='{cat_val}'. Must be one of: {ALLOWED_CATEGORIES}. Header: {header}"
+        )
+
+
+def _validate_write_output(step: Step, errors: List[str]) -> None:
+    joined = "\n".join(step.block_lines)
+    # Strict: must use double quotes exactly: --write-output "<path>"
+    m = re.search(r'--write-output\s+"([^"]+)"', joined)
+    if not m:
+        errors.append(f"Step {step.n}: missing --write-output \"...\" (double-quoted) in step block.")
+        return
+
+    out_path = m.group(1)
+
+    # Disallow variable expansions in write paths.
+    if "$" in out_path or "`" in out_path:
+        errors.append(f"Step {step.n}: --write-output path must not contain shell expansions. Got: {out_path}")
+
+    # Disallow absolute writes (and home shortcuts).
+    if out_path.startswith("/") or out_path.startswith("~"):
+        errors.append(f"Step {step.n}: --write-output path must be relative (no absolute/home paths). Got: {out_path}")
+
+    # Disallow traversal.
+    if re.search(r"(^|/)\.\.(/|$)", out_path):
+        errors.append(f"Step {step.n}: --write-output path must not contain '..' traversal. Got: {out_path}")
+
+    # Basic shape: <out_dir>/<nn>-<slug>.md
+    if "/" not in out_path:
+        errors.append(f"Step {step.n}: --write-output path must contain a directory component. Got: {out_path}")
+        return
+
+    filename = out_path.split("/")[-1]
+    if not filename.startswith(f"{step.n}-"):
+        errors.append(f"Step {step.n}: --write-output filename must start with '{step.n}-'. Got: {filename}")
+    if not filename.endswith(".md"):
+        errors.append(f"Step {step.n}: --write-output filename must end with '.md'. Got: {filename}")
+
+    # Extra guard: ensure PurePosixPath doesn't include '..' (covers odd strings like 'a/../b').
+    try:
+        parts = PurePosixPath(out_path).parts
+        if ".." in parts:
+            errors.append(f"Step {step.n}: --write-output path contains '..' segment (unsafe). Got: {out_path}")
+    except Exception:
+        # Non-fatal; already handled by regex.
+        pass
+
+
+def _validate_ticket_bundle_reference(step: Step, errors: List[str]) -> None:
+    joined = "\n".join(step.block_lines)
+
+    # Require the bundle to be mentioned/attached.
+    if "_tickets_bundle" not in joined:
+        errors.append(
+            f"Step {step.n}: must reference the ticket bundle (expected '_tickets_bundle' in step block)."
+        )
+
+    # Require a file attachment pointing to the bundle, double-quoted for stability.
+    if re.search(r'(?<!\S)(-f|--file)(?!\S)\s+"[^"\n]*_tickets_bundle[^"\n]*"', joined) is None:
+        errors.append(
+            f"Step {step.n}: must attach the ticket bundle via -f/--file \"..._tickets_bundle...\"."
+        )
+
+
+def _validate_answer_format(step: Step, errors: List[str]) -> None:
+    hay = "\n".join(step.block_lines).lower()
+    required = [
+        "answer format:",
+        "direct answer",
+        "risks/unknowns",
+        "next smallest concrete experiment",
+        "if evidence is insufficient",
+        "missing file/path pattern",
+    ]
+    missing = [s for s in required if s not in hay]
+    if missing:
+        errors.append(f"Step {step.n}: prompt missing required Answer format components: {missing}")
+
+
+def _validate_category_counts(steps: List[Step], errors: List[str]) -> None:
+    counts: Dict[str, List[str]] = {c: [] for c in ALLOWED_CATEGORIES}
+    for st in steps:
+        cat = _parse_category_value(st.header_line)
+        if cat in counts:
+            counts[cat].append(st.n)
+
+    bad = []
+    for cat, ids in counts.items():
+        if len(ids) != 2:
+            bad.append(f"{cat}={len(ids)} (steps={ids})")
+    if bad:
+        errors.append(
+            "Category distribution must be exactly 2 steps per category (20 total). Problems: " + ", ".join(bad)
+        )
+
+
+def _validate_coverage_check(outside_lines: List[str], errors: List[str]) -> None:
+    text = "\n".join(outside_lines)
+    m = re.search(r"^##\s+Coverage check\s*$", text, flags=re.IGNORECASE | re.MULTILINE)
+    if m is None:
+        errors.append('Missing "## Coverage check" section (must be outside the bash fence).')
+        return
+
+    after = text[m.end() :]
+    for cat in ALLOWED_CATEGORIES:
+        # Require a line like: "- <cat>: OK" OR "- <cat>: Missing(01,02)"
+        pat = rf"^\s*[-*]\s+{re.escape(cat)}\s*:\s*(OK|Missing\([^)]*\))\s*$"
+        if re.search(pat, after, flags=re.MULTILINE) is None:
+            errors.append(f'Coverage check missing/invalid line for category: "{cat}"')
+
+
+def validate_pack(path: Path) -> None:
+    raw = _read_text(path)
+    lines = raw.splitlines(True)
+
+    try:
+        _, _, fence_lines, outside_lines = _extract_single_bash_fence(lines)
+    except ValueError as e:
+        _fail([str(e)])
+
+    try:
+        steps = _parse_steps(fence_lines)
+    except ValueError as e:
+        _fail([str(e)])
+
+    errors: List[str] = []
+    for st in steps:
+        _validate_header(st, errors)
+        _validate_write_output(st, errors)
+        _validate_ticket_bundle_reference(st, errors)
+        _validate_answer_format(st, errors)
+
+    _validate_category_counts(steps, errors)
+    _validate_coverage_check(outside_lines, errors)
+
+    if errors:
+        _fail(errors)
+
+    print("[OK] Pack validates against tickets Stage-1 contract.")
+
+def main() -> None:
+    p = argparse.ArgumentParser(
+        description="Validate a ticket-driven oraclepack Stage-1 pack (single bash fence, 20 steps, strict headers/tokens, safe write paths, ticket bundle references, coverage check)."
+    )
+    p.add_argument("pack_path", help="Path to the Markdown pack file")
+    args = p.parse_args()
+
+    path = Path(args.pack_path)
+    if not path.exists():
+        _fail([f"File not found: {path}"])
+
+    validate_pack(path)
+
+
+if __name__ == "__main__":
+    main()
+```
+
+skills/oraclepack-tickets-pack/references/attachment-minimization.md
+```
+# Attachment minimization rules (Tickets Stage 1 packs)
+
+Objective: keep oracle calls fast, portable, and deterministic by attaching the minimum evidence per step.
+
+## Hard limits
+
+- Default **native attachments**: **0–2 per step** (`-f/--file`).
+- In tickets packs, the ticket bundle (`ticket_bundle_path`) is typically **the first native attachment**.
+- If you need more than 2 native attachments, the step is not scoped tightly enough: split or reduce.
+
+## extra_files (literal append)
+
+- If `extra_files` is provided, it must be appended **literally** to every oracle command.
+- It may contain additional `-f/--file` flags.
+- To keep linting reliable and preserve the “native attachments ≤2” rule:
+  - place `extra_files` on its own line in each command,
+  - preceded by a comment line containing: `extra_files appended literally`.
+
+This lets `scripts/lint_attachments.py` treat that line as “extra” and not part of the native attachment count.
+
+## What to attach (rule of thumb)
+
+For each step, prefer:
+1) Ticket bundle: `-f "<ticket_bundle_path>"`
+2) One repo file that best supports the question:
+   - a definition/contract file (types, schemas, CLI/TUI surface), OR
+   - a use-site/enforcement file
+
+If you can’t pick confidently:
+- attach only the ticket bundle
+- set `reference=Unknown`
+- ensure the prompt requests the exact missing file/path pattern(s) to attach next
+
+## Avoid these attachment anti-patterns
+
+- Attaching entire directories when one file is enough.
+- Attaching duplicates.
+- Attaching generated/lock files unless the ticket explicitly requires it.
+- Attaching secrets.
+```
+
+skills/oraclepack-tickets-pack/references/ticket-bundling.md
+```
+# Ticket bundling (deterministic)
+
+Objective: create a single Markdown file (`ticket_bundle_path`) that provides stable, minimal, high-signal context for all 20 oracle steps.
+
+## Inputs
+
+- `ticket_root` (default `.tickets`)
+- `ticket_glob` (default `**/*.md`, relative to `ticket_root`)
+- `ticket_paths` (optional; comma-separated explicit files; if present, ignore `ticket_glob`)
+- `ticket_bundle_path` (default `<out_dir>/_tickets_bundle.md`)
+
+## Deterministic selection rules
+
+1) If `ticket_paths` is non-empty:
+- Split on commas, trim whitespace.
+- Use that list exactly.
+- Sort lexicographically by path string.
+
+2) Else:
+- If `ticket_root` does not exist: select nothing.
+- Glob `ticket_root/ticket_glob`.
+- Sort lexicographically by path string.
+
+Hard rule: do not use timestamps, mtimes, file sizes, or “newest” semantics.
+
+## Bundle format
+
+The bundle should include:
+
+1) Header:
+- codebase name (if available)
+- the selection rules and resolved values:
+  - ticket_root, ticket_glob, ticket_paths (or “(none)”)
+  - ordering: lexicographic by path
+
+2) Per-ticket sections (in lex order):
+- ticket title (best-effort):
+  - first Markdown heading (`# ...`) if present, else first non-empty line, else “Untitled”
+- ticket path
+- key sections or excerpt:
+  - if ticket content is small, include full content
+  - otherwise include common sections when present (examples):
+    - Description / Context / Problem
+    - Proposal / Solution
+    - Acceptance Criteria
+    - Repro steps / Expected / Actual
+    - Notes / Links
+  - and include a “[... truncated ...]” marker when partial
+
+## Failure handling requirements
+
+If `ticket_root` is missing OR no tickets matched:
+- Still create `ticket_bundle_path`.
+- Include a **WARNING** section explaining:
+  - what was attempted (root + glob or explicit paths)
+  - that the bundle is empty
+  - that Step 01 should request which ticket paths to attach next (exact missing file/path pattern(s))
+
+## Why bundling exists
+
+- Ensures every step uses the same primary evidence.
+- Reduces per-step attachments (bundle is 1 attachment).
+- Improves determinism and portability of oracle calls.
+```
+
+skills/oraclepack-tickets-pack/references/tickets-pack-template.md
+```
+# Oracle Pack — {{codebase_name}} (Tickets Stage 1)
+
+## Parsed args
+- codebase_name: {{codebase_name}}
+- out_dir: {{out_dir}}
+- oracle_cmd: {{oracle_cmd}}
+- oracle_flags: {{oracle_flags}}
+- extra_files: {{extra_files}}
+- ticket_root: {{ticket_root}}
+- ticket_glob: {{ticket_glob}}
+- ticket_paths: {{ticket_paths}}
+- ticket_bundle_path: {{ticket_bundle_path}}
+- mode: {{mode}}
+
+Notes (contract):
+- Exactly one fenced `bash` block in this document.
+- No other ``` fences anywhere.
+- Exactly 20 steps, numbered 01..20 in order.
+- Step header: `# NN) ROI=... impact=... confidence=... effort=... horizon=... category=... reference=...`
+- Every step includes: `--write-output "{{out_dir}}/NN-<slug>.md"` (double quotes required).
+- Steps must be self-contained and must not rely on shell variables created in previous steps.
+- Pack ends with a Coverage check section listing all 10 categories as OK or Missing(<step ids>).
+
+```bash
+# Prelude (allowed inside the single bash fence)
+# - Creates out_dir deterministically
+# - Builds ticket_bundle_path deterministically from ticket_root/ticket_glob OR ticket_paths
+# - Uses lexicographic ordering only (no mtime/timestamps)
+
+set -euo pipefail
+
+mkdir -p "{{out_dir}}"
+
+python3 - <<'PY'
+from __future__ import annotations
+
+import os
+from pathlib import Path
+
+CODEBASE_NAME = "{{codebase_name}}"
+OUT_DIR = "{{out_dir}}"
+TICKET_ROOT = "{{ticket_root}}"
+TICKET_GLOB = "{{ticket_glob}}"
+TICKET_PATHS = "{{ticket_paths}}".strip()
+BUNDLE_PATH = "{{ticket_bundle_path}}"
+
+root = Path(TICKET_ROOT)
+
+def read_text(p: Path) -> str:
+    try:
+        return p.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        return p.read_text(encoding="utf-8", errors="replace")
+
+def title_from_md(text: str) -> str:
+    for ln in text.splitlines():
+        s = ln.strip()
+        if s.startswith("#"):
+            return s.lstrip("#").strip()[:160] or "Untitled"
+    for ln in text.splitlines():
+        s = ln.strip()
+        if s:
+            return s[:160]
+    return "Untitled"
+
+def select_key_sections(text: str) -> str:
+    # Heuristic: if small, include all; else include common ticket sections + top excerpt.
+    lines = text.splitlines()
+    if len(text) <= 8000 and len(lines) <= 250:
+        return text
+
+    keep = []
+    wanted = {"description", "context", "problem", "proposal", "solution", "acceptance criteria", "ac", "steps", "repro", "expected", "actual", "notes", "links"}
+    i = 0
+    while i < len(lines):
+        ln = lines[i]
+        s = ln.strip()
+        if s.startswith("##"):
+            hdr = s.lstrip("#").strip().lower()
+            if hdr in wanted:
+                keep.append(ln)
+                i += 1
+                # capture until next heading
+                while i < len(lines) and not lines[i].lstrip().startswith("#"):
+                    keep.append(lines[i])
+                    i += 1
+                continue
+        i += 1
+
+    # Fallback excerpt if no sections matched
+    if not any(l.strip() for l in keep):
+        excerpt = "\n".join(lines[:200])
+        return excerpt + "\n\n[... truncated ...]\n"
+    return "\n".join(keep) + "\n\n[... truncated ...]\n"
+
+def resolve_ticket_files() -> list[Path]:
+    if TICKET_PATHS:
+        items = [p.strip() for p in TICKET_PATHS.split(",") if p.strip()]
+        return sorted([Path(p) for p in items], key=lambda p: str(p))
+    if not root.exists():
+        return []
+    return sorted(list(root.glob(TICKET_GLOB)), key=lambda p: str(p))
+
+tickets = resolve_ticket_files()
+
+bundle_lines = []
+bundle_lines.append(f"# Tickets bundle — {CODEBASE_NAME}")
+bundle_lines.append("")
+bundle_lines.append("## Selection rules (deterministic)")
+bundle_lines.append(f"- ticket_root: {TICKET_ROOT}")
+bundle_lines.append(f"- ticket_glob: {TICKET_GLOB}")
+bundle_lines.append(f"- ticket_paths: {TICKET_PATHS or '(none)'}")
+bundle_lines.append("- ordering: lexicographic by path")
+bundle_lines.append("")
+
+if not tickets:
+    bundle_lines.append("## WARNING")
+    if TICKET_PATHS:
+        bundle_lines.append("- No tickets were found from ticket_paths (check paths).")
+    else:
+        bundle_lines.append("- ticket_root missing or no tickets matched the glob.")
+    bundle_lines.append("- This bundle is empty; Step 01 should request which ticket paths to attach next.")
+    bundle_lines.append("")
+
+for p in tickets:
+    try:
+        txt = read_text(p)
+    except Exception as e:
+        txt = f"[ERROR reading file: {e}]"
+    title = title_from_md(txt)
+    body = select_key_sections(txt)
+    bundle_lines.append(f"## {title}")
+    bundle_lines.append(f"- path: {p}")
+    bundle_lines.append("")
+    bundle_lines.append(body)
+    bundle_lines.append("")
+    bundle_lines.append("---")
+    bundle_lines.append("")
+
+out_path = Path(BUNDLE_PATH)
+out_path.parent.mkdir(parents=True, exist_ok=True)
+out_path.write_text("\n".join(bundle_lines).rstrip() + "\n", encoding="utf-8")
+
+print(f"OK: wrote ticket bundle: {out_path}")
+PY
+
+# 01) ROI=4.8 impact=6 confidence=0.80 effort=1 horizon=Immediate category=contracts/interfaces reference=Unknown
+{{oracle_cmd}} \
+  {{oracle_flags}} \
+  --write-output "{{out_dir}}/01-contracts-interfaces-ticket-surface.md" \
+  -f "{{ticket_bundle_path}}" \
+  # optional (at most one): -f "<best_repo_file_path>" \
+  # extra_files appended literally (may be empty; may include -f/--file):
+  {{extra_files}} \
+  -p "$(cat <<'PROMPT'
+Strategist question #01  (ticket-driven)
+
+Reference: Unknown
+Category: contracts/interfaces
+Horizon: Immediate
+ROI: 4.8 (impact=6, confidence=0.80, effort=1)
+
+Question:
+Using the ticket bundle as the primary context, list the public surface changes implied by the tickets (CLI/TUI/API/interfaces/contracts). For each implied change:
+- describe the new/changed interface shape
+- identify the most likely code areas involved
+- call out any backwards-compatibility constraints that must be preserved.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 02) ROI=4.6 impact=6 confidence=0.78 effort=1 horizon=Immediate category=contracts/interfaces reference=Unknown
+{{oracle_cmd}} \
+  {{oracle_flags}} \
+  --write-output "{{out_dir}}/02-contracts-interfaces-integration-points.md" \
+  -f "{{ticket_bundle_path}}" \
+  # optional (at most one): -f "<best_repo_file_path>" \
+  # extra_files appended literally (may be empty; may include -f/--file):
+  {{extra_files}} \
+  -p "$(cat <<'PROMPT'
+Strategist question #02  (ticket-driven)
+
+Reference: Unknown
+Category: contracts/interfaces
+Horizon: Immediate
+ROI: 4.6 (impact=6, confidence=0.78, effort=1)
+
+Question:
+Using the ticket bundle as the primary context, identify any external integrations implied by the tickets (e.g., calling new agents/tools, new CLIs, new services). For each:
+- what contract/config must be added or changed?
+- what failure/timeout behavior should be defined?
+- what should be the minimal “compat-safe” rollout approach?
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 03) ROI=5.2 impact=7 confidence=0.75 effort=2 horizon=NearTerm category=invariants reference=Unknown
+{{oracle_cmd}} \
+  {{oracle_flags}} \
+  --write-output "{{out_dir}}/03-invariants-correctness-guardrails.md" \
+  -f "{{ticket_bundle_path}}" \
+  # optional (at most one): -f "<best_repo_file_path>" \
+  # extra_files appended literally (may be empty; may include -f/--file):
+  {{extra_files}} \
+  -p "$(cat <<'PROMPT'
+Strategist question #03  (ticket-driven)
+
+Reference: Unknown
+Category: invariants
+Horizon: NearTerm
+ROI: 5.2 (impact=7, confidence=0.75, effort=2)
+
+Question:
+From the tickets, derive the key correctness invariants that must hold while implementing them (e.g., “runner-ingestible pack constraints”, “no schema drift”, “no unsafe paths”). For each invariant:
+- define it precisely
+- state how to enforce it (validation, linting, runtime checks)
+- identify where it should live in the codebase (by file/path patterns if evidence is missing).
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 04) ROI=5.0 impact=7 confidence=0.72 effort=2 horizon=NearTerm category=invariants reference=Unknown
+{{oracle_cmd}} \
+  {{oracle_flags}} \
+  --write-output "{{out_dir}}/04-invariants-validation-boundaries.md" \
+  -f "{{ticket_bundle_path}}" \
+  # optional (at most one): -f "<best_repo_file_path>" \
+  # extra_files appended literally (may be empty; may include -f/--file):
+  {{extra_files}} \
+  -p "$(cat <<'PROMPT'
+Strategist question #04  (ticket-driven)
+
+Reference: Unknown
+Category: invariants
+Horizon: NearTerm
+ROI: 5.0 (impact=7, confidence=0.72, effort=2)
+
+Question:
+Using the tickets, identify validation boundaries that must exist (ticket parsing, pack generation, pack validation). Where could invalid inputs slip through (missing tickets, malformed headers, extra fences)? Propose a minimal validation plan that preserves backward compatibility.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 05) ROI=4.4 impact=6 confidence=0.78 effort=2 horizon=NearTerm category=caching/state reference=Unknown
+{{oracle_cmd}} \
+  {{oracle_flags}} \
+  --write-output "{{out_dir}}/05-caching-state-ticket-artifacts.md" \
+  -f "{{ticket_bundle_path}}" \
+  # optional (at most one): -f "<best_repo_file_path>" \
+  # extra_files appended literally (may be empty; may include -f/--file):
+  {{extra_files}} \
+  -p "$(cat <<'PROMPT'
+Strategist question #05  (ticket-driven)
+
+Reference: Unknown
+Category: caching/state
+Horizon: NearTerm
+ROI: 4.4 (impact=6, confidence=0.78, effort=2)
+
+Question:
+Based on the tickets, what state/artifacts must be produced and preserved (ticket bundle, generated pack, validator outputs, runner outputs)? Identify any schema/format expectations that must remain backward compatible and how to keep them stable.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 06) ROI=4.1 impact=5 confidence=0.80 effort=2 horizon=NearTerm category=caching/state reference=Unknown
+{{oracle_cmd}} \
+  {{oracle_flags}} \
+  --write-output "{{out_dir}}/06-caching-state-determinism-consistency.md" \
+  -f "{{ticket_bundle_path}}" \
+  # optional (at most one): -f "<best_repo_file_path>" \
+  # extra_files appended literally (may be empty; may include -f/--file):
+  {{extra_files}} \
+  -p "$(cat <<'PROMPT'
+Strategist question #06  (ticket-driven)
+
+Reference: Unknown
+Category: caching/state
+Horizon: NearTerm
+ROI: 4.1 (impact=5, confidence=0.80, effort=2)
+
+Question:
+Using the tickets, identify determinism risks (non-deterministic ticket selection, unstable ordering, environment-dependent paths). Propose a minimal deterministic selection and bundling approach and how to test it.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 07) ROI=3.6 impact=5 confidence=0.70 effort=3 horizon=NearTerm category=background jobs reference=Unknown
+{{oracle_cmd}} \
+  {{oracle_flags}} \
+  --write-output "{{out_dir}}/07-background-jobs-ticket-implications.md" \
+  -f "{{ticket_bundle_path}}" \
+  # optional (at most one): -f "<best_repo_file_path>" \
+  # extra_files appended literally (may be empty; may include -f/--file):
+  {{extra_files}} \
+  -p "$(cat <<'PROMPT'
+Strategist question #07  (ticket-driven)
+
+Reference: Unknown
+Category: background jobs
+Horizon: NearTerm
+ROI: 3.6 (impact=5, confidence=0.70, effort=3)
+
+Question:
+Do any tickets imply background processing, worker modes, scheduled validation, or CI pipelines (e.g., generating packs from tickets in CI)? If yes, define:
+- trigger mechanism
+- inputs/outputs
+- retries/idempotency constraints
+If no, explicitly confirm based on the ticket bundle.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 08) ROI=3.9 impact=5 confidence=0.72 effort=3 horizon=NearTerm category=background jobs reference=Unknown
+{{oracle_cmd}} \
+  {{oracle_flags}} \
+  --write-output "{{out_dir}}/08-background-jobs-reliability-controls.md" \
+  -f "{{ticket_bundle_path}}" \
+  # optional (at most one): -f "<best_repo_file_path>" \
+  # extra_files appended literally (may be empty; may include -f/--file):
+  {{extra_files}} \
+  -p "$(cat <<'PROMPT'
+Strategist question #08  (ticket-driven)
+
+Reference: Unknown
+Category: background jobs
+Horizon: NearTerm
+ROI: 3.9 (impact=5, confidence=0.72, effort=3)
+
+Question:
+If tickets imply background/CI execution, what reliability controls are required (concurrency limits, backoff, reprocessing, artifact retention)? Tie each control to a specific ticket requirement and suggest minimal implementation points.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 09) ROI=4.7 impact=6 confidence=0.82 effort=2 horizon=Immediate category=observability reference=Unknown
+{{oracle_cmd}} \
+  {{oracle_flags}} \
+  --write-output "{{out_dir}}/09-observability-required-signals.md" \
+  -f "{{ticket_bundle_path}}" \
+  # optional (at most one): -f "<best_repo_file_path>" \
+  # extra_files appended literally (may be empty; may include -f/--file):
+  {{extra_files}} \
+  -p "$(cat <<'PROMPT'
+Strategist question #09  (ticket-driven)
+
+Reference: Unknown
+Category: observability
+Horizon: Immediate
+ROI: 4.7 (impact=6, confidence=0.82, effort=2)
+
+Question:
+From the tickets, define the minimum observability required for implementing and operating ticketed changes (logs, warnings, structured outputs, correlation/run IDs). What signals must be emitted on:
+- missing tickets
+- validation failures
+- unsafe path detection
+- runner ingestion failures?
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 10) ROI=4.5 impact=6 confidence=0.80 effort=2 horizon=Immediate category=observability reference=Unknown
+{{oracle_cmd}} \
+  {{oracle_flags}} \
+  --write-output "{{out_dir}}/10-observability-gaps-and-metrics.md" \
+  -f "{{ticket_bundle_path}}" \
+  # optional (at most one): -f "<best_repo_file_path>" \
+  # extra_files appended literally (may be empty; may include -f/--file):
+  {{extra_files}} \
+  -p "$(cat <<'PROMPT'
+Strategist question #10  (ticket-driven)
+
+Reference: Unknown
+Category: observability
+Horizon: Immediate
+ROI: 4.5 (impact=6, confidence=0.80, effort=2)
+
+Question:
+Using the ticket bundle, identify observability gaps that would block shipping the ticketed work safely (missing structured errors, missing per-step diagnostics, missing coverage/mismatch reporting). Recommend the smallest additions with high debugging value.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 11) ROI=5.0 impact=7 confidence=0.76 effort=2 horizon=Immediate category=permissions reference=Unknown
+{{oracle_cmd}} \
+  {{oracle_flags}} \
+  --write-output "{{out_dir}}/11-permissions-security-constraints.md" \
+  -f "{{ticket_bundle_path}}" \
+  # optional (at most one): -f "<best_repo_file_path>" \
+  # extra_files appended literally (may be empty; may include -f/--file):
+  {{extra_files}} \
+  -p "$(cat <<'PROMPT'
+Strategist question #11  (ticket-driven)
+
+Reference: Unknown
+Category: permissions
+Horizon: Immediate
+ROI: 5.0 (impact=7, confidence=0.76, effort=2)
+
+Question:
+From the tickets, determine what security/permissions constraints must exist (e.g., exec gating, tool invocation restrictions, file access restrictions, safe write paths). Define “who can do what” minimally and where enforcement should live.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 12) ROI=4.8 impact=7 confidence=0.74 effort=2 horizon=Immediate category=permissions reference=Unknown
+{{oracle_cmd}} \
+  {{oracle_flags}} \
+  --write-output "{{out_dir}}/12-permissions-enforcement-chokepoints.md" \
+  -f "{{ticket_bundle_path}}" \
+  # optional (at most one): -f "<best_repo_file_path>" \
+  # extra_files appended literally (may be empty; may include -f/--file):
+  {{extra_files}} \
+  -p "$(cat <<'PROMPT'
+Strategist question #12  (ticket-driven)
+
+Reference: Unknown
+Category: permissions
+Horizon: Immediate
+ROI: 4.8 (impact=7, confidence=0.74, effort=2)
+
+Question:
+Using the tickets, identify where permissions must be enforced (CLI command gating, TUI actions, runner execution, filesystem writes). Call out bypass risks and propose the minimal enforcement chokepoints and tests.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 13) ROI=4.2 impact=6 confidence=0.72 effort=3 horizon=NearTerm category=migrations reference=Unknown
+{{oracle_cmd}} \
+  {{oracle_flags}} \
+  --write-output "{{out_dir}}/13-migrations-schema-changes.md" \
+  -f "{{ticket_bundle_path}}" \
+  # optional (at most one): -f "<best_repo_file_path>" \
+  # extra_files appended literally (may be empty; may include -f/--file):
+  {{extra_files}} \
+  -p "$(cat <<'PROMPT'
+Strategist question #13  (ticket-driven)
+
+Reference: Unknown
+Category: migrations
+Horizon: NearTerm
+ROI: 4.2 (impact=6, confidence=0.72, effort=3)
+
+Question:
+Do tickets imply schema/version changes (pack schema, state/report schema, actions artifacts)? Identify what can change vs must remain backward-compatible, and propose a minimal migration strategy (if any).
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 14) ROI=4.0 impact=6 confidence=0.70 effort=3 horizon=NearTerm category=migrations reference=Unknown
+{{oracle_cmd}} \
+  {{oracle_flags}} \
+  --write-output "{{out_dir}}/14-migrations-compat-guardrails.md" \
+  -f "{{ticket_bundle_path}}" \
+  # optional (at most one): -f "<best_repo_file_path>" \
+  # extra_files appended literally (may be empty; may include -f/--file):
+  {{extra_files}} \
+  -p "$(cat <<'PROMPT'
+Strategist question #14  (ticket-driven)
+
+Reference: Unknown
+Category: migrations
+Horizon: NearTerm
+ROI: 4.0 (impact=6, confidence=0.70, effort=3)
+
+Question:
+Using the ticket bundle, define the compatibility expectations (backward/forward, rolling upgrades, mixed versions). Where are the risky edges, and what guardrails/tests should be required before shipping ticketed changes?
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 15) ROI=4.6 impact=6 confidence=0.80 effort=2 horizon=NearTerm category=UX flows reference=Unknown
+{{oracle_cmd}} \
+  {{oracle_flags}} \
+  --write-output "{{out_dir}}/15-ux-flows-ticketed-user-journeys.md" \
+  -f "{{ticket_bundle_path}}" \
+  # optional (at most one): -f "<best_repo_file_path>" \
+  # extra_files appended literally (may be empty; may include -f/--file):
+  {{extra_files}} \
+  -p "$(cat <<'PROMPT'
+Strategist question #15  (ticket-driven)
+
+Reference: Unknown
+Category: UX flows
+Horizon: NearTerm
+ROI: 4.6 (impact=6, confidence=0.80, effort=2)
+
+Question:
+From the ticket bundle, identify which user/operator flows are affected (TUI flows, CLI flows, non-interactive mode). For each flow:
+- outline steps and state transitions
+- identify key UX requirements implied by tickets
+- call out compatibility constraints with existing workflows.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 16) ROI=4.2 impact=6 confidence=0.78 effort=2 horizon=NearTerm category=UX flows reference=Unknown
+{{oracle_cmd}} \
+  {{oracle_flags}} \
+  --write-output "{{out_dir}}/16-ux-flows-edge-cases-and-gotchas.md" \
+  -f "{{ticket_bundle_path}}" \
+  # optional (at most one): -f "<best_repo_file_path>" \
+  # extra_files appended literally (may be empty; may include -f/--file):
+  {{extra_files}} \
+  -p "$(cat <<'PROMPT'
+Strategist question #16  (ticket-driven)
+
+Reference: Unknown
+Category: UX flows
+Horizon: NearTerm
+ROI: 4.2 (impact=6, confidence=0.78, effort=2)
+
+Question:
+Using the ticket bundle, enumerate top UX edge cases (“gotchas”) that must be handled (missing tickets, partial bundles, validation failures, ambiguous outputs, cancel/back navigation). Identify where handling should be implemented and what tests are required.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 17) ROI=5.4 impact=7 confidence=0.76 effort=2 horizon=Immediate category=failure modes reference=Unknown
+{{oracle_cmd}} \
+  {{oracle_flags}} \
+  --write-output "{{out_dir}}/17-failure-modes-taxonomy-from-tickets.md" \
+  -f "{{ticket_bundle_path}}" \
+  # optional (at most one): -f "<best_repo_file_path>" \
+  # extra_files appended literally (may be empty; may include -f/--file):
+  {{extra_files}} \
+  -p "$(cat <<'PROMPT'
+Strategist question #17  (ticket-driven)
+
+Reference: Unknown
+Category: failure modes
+Horizon: Immediate
+ROI: 5.4 (impact=7, confidence=0.76, effort=2)
+
+Question:
+Derive a failure-mode taxonomy implied by the tickets (ticket discovery failures, bundle generation failures, schema violations, runner ingestion errors, tool execution failures). For each failure:
+- expected user-visible behavior
+- diagnostics to emit
+- where to classify/handle it.
+
+[TRUNCATED]
+```
+
+skills/oraclepack-pipeline-improver/assets/backlog-template.md
+```
+<!-- # path: oraclepack-pipeline-improver/assets/backlog-template.md -->
+# Oraclepack Actionizer Backlog
+
+Run:
+- pack_id: TODO
+- pack_hash: TODO
+- generated_at: TODO
+
+## Summary
+
+- Total tasks: TODO
+- Actionable: TODO
+- Blocked: TODO
+- Conflicts: TODO
+
+## P0 (do first)
+
+### <task_id> — <title>
+- Status: actionable | blocked | conflict | noop
+- Category: TODO
+- Reference: TODO
+- Expected artifacts: TODO
+- Actions:
+  - TODO
+- Evidence:
+  - Paths: TODO
+  - Symbols: TODO
+  - Commands: TODO
+- Done when:
+  - TODO
+
+## P1
+
+### <task_id> — <title>
+- (same fields)
+
+## Blocked / needs evidence
+
+### <task_id> — <title>
+- Missing inputs:
+  - TODO
+- Next smallest experiment (one action):
+  - TODO
+
+## Conflicts / needs resolution
+
+### <task_id> — <title>
+- Conflicting statements:
+  - TODO
+- What evidence resolves this:
+  - TODO
+- Proposed resolution (clearly marked as Proposed):
+  - TODO
+```
+
+skills/oraclepack-pipeline-improver/assets/change-plan-template.md
+```
+<!-- # path: oraclepack-pipeline-improver/assets/change-plan-template.md -->
+# Oraclepack Change Plan
+
+Run:
+- pack_id: TODO
+- pack_hash: TODO
+- generated_at: TODO
+
+## Principles
+
+- Smallest shippable increments first.
+- Every step has an acceptance check.
+- Unknowns are explicit; no guessing.
+
+## Phase 0 — Guardrails (validate + safety)
+
+1) Implement/confirm strict validation (validate --strict --json)
+- Scope:
+  - TODO
+- Acceptance:
+  - TODO (e.g., rejects non-20 packs; emits JSON summary)
+- Tests:
+  - TODO (fixtures for invalid packs)
+
+2) Path safety for output writing
+- Scope:
+  - TODO
+- Acceptance:
+  - TODO (rejects .. traversal / absolute escape)
+- Tests:
+  - TODO
+
+## Phase 1 — Deterministic runs (run dir + manifests + resume)
+
+3) Stable run dir + run.json / steps.json
+- Scope:
+  - TODO
+- Acceptance:
+  - TODO (creates .oraclepack/runs/<pack_id>/..., stable naming)
+- Tests:
+  - TODO
+
+4) Resume default + --rerun semantics
+- Scope:
+  - TODO
+- Acceptance:
+  - TODO (interrupt + rerun skips completed via hashes)
+- Tests:
+  - TODO
+
+## Phase 2 — Reliability (concurrency + retries + optional caching)
+
+5) Concurrency cap
+- Scope:
+  - TODO
+- Acceptance:
+  - TODO (never exceeds N parallel calls)
+
+6) Retry/backoff on transient errors
+- Scope:
+  - TODO
+- Acceptance:
+  - TODO (bounded retries; recorded in steps.json)
+
+7) Optional caching (if enabled)
+- Scope:
+  - TODO
+- Acceptance:
+  - TODO (unchanged inputs cause zero provider calls)
+
+## Phase 3 — Actionizer (Stage 3)
+
+8) Implement actionize command and artifacts
+- Scope:
+  - normalized.jsonl + backlog.md + change-plan.md
+- Acceptance:
+  - TODO (byte-identical output on rerun with unchanged inputs)
+
+## CI integration (optional)
+
+9) Add CI mode wiring (run --ci --non-interactive --json-log; actionize --ci)
+- Policy thresholds:
+  - TODO/Unknown
+- Acceptance:
+  - TODO (exit codes match policy)
+```
+
+skills/oraclepack-pipeline-improver/assets/normalized.example.jsonl
+```
+{"pack_id":"2026-01-05__nogit__deadbeef","pack_hash":"deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef","step_id":"07","task_id":"t_deadbeef_07_a1b2c3d4","title":"Define authorization boundary for server routes","status":"blocked","category":"permissions","reference":"src/server/auth/**","expected_artifacts":["src/server/auth/**","src/routes/**"],"actions":["Locate existing auth middleware/guards and document intended boundary","Add route guard checks or middleware wiring where missing"],"evidence":{"paths":["src/server/auth/**","src/routes/**"],"symbols":[],"commands":["ck --regex auth|permission|role src/server src/routes"]},"notes":["Auth wiring not evidenced in provided inputs"],"missing_inputs":["Repo paths containing current auth middleware or route guards (e.g., src/server/auth/**)","CLI help output for oraclepack validate/run/actionize (if already exists)"]}
+{"pack_id":"2026-01-05__nogit__deadbeef","pack_hash":"deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef","step_id":"13","task_id":"t_deadbeef_13_e5f6a7b8","title":"Bound upload persistence metadata and retention policy","status":"actionable","category":"caching/state","reference":"src/server/persistence/sessionUploads.server.ts","expected_artifacts":["src/server/persistence/**","docs/plans/**"],"actions":["Add explicit retention policy + max entries/size controls","Ensure metadata captured is sufficient for downstream analysis"],"evidence":{"paths":["src/server/persistence/sessionUploads.server.ts"],"symbols":["saveSessionUpload"],"commands":["ck --regex saveSessionUpload src"]},"notes":[],"missing_inputs":[]}
 ```
 
 .config/mcp/mcp-builder/reference/evaluation.md
@@ -19984,36 +20270,7 @@ Before finalizing your Node/TypeScript MCP server implementation, ensure:
 - [ ] TypeScript interfaces are defined for all data structures
 - [ ] Strict TypeScript is enabled in tsconfig.json
 - [ ] No use of `any` type - use `unknown` or proper types instead
-- [ ] All async functions have explicit Promise<T> return types
-- [ ] Error handling uses proper type guards (e.g., `axios.isAxiosError`, `z.ZodError`)
-
-### Advanced Features (where applicable)
-- [ ] Resources registered for appropriate data endpoints
-- [ ] Appropriate transport configured (stdio or streamable HTTP)
-- [ ] Notifications implemented for dynamic server capabilities
-- [ ] Type-safe with SDK interfaces
-
-### Project Configuration
-- [ ] Package.json includes all necessary dependencies
-- [ ] Build script produces working JavaScript in dist/ directory
-- [ ] Main entry point is properly configured as dist/index.js
-- [ ] Server name follows format: `{service}-mcp-server`
-- [ ] tsconfig.json properly configured with strict mode
-
-### Code Quality
-- [ ] Pagination is properly implemented where applicable
-- [ ] Large responses check CHARACTER_LIMIT constant and truncate with clear messages
-- [ ] Filtering options are provided for potentially large result sets
-- [ ] All network operations handle timeouts and connection errors gracefully
-- [ ] Common functionality is extracted into reusable functions
-- [ ] Return types are consistent across similar operations
-
-### Testing and Build
-- [ ] `npm run build` completes successfully without errors
-- [ ] dist/index.js created and executable
-- [ ] Server runs: `node dist/index.js --help`
-- [ ] All imports resolve correctly
-- [ ] Sample tool calls work as expected
+[TRUNCATED]
 ```
 
 .config/mcp/mcp-builder/reference/python_mcp_server.md
@@ -23253,6 +23510,469 @@ done
 echo "OK: Action Pack validation passed."
 ```
 
+.config/skills/oraclepack-pipeline-improver/assets/backlog-template.md
+```
+<!-- # path: oraclepack-pipeline-improver/assets/backlog-template.md -->
+# Oraclepack Actionizer Backlog
+
+Run:
+- pack_id: TODO
+- pack_hash: TODO
+- generated_at: TODO
+
+## Summary
+
+- Total tasks: TODO
+- Actionable: TODO
+- Blocked: TODO
+- Conflicts: TODO
+
+## P0 (do first)
+
+### <task_id> — <title>
+- Status: actionable | blocked | conflict | noop
+- Category: TODO
+- Reference: TODO
+- Expected artifacts: TODO
+- Actions:
+  - TODO
+- Evidence:
+  - Paths: TODO
+  - Symbols: TODO
+  - Commands: TODO
+- Done when:
+  - TODO
+
+## P1
+
+### <task_id> — <title>
+- (same fields)
+
+## Blocked / needs evidence
+
+### <task_id> — <title>
+- Missing inputs:
+  - TODO
+- Next smallest experiment (one action):
+  - TODO
+
+## Conflicts / needs resolution
+
+### <task_id> — <title>
+- Conflicting statements:
+  - TODO
+- What evidence resolves this:
+  - TODO
+- Proposed resolution (clearly marked as Proposed):
+  - TODO
+```
+
+.config/skills/oraclepack-pipeline-improver/assets/change-plan-template.md
+```
+<!-- # path: oraclepack-pipeline-improver/assets/change-plan-template.md -->
+# Oraclepack Change Plan
+
+Run:
+- pack_id: TODO
+- pack_hash: TODO
+- generated_at: TODO
+
+## Principles
+
+- Smallest shippable increments first.
+- Every step has an acceptance check.
+- Unknowns are explicit; no guessing.
+
+## Phase 0 — Guardrails (validate + safety)
+
+1) Implement/confirm strict validation (validate --strict --json)
+- Scope:
+  - TODO
+- Acceptance:
+  - TODO (e.g., rejects non-20 packs; emits JSON summary)
+- Tests:
+  - TODO (fixtures for invalid packs)
+
+2) Path safety for output writing
+- Scope:
+  - TODO
+- Acceptance:
+  - TODO (rejects .. traversal / absolute escape)
+- Tests:
+  - TODO
+
+## Phase 1 — Deterministic runs (run dir + manifests + resume)
+
+3) Stable run dir + run.json / steps.json
+- Scope:
+  - TODO
+- Acceptance:
+  - TODO (creates .oraclepack/runs/<pack_id>/..., stable naming)
+- Tests:
+  - TODO
+
+4) Resume default + --rerun semantics
+- Scope:
+  - TODO
+- Acceptance:
+  - TODO (interrupt + rerun skips completed via hashes)
+- Tests:
+  - TODO
+
+## Phase 2 — Reliability (concurrency + retries + optional caching)
+
+5) Concurrency cap
+- Scope:
+  - TODO
+- Acceptance:
+  - TODO (never exceeds N parallel calls)
+
+6) Retry/backoff on transient errors
+- Scope:
+  - TODO
+- Acceptance:
+  - TODO (bounded retries; recorded in steps.json)
+
+7) Optional caching (if enabled)
+- Scope:
+  - TODO
+- Acceptance:
+  - TODO (unchanged inputs cause zero provider calls)
+
+## Phase 3 — Actionizer (Stage 3)
+
+8) Implement actionize command and artifacts
+- Scope:
+  - normalized.jsonl + backlog.md + change-plan.md
+- Acceptance:
+  - TODO (byte-identical output on rerun with unchanged inputs)
+
+## CI integration (optional)
+
+9) Add CI mode wiring (run --ci --non-interactive --json-log; actionize --ci)
+- Policy thresholds:
+  - TODO/Unknown
+- Acceptance:
+  - TODO (exit codes match policy)
+```
+
+.config/skills/oraclepack-pipeline-improver/assets/normalized.example.jsonl
+```
+{"pack_id":"2026-01-05__nogit__deadbeef","pack_hash":"deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef","step_id":"07","task_id":"t_deadbeef_07_a1b2c3d4","title":"Define authorization boundary for server routes","status":"blocked","category":"permissions","reference":"src/server/auth/**","expected_artifacts":["src/server/auth/**","src/routes/**"],"actions":["Locate existing auth middleware/guards and document intended boundary","Add route guard checks or middleware wiring where missing"],"evidence":{"paths":["src/server/auth/**","src/routes/**"],"symbols":[],"commands":["ck --regex auth|permission|role src/server src/routes"]},"notes":["Auth wiring not evidenced in provided inputs"],"missing_inputs":["Repo paths containing current auth middleware or route guards (e.g., src/server/auth/**)","CLI help output for oraclepack validate/run/actionize (if already exists)"]}
+{"pack_id":"2026-01-05__nogit__deadbeef","pack_hash":"deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef","step_id":"13","task_id":"t_deadbeef_13_e5f6a7b8","title":"Bound upload persistence metadata and retention policy","status":"actionable","category":"caching/state","reference":"src/server/persistence/sessionUploads.server.ts","expected_artifacts":["src/server/persistence/**","docs/plans/**"],"actions":["Add explicit retention policy + max entries/size controls","Ensure metadata captured is sufficient for downstream analysis"],"evidence":{"paths":["src/server/persistence/sessionUploads.server.ts"],"symbols":["saveSessionUpload"],"commands":["ck --regex saveSessionUpload src"]},"notes":[],"missing_inputs":[]}
+```
+
+.config/skills/oraclepack-pipeline-improver/references/actionizer-spec.md
+```
+<!-- # path: oraclepack-pipeline-improver/references/actionizer-spec.md -->
+# Stage 3 “Actionizer” spec (proposed)
+
+Goal: deterministically convert the 20 outputs of a run into actionable engineering work artifacts, without duplicating work on reruns.
+
+## Inputs
+
+- `.oraclepack/runs/<pack_id>/run.json`
+- `.oraclepack/runs/<pack_id>/steps.json`
+- `.oraclepack/runs/<pack_id>/outputs/*`
+
+## Processing pipeline (deterministic)
+
+1) **Load** run + steps + outputs
+- If any output is missing, mark that step as `missing_output` in normalization.
+
+2) **Normalize** each step output into a stable record
+- Extract (when present):
+  - question metadata (QuestionId/Category/Reference/ExpectedArtifacts),
+  - recommended actions,
+  - evidence anchors (paths, symbols, commands),
+  - unknowns / missing inputs.
+- Classify:
+  - `actionable` (clear tasks),
+  - `blocked` (missing evidence prevents action),
+  - `conflict` (contradictory requirements/answers),
+  - `noop` (no action required).
+
+3) **Deduplicate** tasks across steps
+- Use stable task IDs derived from `pack_hash` + a stable task key (e.g., normalized title + target path).
+- Reruns must produce byte-identical outputs when inputs unchanged.
+
+4) **Generate** three core artifacts:
+- `normalized.jsonl` (machine-readable records)
+- `backlog.md` (human-prioritized tasks)
+- `change-plan.md` (ordered implementation plan, smallest-first)
+
+5) Optional exports:
+- `github-issues.json` (issue objects; exact schema TODO/Unknown)
+- `taskmaster.json` (taskmaster-style import; exact schema TODO/Unknown)
+
+## Output files
+
+### A) `actionizer/normalized.jsonl`
+
+One JSON object per line.
+
+**Proposed record fields:**
+- `pack_id` (string)
+- `pack_hash` (string)
+- `step_id` (string `"01"`..`"20"`)
+- `task_id` (string; stable)
+- `title` (string)
+- `status` (enum: `actionable` | `blocked` | `conflict` | `noop`)
+- `category` (string | null)
+- `reference` (string | null)
+- `expected_artifacts` (string[] | null)
+- `actions` (string[]) — concrete “do X” items
+- `evidence` (object)
+  - `paths` (string[])
+  - `symbols` (string[])
+  - `commands` (string[])
+- `notes` (string[])
+- `missing_inputs` (string[])
+
+### B) `actionizer/backlog.md`
+
+Use assets/backlog-template.md as the base.
+
+Rules:
+- Group by category (if present), else by subsystem (inferred from reference paths).
+- Include blocked/conflict items explicitly with “what evidence is needed”.
+
+### C) `actionizer/change-plan.md`
+
+Use assets/change-plan-template.md as the base.
+
+Rules:
+- Ordered, smallest shippable increments first.
+- Each step includes acceptance criteria and “done when…” checks.
+- If CI gating thresholds exist, include them; else mark TODO.
+
+## Handling blocked/conflict outputs
+
+- `blocked` must include a **single next smallest experiment** (one action) to obtain missing evidence.
+- `conflict` must include:
+  - conflicting statements,
+  - what file/path/log is needed to resolve,
+  - a proposed resolution strategy (flagged as Proposed).
+
+## Idempotency / stability requirements
+
+- Stable IDs (required):
+  - deterministic function of `pack_hash` + `step_id` + normalized title (or similar stable key).
+- Reruns:
+  - must not duplicate tasks,
+  - must regenerate byte-identical artifacts if inputs unchanged.
+```
+
+.config/skills/oraclepack-pipeline-improver/references/cli-contract.md
+```
+<!-- # path: oraclepack-pipeline-improver/references/cli-contract.md -->
+# oraclepack CLI contract (proposed)
+
+This document is the target CLI behavior to implement. If the current repo differs, treat that as **Observed** and this as **Proposed**.
+
+## Commands
+
+### 1) `oraclepack validate`
+
+**Goal:** Deterministically validate a pack file and (optionally) emit machine-readable results.
+
+**Proposed:**
+- `oraclepack validate <pack.md> [--strict] [--json]`
+
+**--strict checks (proposed minimum):**
+- Exactly **20** oracle invocations.
+- No schema drift vs expected pack format (**exact schema rules: TODO/Unknown** unless provided).
+- Each question has required fields present (as enforceable in current schema; else **TODO**).
+- Stable ordering checks (if applicable): ROI desc, effort asc (only if the pack uses those fields; else skip).
+
+**--json output (proposed):**
+- Print a single JSON object to stdout (or to a specified file if supported; **TODO**).
+- Include `ok: boolean`, `errors: []`, `warnings: []`, and per-question metadata when parseable.
+
+### 2) `oraclepack run`
+
+**Goal:** Execute the 20 steps into a deterministic run directory with resumable semantics.
+
+**Proposed:**
+- `oraclepack run <pack.md> [--max-parallel N] [--resume] [--rerun all|failed|01,03,07] [--ci] [--non-interactive] [--json-log]`
+
+**Run dir (proposed):**
+- Create: `.oraclepack/runs/<pack_id>/`
+- Emit at least:
+  - `.oraclepack/runs/<pack_id>/run.json`
+  - `.oraclepack/runs/<pack_id>/steps.json`
+  - `.oraclepack/runs/<pack_id>/outputs/` (20 files; naming convention below)
+  - `.oraclepack/runs/<pack_id>/logs/` (optional)
+
+**pack_id (proposed):**
+- `YYYY-MM-DD__<gitshort>__<packhash8>`
+- If git SHA unavailable: use `nogit` for `<gitshort>`.
+
+**Output naming (proposed):**
+- Prefer deterministic: `outputs/01.md` ... `outputs/20.md`
+- If a stable QuestionId exists: optionally include in filename, but do not break determinism.
+
+**Resume/rerun (proposed):**
+- Resume is default if the run dir already exists:
+  - skip steps already marked `ok` with matching output hash.
+- `--rerun failed` reruns only failed steps.
+- `--rerun all` reruns all steps.
+- `--rerun 01,03,07` reruns specified step IDs.
+
+**Concurrency (proposed):**
+- `--max-parallel N` bounds parallel provider calls.
+- Optional: per-provider caps via config (**TODO/Unknown**: config format).
+
+**Transient errors (proposed):**
+- Implement exponential backoff + jitter on retryable errors (e.g., 429/503) up to a retry budget.
+- Persist retry counts/outcomes into `steps.json`.
+
+### 3) `oraclepack actionize`
+
+**Goal:** Convert run outputs into actionable engineering work artifacts.
+
+**Proposed:**
+- `oraclepack actionize --run-dir .oraclepack/runs/<pack_id> [--ci]`
+
+**Inputs:**
+- `run.json`, `steps.json`
+- `outputs/` (20 outputs)
+
+**Outputs:**
+- `.oraclepack/runs/<pack_id>/actionizer/normalized.jsonl`
+- `.oraclepack/runs/<pack_id>/actionizer/backlog.md`
+- `.oraclepack/runs/<pack_id>/actionizer/change-plan.md`
+- Optional:
+  - `.oraclepack/runs/<pack_id>/actionizer/github-issues.json`
+  - `.oraclepack/runs/<pack_id>/actionizer/taskmaster.json`
+
+## CI mode (proposed)
+
+- `oraclepack run --ci --non-interactive --json-log`
+- `oraclepack actionize --ci`
+
+**Behavior (proposed):**
+- No TUI interaction.
+- Structured logs enabled (JSONL or JSON objects; **TODO/Unknown** exact format).
+- Exit codes are policy-driven:
+  - validation failures → non-zero
+  - run failures exceeding retry budget → non-zero
+  - optional policy thresholds (completion rate, action yield) → **TODO/Unknown** threshold values.
+
+## Security / path safety (proposed)
+
+- Prevent any output flag (including legacy `--write-output` if present) from writing outside the intended run directory.
+- Reject path traversal (e.g., `..`) and absolute paths when writing within `.oraclepack/runs/<pack_id>/...`.
+```
+
+.config/skills/oraclepack-pipeline-improver/references/run-manifest-spec.md
+```
+<!-- # path: oraclepack-pipeline-improver/references/run-manifest-spec.md -->
+# Run manifest spec (proposed)
+
+This defines the minimum content for run artifacts to enable traceability, resume/rerun, and Stage 3 processing.
+
+## `.oraclepack/runs/<pack_id>/run.json`
+
+**Required fields (proposed minimum):**
+- `pack_id` (string)
+- `pack_path` (string)
+- `pack_hash` (string; full hash)
+- `created_at` (RFC3339 string)
+- `git_sha` (string | null)
+- `oraclepack_version` (string | TODO if not available)
+- `oracle_version` (string | TODO if not available)
+- `max_parallel` (number | null)
+- `ci` (boolean)
+- `providers` (object | TODO if not available)
+- `models` (object | TODO if not available)
+
+**Notes:**
+- If any value cannot be derived, set it to `null` and record a `warnings[]` entry rather than inventing it.
+
+## `.oraclepack/runs/<pack_id>/steps.json`
+
+Represent steps as an array of 20 items ordered by `step_id`.
+
+**Per-step fields (proposed minimum):**
+- `step_id` (string `"01"`..`"20"`)
+- `question_id` (string | null) — if present in the pack/prompt metadata
+- `category` (string | null)
+- `reference` (string | null)
+- `invocation_hash` (string) — hash of canonical invocation inputs (prompt + attachments + provider/model knobs)
+- `output_path` (string)
+- `output_hash` (string | null)
+- `status` (enum: `pending` | `ok` | `failed` | `skipped`)
+- `attempts` (number)
+- `last_error` (string | null)
+- `started_at` (RFC3339 string | null)
+- `finished_at` (RFC3339 string | null)
+
+## Hashing (proposed)
+
+### `pack_hash`
+- Compute from a canonical representation of the pack file:
+  - normalize line endings,
+  - remove non-semantic whitespace if safe (TODO/Unknown: exact pack grammar),
+  - hash the resulting bytes.
+
+### `invocation_hash`
+- Compute from:
+  - prompt text (including embedded mini-metadata),
+  - attachment file contents (hash of contents, not just paths),
+  - provider + model identifiers,
+  - deterministic knobs (temperature, etc.) if applicable.
+
+If attachment content hashing cannot be performed, record **Unknown/TODO** and do not enable caching based on incomplete inputs.
+```
+
+.config/skills/oraclepack-pipeline-improver/references/stage1-prompt-metadata.md
+```
+<!-- # path: oraclepack-pipeline-improver/references/stage1-prompt-metadata.md -->
+# Stage 1 prompt-embedded metadata (proposed)
+
+Goal: improve downstream parsing for Stage 2/3 without changing the oracle pack schema.
+
+## Constraints
+
+- Do not change the pack’s structural schema unless an explicit migration path is provided.
+- Embed metadata inside the prompt text (the `-p` payload) in a parseable, consistent format.
+
+## Recommended metadata block (inside the prompt)
+
+Add at the *very top* of each prompt:
+
+```
+
+[oraclepack-meta]
+QuestionId: 07
+Category: permissions
+Reference: src/server/auth/middleware.ts
+ExpectedArtifacts:
+
+* src/server/auth/**
+* docs/plans/...
+  [/oraclepack-meta]
+
+```
+
+## Parsing rules (deterministic)
+
+- The block starts with `[oraclepack-meta]` and ends with `[/oraclepack-meta]`.
+- Keys are case-sensitive as shown.
+- Multi-line lists are allowed for `ExpectedArtifacts`.
+- If any key is missing, treat it as `null` and continue.
+
+## Minimal required keys (recommended)
+
+- QuestionId
+- Category
+- Reference
+- ExpectedArtifacts (optional but recommended)
+
+If the Stage 1 generator cannot produce these, it should write `Unknown` values explicitly rather than omitting keys.
+```
+
 .config/skills/oraclepack-tickets-pack/references/attachment-minimization.md
 ```
 # Attachment minimization rules (Tickets Stage 1 packs)
@@ -24033,123 +24753,7 @@ Derive a failure-mode taxonomy implied by the tickets (ticket discovery failures
 - diagnostics to emit
 - where to classify/handle it.
 
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 18) ROI=5.1 impact=7 confidence=0.74 effort=2 horizon=Immediate category=failure modes reference=Unknown
-{{oracle_cmd}} \
-  {{oracle_flags}} \
-  --write-output "{{out_dir}}/18-failure-modes-resilience-and-recovery.md" \
-  -f "{{ticket_bundle_path}}" \
-  # optional (at most one): -f "<best_repo_file_path>" \
-  # extra_files appended literally (may be empty; may include -f/--file):
-  {{extra_files}} \
-  -p "$(cat <<'PROMPT'
-Strategist question #18  (ticket-driven)
-
-Reference: Unknown
-Category: failure modes
-Horizon: Immediate
-ROI: 5.1 (impact=7, confidence=0.74, effort=2)
-
-Question:
-Using the tickets, propose resilience mechanisms appropriate for the ticketed changes (sanitize unsafe output paths, fail-fast vs partial completion, error wrapping, “stop-on-fail” behavior). Identify critical paths lacking safeguards and the smallest fixes.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 19) ROI=4.7 impact=6 confidence=0.78 effort=2 horizon=NearTerm category=feature flags reference=Unknown
-{{oracle_cmd}} \
-  {{oracle_flags}} \
-  --write-output "{{out_dir}}/19-feature-flags-rollout-controls.md" \
-  -f "{{ticket_bundle_path}}" \
-  # optional (at most one): -f "<best_repo_file_path>" \
-  # extra_files appended literally (may be empty; may include -f/--file):
-  {{extra_files}} \
-  -p "$(cat <<'PROMPT'
-Strategist question #19  (ticket-driven)
-
-Reference: Unknown
-Category: feature flags
-Horizon: NearTerm
-ROI: 4.7 (impact=6, confidence=0.78, effort=2)
-
-Question:
-Do tickets imply the need for feature-flag-like controls (rollout gating, experimental flags, safety toggles, per-step targeting)? Inventory what controls should exist and where they should be defined/evaluated.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 20) ROI=4.3 impact=6 confidence=0.76 effort=2 horizon=NearTerm category=feature flags reference=Unknown
-{{oracle_cmd}} \
-  {{oracle_flags}} \
-  --write-output "{{out_dir}}/20-feature-flags-lifecycle-and-flag-debt.md" \
-  -f "{{ticket_bundle_path}}" \
-  # optional (at most one): -f "<best_repo_file_path>" \
-  # extra_files appended literally (may be empty; may include -f/--file):
-  {{extra_files}} \
-  -p "$(cat <<'PROMPT'
-Strategist question #20  (ticket-driven)
-
-Reference: Unknown
-Category: feature flags
-Horizon: NearTerm
-ROI: 4.3 (impact=6, confidence=0.76, effort=2)
-
-Question:
-Define the rollout lifecycle required to ship the ticketed changes safely (create flag, test, ramp, monitor, retire). Identify minimum guardrails needed to prevent flag debt and to keep backward compatibility.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-## Coverage check
-
-Mark each as `OK` or `Missing(<step ids>)`:
-
-- contracts/interfaces: OK
-- invariants: OK
-- caching/state: OK
-- background jobs: OK
-- observability: OK
-- permissions: OK
-- migrations: OK
-- UX flows: OK
-- failure modes: OK
-- feature flags: OK
-
-```
+[TRUNCATED]
 ```
 
 .config/skills/oraclepack-tickets-pack/scripts/lint_attachments.py
@@ -24621,6 +25225,66 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+```
+
+.mypy_cache/3.12/importlib/metadata/__init__.data.json
+```
+[TRUNCATED]
+```
+
+.mypy_cache/3.12/importlib/metadata/__init__.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[37,7,8,9,1,2,3,4,5,6,10,12,13,14,1,1],"dep_prios":[5,5,5,5,10,5,10,10,5,5,5,5,5,5,5,30],"dependencies":["importlib.metadata._meta","collections.abc","email.message","importlib.abc","abc","pathlib","sys","types","_collections_abc","_typeshed","os","re","typing","typing_extensions","builtins","_frozen_importlib"],"hash":"5416a38893c2182fc301e16118320b69d5d4a8c6","id":"importlib.metadata","ignore_all":true,"interface_hash":"bb51644d32e8ffeae6160e073056c2f5d31cf78e","mtime":1762029371,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/importlib/metadata/__init__.pyi","plugin_data":null,"size":9382,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/importlib/metadata/_meta.data.json
+```
+[TRUNCATED]
+```
+
+.mypy_cache/3.12/importlib/metadata/_meta.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[3,1,2,4,5,6,1,1,1,1],"dep_prios":[5,10,5,5,5,5,5,30,30,30],"dependencies":["collections.abc","sys","_typeshed","os","typing","typing_extensions","builtins","_frozen_importlib","abc","types"],"hash":"776d16d8b3327bdf2554440e5860ecc3d293b163","id":"importlib.metadata._meta","ignore_all":true,"interface_hash":"5399b26f16fa43cd060562beb5de30f6b64d2062","mtime":1762029371,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/importlib/metadata/_meta.pyi","plugin_data":null,"size":2552,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/importlib/resources/__init__.data.json
+```
+{".class":"MypyFile","_fullname":"importlib.resources","future_import_flags":[],"is_partial_stub_package":false,"is_stub":true,"names":{".class":"SymbolTable","AbstractContextManager":{".class":"SymbolTableNode","cross_ref":"contextlib.AbstractContextManager","kind":"Gdef","module_hidden":true,"module_public":false},"Any":{".class":"SymbolTableNode","cross_ref":"typing.Any","kind":"Gdef","module_hidden":true,"module_public":false},"BinaryIO":{".class":"SymbolTableNode","cross_ref":"typing.BinaryIO","kind":"Gdef","module_hidden":true,"module_public":false},"Iterator":{".class":"SymbolTableNode","cross_ref":"typing.Iterator","kind":"Gdef","module_hidden":true,"module_public":false},"ModuleType":{".class":"SymbolTableNode","cross_ref":"types.ModuleType","kind":"Gdef","module_hidden":true,"module_public":false},"Package":{".class":"SymbolTableNode","cross_ref":"importlib.resources._common.Package","kind":"Gdef"},"Path":{".class":"SymbolTableNode","cross_ref":"pathlib.Path","kind":"Gdef","module_hidden":true,"module_public":false},"Resource":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeAlias","alias_tvars":[],"column":4,"fullname":"importlib.resources.Resource","line":32,"no_args":true,"normalized":false,"python_3_12_type_alias":false,"target":"builtins.str"}},"ResourceReader":{".class":"SymbolTableNode","cross_ref":"importlib.abc.ResourceReader","kind":"Gdef"},"TextIO":{".class":"SymbolTableNode","cross_ref":"typing.TextIO","kind":"Gdef","module_hidden":true,"module_public":false},"Traversable":{".class":"SymbolTableNode","cross_ref":"importlib.abc.Traversable","kind":"Gdef","module_hidden":true,"module_public":false},"TypeAlias":{".class":"SymbolTableNode","cross_ref":"typing.TypeAlias","kind":"Gdef","module_hidden":true,"module_public":false},"__all__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_inferred","has_explicit_value"],"fullname":"importlib.resources.__all__","name":"__all__","type":{".class":"Instance","args":["builtins.str"],"extra_attrs":null,"type_ref":"builtins.list"}}},"__annotations__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.resources.__annotations__","name":"__annotations__","type":{".class":"Instance","args":["builtins.str",{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":6}],"extra_attrs":null,"type_ref":"builtins.dict"}}},"__doc__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.resources.__doc__","name":"__doc__","type":"builtins.str"}},"__file__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.resources.__file__","name":"__file__","type":"builtins.str"}},"__name__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.resources.__name__","name":"__name__","type":"builtins.str"}},"__package__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.resources.__package__","name":"__package__","type":"builtins.str"}},"__path__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.resources.__path__","name":"__path__","type":{".class":"Instance","args":["builtins.str"],"extra_attrs":null,"type_ref":"builtins.list"}}},"__spec__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.resources.__spec__","name":"__spec__","type":"_frozen_importlib.ModuleSpec"}},"as_file":{".class":"SymbolTableNode","cross_ref":"importlib.resources._common.as_file","kind":"Gdef"},"contents":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0],"arg_names":["package"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.resources.contents","name":"contents","type":{".class":"CallableType","arg_kinds":[0],"arg_names":["package"],"arg_types":[{".class":"TypeAliasType","args":[],"type_ref":"importlib.resources._common.Package"}],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"contents","ret_type":{".class":"Instance","args":["builtins.str"],"extra_attrs":null,"type_ref":"typing.Iterator"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"files":{".class":"SymbolTableNode","cross_ref":"importlib.resources._common.files","kind":"Gdef"},"is_resource":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0],"arg_names":["package","name"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.resources.is_resource","name":"is_resource","type":{".class":"CallableType","arg_kinds":[0,0],"arg_names":["package","name"],"arg_types":[{".class":"TypeAliasType","args":[],"type_ref":"importlib.resources._common.Package"},"builtins.str"],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"is_resource","ret_type":"builtins.bool","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"open_binary":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0],"arg_names":["package","resource"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.resources.open_binary","name":"open_binary","type":{".class":"CallableType","arg_kinds":[0,0],"arg_names":["package","resource"],"arg_types":[{".class":"TypeAliasType","args":[],"type_ref":"importlib.resources._common.Package"},"builtins.str"],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"open_binary","ret_type":"typing.BinaryIO","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"open_text":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0,1,1],"arg_names":["package","resource","encoding","errors"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.resources.open_text","name":"open_text","type":{".class":"CallableType","arg_kinds":[0,0,1,1],"arg_names":["package","resource","encoding","errors"],"arg_types":[{".class":"TypeAliasType","args":[],"type_ref":"importlib.resources._common.Package"},"builtins.str","builtins.str","builtins.str"],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"open_text","ret_type":"typing.TextIO","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"os":{".class":"SymbolTableNode","cross_ref":"os","kind":"Gdef","module_hidden":true,"module_public":false},"path":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0],"arg_names":["package","resource"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.resources.path","name":"path","type":{".class":"CallableType","arg_kinds":[0,0],"arg_names":["package","resource"],"arg_types":[{".class":"TypeAliasType","args":[],"type_ref":"importlib.resources._common.Package"},"builtins.str"],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"path","ret_type":{".class":"Instance","args":["pathlib.Path",{".class":"UnionType","items":["builtins.bool",{".class":"NoneType"}],"uses_pep604_syntax":false}],"extra_attrs":null,"type_ref":"contextlib.AbstractContextManager"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"read_binary":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0],"arg_names":["package","resource"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.resources.read_binary","name":"read_binary","type":{".class":"CallableType","arg_kinds":[0,0],"arg_names":["package","resource"],"arg_types":[{".class":"TypeAliasType","args":[],"type_ref":"importlib.resources._common.Package"},"builtins.str"],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"read_binary","ret_type":"builtins.bytes","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"read_text":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0,1,1],"arg_names":["package","resource","encoding","errors"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.resources.read_text","name":"read_text","type":{".class":"CallableType","arg_kinds":[0,0,1,1],"arg_names":["package","resource","encoding","errors"],"arg_types":[{".class":"TypeAliasType","args":[],"type_ref":"importlib.resources._common.Package"},"builtins.str","builtins.str","builtins.str"],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"read_text","ret_type":"builtins.str","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"sys":{".class":"SymbolTableNode","cross_ref":"sys","kind":"Gdef","module_hidden":true,"module_public":false}},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/importlib/resources/__init__.pyi"}
+```
+
+.mypy_cache/3.12/importlib/resources/__init__.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[11,3,16,1,2,4,5,6,7,8,1,1,1,1,1],"dep_prios":[5,5,5,10,10,5,5,5,5,5,5,30,30,30,30],"dependencies":["importlib.resources._common","collections.abc","importlib.abc","os","sys","contextlib","pathlib","types","typing","typing_extensions","builtins","_collections_abc","_frozen_importlib","_typeshed","abc"],"hash":"09729156e3798abfc8666cd3458f6108e653f02a","id":"importlib.resources","ignore_all":true,"interface_hash":"7dfd904ab9f28047241f02eaf07d4613420b0e77","mtime":1762029371,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/importlib/resources/__init__.pyi","plugin_data":null,"size":2385,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/importlib/resources/_common.data.json
+```
+{".class":"MypyFile","_fullname":"importlib.resources._common","future_import_flags":[],"is_partial_stub_package":false,"is_stub":true,"names":{".class":"SymbolTable","AbstractContextManager":{".class":"SymbolTableNode","cross_ref":"contextlib.AbstractContextManager","kind":"Gdef","module_hidden":true,"module_public":false},"Anchor":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeAlias","alias_tvars":[],"column":8,"fullname":"importlib.resources._common.Anchor","line":16,"no_args":false,"normalized":false,"python_3_12_type_alias":false,"target":{".class":"TypeAliasType","args":[],"type_ref":"importlib.resources._common.Package"}}},"Callable":{".class":"SymbolTableNode","cross_ref":"typing.Callable","kind":"Gdef","module_hidden":true,"module_public":false},"Package":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeAlias","alias_tvars":[],"column":4,"fullname":"importlib.resources._common.Package","line":13,"no_args":false,"normalized":false,"python_3_12_type_alias":false,"target":{".class":"UnionType","items":["builtins.str","types.ModuleType"],"uses_pep604_syntax":true}}},"Path":{".class":"SymbolTableNode","cross_ref":"pathlib.Path","kind":"Gdef","module_hidden":true,"module_public":false},"ResourceReader":{".class":"SymbolTableNode","cross_ref":"importlib.abc.ResourceReader","kind":"Gdef","module_hidden":true,"module_public":false},"Traversable":{".class":"SymbolTableNode","cross_ref":"importlib.abc.Traversable","kind":"Gdef","module_hidden":true,"module_public":false},"TypeAlias":{".class":"SymbolTableNode","cross_ref":"typing.TypeAlias","kind":"Gdef","module_hidden":true,"module_public":false},"__annotations__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.resources._common.__annotations__","name":"__annotations__","type":{".class":"Instance","args":["builtins.str",{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":6}],"extra_attrs":null,"type_ref":"builtins.dict"}}},"__doc__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.resources._common.__doc__","name":"__doc__","type":"builtins.str"}},"__file__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.resources._common.__file__","name":"__file__","type":"builtins.str"}},"__name__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.resources._common.__name__","name":"__name__","type":"builtins.str"}},"__package__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.resources._common.__package__","name":"__package__","type":"builtins.str"}},"__spec__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.resources._common.__spec__","name":"__spec__","type":"_frozen_importlib.ModuleSpec"}},"as_file":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0],"arg_names":["path"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.resources._common.as_file","name":"as_file","type":{".class":"CallableType","arg_kinds":[0],"arg_names":["path"],"arg_types":["importlib.abc.Traversable"],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"as_file","ret_type":{".class":"Instance","args":["pathlib.Path",{".class":"UnionType","items":["builtins.bool",{".class":"NoneType"}],"uses_pep604_syntax":false}],"extra_attrs":null,"type_ref":"contextlib.AbstractContextManager"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"deprecated":{".class":"SymbolTableNode","cross_ref":"typing_extensions.deprecated","kind":"Gdef","module_hidden":true,"module_public":false},"files":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"OverloadedFuncDef","deprecated":null,"flags":[],"fullname":"importlib.resources._common.files","impl":null,"items":[{".class":"Decorator","func":{".class":"FuncDef","abstract_status":0,"arg_kinds":[1],"arg_names":["anchor"],"dataclass_transform_spec":null,"deprecated":null,"flags":["is_overload","is_decorated"],"fullname":"importlib.resources._common.files","name":"files","type":{".class":"CallableType","arg_kinds":[1],"arg_names":["anchor"],"arg_types":[{".class":"UnionType","items":[{".class":"TypeAliasType","args":[],"type_ref":"importlib.resources._common.Anchor"},{".class":"NoneType"}],"uses_pep604_syntax":true}],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"files","ret_type":"importlib.abc.Traversable","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}},"is_overload":true,"var":{".class":"Var","flags":["is_ready","is_inferred"],"fullname":"importlib.resources._common.files","name":"files","type":{".class":"CallableType","arg_kinds":[1],"arg_names":["anchor"],"arg_types":[{".class":"UnionType","items":[{".class":"TypeAliasType","args":[],"type_ref":"importlib.resources._common.Anchor"},{".class":"NoneType"}],"uses_pep604_syntax":true}],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"files","ret_type":"importlib.abc.Traversable","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},{".class":"Decorator","func":{".class":"FuncDef","abstract_status":0,"arg_kinds":[1],"arg_names":["package"],"dataclass_transform_spec":null,"deprecated":"overload def (package: Union[Union[builtins.str, types.ModuleType], None] =) -> importlib.abc.Traversable of function importlib.resources._common.files is deprecated: First parameter to files is renamed to 'anchor'","flags":["is_overload","is_decorated"],"fullname":"importlib.resources._common.files","name":"files","type":{".class":"CallableType","arg_kinds":[1],"arg_names":["package"],"arg_types":[{".class":"UnionType","items":[{".class":"TypeAliasType","args":[],"type_ref":"importlib.resources._common.Anchor"},{".class":"NoneType"}],"uses_pep604_syntax":true}],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"files","ret_type":"importlib.abc.Traversable","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}},"is_overload":true,"var":{".class":"Var","flags":["is_ready","is_inferred"],"fullname":"importlib.resources._common.files","name":"files","type":{".class":"CallableType","arg_kinds":[1],"arg_names":["package"],"arg_types":[{".class":"UnionType","items":[{".class":"TypeAliasType","args":[],"type_ref":"importlib.resources._common.Anchor"},{".class":"NoneType"}],"uses_pep604_syntax":true}],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"files","ret_type":"importlib.abc.Traversable","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}}],"type":{".class":"Overloaded","items":[{".class":"CallableType","arg_kinds":[1],"arg_names":["anchor"],"arg_types":[{".class":"UnionType","items":[{".class":"TypeAliasType","args":[],"type_ref":"importlib.resources._common.Anchor"},{".class":"NoneType"}],"uses_pep604_syntax":true}],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"files","ret_type":"importlib.abc.Traversable","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]},{".class":"CallableType","arg_kinds":[1],"arg_names":["package"],"arg_types":[{".class":"UnionType","items":[{".class":"TypeAliasType","args":[],"type_ref":"importlib.resources._common.Anchor"},{".class":"NoneType"}],"uses_pep604_syntax":true}],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"files","ret_type":"importlib.abc.Traversable","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}]}}},"from_package":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0],"arg_names":["package"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.resources._common.from_package","name":"from_package","type":{".class":"CallableType","arg_kinds":[0],"arg_names":["package"],"arg_types":["types.ModuleType"],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"from_package","ret_type":"importlib.abc.Traversable","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"get_resource_reader":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0],"arg_names":["package"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.resources._common.get_resource_reader","name":"get_resource_reader","type":{".class":"CallableType","arg_kinds":[0],"arg_names":["package"],"arg_types":["types.ModuleType"],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"get_resource_reader","ret_type":{".class":"UnionType","items":["importlib.abc.ResourceReader",{".class":"NoneType"}],"uses_pep604_syntax":true},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"overload":{".class":"SymbolTableNode","cross_ref":"typing.overload","kind":"Gdef","module_hidden":true,"module_public":false},"package_to_anchor":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0],"arg_names":["func"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.resources._common.package_to_anchor","name":"package_to_anchor","type":{".class":"CallableType","arg_kinds":[0],"arg_names":["func"],"arg_types":[{".class":"CallableType","arg_kinds":[0],"arg_names":[null],"arg_types":[{".class":"UnionType","items":[{".class":"TypeAliasType","args":[],"type_ref":"importlib.resources._common.Anchor"},{".class":"NoneType"}],"uses_pep604_syntax":true}],"bound_args":[],"def_extras":{},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":null,"ret_type":"importlib.abc.Traversable","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"package_to_anchor","ret_type":{".class":"CallableType","arg_kinds":[0,0],"arg_names":[null,null],"arg_types":[{".class":"UnionType","items":[{".class":"TypeAliasType","args":[],"type_ref":"importlib.resources._common.Anchor"},{".class":"NoneType"}],"uses_pep604_syntax":true},{".class":"UnionType","items":[{".class":"TypeAliasType","args":[],"type_ref":"importlib.resources._common.Anchor"},{".class":"NoneType"}],"uses_pep604_syntax":true}],"bound_args":[],"def_extras":{},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":null,"ret_type":"importlib.abc.Traversable","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"resolve":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0],"arg_names":["cand"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.resources._common.resolve","name":"resolve","type":{".class":"CallableType","arg_kinds":[0],"arg_names":["cand"],"arg_types":[{".class":"UnionType","items":[{".class":"TypeAliasType","args":[],"type_ref":"importlib.resources._common.Anchor"},{".class":"NoneType"}],"uses_pep604_syntax":true}],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"resolve","ret_type":"types.ModuleType","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"sys":{".class":"SymbolTableNode","cross_ref":"sys","kind":"Gdef","module_hidden":true,"module_public":false},"types":{".class":"SymbolTableNode","cross_ref":"types","kind":"Gdef","module_hidden":true,"module_public":false}},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/importlib/resources/_common.pyi"}
+```
+
+.mypy_cache/3.12/importlib/resources/_common.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[6,8,1,5,7,9,10,11,1,1,1,1,1],"dep_prios":[5,5,10,10,5,5,5,5,5,30,30,30,30],"dependencies":["collections.abc","importlib.abc","sys","types","contextlib","pathlib","typing","typing_extensions","builtins","_frozen_importlib","_typeshed","abc","os"],"hash":"e7087e18dc33e0a7404dcf3d432815374348c910","id":"importlib.resources._common","ignore_all":true,"interface_hash":"0017916353de98c5688348b377bfb02998c94023","mtime":1762029371,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/importlib/resources/_common.pyi","plugin_data":null,"size":1518,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/importlib/resources/abc.data.json
+```
+{".class":"MypyFile","_fullname":"importlib.resources.abc","future_import_flags":[],"is_partial_stub_package":false,"is_stub":true,"names":{".class":"SymbolTable","ResourceReader":{".class":"SymbolTableNode","cross_ref":"importlib.abc.ResourceReader","kind":"Gdef"},"Traversable":{".class":"SymbolTableNode","cross_ref":"importlib.abc.Traversable","kind":"Gdef"},"TraversableResources":{".class":"SymbolTableNode","cross_ref":"importlib.abc.TraversableResources","kind":"Gdef"},"__all__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_inferred","has_explicit_value"],"fullname":"importlib.resources.abc.__all__","name":"__all__","type":{".class":"Instance","args":["builtins.str"],"extra_attrs":null,"type_ref":"builtins.list"}}},"__annotations__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.resources.abc.__annotations__","name":"__annotations__","type":{".class":"Instance","args":["builtins.str",{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":6}],"extra_attrs":null,"type_ref":"builtins.dict"}}},"__doc__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.resources.abc.__doc__","name":"__doc__","type":"builtins.str"}},"__file__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.resources.abc.__file__","name":"__file__","type":"builtins.str"}},"__name__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.resources.abc.__name__","name":"__name__","type":"builtins.str"}},"__package__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.resources.abc.__package__","name":"__package__","type":"builtins.str"}},"__spec__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.resources.abc.__spec__","name":"__spec__","type":"_frozen_importlib.ModuleSpec"}},"sys":{".class":"SymbolTableNode","cross_ref":"sys","kind":"Gdef","module_hidden":true,"module_public":false}},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/importlib/resources/abc.pyi"}
+```
+
+.mypy_cache/3.12/importlib/resources/abc.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[8,1,1,1,1,1,1],"dep_prios":[5,10,5,30,30,30,30],"dependencies":["importlib.abc","sys","builtins","_frozen_importlib","_typeshed","abc","typing"],"hash":"a45509748ab7029a1aa56d5883c154bd20a3a2ae","id":"importlib.resources.abc","ignore_all":true,"interface_hash":"b48fdd6f9bc8523f2011bc294ab10d888e682139","mtime":1762029371,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/importlib/resources/abc.pyi","plugin_data":null,"size":549,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/zipfile/_path/__init__.data.json
+```
+[TRUNCATED]
+```
+
+.mypy_cache/3.12/zipfile/_path/__init__.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[3,1,2,4,5,6,7,8,1,1,1,1,1],"dep_prios":[5,10,5,5,5,5,5,5,5,30,30,30,30],"dependencies":["collections.abc","sys","_typeshed","io","os","typing","typing_extensions","zipfile","builtins","_frozen_importlib","_io","abc","types"],"hash":"3270f9c480b6422db9446d3607ad07e8e1867afb","id":"zipfile._path","ignore_all":true,"interface_hash":"44fe79deed98f9fb67436ce6e17344f1b9726db9","mtime":1762029371,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/zipfile/_path/__init__.pyi","plugin_data":null,"size":3840,"suppressed":[],"version_id":"1.15.0"}
 ```
 
 oraclepack-mcp-server/.pytest_cache/v/cache/lastfailed
