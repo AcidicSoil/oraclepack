@@ -9,7 +9,6 @@ from typing import List, Tuple
 @dataclass
 class Step:
     n: str
-    header: str
     lines: List[str]
 
 
@@ -46,40 +45,9 @@ def _parse_steps(fence_lines: List[str]) -> List[Step]:
     steps: List[Step] = []
     for idx, (start_i, n) in enumerate(header_idxs):
         end_i = header_idxs[idx + 1][0] if idx + 1 < len(header_idxs) else len(fence_lines)
-        block = fence_lines[start_i:end_i]
-        steps.append(Step(n=n, header=block[0], lines=block))
+        steps.append(Step(n=n, lines=fence_lines[start_i:end_i]))
     return steps
 
-
-def _count_native_attachments(step: Step) -> int:
-    """
-    Counts -f/--file occurrences excluding:
-      - comment lines
-      - the literal extra_files line (immediately following the marker comment)
-    """
-    count = 0
-    ignore_next_nonempty = False
-
-    for ln in step.lines[1:]:
-        s = ln.strip()
-        if not s:
-            continue
-
-        # Detect extra_files marker comment; ignore next non-empty line.
-        if s.startswith("#") and "extra_files appended literally" in s.lower():
-            ignore_next_nonempty = True
-            continue
-
-        if ignore_next_nonempty:
-            # Skip counting attachments on the extra_files line itself.
-            ignore_next_nonempty = False
-            continue
-
-        if s.startswith("#"):
-            continue
-
-        count += len(re.findall(r"(?<!\S)(-f|--file)(?!\S)", ln))
-    return count
 
 def lint(path: Path) -> None:
     raw = _read_text(path)
@@ -89,23 +57,34 @@ def lint(path: Path) -> None:
 
     errors: List[str] = []
     for step in steps:
-        native = _count_native_attachments(step)
-        if native > 2:
-            errors.append(
-                f"Step {step.n}: has {native} native attachments; must be <= 2 (ticket bundle + at most one repo file)."
-            )
+        joined = "\n".join(step.lines)
+
+        if "_tickets_bundle" in joined:
+            errors.append(f"Step {step.n}: found '_tickets_bundle' reference (direct-ticket packs must not use bundle).")
+
+        if re.search(r"mapfile\s+-t\s+__tickets\s+<\s+<\(", joined) is None:
+            errors.append(f"Step {step.n}: missing mapfile ticket discovery stanza.")
+
+        if re.search(r"ticket_args=\(\)", joined) is None or re.search(r"ticket_args\+\=\(\s*(-f|--file)\b", joined) is None:
+            errors.append(f"Step {step.n}: missing ticket_args builder (ticket_args+=(-f \"$p\")).")
+
+        if re.search(r"\$\{ticket_args\[@\]\}", joined) is None:
+            errors.append(f"Step {step.n}: missing ${'{'}ticket_args[@]{'}'} usage in oracle invocation.")
+
+        # Heuristic: ensure we did not hardcode a non-existent bundle path.
+        if re.search(r'(?<!\S)(-f|--file)(?!\S)\s+"[^"\n]*_tickets_bundle', joined):
+            errors.append(f"Step {step.n}: contains a hardcoded _tickets_bundle attachment.")
 
     if errors:
         for e in errors:
             print(f"[ERROR] {e}", file=sys.stderr)
         sys.exit(1)
 
-    print("[OK] Attachment lint passed (native attachments <= 2 per step; extra_files line excluded).")
+    print("[OK] Direct-ticket lint passed.")
+
 
 def main() -> None:
-    p = argparse.ArgumentParser(
-        description="Lint ticket-driven oraclepack Stage-1 packs for native attachments (<=2 per step, excluding literal extra_files line)."
-    )
+    p = argparse.ArgumentParser(description="Lint ticket-driven Stage-1 packs (direct-ticket mode).")
     p.add_argument("pack_path", help="Path to the Markdown pack file")
     args = p.parse_args()
 

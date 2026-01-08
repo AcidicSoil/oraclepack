@@ -206,6 +206,7 @@ Project Structure:
 ├── .ruler
 │   ├── AGENTS.md
 │   ├── ruler.toml
+│   ├── skill-usage.md
 │   └── tm-AGENTS.md
 ├── .rules
 │   ├── dev_workflow.md
@@ -239,6 +240,22 @@ Project Structure:
 │   ├── Oraclepack Schema Approach.md
 │   ├── Oraclepack bash fix.md
 │   └── Publish OraclePack MCP.md
+├── docs
+│   └── oracle-questions-2026-01-08
+│       ├── actions
+│       │   ├── 01-contracts-interfaces-ticket-surface.md
+│       │   ├── 02-contracts-interfaces-integration-points.md
+│       │   ├── 03-invariants-invariant-map.md
+│       │   ├── 04-invariants-validation-boundaries.md
+│       │   └── 05-caching-state-state-artifacts.md
+│       ├── packs
+│       │   ├── actions.md
+│       │   ├── mcp.md
+│       │   ├── misc.md
+│       │   ├── other.md
+│       │   └── prd-tui.md
+│       ├── _groups.json
+│       └── manifest.json
 ├── internal
 │   ├── app
 │   │   ├── app.go
@@ -348,17 +365,35 @@ Project Structure:
 │   │   │   ├── run-manifest-spec.md
 │   │   │   └── stage1-prompt-metadata.md
 │   │   └── SKILL.md
-│   └── oraclepack-tickets-pack
+│   ├── oraclepack-tickets-pack
+│   │   ├── references
+│   │   │   ├── attachment-minimization.md
+│   │   │   ├── ticket-bundling.md
+│   │   │   └── tickets-pack-template.md
+│   │   ├── scripts
+│   │   │   ├── lint_attachments.py
+│   │   │   └── validate_pack.py
+│   │   └── SKILL.md
+│   ├── oraclepack-tickets-pack-common
+│   │   └── scripts
+│   │       └── validate_pack.py
+│   └── oraclepack-tickets-pack-grouped
 │       ├── references
 │       │   ├── attachment-minimization.md
-│       │   ├── ticket-bundling.md
+│       │   ├── ticket-grouping.md
+│       │   ├── tickets-pack-template-bundle.md
 │       │   └── tickets-pack-template.md
 │       ├── scripts
+│       │   ├── generate_grouped_packs.py
 │       │   ├── lint_attachments.py
-│       │   └── validate_pack.py
+│       │   ├── render_group_packs.py
+│       │   ├── shard_tickets.py
+│       │   ├── validate_pack.py
+│       │   └── validate_shards.py
 │       └── SKILL.md
 ├── .browser-echo-mcp.json
 ├── .goreleaser.yaml
+├── actions.state.json
 ├── go.mod
 ├── inspector.config.json
 ├── oracle-pack-2026-01-02.chatgpt-urls.json
@@ -374,7 +409,7 @@ Project Structure:
 <source_code>
 .browser-echo-mcp.json
 ```
-{"url":"http://127.0.0.1:45301","route":"/__client-logs","timestamp":1767903207887,"pid":62589}
+{"url":"http://127.0.0.1:45425","route":"/__client-logs","timestamp":1767909167004,"pid":78991}
 ```
 
 .goreleaser.yaml
@@ -424,6 +459,18 @@ changelog:
       - "^docs:"
       - "^test:"
       - "^chore:"
+```
+
+actions.state.json
+```
+{
+  "schema_version": 1,
+  "pack_hash": "",
+  "start_time": "0001-01-01T00:00:00Z",
+  "step_statuses": {},
+  "roi_threshold": 4.7,
+  "roi_mode": "over"
+}
 ```
 
 go.mod
@@ -607,13 +654,6 @@ tickets_prd.chatgpt-urls.json
 }
 ```
 
-.mypy_cache/CACHEDIR.TAG
-```
-Signature: 8a477f597d28d172789f06886806bc55
-# This file is a cache directory tag automatically created by mypy.
-# For information about cache directory tags see https://bford.info/cachedir/
-```
-
 .ruler/AGENTS.md
 ```
 # AGENTS.md
@@ -667,6 +707,64 @@ nested = true
 # headers = { Authorization = "Bearer REPLACE_ME" }
 ```
 
+.ruler/skill-usage.md
+```
+## Skills usage
+
+You have a library of reusable skill prompts stored under `$CODEX_HOME/skills/` (commonly `~/.codex/skills/`).
+
+Treat each **skill folder** in `$CODEX_HOME/skills/` as a named skill:
+
+- A folder `$CODEX_HOME/skills/<SKILL_NAME>/SKILL.md` defines the canonical flow and constraints for the `<SKILL_NAME>` skill.
+- Skill folders may also include `scripts/`, `references/`, and `assets/` that the assistant should use when the skill requires them.
+- These skills are the primary reference for how to handle common or important task types.
+
+General rule:
+
+- Before starting work on any task, briefly classify it (for example: architecture, implementation, refactoring, performance, reliability, data, documentation, tests, tooling, pack generation, etc.).
+- If there is a relevant skill under `$CODEX_HOME/skills/` for that class of task, base the approach on the instructions in that skill instead of inventing new, ad-hoc instructions.
+- When a skill exists for a task type, follow its steps, constraints, and return format as the default behavior.
+
+Task-type rule:
+
+- When working on any task that corresponds to an existing skill:
+  - Consult the corresponding `$CODEX_HOME/skills/<SKILL_NAME>/SKILL.md` as the first step.
+  - Let the skill’s instructions drive the approach (checks to perform, constraints to respect, preferred output format).
+  - Only add additional reasoning or deviations after the skill’s instructions have been applied.
+
+Reporting rule:
+
+- When following a skill, explicitly mention which skill is being used (for example: “Using the guidance from `$CODEX_HOME/skills/<SKILL_NAME>/SKILL.md`”) so the link between behavior and skill remains clear.
+- Do not modify or overwrite skill files themselves unless explicitly instructed to adjust the underlying skill behavior.
+
+---
+
+## Oraclepack Stage-1 pack generation (grouped mini-packs)
+
+When the user asks to generate **oraclepack Stage-1 question packs** (runner-ingestible Markdown packs with strict schema: single `bash` fence, exactly 20 steps, deterministic attachments, and a Coverage check), prefer these skills over ad-hoc prompting:
+
+1) `$CODEX_HOME/skills/oraclepack-tickets-pack-grouped/SKILL.md`
+   - Use when the task is **ticket-driven** (user references `.tickets/`, “tickets as primary context”, “group by ticket topic/domain”, or wants per-topic mini-packs from tickets).
+   - Produces multiple per-topic/per-domain packs grouped by ticket subdirs + deterministic inference for loose tickets.
+   - Packs must be direct-attach (no bundle dependency) and validated/linted per the skill.
+
+2) `$CODEX_HOME/skills/oraclepack-codebase-pack-grouped/SKILL.md`
+   - Use when the task is **codebase-driven** (user wants per-topic/per-domain mini-packs derived from repository structure/modules, and tickets are not the primary context).
+   - Produces multiple per-topic/per-domain packs grouped by codebase subdirs + deterministic inference for loose files.
+   - Packs must be direct-attach and validated/linted per the skill.
+
+Selection decision (apply in order):
+
+- If the user mentions tickets or `.tickets/` or provides “attached tickets” as primary context → use `oraclepack-tickets-pack-grouped`.
+- Else → use `oraclepack-codebase-pack-grouped`.
+
+Mandatory follow-through for either skill:
+
+- Run the skill’s required validation and attachment linting for every generated pack.
+- Enforce the skill’s size-control guidance (dry-run the largest pack and reduce scope if needed).
+- Report the produced pack paths (e.g., `{{out_dir}}/packs/*.md`) and any group manifests the skill generates (e.g., `{{out_dir}}/_groups.json`), and explicitly state which skill drove the result.
+```
+
 .ruler/tm-AGENTS.md
 ```
 # Agent Instructions
@@ -674,6 +772,13 @@ nested = true
 ## Task Master AI and Workflow Instructions
 **Import Task Master's development workflow commands and guidelines, treat as if import is in the main AGENT.md file.**
 @./.taskmaster/AGENTS.md @./.rules/dev_workflow.md @./.rules/rules.md @./.rules/self_improve.md @./.rules/taskmaster.md
+```
+
+.mypy_cache/CACHEDIR.TAG
+```
+Signature: 8a477f597d28d172789f06886806bc55
+# This file is a cache directory tag automatically created by mypy.
+# For information about cache directory tags see https://bford.info/cachedir/
 ```
 
 .rules/dev_workflow.md
@@ -964,30 +1069,6 @@ Taskmaster configuration is managed through two main mechanisms:
     *   For MCP/<AGENT> integration, configure these keys in the `env` section of `.<AGENT>/mcp.json`.
     *   Available keys/variables: See `assets/env.example` or the Configuration section in the command reference (previously linked to `taskmaster.md`).
 
-3.  **`.taskmaster/state.json` File (Tagged System State):**
-    *   Tracks current tag context and migration status.
-    *   Automatically created during tagged system migration.
-    *   Contains: `currentTag`, `lastSwitched`, `migrationNoticeShown`.
-
-**Important:** Non-API key settings (like model selections, `MAX_TOKENS`, `TASKMASTER_LOG_LEVEL`) are **no longer configured via environment variables**. Use the `task-master models` command (or `--setup` for interactive configuration) or the `models` MCP tool.
-**If AI commands FAIL in MCP** verify that the API key for the selected provider is present in the `env` section of `.<AGENT>/mcp.json`.
-**If AI commands FAIL in CLI** verify that the API key for the selected provider is present in the `.env` file in the root of the project.
-
-## Rules Management
-
-Taskmaster supports multiple AI coding assistant rule sets that can be configured during project initialization or managed afterward:
-
-- **Available Profiles**: Claude Code, <AGENT>, Codex, <AGENT>, Roo Code, Trae, Windsurf (claude, <AGENT>, codex, <AGENT>, roo, trae, windsurf)
-- **During Initialization**: Use `task-master init --rules <AGENT>,windsurf` to specify which rule sets to include
-- **After Initialization**: Use `task-master rules add <profiles>` or `task-master rules remove <profiles>` to manage rule sets
-- **Interactive Setup**: Use `task-master rules setup` to launch an interactive prompt for selecting rule profiles
-- **Default Behavior**: If no `--rules` flag is specified during initialization, all available rule profiles are included
-- **Rule Structure**: Each profile creates its own directory (e.g., `.<AGENT>/rules`, `.roo/rules`) with appropriate configuration files
-
-## Determining the Next Task
-
-- Run `next_task` / `task-master next` to show the next task to work on.
-- The command identifies tasks with all dependencies satisfied
 [TRUNCATED]
 ```
 
@@ -1346,27 +1427,6 @@ This document provides a detailed reference for interacting with Taskmaster, cov
 *   **Key Parameters/Options:**
     *   `id`: `Required. The ID of the Taskmaster task, e.g., '5', or subtask, e.g., '5.2', to permanently remove.` (CLI: `-i, --id <id>`)
     *   `yes`: `Skip the confirmation prompt and immediately delete the task.` (CLI: `-y, --yes`)
-    *   `tag`: `Specify which tag context to operate on. Defaults to the current active tag.` (CLI: `--tag <name>`)
-    *   `file`: `Path to your Taskmaster 'tasks.json' file. Default relies on auto-detection.` (CLI: `-f, --file <file>`)
-*   **Usage:** Permanently delete tasks or subtasks that are no longer needed in the project.
-*   **Notes:** Use with caution as this operation cannot be undone. Consider using 'blocked', 'cancelled', or 'deferred' status instead if you just want to exclude a task from active planning but keep it for reference. The command automatically cleans up dependency references in other tasks.
-
----
-
-## Task Structure & Breakdown
-
-### 13. Expand Task (`expand_task`)
-
-*   **MCP Tool:** `expand_task`
-*   **CLI Command:** `task-master expand [options]`
-*   **Description:** `Use Taskmaster's AI to break down a complex task into smaller, manageable subtasks. Appends subtasks by default.`
-*   **Key Parameters/Options:**
-    *   `id`: `The ID of the specific Taskmaster task you want to break down into subtasks.` (CLI: `-i, --id <id>`)
-    *   `num`: `Optional: Suggests how many subtasks Taskmaster should aim to create. Uses complexity analysis/defaults otherwise.` (CLI: `-n, --num <number>`)
-    *   `research`: `Enable Taskmaster to use the research role for more informed subtask generation. Requires appropriate API key.` (CLI: `-r, --research`)
-    *   `prompt`: `Optional: Provide extra context or specific instructions to Taskmaster for generating the subtasks.` (CLI: `-p, --prompt <text>`)
-    *   `force`: `Optional: If true, clear existing subtasks before generating new ones. Default is false (append).` (CLI: `--force`)
-    *   `tag`: `Specify which tag context the task belongs to. Defaults to the current active tag.` (CLI: `--tag <name>`)
 [TRUNCATED]
 ```
 
@@ -4331,6 +4391,668 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
+internal/cli/cmds.go
+```
+package cli
+
+import (
+	"fmt"
+
+	"github.com/spf13/cobra"
+	"github.com/user/oraclepack/internal/app"
+)
+
+var validateCmd = &cobra.Command{
+	Use:   "validate [pack.md]",
+	Short: "Validate an oracle pack",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		cfg := app.Config{PackPath: args[0]}
+		a := app.New(cfg)
+		if err := a.LoadPack(); err != nil {
+			return err
+		}
+		fmt.Println("Pack is valid.")
+		return nil
+	},
+}
+
+var listCmd = &cobra.Command{
+	Use:   "list [pack.md]",
+	Short: "List steps in an oracle pack",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		cfg := app.Config{PackPath: args[0]}
+		a := app.New(cfg)
+		if err := a.LoadPack(); err != nil {
+			return err
+		}
+		for _, s := range a.Pack.Steps {
+			fmt.Printf("%s: %s\n", s.ID, s.OriginalLine)
+		}
+		return nil
+	},
+}
+
+func init() {
+	rootCmd.AddCommand(validateCmd)
+	rootCmd.AddCommand(listCmd)
+}
+```
+
+internal/cli/root.go
+```
+package cli
+
+import (
+	"fmt"
+	"os"
+
+	"github.com/spf13/cobra"
+	"github.com/user/oraclepack/internal/errors"
+)
+
+var (
+	noTUI     bool
+	oracleBin string
+	outDir    string
+)
+
+var rootCmd = &cobra.Command{
+	Use:   "oraclepack",
+	Short: "Oracle Pack Runner",
+	Long:  `A polished TUI-driven runner for oracle-based interactive bash steps.`,
+}
+
+// Execute adds all child commands to the root command and sets flags appropriately.
+func Execute() {
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(errors.ExitCode(err))
+	}
+}
+
+func init() {
+	rootCmd.PersistentFlags().BoolVar(&noTUI, "no-tui", false, "Disable the TUI and run in plain terminal mode")
+	rootCmd.PersistentFlags().StringVar(&oracleBin, "oracle-bin", "oracle", "Path to the oracle binary")
+	rootCmd.PersistentFlags().StringVarP(&outDir, "out-dir", "o", "", "Output directory for step execution")
+}
+```
+
+internal/cli/run.go
+```
+package cli
+
+import (
+	"context"
+	"os"
+	"path/filepath"
+	"strings"
+
+	"github.com/spf13/cobra"
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/user/oraclepack/internal/app"
+	"github.com/user/oraclepack/internal/tui"
+)
+
+var (
+	yes          bool
+	resume       bool
+	stopOnFail   bool
+	roiThreshold float64
+	roiMode      string
+	runAll       bool
+)
+
+var runCmd = &cobra.Command{
+	Use:   "run [pack.md]",
+	Short: "Run an oracle pack",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		packPath := args[0]
+		
+		// Setup paths
+		base := strings.TrimSuffix(filepath.Base(packPath), filepath.Ext(packPath))
+		statePath := base + ".state.json"
+		reportPath := base + ".report.json"
+
+		cfg := app.Config{
+			PackPath:     packPath,
+			StatePath:    statePath,
+			ReportPath:   reportPath,
+			Resume:       resume,
+			StopOnFail:   stopOnFail,
+			WorkDir:      ".",
+			OutDir:       outDir,
+			ROIThreshold: roiThreshold,
+			ROIMode:      roiMode,
+		}
+
+		a := app.New(cfg)
+		// Prepare the application (loads pack, resolves out_dir, provisions env)
+		if err := a.Prepare(); err != nil {
+			return err
+		}
+		
+		if err := a.LoadState(); err != nil {
+			return err
+		}
+
+		if noTUI {
+			return a.RunPlain(context.Background(), os.Stdout)
+		}
+
+		m := tui.NewModel(a.Pack, a.Runner, a.State, cfg.StatePath, cfg.ROIThreshold, cfg.ROIMode, runAll)
+		p := tea.NewProgram(m, tea.WithAltScreen())
+		_, err := p.Run()
+		return err
+	},
+}
+
+func init() {
+	runCmd.Flags().BoolVarP(&yes, "yes", "y", false, "Auto-approve all steps")
+	runCmd.Flags().BoolVar(&resume, "resume", false, "Resume from last successful step")
+	runCmd.Flags().BoolVar(&stopOnFail, "stop-on-fail", true, "Stop execution if a step fails")
+	runCmd.Flags().Float64Var(&roiThreshold, "roi-threshold", 0.0, "Filter steps by ROI threshold")
+	runCmd.Flags().StringVar(&roiMode, "roi-mode", "over", "ROI filter mode ('over' or 'under')")
+	runCmd.Flags().BoolVar(&runAll, "run-all", false, "Automatically run all steps sequentially on start")
+	rootCmd.AddCommand(runCmd)
+}
+```
+
+internal/errors/errors.go
+```
+package errors
+
+import (
+	"errors"
+)
+
+var (
+	// ErrInvalidPack is returned when the Markdown pack is malformed.
+	ErrInvalidPack = errors.New("invalid pack structure")
+	// ErrExecutionFailed is returned when a shell command fails.
+	ErrExecutionFailed = errors.New("execution failed")
+	// ErrConfigInvalid is returned when CLI flags or environment variables are incorrect.
+	ErrConfigInvalid = errors.New("invalid configuration")
+)
+
+// ExitCode returns the appropriate exit code for a given error.
+func ExitCode(err error) int {
+	if err == nil {
+		return 0
+	}
+
+	if errors.Is(err, ErrConfigInvalid) {
+		return 2
+	}
+
+	if errors.Is(err, ErrInvalidPack) {
+		return 3
+	}
+
+	if errors.Is(err, ErrExecutionFailed) {
+		return 4
+	}
+
+	return 1 // Generic error
+}
+```
+
+internal/errors/errors_test.go
+```
+package errors
+
+import (
+	"errors"
+	"fmt"
+	"testing"
+)
+
+func TestExitCode(t *testing.T) {
+	tests := []struct {
+		name     string
+		err      error
+		expected int
+	}{
+		{"nil error", nil, 0},
+		{"generic error", errors.New("generic"), 1},
+		{"invalid pack", ErrInvalidPack, 3},
+		{"execution failed", ErrExecutionFailed, 4},
+		{"config invalid", ErrConfigInvalid, 2},
+		{"wrapped invalid pack", fmt.Errorf("wrap: %w", ErrInvalidPack), 3},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := ExitCode(tt.err); got != tt.expected {
+				t.Errorf("ExitCode() = %v, want %v", got, tt.expected)
+			}
+		})
+	}
+}
+```
+
+internal/app/app.go
+```
+package app
+
+import (
+	"fmt"
+	"os"
+
+	"github.com/user/oraclepack/internal/exec"
+	"github.com/user/oraclepack/internal/pack"
+	"github.com/user/oraclepack/internal/state"
+)
+
+// Config holds application-wide configuration.
+type Config struct {
+	PackPath     string
+	StatePath    string
+	ReportPath   string
+	StopOnFail   bool
+	Resume       bool
+	Verbose      bool
+	DryRun       bool
+	OracleFlags  []string
+	WorkDir      string
+	OutDir       string // CLI override for output directory
+	ROIThreshold float64
+	ROIMode      string // "over" or "under"
+}
+
+// App orchestrates the execution flow.
+type App struct {
+	Config Config
+	Pack   *pack.Pack
+	State  *state.RunState
+	Runner *exec.Runner
+}
+
+// New creates a new application instance.
+func New(cfg Config) *App {
+	return &App{
+		Config: cfg,
+		Runner: exec.NewRunner(exec.RunnerOptions{
+			WorkDir:     cfg.WorkDir,
+			OracleFlags: cfg.OracleFlags,
+		}),
+	}
+}
+
+// LoadPack loads and validates the pack.
+func (a *App) LoadPack() error {
+	data, err := os.ReadFile(a.Config.PackPath)
+	if err != nil {
+		return err
+	}
+
+	p, err := pack.Parse(data)
+	if err != nil {
+		return err
+	}
+
+	if err := p.Validate(); err != nil {
+		return err
+	}
+
+	a.Pack = p
+	a.Pack.Source = a.Config.PackPath
+	return nil
+}
+
+// LoadState loads or initializes the state.
+func (a *App) LoadState() error {
+	if a.Config.Resume {
+		s, err := state.LoadState(a.Config.StatePath)
+		if err == nil {
+			a.State = s
+			return nil
+		}
+	}
+
+	a.State = &state.RunState{
+		SchemaVersion: 1,
+		StepStatuses:  make(map[string]state.StepStatus),
+	}
+	return nil
+}
+
+// Prepare resolves configuration and prepares the runtime environment.
+func (a *App) Prepare() error {
+	if a.Pack == nil {
+		if err := a.LoadPack(); err != nil {
+			return err
+		}
+	}
+
+	// Resolve Output Directory
+	// Precedence: CLI > Pack > Default (.)
+	outDir := a.Config.OutDir
+	if outDir == "" && a.Pack.OutDir != "" {
+		outDir = a.Pack.OutDir
+	}
+	if outDir == "" {
+		outDir = "."
+	}
+
+	// Provision Directory
+	if err := os.MkdirAll(outDir, 0755); err != nil {
+		return fmt.Errorf("failed to create output directory %s: %w", outDir, err)
+	}
+
+	// Update Runner
+	// We do NOT set WorkDir to outDir, so execution happens in the project root.
+	// This preserves relative path resolution for -f flags.
+	// a.Runner.WorkDir = outDir 
+	
+	// Add out_dir to Env so scripts can reference it
+	a.Runner.Env = append(a.Runner.Env, fmt.Sprintf("out_dir=%s", outDir))
+
+	return nil
+}
+```
+
+internal/app/app_test.go
+```
+package app
+
+import (
+	"bytes"
+	"context"
+	"os"
+	"testing"
+)
+
+func TestApp_RunPlain(t *testing.T) {
+	packContent := `
+# Test Pack
+` + "```" + `bash
+# 01)
+echo "step 1"
+# 02)
+echo "step 2"
+` + "```" + `
+`
+	packFile := "test.md"
+	stateFile := "test_state.json"
+	reportFile := "test_report.json"
+	defer os.Remove(packFile)
+	defer os.Remove(stateFile)
+	defer os.Remove(reportFile)
+
+	os.WriteFile(packFile, []byte(packContent), 0644)
+
+	cfg := Config{
+		PackPath:   packFile,
+		StatePath:  stateFile,
+		ReportPath: reportFile,
+	}
+
+	a := New(cfg)
+	if err := a.Prepare(); err != nil {
+		t.Fatalf("Prepare failed: %v", err)
+	}
+	if err := a.LoadState(); err != nil {
+		t.Fatalf("LoadState failed: %v", err)
+	}
+	
+	var out bytes.Buffer
+	err := a.RunPlain(context.Background(), &out)
+	if err != nil {
+		t.Fatalf("RunPlain failed: %v", err)
+	}
+
+	output := out.String()
+	if !contains(output, "step 1") || !contains(output, "step 2") {
+		t.Errorf("output missing steps: %s", output)
+	}
+
+	if _, err := os.Stat(stateFile); os.IsNotExist(err) {
+		t.Error("state file was not created")
+	}
+
+	if _, err := os.Stat(reportFile); os.IsNotExist(err) {
+		t.Error("report file was not created")
+	}
+}
+
+func contains(s, substr string) bool {
+	return len(s) >= len(substr) && (s == substr || (len(substr) > 0 && (s[:len(substr)] == substr || contains(s[1:], substr))))
+}
+```
+
+internal/app/run.go
+```
+package app
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"os"
+	"path/filepath"
+	"time"
+
+	"github.com/user/oraclepack/internal/report"
+	"github.com/user/oraclepack/internal/state"
+)
+
+func (a *App) RunPlain(ctx context.Context, out io.Writer) error {
+	// Assumes a.Prepare() and a.LoadState() have been called by the CLI entrypoint.
+	if a.Pack == nil {
+		return fmt.Errorf("pack not loaded")
+	}
+	if a.State == nil {
+		return fmt.Errorf("state not loaded")
+	}
+
+	if a.State.StartTime.IsZero() {
+		a.State.StartTime = time.Now()
+	}
+
+	fmt.Fprintf(out, "Running pack: %s\n", a.Config.PackPath)
+	fmt.Fprintf(out, "Output directory: %s\n", a.Runner.WorkDir)
+
+	// Prelude
+	if a.Pack.Prelude.Code != "" {
+		fmt.Fprintln(out, "Executing prelude...")
+		err := a.Runner.RunPrelude(ctx, &a.Pack.Prelude, out)
+		a.recordWarnings()
+		if err != nil {
+			return fmt.Errorf("prelude failed: %w", err)
+		}
+	}
+
+	for _, step := range a.Pack.Steps {
+		// Filter by ROI
+		if a.Config.ROIThreshold > 0 {
+			if a.Config.ROIMode == "under" {
+				// "under" is strictly less than
+				if step.ROI >= a.Config.ROIThreshold {
+					fmt.Fprintf(out, "Skipping step %s (ROI %.2f >= %.2f)\n", step.ID, step.ROI, a.Config.ROIThreshold)
+					continue
+				}
+			} else {
+				// "over" is greater than or equal to (3.3 or higher)
+				if step.ROI < a.Config.ROIThreshold {
+					fmt.Fprintf(out, "Skipping step %s (ROI %.2f < %.2f)\n", step.ID, step.ROI, a.Config.ROIThreshold)
+					continue
+				}
+			}
+		}
+
+		// Check resume
+		if s, ok := a.State.StepStatuses[step.ID]; ok && s.Status == state.StatusSuccess {
+			fmt.Fprintf(out, "Skipping step %s (already succeeded)\n", step.ID)
+			continue
+		}
+
+		fmt.Fprintf(out, "\n>>> Step %s: %s\n", step.ID, step.OriginalLine)
+
+		status := state.StepStatus{
+			Status:    state.StatusRunning,
+			StartedAt: time.Now(),
+		}
+		a.State.StepStatuses[step.ID] = status
+		a.saveState()
+
+		// Execute
+		err := a.Runner.RunStep(ctx, &step, out)
+		a.recordWarnings()
+
+		status.EndedAt = time.Now()
+		if err != nil {
+			status.Status = state.StatusFailed
+			status.Error = err.Error()
+			a.State.StepStatuses[step.ID] = status
+			a.saveState()
+
+			if a.Config.StopOnFail {
+				a.finalize(out)
+				return err
+			}
+			continue
+		}
+
+		status.Status = state.StatusSuccess
+		status.ExitCode = 0
+		a.State.StepStatuses[step.ID] = status
+		a.saveState()
+	}
+
+	a.finalize(out)
+	return nil
+}
+
+func (a *App) recordWarnings() {
+	if a.State == nil || a.Runner == nil {
+		return
+	}
+	warnings := a.Runner.DrainWarnings()
+	if len(warnings) == 0 {
+		return
+	}
+	for _, w := range warnings {
+		a.State.Warnings = append(a.State.Warnings, state.Warning{
+			Scope:   w.Scope,
+			StepID:  w.StepID,
+			Line:    w.Line,
+			Token:   w.Token,
+			Message: w.Message,
+		})
+	}
+	a.saveState()
+}
+
+func (a *App) saveState() {
+	if a.Config.StatePath != "" {
+		_ = state.SaveStateAtomic(a.Config.StatePath, a.State)
+	}
+}
+
+func (a *App) finalize(out io.Writer) {
+	if a.Config.ReportPath != "" {
+		rep := report.GenerateReport(a.State, filepath.Base(a.Config.PackPath))
+		data, _ := json.MarshalIndent(rep, "", "  ")
+		_ = os.WriteFile(a.Config.ReportPath, data, 0644)
+		fmt.Fprintf(out, "\nReport written to %s\n", a.Config.ReportPath)
+	}
+}
+```
+
+internal/app/run_test.go
+```
+package app
+
+import (
+	"bytes"
+	"context"
+	"os"
+	"strings"
+	"testing"
+)
+
+func TestApp_RunPlain_ROI(t *testing.T) {
+	packContent := `
+# ROI Test Pack
+` + "```" + `bash
+# 01) ROI=5.0
+echo "high"
+# 02) ROI=3.3
+echo "threshold"
+# 03) ROI=1.0
+echo "low"
+` + "```" + `
+`
+	packFile := "roi_test.md"
+	defer os.Remove(packFile)
+	os.WriteFile(packFile, []byte(packContent), 0644)
+
+	// Test Case 1: Filter OVER 3.3 (Should run 5.0 and 3.3)
+	t.Run("Filter Over 3.3", func(t *testing.T) {
+		var out bytes.Buffer
+		cfg := Config{
+			PackPath:     packFile,
+			ROIThreshold: 3.3,
+			ROIMode:      "over",
+		}
+		app := New(cfg)
+		if err := app.Prepare(); err != nil {
+			t.Fatalf("Prepare failed: %v", err)
+		}
+		if err := app.LoadState(); err != nil {
+			t.Fatalf("LoadState failed: %v", err)
+		}
+		if err := app.RunPlain(context.Background(), &out); err != nil {
+			t.Fatalf("RunPlain failed: %v", err)
+		}
+		output := out.String()
+		if !strings.Contains(output, "Step 01") {
+			t.Error("expected Step 01 (5.0) to run")
+		}
+		if !strings.Contains(output, "Step 02") {
+			t.Error("expected Step 02 (3.3) to run (inclusive)")
+		}
+		if strings.Contains(output, "Step 03") && !strings.Contains(output, "Skipping step 03") {
+			t.Error("expected Step 03 (1.0) to be skipped")
+		}
+	})
+
+	// Test Case 2: Filter UNDER 3.3 (Should run 1.0 only)
+	t.Run("Filter Under 3.3", func(t *testing.T) {
+		var out bytes.Buffer
+		cfg := Config{
+			PackPath:     packFile,
+			ROIThreshold: 3.3,
+			ROIMode:      "under",
+		}
+		app := New(cfg)
+		if err := app.Prepare(); err != nil {
+			t.Fatalf("Prepare failed: %v", err)
+		}
+		if err := app.LoadState(); err != nil {
+			t.Fatalf("LoadState failed: %v", err)
+		}
+		if err := app.RunPlain(context.Background(), &out); err != nil {
+			t.Fatalf("RunPlain failed: %v", err)
+		}
+		output := out.String()
+		if strings.Contains(output, "Step 01") && !strings.Contains(output, "Skipping step 01") {
+			t.Error("expected Step 01 (5.0) to be skipped")
+		}
+		if strings.Contains(output, "Step 02") && !strings.Contains(output, "Skipping step 02") {
+			t.Error("expected Step 02 (3.3) to be skipped (exclusive)")
+		}
+		if !strings.Contains(output, "Step 03") {
+			t.Error("expected Step 03 (1.0) to run")
+		}
+	})
+}
+```
+
 .mypy_cache/3.12/@plugins_snapshot.json
 ```
 {}
@@ -4548,7 +5270,7 @@ jobs:
 
 .mypy_cache/3.12/sre_constants.data.json
 ```
-{".class":"MypyFile","_fullname":"sre_constants","future_import_flags":[],"is_partial_stub_package":false,"is_stub":true,"names":{".class":"SymbolTable","ANY":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.ANY","name":"ANY","type":"sre_constants._NamedIntConstant"}},"ANY_ALL":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.ANY_ALL","name":"ANY_ALL","type":"sre_constants._NamedIntConstant"}},"ASSERT":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.ASSERT","name":"ASSERT","type":"sre_constants._NamedIntConstant"}},"ASSERT_NOT":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.ASSERT_NOT","name":"ASSERT_NOT","type":"sre_constants._NamedIntConstant"}},"AT":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.AT","name":"AT","type":"sre_constants._NamedIntConstant"}},"ATCODES":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.ATCODES","name":"ATCODES","type":{".class":"Instance","args":["sre_constants._NamedIntConstant"],"extra_attrs":null,"type_ref":"builtins.list"}}},"ATOMIC_GROUP":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.ATOMIC_GROUP","name":"ATOMIC_GROUP","type":"sre_constants._NamedIntConstant"}},"AT_BEGINNING":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.AT_BEGINNING","name":"AT_BEGINNING","type":"sre_constants._NamedIntConstant"}},"AT_BEGINNING_LINE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.AT_BEGINNING_LINE","name":"AT_BEGINNING_LINE","type":"sre_constants._NamedIntConstant"}},"AT_BEGINNING_STRING":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.AT_BEGINNING_STRING","name":"AT_BEGINNING_STRING","type":"sre_constants._NamedIntConstant"}},"AT_BOUNDARY":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.AT_BOUNDARY","name":"AT_BOUNDARY","type":"sre_constants._NamedIntConstant"}},"AT_END":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.AT_END","name":"AT_END","type":"sre_constants._NamedIntConstant"}},"AT_END_LINE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.AT_END_LINE","name":"AT_END_LINE","type":"sre_constants._NamedIntConstant"}},"AT_END_STRING":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.AT_END_STRING","name":"AT_END_STRING","type":"sre_constants._NamedIntConstant"}},"AT_LOCALE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.AT_LOCALE","name":"AT_LOCALE","type":{".class":"Instance","args":["sre_constants._NamedIntConstant","sre_constants._NamedIntConstant"],"extra_attrs":null,"type_ref":"builtins.dict"}}},"AT_LOC_BOUNDARY":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.AT_LOC_BOUNDARY","name":"AT_LOC_BOUNDARY","type":"sre_constants._NamedIntConstant"}},"AT_LOC_NON_BOUNDARY":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.AT_LOC_NON_BOUNDARY","name":"AT_LOC_NON_BOUNDARY","type":"sre_constants._NamedIntConstant"}},"AT_MULTILINE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.AT_MULTILINE","name":"AT_MULTILINE","type":{".class":"Instance","args":["sre_constants._NamedIntConstant","sre_constants._NamedIntConstant"],"extra_attrs":null,"type_ref":"builtins.dict"}}},"AT_NON_BOUNDARY":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.AT_NON_BOUNDARY","name":"AT_NON_BOUNDARY","type":"sre_constants._NamedIntConstant"}},"AT_UNICODE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.AT_UNICODE","name":"AT_UNICODE","type":{".class":"Instance","args":["sre_constants._NamedIntConstant","sre_constants._NamedIntConstant"],"extra_attrs":null,"type_ref":"builtins.dict"}}},"AT_UNI_BOUNDARY":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.AT_UNI_BOUNDARY","name":"AT_UNI_BOUNDARY","type":"sre_constants._NamedIntConstant"}},"AT_UNI_NON_BOUNDARY":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.AT_UNI_NON_BOUNDARY","name":"AT_UNI_NON_BOUNDARY","type":"sre_constants._NamedIntConstant"}},"Any":{".class":"SymbolTableNode","cross_ref":"typing.Any","kind":"Gdef","module_hidden":true,"module_public":false},"BIGCHARSET":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.BIGCHARSET","name":"BIGCHARSET","type":"sre_constants._NamedIntConstant"}},"BRANCH":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.BRANCH","name":"BRANCH","type":"sre_constants._NamedIntConstant"}},"CATEGORY":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.CATEGORY","name":"CATEGORY","type":"sre_constants._NamedIntConstant"}},"CATEGORY_DIGIT":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.CATEGORY_DIGIT","name":"CATEGORY_DIGIT","type":"sre_constants._NamedIntConstant"}},"CATEGORY_LINEBREAK":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.CATEGORY_LINEBREAK","name":"CATEGORY_LINEBREAK","type":"sre_constants._NamedIntConstant"}},"CATEGORY_LOC_NOT_WORD":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.CATEGORY_LOC_NOT_WORD","name":"CATEGORY_LOC_NOT_WORD","type":"sre_constants._NamedIntConstant"}},"CATEGORY_LOC_WORD":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.CATEGORY_LOC_WORD","name":"CATEGORY_LOC_WORD","type":"sre_constants._NamedIntConstant"}},"CATEGORY_NOT_DIGIT":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.CATEGORY_NOT_DIGIT","name":"CATEGORY_NOT_DIGIT","type":"sre_constants._NamedIntConstant"}},"CATEGORY_NOT_LINEBREAK":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.CATEGORY_NOT_LINEBREAK","name":"CATEGORY_NOT_LINEBREAK","type":"sre_constants._NamedIntConstant"}},"CATEGORY_NOT_SPACE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.CATEGORY_NOT_SPACE","name":"CATEGORY_NOT_SPACE","type":"sre_constants._NamedIntConstant"}},"CATEGORY_NOT_WORD":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.CATEGORY_NOT_WORD","name":"CATEGORY_NOT_WORD","type":"sre_constants._NamedIntConstant"}},"CATEGORY_SPACE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.CATEGORY_SPACE","name":"CATEGORY_SPACE","type":"sre_constants._NamedIntConstant"}},"CATEGORY_UNI_DIGIT":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.CATEGORY_UNI_DIGIT","name":"CATEGORY_UNI_DIGIT","type":"sre_constants._NamedIntConstant"}},"CATEGORY_UNI_LINEBREAK":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.CATEGORY_UNI_LINEBREAK","name":"CATEGORY_UNI_LINEBREAK","type":"sre_constants._NamedIntConstant"}},"CATEGORY_UNI_NOT_DIGIT":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.CATEGORY_UNI_NOT_DIGIT","name":"CATEGORY_UNI_NOT_DIGIT","type":"sre_constants._NamedIntConstant"}},"CATEGORY_UNI_NOT_LINEBREAK":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.CATEGORY_UNI_NOT_LINEBREAK","name":"CATEGORY_UNI_NOT_LINEBREAK","type":"sre_constants._NamedIntConstant"}},"CATEGORY_UNI_NOT_SPACE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.CATEGORY_UNI_NOT_SPACE","name":"CATEGORY_UNI_NOT_SPACE","type":"sre_constants._NamedIntConstant"}},"CATEGORY_UNI_NOT_WORD":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.CATEGORY_UNI_NOT_WORD","name":"CATEGORY_UNI_NOT_WORD","type":"sre_constants._NamedIntConstant"}},"CATEGORY_UNI_SPACE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.CATEGORY_UNI_SPACE","name":"CATEGORY_UNI_SPACE","type":"sre_constants._NamedIntConstant"}},"CATEGORY_UNI_WORD":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.CATEGORY_UNI_WORD","name":"CATEGORY_UNI_WORD","type":"sre_constants._NamedIntConstant"}},"CATEGORY_WORD":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.CATEGORY_WORD","name":"CATEGORY_WORD","type":"sre_constants._NamedIntConstant"}},"CHARSET":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.CHARSET","name":"CHARSET","type":"sre_constants._NamedIntConstant"}},"CHCODES":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.CHCODES","name":"CHCODES","type":{".class":"Instance","args":["sre_constants._NamedIntConstant"],"extra_attrs":null,"type_ref":"builtins.list"}}},"CH_LOCALE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.CH_LOCALE","name":"CH_LOCALE","type":{".class":"Instance","args":["sre_constants._NamedIntConstant","sre_constants._NamedIntConstant"],"extra_attrs":null,"type_ref":"builtins.dict"}}},"CH_UNICODE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.CH_UNICODE","name":"CH_UNICODE","type":{".class":"Instance","args":["sre_constants._NamedIntConstant","sre_constants._NamedIntConstant"],"extra_attrs":null,"type_ref":"builtins.dict"}}},"FAILURE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.FAILURE","name":"FAILURE","type":"sre_constants._NamedIntConstant"}},"GROUPREF":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.GROUPREF","name":"GROUPREF","type":"sre_constants._NamedIntConstant"}},"GROUPREF_EXISTS":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.GROUPREF_EXISTS","name":"GROUPREF_EXISTS","type":"sre_constants._NamedIntConstant"}},"GROUPREF_IGNORE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.GROUPREF_IGNORE","name":"GROUPREF_IGNORE","type":"sre_constants._NamedIntConstant"}},"GROUPREF_LOC_IGNORE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.GROUPREF_LOC_IGNORE","name":"GROUPREF_LOC_IGNORE","type":"sre_constants._NamedIntConstant"}},"GROUPREF_UNI_IGNORE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.GROUPREF_UNI_IGNORE","name":"GROUPREF_UNI_IGNORE","type":"sre_constants._NamedIntConstant"}},"IN":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.IN","name":"IN","type":"sre_constants._NamedIntConstant"}},"INFO":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.INFO","name":"INFO","type":"sre_constants._NamedIntConstant"}},"IN_IGNORE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.IN_IGNORE","name":"IN_IGNORE","type":"sre_constants._NamedIntConstant"}},"IN_LOC_IGNORE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.IN_LOC_IGNORE","name":"IN_LOC_IGNORE","type":"sre_constants._NamedIntConstant"}},"IN_UNI_IGNORE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.IN_UNI_IGNORE","name":"IN_UNI_IGNORE","type":"sre_constants._NamedIntConstant"}},"JUMP":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.JUMP","name":"JUMP","type":"sre_constants._NamedIntConstant"}},"LITERAL":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.LITERAL","name":"LITERAL","type":"sre_constants._NamedIntConstant"}},"LITERAL_IGNORE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.LITERAL_IGNORE","name":"LITERAL_IGNORE","type":"sre_constants._NamedIntConstant"}},"LITERAL_LOC_IGNORE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.LITERAL_LOC_IGNORE","name":"LITERAL_LOC_IGNORE","type":"sre_constants._NamedIntConstant"}},"LITERAL_UNI_IGNORE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.LITERAL_UNI_IGNORE","name":"LITERAL_UNI_IGNORE","type":"sre_constants._NamedIntConstant"}},"MAGIC":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.MAGIC","name":"MAGIC","type":"builtins.int"}},"MARK":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.MARK","name":"MARK","type":"sre_constants._NamedIntConstant"}},"MAXGROUPS":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.MAXGROUPS","name":"MAXGROUPS","type":"builtins.int"}},"MAXREPEAT":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.MAXREPEAT","name":"MAXREPEAT","type":"sre_constants._NamedIntConstant"}},"MAX_REPEAT":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.MAX_REPEAT","name":"MAX_REPEAT","type":"sre_constants._NamedIntConstant"}},"MAX_UNTIL":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.MAX_UNTIL","name":"MAX_UNTIL","type":"sre_constants._NamedIntConstant"}},"MIN_REPEAT":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.MIN_REPEAT","name":"MIN_REPEAT","type":"sre_constants._NamedIntConstant"}},"MIN_REPEAT_ONE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.MIN_REPEAT_ONE","name":"MIN_REPEAT_ONE","type":"sre_constants._NamedIntConstant"}},"MIN_UNTIL":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.MIN_UNTIL","name":"MIN_UNTIL","type":"sre_constants._NamedIntConstant"}},"NEGATE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.NEGATE","name":"NEGATE","type":"sre_constants._NamedIntConstant"}},"NOT_LITERAL":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.NOT_LITERAL","name":"NOT_LITERAL","type":"sre_constants._NamedIntConstant"}},"NOT_LITERAL_IGNORE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.NOT_LITERAL_IGNORE","name":"NOT_LITERAL_IGNORE","type":"sre_constants._NamedIntConstant"}},"NOT_LITERAL_LOC_IGNORE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.NOT_LITERAL_LOC_IGNORE","name":"NOT_LITERAL_LOC_IGNORE","type":"sre_constants._NamedIntConstant"}},"NOT_LITERAL_UNI_IGNORE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.NOT_LITERAL_UNI_IGNORE","name":"NOT_LITERAL_UNI_IGNORE","type":"sre_constants._NamedIntConstant"}},"OPCODES":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.OPCODES","name":"OPCODES","type":{".class":"Instance","args":["sre_constants._NamedIntConstant"],"extra_attrs":null,"type_ref":"builtins.list"}}},"OP_IGNORE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.OP_IGNORE","name":"OP_IGNORE","type":{".class":"Instance","args":["sre_constants._NamedIntConstant","sre_constants._NamedIntConstant"],"extra_attrs":null,"type_ref":"builtins.dict"}}},"OP_LOCALE_IGNORE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.OP_LOCALE_IGNORE","name":"OP_LOCALE_IGNORE","type":{".class":"Instance","args":["sre_constants._NamedIntConstant","sre_constants._NamedIntConstant"],"extra_attrs":null,"type_ref":"builtins.dict"}}},"OP_UNICODE_IGNORE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.OP_UNICODE_IGNORE","name":"OP_UNICODE_IGNORE","type":{".class":"Instance","args":["sre_constants._NamedIntConstant","sre_constants._NamedIntConstant"],"extra_attrs":null,"type_ref":"builtins.dict"}}},"POSSESSIVE_REPEAT":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.POSSESSIVE_REPEAT","name":"POSSESSIVE_REPEAT","type":"sre_constants._NamedIntConstant"}},"POSSESSIVE_REPEAT_ONE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.POSSESSIVE_REPEAT_ONE","name":"POSSESSIVE_REPEAT_ONE","type":"sre_constants._NamedIntConstant"}},"RANGE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.RANGE","name":"RANGE","type":"sre_constants._NamedIntConstant"}},"RANGE_UNI_IGNORE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.RANGE_UNI_IGNORE","name":"RANGE_UNI_IGNORE","type":"sre_constants._NamedIntConstant"}},"REPEAT":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.REPEAT","name":"REPEAT","type":"sre_constants._NamedIntConstant"}},"REPEAT_ONE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.REPEAT_ONE","name":"REPEAT_ONE","type":"sre_constants._NamedIntConstant"}},"SRE_FLAG_ASCII":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.SRE_FLAG_ASCII","name":"SRE_FLAG_ASCII","type":"builtins.int"}},"SRE_FLAG_DEBUG":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.SRE_FLAG_DEBUG","name":"SRE_FLAG_DEBUG","type":"builtins.int"}},"SRE_FLAG_DOTALL":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.SRE_FLAG_DOTALL","name":"SRE_FLAG_DOTALL","type":"builtins.int"}},"SRE_FLAG_IGNORECASE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.SRE_FLAG_IGNORECASE","name":"SRE_FLAG_IGNORECASE","type":"builtins.int"}},"SRE_FLAG_LOCALE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.SRE_FLAG_LOCALE","name":"SRE_FLAG_LOCALE","type":"builtins.int"}},"SRE_FLAG_MULTILINE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.SRE_FLAG_MULTILINE","name":"SRE_FLAG_MULTILINE","type":"builtins.int"}},"SRE_FLAG_TEMPLATE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.SRE_FLAG_TEMPLATE","name":"SRE_FLAG_TEMPLATE","type":"builtins.int"}},"SRE_FLAG_UNICODE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.SRE_FLAG_UNICODE","name":"SRE_FLAG_UNICODE","type":"builtins.int"}},"SRE_FLAG_VERBOSE":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.SRE_FLAG_VERBOSE","name":"SRE_FLAG_VERBOSE","type":"builtins.int"}},"SRE_INFO_CHARSET":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.SRE_INFO_CHARSET","name":"SRE_INFO_CHARSET","type":"builtins.int"}},"SRE_INFO_LITERAL":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.SRE_INFO_LITERAL","name":"SRE_INFO_LITERAL","type":"builtins.int"}},"SRE_INFO_PREFIX":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.SRE_INFO_PREFIX","name":"SRE_INFO_PREFIX","type":"builtins.int"}},"SUBPATTERN":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.SUBPATTERN","name":"SUBPATTERN","type":"sre_constants._NamedIntConstant"}},"SUCCESS":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.SUCCESS","name":"SUCCESS","type":"sre_constants._NamedIntConstant"}},"Self":{".class":"SymbolTableNode","cross_ref":"typing.Self","kind":"Gdef","module_hidden":true,"module_public":false},"_NamedIntConstant":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["builtins.int"],"dataclass_transform_spec":null,"declared_metaclass":null,"defn":{".class":"ClassDef","fullname":"sre_constants._NamedIntConstant","name":"_NamedIntConstant","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":[],"fullname":"sre_constants._NamedIntConstant","has_param_spec_type":false,"metaclass_type":null,"metadata":{},"module_name":"sre_constants","mro":["sre_constants._NamedIntConstant","builtins.int","builtins.object"],"names":{".class":"SymbolTable","__new__":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0,0],"arg_names":["cls","value","name"],"dataclass_transform_spec":null,"deprecated":null,"flags":["is_static"],"fullname":"sre_constants._NamedIntConstant.__new__","name":"__new__","type":{".class":"CallableType","arg_kinds":[0,0,0],"arg_names":["cls","value","name"],"arg_types":[{".class":"TypeType","item":{".class":"TypeVarType","default":{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":4},"fullname":"sre_constants._NamedIntConstant.Self","id":0,"name":"Self","namespace":"","upper_bound":"sre_constants._NamedIntConstant","values":[],"variance":0}},"builtins.int","builtins.str"],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"__new__ of _NamedIntConstant","ret_type":{".class":"TypeVarType","default":{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":4},"fullname":"sre_constants._NamedIntConstant.Self","id":0,"name":"Self","namespace":"","upper_bound":"sre_constants._NamedIntConstant","values":[],"variance":0},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[{".class":"TypeVarType","default":{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":4},"fullname":"sre_constants._NamedIntConstant.Self","id":0,"name":"Self","namespace":"","upper_bound":"sre_constants._NamedIntConstant","values":[],"variance":0}]}}},"name":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"Var","flags":["is_initialized_in_class","is_ready"],"fullname":"sre_constants._NamedIntConstant.name","name":"name","type":{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":2}}}},"self_type":{".class":"TypeVarType","default":{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":4},"fullname":"sre_constants._NamedIntConstant.Self","id":0,"name":"Self","namespace":"","upper_bound":"sre_constants._NamedIntConstant","values":[],"variance":0},"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"__annotations__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.__annotations__","name":"__annotations__","type":{".class":"Instance","args":["builtins.str",{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":6}],"extra_attrs":null,"type_ref":"builtins.dict"}}},"__doc__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.__doc__","name":"__doc__","type":"builtins.str"}},"__file__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.__file__","name":"__file__","type":"builtins.str"}},"__name__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.__name__","name":"__name__","type":"builtins.str"}},"__package__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.__package__","name":"__package__","type":"builtins.str"}},"__spec__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"sre_constants.__spec__","name":"__spec__","type":"_frozen_importlib.ModuleSpec"}},"error":{".class":"SymbolTableNode","cross_ref":"re.error","kind":"Gdef"},"sys":{".class":"SymbolTableNode","cross_ref":"sys","kind":"Gdef","module_hidden":true,"module_public":false}},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/sre_constants.pyi"}
+[TRUNCATED]
 ```
 
 .mypy_cache/3.12/sre_constants.meta.json
@@ -4614,6 +5336,4214 @@ jobs:
 .mypy_cache/3.12/typing_extensions.meta.json
 ```
 {"data_mtime":1767891128,"dep_lines":[376,3,4,5,6,7,8,69,1,1],"dep_prios":[5,10,10,5,5,5,5,5,5,30],"dependencies":["collections.abc","abc","sys","typing","_collections_abc","_typeshed","contextlib","types","builtins","_frozen_importlib"],"hash":"8b004565f89c760413260f9c21b7d4add31f1bb7","id":"typing_extensions","ignore_all":true,"interface_hash":"313ba102aea969904af9ee75975fe896e1526675","mtime":1762029371,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/typing_extensions.pyi","plugin_data":null,"size":17919,"suppressed":[],"version_id":"1.15.0"}
+```
+
+internal/pack/parser.go
+```
+package pack
+
+import (
+	"bufio"
+	"fmt"
+	"regexp"
+	"strconv"
+	"strings"
+
+	"github.com/user/oraclepack/internal/errors"
+)
+
+var (
+	bashFenceRegex = regexp.MustCompile("(?s)```bash\n(.*?)\n```")
+	// Updated regex to support ")", " —", and " -" separators
+	stepHeaderRegex = regexp.MustCompile(`^#\s*(\d{2})(?:\)|[\s]+[—-])`)
+	roiRegex        = regexp.MustCompile(`ROI=(\d+(\.\d+)?)`)
+	outDirRegex    = regexp.MustCompile(`(?m)^out_dir=["']?([^"'\s]+)["']?`)
+	writeOutputRegex = regexp.MustCompile(`(?m)--write-output`)
+)
+
+// Parse reads a Markdown content and returns a Pack.
+func Parse(content []byte) (*Pack, error) {
+	match := bashFenceRegex.FindSubmatch(content)
+	if match == nil || len(match) < 2 {
+		return nil, fmt.Errorf("%w: no bash code block found", errors.ErrInvalidPack)
+	}
+
+	bashCode := string(match[1])
+	pack := &Pack{}
+	
+	scanner := bufio.NewScanner(strings.NewReader(bashCode))
+	var currentStep *Step
+	var preludeLines []string
+	var inSteps bool
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		headerMatch := stepHeaderRegex.FindStringSubmatch(strings.TrimSpace(line))
+
+		if len(headerMatch) > 1 {
+			inSteps = true
+			if currentStep != nil {
+				pack.Steps = append(pack.Steps, *currentStep)
+			}
+			num, _ := strconv.Atoi(headerMatch[1])
+			
+			// Extract ROI if present
+			var roi float64
+			cleanedLine := line
+			roiMatch := roiRegex.FindStringSubmatch(line)
+			if len(roiMatch) > 1 {
+				val, err := strconv.ParseFloat(roiMatch[1], 64)
+				if err == nil {
+					roi = val
+					// Remove ROI tag from display title, but keep original line intact?
+					// The task says "strip from Step.Title". Step struct currently has `OriginalLine`.
+					// I'll assume OriginalLine is what is displayed, or I should add a Title field.
+					// Looking at Step struct: ID, Number, Code, OriginalLine.
+					// I'll remove it from OriginalLine for now or add a Title field.
+					// The existing TUI uses OriginalLine as description. 
+					// Let's clean OriginalLine for display purposes or add a dedicated Title field.
+					// Adding a dedicated Title field seems cleaner but requires struct change.
+					// For now, I'll strip it from OriginalLine to match the prompt requirement "cleaner UI display".
+					cleanedLine = strings.Replace(cleanedLine, roiMatch[0], "", 1)
+					cleanedLine = strings.TrimSpace(cleanedLine)
+					// Fix any double spaces or trailing separators if needed, but simple replace is a good start.
+				}
+			}
+
+			currentStep = &Step{
+				ID:           headerMatch[1],
+				Number:       num,
+				OriginalLine: cleanedLine,
+				ROI:          roi,
+			}
+			continue
+		}
+
+		if inSteps {
+			currentStep.Code += line + "\n"
+		} else {
+			preludeLines = append(preludeLines, line)
+		}
+	}
+
+	if currentStep != nil {
+		pack.Steps = append(pack.Steps, *currentStep)
+	}
+
+	pack.Prelude.Code = strings.Join(preludeLines, "\n")
+	pack.DeriveMetadata()
+
+	return pack, nil
+}
+
+// DeriveMetadata extracts configuration from the prelude.
+func (p *Pack) DeriveMetadata() {
+	outDirMatch := outDirRegex.FindStringSubmatch(p.Prelude.Code)
+	if len(outDirMatch) > 1 {
+		p.OutDir = outDirMatch[1]
+	}
+
+	if writeOutputRegex.MatchString(p.Prelude.Code) {
+		p.WriteOutput = true
+	}
+}
+
+// Validate checks if the pack follows all rules.
+func (p *Pack) Validate() error {
+	if len(p.Steps) == 0 {
+		return fmt.Errorf("%w: at least one step is required", errors.ErrInvalidPack)
+	}
+
+	seen := make(map[int]bool)
+	for i, step := range p.Steps {
+		if step.Number <= 0 {
+			return fmt.Errorf("%w: invalid step number %d", errors.ErrInvalidPack, step.Number)
+		}
+		if seen[step.Number] {
+			return fmt.Errorf("%w: duplicate step number %d", errors.ErrInvalidPack, step.Number)
+		}
+		seen[step.Number] = true
+
+		// Optional: Ensure sequential starting from 1
+		if step.Number != i+1 {
+			return fmt.Errorf("%w: steps must be sequential starting from 1 (expected %d, got %d)", errors.ErrInvalidPack, i+1, step.Number)
+		}
+	}
+
+	return nil
+}
+```
+
+internal/pack/parser_test.go
+```
+package pack
+
+import (
+	"strings"
+	"testing"
+)
+
+func TestParse(t *testing.T) {
+	content := []byte(`
+# My Pack
+Some description.
+
+` + "```" + `bash
+out_dir="dist"
+--write-output
+
+# 01)
+echo "hello"
+
+# 02)
+echo "world"
+` + "```" + `
+`)
+
+	p, err := Parse(content)
+	if err != nil {
+		t.Fatalf("Parse failed: %v", err)
+	}
+
+	if p.OutDir != "dist" {
+		t.Errorf("expected OutDir dist, got %s", p.OutDir)
+	}
+
+	if !p.WriteOutput {
+		t.Errorf("expected WriteOutput true, got false")
+	}
+
+	if len(p.Steps) != 2 {
+		t.Errorf("expected 2 steps, got %d", len(p.Steps))
+	}
+
+	if p.Steps[0].ID != "01" || p.Steps[0].Number != 1 {
+		t.Errorf("step 1 mismatch: %+v", p.Steps[0])
+	}
+
+	if err := p.Validate(); err != nil {
+		t.Errorf("Validate failed: %v", err)
+	}
+}
+
+func TestParseVariants(t *testing.T) {
+	tests := []struct {
+		name    string
+		content string
+	}{
+		{
+			"em dash",
+			`
+` + "```" + `bash
+# 01 — ROI=...
+echo "step 1"
+` + "```" + `
+`,
+		},
+		{
+			"hyphen",
+			`
+` + "```" + `bash
+# 01 - ROI=...
+echo "step 1"
+` + "```" + `
+`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			p, err := Parse([]byte(tt.content))
+			if err != nil {
+				t.Fatalf("Parse failed: %v", err)
+			}
+			if len(p.Steps) != 1 {
+				t.Errorf("expected 1 step, got %d", len(p.Steps))
+			}
+		})
+	}
+}
+
+func TestParseROI(t *testing.T) {
+	content := []byte(`
+` + "```" + `bash
+# 01) ROI=4.5 clean me
+echo "high value"
+
+# 02) ROI=0.5
+echo "low value"
+
+# 03) No ROI
+echo "default"
+` + "```" + `
+`)
+
+	p, err := Parse(content)
+	if err != nil {
+		t.Fatalf("Parse failed: %v", err)
+	}
+
+	if len(p.Steps) != 3 {
+		t.Fatalf("expected 3 steps, got %d", len(p.Steps))
+	}
+
+	if p.Steps[0].ROI != 4.5 {
+		t.Errorf("step 1 ROI mismatch: expected 4.5, got %f", p.Steps[0].ROI)
+	}
+	if strings.Contains(p.Steps[0].OriginalLine, "ROI=4.5") {
+		t.Errorf("step 1 title was not cleaned: %q", p.Steps[0].OriginalLine)
+	}
+
+	if p.Steps[1].ROI != 0.5 {
+		t.Errorf("step 2 ROI mismatch: expected 0.5, got %f", p.Steps[1].ROI)
+	}
+
+	if p.Steps[2].ROI != 0.0 {
+		t.Errorf("step 3 ROI mismatch: expected 0.0, got %f", p.Steps[2].ROI)
+	}
+}
+
+func TestValidateErrors(t *testing.T) {
+	tests := []struct {
+		name    string
+		pack    *Pack
+		wantErr string
+	}{
+		{
+			"no steps",
+			&Pack{},
+			"at least one step is required",
+		},
+		{
+			"duplicate steps",
+			&Pack{
+				Steps: []Step{
+					{Number: 1, ID: "01"},
+					{Number: 1, ID: "01"},
+				},
+			},
+			"duplicate step number 1",
+		},
+		{
+			"non-sequential",
+			&Pack{
+				Steps: []Step{
+					{Number: 1, ID: "01"},
+					{Number: 3, ID: "03"},
+				},
+			},
+			"steps must be sequential starting from 1",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.pack.Validate()
+			if err == nil {
+				t.Error("expected error, got nil")
+			} else if !contains(err.Error(), tt.wantErr) {
+				t.Errorf("expected error containing %q, got %q", tt.wantErr, err.Error())
+			}
+		})
+	}
+}
+
+func contains(s, substr string) bool {
+	return len(s) >= len(substr) && (s == substr || (len(substr) > 0 && (s[:len(substr)] == substr || contains(s[1:], substr))))
+}
+```
+
+internal/pack/types.go
+```
+package pack
+
+// Pack represents a parsed oracle pack.
+type Pack struct {
+	Prelude     Prelude
+	Steps       []Step
+	Source      string
+	OutDir      string
+	WriteOutput bool
+}
+
+// Prelude contains the shell code that runs before any steps.
+type Prelude struct {
+	Code string
+}
+
+// Step represents an individual executable step within the pack.
+type Step struct {
+	ID           string  // e.g., "01"
+	Number       int     // e.g., 1
+	Code         string  // The bash code
+	OriginalLine string  // The header line, e.g., "# 01)"
+	ROI          float64 // Return on Investment value extracted from header
+}
+```
+
+internal/render/render.go
+```
+package render
+
+import (
+	"sync"
+
+	"github.com/charmbracelet/glamour"
+	"github.com/user/oraclepack/internal/pack"
+)
+
+const (
+	DefaultStyle = "dark"
+	DefaultWidth = 80
+)
+
+type rendererKey struct {
+	width int
+	style string
+}
+
+var (
+	rendererMu    sync.Mutex
+	rendererCache = map[rendererKey]*glamour.TermRenderer{}
+)
+
+// RenderMarkdown renders markdown text as ANSI-styled text.
+func RenderMarkdown(text string, width int, style string) (string, error) {
+	if width <= 0 {
+		width = DefaultWidth
+	}
+	if style == "" {
+		style = DefaultStyle
+	}
+
+	r, err := rendererFor(width, style)
+	if err != nil {
+		return "", err
+	}
+
+	return r.Render(text)
+}
+
+// RenderStepCode renders a step's code block for preview.
+func RenderStepCode(s pack.Step, width int, style string) (string, error) {
+	md := "```bash\n" + s.Code + "\n```"
+	return RenderMarkdown(md, width, style)
+}
+
+func rendererFor(width int, style string) (*glamour.TermRenderer, error) {
+	key := rendererKey{width: width, style: style}
+
+	rendererMu.Lock()
+	r := rendererCache[key]
+	rendererMu.Unlock()
+	if r != nil {
+		return r, nil
+	}
+
+	opts := []glamour.TermRendererOption{glamour.WithWordWrap(width)}
+	if style == "auto" {
+		opts = append(opts, glamour.WithAutoStyle())
+	} else {
+		opts = append(opts, glamour.WithStandardStyle(style))
+	}
+
+	r, err := glamour.NewTermRenderer(opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	rendererMu.Lock()
+	rendererCache[key] = r
+	rendererMu.Unlock()
+	return r, nil
+}
+```
+
+internal/render/render_test.go
+```
+package render
+
+import (
+	"strings"
+	"testing"
+)
+
+func TestRenderMarkdown(t *testing.T) {
+	text := "# Hello\n**bold**"
+	got, err := RenderMarkdown(text, 40, DefaultStyle)
+	if err != nil {
+		t.Fatalf("RenderMarkdown failed: %v", err)
+	}
+
+	// ANSI escape codes start with \x1b[
+	if !strings.Contains(got, "\x1b[") {
+		t.Errorf("expected ANSI codes in output, got: %q", got)
+	}
+}
+```
+
+internal/report/generate.go
+```
+package report
+
+import (
+	"time"
+
+	"github.com/user/oraclepack/internal/state"
+)
+
+// GenerateReport creates a ReportV1 from a RunState.
+func GenerateReport(s *state.RunState, packName string) *ReportV1 {
+	report := &ReportV1{
+		PackInfo: PackInfo{
+			Name: packName,
+			Hash: s.PackHash,
+		},
+		GeneratedAt: time.Now(),
+		Steps:       []StepReport{},
+	}
+
+	var totalDuration time.Duration
+	success, failure, skipped := 0, 0, 0
+
+	for id, status := range s.StepStatuses {
+		duration := status.EndedAt.Sub(status.StartedAt)
+		if status.EndedAt.IsZero() || status.StartedAt.IsZero() {
+			duration = 0
+		}
+
+		totalDuration += duration
+
+		sr := StepReport{
+			ID:         id,
+			Status:     string(status.Status),
+			ExitCode:   status.ExitCode,
+			Duration:   duration,
+			DurationMs: duration.Milliseconds(),
+			Error:      status.Error,
+		}
+		report.Steps = append(report.Steps, sr)
+
+		switch status.Status {
+		case state.StatusSuccess:
+			success++
+		case state.StatusFailed:
+			failure++
+		case state.StatusSkipped:
+			skipped++
+		}
+	}
+
+	report.Summary = Summary{
+		TotalSteps:      len(s.StepStatuses),
+		SuccessCount:    success,
+		FailureCount:    failure,
+		SkippedCount:    skipped,
+		TotalDuration:   totalDuration,
+		TotalDurationMs: totalDuration.Milliseconds(),
+	}
+
+	if len(s.Warnings) > 0 {
+		report.Warnings = make([]Warning, 0, len(s.Warnings))
+		for _, w := range s.Warnings {
+			report.Warnings = append(report.Warnings, Warning{
+				Scope:   w.Scope,
+				StepID:  w.StepID,
+				Line:    w.Line,
+				Token:   w.Token,
+				Message: w.Message,
+			})
+		}
+	}
+
+	return report
+}
+```
+
+internal/report/report_test.go
+```
+package report
+
+import (
+	"testing"
+	"time"
+
+	"github.com/user/oraclepack/internal/state"
+)
+
+func TestGenerateReport(t *testing.T) {
+	s := &state.RunState{
+		PackHash: "hash123",
+		StepStatuses: map[string]state.StepStatus{
+			"01": {
+				Status:    state.StatusSuccess,
+				StartedAt: time.Now().Add(-1 * time.Second),
+				EndedAt:   time.Now(),
+			},
+		},
+	}
+
+	rep := GenerateReport(s, "my-pack")
+
+	if rep.PackInfo.Name != "my-pack" {
+		t.Errorf("expected name my-pack, got %s", rep.PackInfo.Name)
+	}
+
+	if rep.Summary.TotalSteps != 1 {
+		t.Errorf("expected 1 total step, got %d", rep.Summary.TotalSteps)
+	}
+
+	if rep.Summary.SuccessCount != 1 {
+		t.Errorf("expected 1 success, got %d", rep.Summary.SuccessCount)
+	}
+}
+```
+
+internal/report/types.go
+```
+package report
+
+import (
+	"time"
+)
+
+// ReportV1 represents the final machine-readable summary.
+type ReportV1 struct {
+	Summary     Summary      `json:"summary"`
+	PackInfo    PackInfo     `json:"pack_info"`
+	Steps       []StepReport `json:"steps"`
+	Warnings    []Warning    `json:"warnings,omitempty"`
+	GeneratedAt time.Time    `json:"generated_at"`
+}
+
+type Summary struct {
+	TotalSteps      int           `json:"total_steps"`
+	SuccessCount    int           `json:"success_count"`
+	FailureCount    int           `json:"failure_count"`
+	SkippedCount    int           `json:"skipped_count"`
+	TotalDuration   time.Duration `json:"total_duration"`
+	TotalDurationMs int64         `json:"total_duration_ms"`
+}
+
+type PackInfo struct {
+	Name string `json:"name"`
+	Hash string `json:"hash"`
+}
+
+type StepReport struct {
+	ID         string        `json:"id"`
+	Status     string        `json:"status"`
+	ExitCode   int           `json:"exit_code"`
+	Duration   time.Duration `json:"duration"`
+	DurationMs int64         `json:"duration_ms"`
+	Error      string        `json:"error,omitempty"`
+}
+
+// Warning captures non-fatal execution notes surfaced during a run.
+type Warning struct {
+	Scope   string `json:"scope"`
+	StepID  string `json:"step_id,omitempty"`
+	Line    int    `json:"line"`
+	Token   string `json:"token"`
+	Message string `json:"message"`
+}
+```
+
+internal/state/persist.go
+```
+package state
+
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+)
+
+// SaveStateAtomic saves the state to a file atomically.
+func SaveStateAtomic(path string, state *RunState) error {
+	data, err := json.MarshalIndent(state, "", "  ")
+	if err != nil {
+		return fmt.Errorf("marshal state: %w", err)
+	}
+
+	tempPath := path + ".tmp"
+	if err := os.WriteFile(tempPath, data, 0644); err != nil {
+		return fmt.Errorf("write temp file: %w", err)
+	}
+
+	if err := os.Rename(tempPath, path); err != nil {
+		os.Remove(tempPath)
+		return fmt.Errorf("rename temp file: %w", err)
+	}
+
+	return nil
+}
+
+// LoadState loads the state from a file.
+func LoadState(path string) (*RunState, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, fmt.Errorf("state file not found: %w", err)
+		}
+		return nil, fmt.Errorf("read state file: %w", err)
+	}
+
+	var state RunState
+	if err := json.Unmarshal(data, &state); err != nil {
+		return nil, fmt.Errorf("unmarshal state: %w", err)
+	}
+
+	return &state, nil
+}
+```
+
+internal/state/state_test.go
+```
+package state
+
+import (
+	"os"
+	"testing"
+)
+
+func TestStatePersistence(t *testing.T) {
+	tmpFile := "test_state.json"
+	defer os.Remove(tmpFile)
+
+	s := &RunState{
+		SchemaVersion: 1,
+		PackHash:      "abc",
+		StepStatuses: map[string]StepStatus{
+			"01": {Status: StatusSuccess, ExitCode: 0},
+		},
+	}
+
+	if err := SaveStateAtomic(tmpFile, s); err != nil {
+		t.Fatalf("SaveStateAtomic failed: %v", err)
+	}
+
+	loaded, err := LoadState(tmpFile)
+	if err != nil {
+		t.Fatalf("LoadState failed: %v", err)
+	}
+
+	if loaded.PackHash != s.PackHash {
+		t.Errorf("expected hash %s, got %s", s.PackHash, loaded.PackHash)
+	}
+
+	if loaded.StepStatuses["01"].Status != StatusSuccess {
+		t.Errorf("expected status success, got %s", loaded.StepStatuses["01"].Status)
+	}
+}
+```
+
+internal/state/types.go
+```
+package state
+
+import (
+	"time"
+)
+
+type Status string
+
+const (
+	StatusPending Status = "pending"
+	StatusRunning Status = "running"
+	StatusSuccess Status = "success"
+	StatusFailed  Status = "failed"
+	StatusSkipped Status = "skipped"
+)
+
+// RunState tracks the execution progress of an oracle pack.
+type RunState struct {
+	SchemaVersion int                   `json:"schema_version"`
+	PackHash      string                `json:"pack_hash"`
+	StartTime     time.Time             `json:"start_time"`
+	StepStatuses  map[string]StepStatus `json:"step_statuses"`
+	ROIThreshold  float64               `json:"roi_threshold,omitempty"`
+	ROIMode       string                `json:"roi_mode,omitempty"`
+	Warnings      []Warning             `json:"warnings,omitempty"`
+}
+
+// StepStatus holds the outcome of an individual step.
+type StepStatus struct {
+	Status    Status    `json:"status"`
+	ExitCode  int       `json:"exit_code"`
+	StartedAt time.Time `json:"started_at"`
+	EndedAt   time.Time `json:"ended_at"`
+	Error     string    `json:"error,omitempty"`
+}
+
+// Warning captures a non-fatal execution note (e.g., sanitized labels).
+type Warning struct {
+	Scope   string `json:"scope"`
+	StepID  string `json:"step_id,omitempty"`
+	Line    int    `json:"line"`
+	Token   string `json:"token"`
+	Message string `json:"message"`
+}
+```
+
+internal/tui/clipboard.go
+```
+package tui
+
+import (
+	"fmt"
+	"os"
+	"os/exec"
+	"runtime"
+	"strings"
+)
+
+func copyToClipboard(content string) error {
+	var cmd *exec.Cmd
+	switch runtime.GOOS {
+	case "darwin":
+		cmd = exec.Command("pbcopy")
+	case "linux":
+		if _, err := exec.LookPath("wl-copy"); err == nil {
+			cmd = exec.Command("wl-copy")
+		} else if _, err := exec.LookPath("xclip"); err == nil {
+			cmd = exec.Command("xclip", "-selection", "clipboard")
+		} else if _, err := exec.LookPath("xsel"); err == nil {
+			cmd = exec.Command("xsel", "--clipboard", "--input")
+		} else {
+			return err
+		}
+	case "windows":
+		cmd = exec.Command("cmd", "/c", "clip")
+	default:
+		return exec.ErrNotFound
+	}
+
+	cmd.Stdin = strings.NewReader(content)
+	return cmd.Run()
+}
+
+func writeClipboardFallback(content string) (string, error) {
+	file, err := os.CreateTemp("", "oraclepack-step-*.txt")
+	if err != nil {
+		return "", fmt.Errorf("create temp file: %w", err)
+	}
+	defer file.Close()
+	if _, err := file.WriteString(content); err != nil {
+		return "", fmt.Errorf("write temp file: %w", err)
+	}
+	return file.Name(), nil
+}
+```
+
+internal/tui/filter_test.go
+```
+package tui
+
+import (
+	"os"
+	"path/filepath"
+	"testing"
+
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/user/oraclepack/internal/exec"
+	"github.com/user/oraclepack/internal/pack"
+	"github.com/user/oraclepack/internal/state"
+)
+
+func TestFilterLogic(t *testing.T) {
+	// Setup pack with steps having different ROI
+	p := &pack.Pack{
+		Steps: []pack.Step{
+			{ID: "01", ROI: 1.0, OriginalLine: "Step 1"},
+			{ID: "02", ROI: 5.0, OriginalLine: "Step 2"},
+			{ID: "03", ROI: 10.0, OriginalLine: "Step 3"},
+		},
+	}
+	r := exec.NewRunner(exec.RunnerOptions{})
+	s := &state.RunState{}
+
+	// Initialize model with no filter (threshold 0)
+	m := NewModel(p, r, s, "", 0, "over", false)
+
+	if len(m.list.Items()) != 3 {
+		t.Fatalf("expected 3 items initially, got %d", len(m.list.Items()))
+	}
+
+	// Apply filter: ROI >= 5.0
+	m.roiThreshold = 5.0
+	m.roiMode = "over"
+	m = m.refreshList()
+
+	if len(m.list.Items()) != 2 {
+		t.Errorf("expected 2 items after filtering >= 5.0, got %d", len(m.list.Items()))
+	}
+
+	// Verify items are 02 and 03
+	items := m.list.Items()
+	if items[0].(item).id != "02" {
+		t.Errorf("expected first item to be 02, got %s", items[0].(item).id)
+	}
+	if items[1].(item).id != "03" {
+		t.Errorf("expected second item to be 03, got %s", items[1].(item).id)
+	}
+
+	// Apply filter: ROI < 5.0 ("under")
+	m.roiThreshold = 5.0
+	m.roiMode = "under"
+	m = m.refreshList()
+
+	if len(m.list.Items()) != 1 {
+		t.Errorf("expected 1 item after filtering < 5.0, got %d", len(m.list.Items()))
+	}
+	if m.list.Items()[0].(item).id != "01" {
+		t.Errorf("expected item to be 01, got %s", m.list.Items()[0].(item).id)
+	}
+}
+
+func TestROIModeTogglePersists(t *testing.T) {
+	dir := t.TempDir()
+	statePath := filepath.Join(dir, "state.json")
+	p := &pack.Pack{
+		Steps: []pack.Step{
+			{ID: "01", ROI: 1.0, OriginalLine: "Step 1"},
+		},
+	}
+	r := exec.NewRunner(exec.RunnerOptions{})
+	s := &state.RunState{SchemaVersion: 1}
+
+	m := NewModel(p, r, s, statePath, 0, "over", false)
+
+	updated, _ := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("m")})
+	m2 := updated.(Model)
+	if m2.roiMode != "under" {
+		t.Fatalf("expected roiMode to toggle to under, got %s", m2.roiMode)
+	}
+
+	loaded, err := state.LoadState(statePath)
+	if err != nil {
+		t.Fatalf("failed to load state: %v", err)
+	}
+	if loaded.ROIMode != "under" {
+		t.Fatalf("expected persisted roiMode under, got %s", loaded.ROIMode)
+	}
+
+	if err := os.Remove(statePath); err != nil {
+		t.Fatalf("failed to cleanup state file: %v", err)
+	}
+}
+```
+
+internal/tui/overrides_confirm.go
+```
+package tui
+
+import (
+	"fmt"
+	"sort"
+	"strings"
+
+	"github.com/user/oraclepack/internal/exec"
+	"github.com/user/oraclepack/internal/overrides"
+)
+
+type ValidationResultMsg struct {
+	Errors []exec.ValidationError
+	Err    error
+}
+
+type OverridesConfirmModel struct {
+	validating bool
+	errMsg     string
+	errors     []exec.ValidationError
+}
+
+func (m OverridesConfirmModel) View(over overrides.RuntimeOverrides, baseline []string) string {
+	added := strings.Join(over.AddedFlags, ", ")
+	if added == "" {
+		added = "(none)"
+	}
+	removed := strings.Join(over.RemovedFlags, ", ")
+	if removed == "" {
+		removed = "(none)"
+	}
+	targeted := len(over.ApplyToSteps)
+	targetList := formatTargetList(over.ApplyToSteps, 5)
+	effective := effectiveFlagsSummary(over, baseline)
+	lines := []string{
+		"Summary:",
+		fmt.Sprintf("Added flags: %s", added),
+		fmt.Sprintf("Removed flags: %s", removed),
+		fmt.Sprintf("Targeted steps: %d%s", targeted, targetList),
+		fmt.Sprintf("Effective flags: %s", effective),
+		"",
+		"[Enter] Validate  [Esc] Cancel",
+	}
+
+	if m.validating {
+		lines = append(lines, "", "Validating overrides...")
+	}
+	if m.errMsg != "" {
+		lines = append(lines, "", "Validation failed:", m.errMsg)
+	}
+	if len(m.errors) > 0 {
+		lines = append(lines, "", fmt.Sprintf("Validation errors (%d):", len(m.errors)))
+		lines = append(lines, formatValidationErrors(m.errors, 6)...)
+	}
+
+	return strings.Join(lines, "\n")
+}
+
+func formatTargetList(targets map[string]bool, limit int) string {
+	if len(targets) == 0 || limit <= 0 {
+		return ""
+	}
+	ids := make([]string, 0, len(targets))
+	for id := range targets {
+		ids = append(ids, id)
+	}
+	sort.Strings(ids)
+	if len(ids) <= limit {
+		return fmt.Sprintf(" (%s)", strings.Join(ids, ", "))
+	}
+	return fmt.Sprintf(" (%s, +%d more)", strings.Join(ids[:limit], ", "), len(ids)-limit)
+}
+
+func effectiveFlagsSummary(over overrides.RuntimeOverrides, baseline []string) string {
+	if len(over.ApplyToSteps) == 0 {
+		return "(no steps targeted)"
+	}
+	var first string
+	for id := range over.ApplyToSteps {
+		first = id
+		break
+	}
+	flags := over.EffectiveFlags(first, baseline)
+	if len(flags) == 0 {
+		return "(none)"
+	}
+	return strings.Join(flags, " ")
+}
+
+func formatValidationErrors(errors []exec.ValidationError, limit int) []string {
+	if limit <= 0 {
+		return nil
+	}
+	lines := []string{}
+	for i, err := range errors {
+		if i >= limit {
+			lines = append(lines, fmt.Sprintf("- (+%d more)", len(errors)-limit))
+			break
+		}
+		msg := strings.TrimSpace(err.ErrorMessage)
+		if msg == "" {
+			msg = "(no error message)"
+		}
+		lines = append(lines, fmt.Sprintf("- Step %s: %s", err.StepID, firstLine(msg)))
+	}
+	return lines
+}
+
+func firstLine(msg string) string {
+	if idx := strings.IndexByte(msg, '\n'); idx != -1 {
+		return msg[:idx]
+	}
+	return msg
+}
+```
+
+internal/tui/overrides_flags.go
+```
+package tui
+
+import (
+	"fmt"
+	"io"
+
+	"github.com/charmbracelet/bubbles/list"
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+)
+
+type FlagItem struct {
+	Flag       string
+	Desc       string
+	IsBaseline bool
+	Selected   bool
+}
+
+func (i FlagItem) Title() string       { return i.Flag }
+func (i FlagItem) Description() string { return i.Desc }
+func (i FlagItem) FilterValue() string { return i.Flag }
+
+type FlagsPickerModel struct {
+	list list.Model
+}
+
+func NewFlagsPickerModel(baseline []string) FlagsPickerModel {
+	baselineSet := make(map[string]bool, len(baseline))
+	for _, f := range baseline {
+		baselineSet[f] = true
+	}
+
+	curated := []FlagItem{
+		{Flag: "--files-report", Desc: "Show per-file token usage"},
+		{Flag: "--render", Desc: "Print assembled markdown bundle"},
+		{Flag: "--render-plain", Desc: "Render markdown without ANSI"},
+		{Flag: "--copy", Desc: "Copy assembled markdown bundle"},
+		{Flag: "--wait", Desc: "Wait for background API runs"},
+	}
+
+	items := make([]list.Item, 0, len(curated))
+	for _, c := range curated {
+		c.IsBaseline = baselineSet[c.Flag]
+		if c.IsBaseline {
+			c.Selected = true
+		}
+		items = append(items, c)
+	}
+
+	delegate := newFlagsDelegate()
+	l := list.New(items, delegate, 0, 0)
+	l.Title = "Oracle Flags"
+	l.SetFilteringEnabled(true)
+
+	return FlagsPickerModel{list: l}
+}
+
+func (m FlagsPickerModel) Init() tea.Cmd {
+	return nil
+}
+
+func (m FlagsPickerModel) Update(msg tea.Msg) (FlagsPickerModel, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		if msg.String() == " " {
+			idx := m.list.Index()
+			item, ok := m.list.SelectedItem().(FlagItem)
+			if ok && !item.IsBaseline {
+				item.Selected = !item.Selected
+				_ = m.list.SetItem(idx, item)
+			}
+		}
+	}
+
+	var cmd tea.Cmd
+	m.list, cmd = m.list.Update(msg)
+	return m, cmd
+}
+
+func (m *FlagsPickerModel) SetSize(width, height int) {
+	m.list.SetSize(width, height)
+}
+
+func (m FlagsPickerModel) View() string {
+	return m.list.View()
+}
+
+func (m FlagsPickerModel) SelectedFlags() []string {
+	var flags []string
+	for _, item := range m.list.Items() {
+		if fi, ok := item.(FlagItem); ok && fi.Selected && !fi.IsBaseline {
+			flags = append(flags, fi.Flag)
+		}
+	}
+	return flags
+}
+
+type flagsDelegate struct {
+	list.DefaultDelegate
+}
+
+func newFlagsDelegate() flagsDelegate {
+	d := list.NewDefaultDelegate()
+	return flagsDelegate{DefaultDelegate: d}
+}
+
+func (d flagsDelegate) Render(w io.Writer, m list.Model, index int, item list.Item) {
+	fi, ok := item.(FlagItem)
+	if !ok {
+		d.DefaultDelegate.Render(w, m, index, item)
+		return
+	}
+
+	checked := fi.Selected || fi.IsBaseline
+	marker := "[ ]"
+	if checked {
+		marker = "[x]"
+	}
+	if fi.IsBaseline {
+		marker = "[*]"
+	}
+
+	label := fi.Flag
+	if fi.Desc != "" {
+		label = fmt.Sprintf("%s - %s", fi.Flag, fi.Desc)
+	}
+	if fi.IsBaseline {
+		label = label + " (base)"
+	}
+
+	line := fmt.Sprintf("%s %s", marker, label)
+	if index == m.Index() {
+		line = d.Styles.SelectedTitle.Render(line)
+	} else {
+		line = d.Styles.NormalTitle.Render(line)
+	}
+	if fi.IsBaseline {
+		line = lipgloss.NewStyle().Faint(true).Render(line)
+	}
+
+	fmt.Fprintln(w, line)
+}
+```
+
+internal/tui/overrides_flow.go
+```
+package tui
+
+import (
+	"context"
+	"fmt"
+
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+	"github.com/user/oraclepack/internal/exec"
+	"github.com/user/oraclepack/internal/overrides"
+	"github.com/user/oraclepack/internal/pack"
+)
+
+type OverridesStep int
+
+const (
+	OverridesFlags OverridesStep = iota
+	OverridesSteps
+	OverridesConfirm
+)
+
+type OverridesStartedMsg struct{}
+
+type OverridesAppliedMsg struct {
+	Overrides overrides.RuntimeOverrides
+}
+
+type OverridesCancelledMsg struct{}
+
+type OverridesFlowModel struct {
+	step    OverridesStep
+	flags   FlagsPickerModel
+	steps   StepsPickerModel
+	confirm OverridesConfirmModel
+
+	packSteps        []pack.Step
+	baseline         []string
+	runnerOpts       exec.RunnerOptions
+	pendingOverrides overrides.RuntimeOverrides
+}
+
+func NewOverridesFlowModel(steps []pack.Step, baseline []string, opts exec.RunnerOptions) OverridesFlowModel {
+	return OverridesFlowModel{
+		step:       OverridesFlags,
+		flags:      NewFlagsPickerModel(nil),
+		steps:      NewStepsPickerModel(steps),
+		confirm:    OverridesConfirmModel{},
+		packSteps:  steps,
+		baseline:   exec.ApplyChatGPTURL(baseline, opts.ChatGPTURL),
+		runnerOpts: opts,
+	}
+}
+
+func (m OverridesFlowModel) Init() tea.Cmd {
+	return nil
+}
+
+func (m OverridesFlowModel) Update(msg tea.Msg) (OverridesFlowModel, tea.Cmd) {
+	var cmd tea.Cmd
+	if m.step == OverridesFlags {
+		m.flags, cmd = m.flags.Update(msg)
+	}
+	if m.step == OverridesSteps {
+		m.steps, cmd = m.steps.Update(msg)
+	}
+	if m.step == OverridesConfirm {
+		switch v := msg.(type) {
+		case ValidationResultMsg:
+			m.confirm.validating = false
+			m.confirm.errors = v.Errors
+			if v.Err != nil {
+				m.confirm.errMsg = v.Err.Error()
+				return m, nil
+			}
+			if len(v.Errors) > 0 {
+				m.confirm.errMsg = fmt.Sprintf("%d validation errors detected.", len(v.Errors))
+				return m, nil
+			}
+			return m, func() tea.Msg { return OverridesAppliedMsg{Overrides: m.pendingOverrides} }
+		}
+	}
+
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "esc":
+			return m, func() tea.Msg { return OverridesCancelledMsg{} }
+		case "shift+tab", "backspace":
+			if m.step > OverridesFlags {
+				m.step--
+			}
+		case "enter", "tab":
+			if m.step == OverridesConfirm {
+				if m.confirm.validating {
+					return m, nil
+				}
+				m.pendingOverrides = m.currentOverrides()
+				m.confirm.validating = true
+				m.confirm.errMsg = ""
+				m.confirm.errors = nil
+				return m, m.validateCmd(m.pendingOverrides)
+			}
+			m.step++
+		}
+	}
+
+	return m, cmd
+}
+
+func (m OverridesFlowModel) View(width, height int) string {
+	title := lipgloss.NewStyle().Bold(true).Render("Overrides Wizard")
+	step := fmt.Sprintf("Step %d/3", int(m.step)+1)
+	body := fmt.Sprintf("Current step: %s\n\n[Enter] Next  [Esc] Cancel", overridesStepName(m.step))
+
+	var content string
+	if m.step == OverridesFlags {
+		m.flags.SetSize(width-4, height-8)
+		content = lipgloss.JoinVertical(lipgloss.Left,
+			title,
+			step,
+			"",
+			m.flags.View(),
+			"",
+			body,
+		)
+	} else if m.step == OverridesSteps {
+		m.steps.SetSize(width-4, height-8)
+		content = lipgloss.JoinVertical(lipgloss.Left,
+			title,
+			step,
+			"",
+			m.steps.View(),
+			"",
+			body,
+		)
+	} else if m.step == OverridesConfirm {
+		content = lipgloss.JoinVertical(lipgloss.Left,
+			title,
+			step,
+			"",
+			m.confirm.View(m.currentOverrides(), m.baseline),
+		)
+	} else {
+		content = lipgloss.JoinVertical(lipgloss.Left,
+			title,
+			step,
+			"",
+			body,
+		)
+	}
+
+	return lipgloss.Place(width, height, lipgloss.Center, lipgloss.Center, content)
+}
+
+func (m OverridesFlowModel) currentOverrides() overrides.RuntimeOverrides {
+	return overrides.RuntimeOverrides{
+		AddedFlags:   m.flags.SelectedFlags(),
+		RemovedFlags: nil,
+		ApplyToSteps: m.steps.SelectedSteps(),
+	}
+}
+
+func (m OverridesFlowModel) validateCmd(over overrides.RuntimeOverrides) tea.Cmd {
+	return func() tea.Msg {
+		errs, err := exec.ValidateOverrides(context.Background(), m.packSteps, &over, m.baseline, m.runnerOpts)
+		return ValidationResultMsg{Errors: errs, Err: err}
+	}
+}
+
+func overridesStepName(step OverridesStep) string {
+	switch step {
+	case OverridesFlags:
+		return "Flags"
+	case OverridesSteps:
+		return "Target Steps"
+	case OverridesConfirm:
+		return "Confirm"
+	default:
+		return "Unknown"
+	}
+}
+```
+
+internal/tui/overrides_steps.go
+```
+package tui
+
+import (
+	"fmt"
+	"io"
+
+	"github.com/charmbracelet/bubbles/list"
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+	"github.com/user/oraclepack/internal/pack"
+)
+
+type StepItem struct {
+	ID       string
+	TitleTxt string
+	DescTxt  string
+	Selected bool
+}
+
+func (i StepItem) Title() string       { return i.TitleTxt }
+func (i StepItem) Description() string { return i.DescTxt }
+func (i StepItem) FilterValue() string { return i.TitleTxt }
+
+type StepsPickerModel struct {
+	list list.Model
+}
+
+func NewStepsPickerModel(steps []pack.Step) StepsPickerModel {
+	items := make([]list.Item, 0, len(steps))
+	for _, s := range steps {
+		items = append(items, StepItem{
+			ID:       s.ID,
+			TitleTxt: fmt.Sprintf("Step %s", s.ID),
+			DescTxt:  s.OriginalLine,
+			Selected: true,
+		})
+	}
+
+	delegate := newStepsDelegate()
+	l := list.New(items, delegate, 0, 0)
+	l.Title = "Target Steps"
+	l.SetFilteringEnabled(true)
+
+	return StepsPickerModel{list: l}
+}
+
+func (m StepsPickerModel) Init() tea.Cmd {
+	return nil
+}
+
+func (m StepsPickerModel) Update(msg tea.Msg) (StepsPickerModel, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "a", "A":
+			m = m.setAll(true)
+			return m, nil
+		case "i":
+			m = m.invert()
+			return m, nil
+		case "n":
+			m = m.setAll(false)
+			return m, nil
+		case " ":
+			idx := m.list.Index()
+			item, ok := m.list.SelectedItem().(StepItem)
+			if ok {
+				item.Selected = !item.Selected
+				_ = m.list.SetItem(idx, item)
+			}
+		}
+	}
+
+	var cmd tea.Cmd
+	m.list, cmd = m.list.Update(msg)
+	return m, cmd
+}
+
+func (m *StepsPickerModel) SetSize(width, height int) {
+	m.list.SetSize(width, height)
+}
+
+func (m StepsPickerModel) View() string {
+	help := lipgloss.NewStyle().Faint(true).Render("[space] toggle  [a] all  [i] invert  [n] none")
+	return m.list.View() + "\n" + help
+}
+
+func (m StepsPickerModel) SelectedSteps() map[string]bool {
+	selected := make(map[string]bool)
+	for _, item := range m.list.Items() {
+		if si, ok := item.(StepItem); ok && si.Selected {
+			selected[si.ID] = true
+		}
+	}
+	return selected
+}
+
+func (m StepsPickerModel) setAll(value bool) StepsPickerModel {
+	for idx, item := range m.list.Items() {
+		si, ok := item.(StepItem)
+		if !ok {
+			continue
+		}
+		si.Selected = value
+		_ = m.list.SetItem(idx, si)
+	}
+	return m
+}
+
+func (m StepsPickerModel) invert() StepsPickerModel {
+	for idx, item := range m.list.Items() {
+		si, ok := item.(StepItem)
+		if !ok {
+			continue
+		}
+		si.Selected = !si.Selected
+		_ = m.list.SetItem(idx, si)
+	}
+	return m
+}
+
+type stepsDelegate struct {
+	list.DefaultDelegate
+}
+
+func newStepsDelegate() stepsDelegate {
+	d := list.NewDefaultDelegate()
+	return stepsDelegate{DefaultDelegate: d}
+}
+
+func (d stepsDelegate) Render(w io.Writer, m list.Model, index int, item list.Item) {
+	si, ok := item.(StepItem)
+	if !ok {
+		d.DefaultDelegate.Render(w, m, index, item)
+		return
+	}
+
+	marker := "[ ]"
+	if si.Selected {
+		marker = "[x]"
+	}
+
+	label := si.TitleTxt
+	if si.DescTxt != "" {
+		label = fmt.Sprintf("%s - %s", si.TitleTxt, si.DescTxt)
+	}
+
+	line := fmt.Sprintf("%s %s", marker, label)
+	if index == m.Index() {
+		line = d.Styles.SelectedTitle.Render(line)
+	} else {
+		line = d.Styles.NormalTitle.Render(line)
+	}
+
+	fmt.Fprintln(w, line)
+}
+```
+
+internal/tui/overrides_url.go
+```
+package tui
+
+import (
+	"strings"
+
+	"github.com/charmbracelet/bubbles/textinput"
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+)
+
+type URLInputModel struct {
+	input textinput.Model
+	err   string
+}
+
+func NewURLInputModel() URLInputModel {
+	ti := textinput.New()
+	ti.Placeholder = "https://chat.openai.com/project/..."
+	ti.CharLimit = 200
+	ti.Width = 50
+
+	return URLInputModel{input: ti}
+}
+
+func (m URLInputModel) Init() tea.Cmd {
+	return textinput.Blink
+}
+
+func (m URLInputModel) Update(msg tea.Msg) (URLInputModel, tea.Cmd) {
+	var cmd tea.Cmd
+	m.input, cmd = m.input.Update(msg)
+	m.err = ""
+	if !m.IsValid() {
+		m.err = "Invalid URL (must start with http:// or https://)"
+	}
+	return m, cmd
+}
+
+func (m URLInputModel) Value() string {
+	return strings.TrimSpace(m.input.Value())
+}
+
+func (m URLInputModel) IsValid() bool {
+	v := m.Value()
+	if v == "" {
+		return true
+	}
+	return strings.HasPrefix(v, "http://") || strings.HasPrefix(v, "https://")
+}
+
+func (m URLInputModel) View() string {
+	body := m.input.View()
+	if m.err != "" {
+		body = body + "\n" + lipgloss.NewStyle().Foreground(lipgloss.Color("196")).Render(m.err)
+	}
+	return body
+}
+
+func (m *URLInputModel) SetValue(v string) {
+	m.input.SetValue(v)
+}
+
+func (m *URLInputModel) Focus() {
+	m.input.Focus()
+}
+
+func (m *URLInputModel) Blur() {
+	m.input.Blur()
+}
+```
+
+internal/tui/preview_test.go
+```
+package tui
+
+import (
+	"strings"
+	"testing"
+
+	"github.com/user/oraclepack/internal/exec"
+	"github.com/user/oraclepack/internal/pack"
+	"github.com/user/oraclepack/internal/state"
+)
+
+func TestStepPreviewContentUnwrapped(t *testing.T) {
+	p := &pack.Pack{
+		Steps: []pack.Step{
+			{ID: "01", OriginalLine: "Step 1", Code: "echo hello"},
+		},
+	}
+	r := exec.NewRunner(exec.RunnerOptions{})
+	s := &state.RunState{}
+	m := NewModel(p, r, s, "", 0, "over", false)
+	m.width = 80
+	m.previewID = "01"
+	m.previewWrap = false
+
+	content := m.stepPreviewContent()
+	if !strings.Contains(content, "Step 01") {
+		t.Fatalf("expected header to include step id, got %q", content)
+	}
+	if !strings.Contains(content, "echo hello") {
+		t.Fatalf("expected content to include code, got %q", content)
+	}
+}
+```
+
+internal/tui/tui.go
+```
+package tui
+
+import (
+	"context"
+	"fmt"
+	"strings"
+	"time"
+
+	"github.com/charmbracelet/bubbles/list"
+	"github.com/charmbracelet/bubbles/spinner"
+	"github.com/charmbracelet/bubbles/textinput"
+	"github.com/charmbracelet/bubbles/viewport"
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+	"github.com/user/oraclepack/internal/exec"
+	"github.com/user/oraclepack/internal/overrides"
+	"github.com/user/oraclepack/internal/pack"
+	"github.com/user/oraclepack/internal/render"
+	"github.com/user/oraclepack/internal/state"
+)
+
+type ViewState int
+
+const (
+	ViewSteps ViewState = iota
+	ViewRunning
+	ViewDone
+	ViewOverrides
+	ViewStepPreview
+)
+
+type item struct {
+	id     string
+	title  string
+	desc   string
+	status state.Status
+}
+
+func (i item) Title() string       { return i.title }
+func (i item) Description() string { return i.desc }
+func (i item) FilterValue() string { return i.title }
+
+type Model struct {
+	list        list.Model
+	viewport    viewport.Model
+	spinner     spinner.Model
+	filterInput textinput.Model
+	urlInput    URLInputModel
+	urlPicker   URLPickerModel
+	pack        *pack.Pack
+	runner      *exec.Runner
+	state       *state.RunState
+	statePath   string
+
+	width  int
+	height int
+
+	viewState     ViewState
+	running       bool
+	runAll        bool // State for sequential execution
+	currentIdx    int
+	autoRun       bool // Config to auto-start on init
+	previewID     string
+	previewWrap   bool
+	previewNotice string
+
+	// Filtering state
+	allSteps     []item // Store all items to support dynamic filtering
+	roiThreshold float64
+	roiMode      string
+	isFiltering  bool
+	isEditingURL bool
+	isPickingURL bool
+
+	overridesFlow    OverridesFlowModel
+	appliedOverrides *overrides.RuntimeOverrides
+	chatGPTURL       string
+
+	err      error
+	logLines []string
+	logChan  chan string
+}
+
+func NewModel(p *pack.Pack, r *exec.Runner, s *state.RunState, statePath string, roiThreshold float64, roiMode string, autoRun bool) Model {
+	if s != nil {
+		if s.ROIThreshold > 0 {
+			roiThreshold = s.ROIThreshold
+		}
+		if s.ROIMode != "" {
+			roiMode = s.ROIMode
+		}
+	}
+	var allItems []item
+	for _, step := range p.Steps {
+		allItems = append(allItems, item{
+			id:    step.ID,
+			title: fmt.Sprintf("Step %s", step.ID),
+			desc:  step.OriginalLine,
+		})
+	}
+
+	ti := textinput.New()
+	ti.Placeholder = "Enter ROI threshold (e.g. 2.5)"
+	ti.CharLimit = 10
+	ti.Width = 20
+
+	l := list.New([]list.Item{}, list.NewDefaultDelegate(), 0, 0)
+	l.Title = "Oracle Pack Steps"
+
+	sp := spinner.New()
+	sp.Spinner = spinner.Dot
+	sp.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
+
+	vp := viewport.New(0, 0)
+	vp.SetContent("Press Enter to run selected, 'a' to run all filtered steps, 'f' to set ROI threshold, 'm' to toggle ROI mode, 'v' to view step, 'o' to configure overrides, 'u' for ChatGPT URL, 'U' to pick a saved URL.")
+
+	projectPath := ProjectURLStorePath(statePath, p.Source)
+	globalPath := GlobalURLStorePath()
+	urlPicker := NewURLPickerModel(projectPath, globalPath)
+	resolvedURL := r.ChatGPTURL
+	if resolvedURL == "" {
+		resolvedURL = urlPicker.DefaultURL()
+	}
+	if resolvedURL != "" {
+		r.ChatGPTURL = resolvedURL
+	}
+
+	m := Model{
+		list:          l,
+		viewport:      vp,
+		spinner:       sp,
+		filterInput:   ti,
+		urlInput:      NewURLInputModel(),
+		urlPicker:     urlPicker,
+		pack:          p,
+		runner:        r,
+		state:         s,
+		statePath:     statePath,
+		autoRun:       autoRun,
+		allSteps:      allItems,
+		roiThreshold:  roiThreshold,
+		roiMode:       roiMode,
+		logChan:       make(chan string, 100),
+		viewState:     ViewSteps,
+		overridesFlow: NewOverridesFlowModel(p.Steps, r.OracleFlags, RunnerOptionsFromRunner(r)),
+		chatGPTURL:    resolvedURL,
+		previewWrap:   true,
+	}
+	m.urlInput.SetValue(resolvedURL)
+	m.urlInput.Blur()
+
+	// Apply initial filter
+	return m.refreshList()
+}
+
+func (m Model) refreshList() Model {
+	var filtered []list.Item
+	for _, it := range m.allSteps {
+		// Find the original step to check ROI
+		var step *pack.Step
+		for _, s := range m.pack.Steps {
+			if s.ID == it.id {
+				step = &s
+				break
+			}
+		}
+		if step == nil {
+			continue
+		}
+
+		if m.roiThreshold > 0 {
+			if m.roiMode == "under" {
+				if step.ROI >= m.roiThreshold {
+					continue
+				}
+			} else {
+				if step.ROI < m.roiThreshold {
+					continue
+				}
+			}
+		}
+		filtered = append(filtered, it)
+	}
+	m.list.SetItems(filtered)
+	return m
+}
+
+type StartAutoRunMsg struct{}
+
+func (m Model) Init() tea.Cmd {
+	var cmds []tea.Cmd
+	if m.autoRun {
+		cmds = append(cmds, func() tea.Msg { return StartAutoRunMsg{} })
+	}
+	cmds = append(cmds, textinput.Blink)
+	return tea.Batch(cmds...)
+}
+
+type LogMsg string
+type FinishedMsg struct {
+	Err error
+	ID  string
+}
+
+func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmds []tea.Cmd
+
+	// Global keys (Quit)
+	if msg, ok := msg.(tea.KeyMsg); ok {
+		switch msg.String() {
+		case "ctrl+c":
+			return m, tea.Quit
+		}
+	}
+
+	if msg, ok := msg.(OverridesStartedMsg); ok {
+		_ = msg
+		m.viewState = ViewOverrides
+		m.overridesFlow = NewOverridesFlowModel(m.pack.Steps, m.runner.OracleFlags, RunnerOptionsFromRunner(m.runner))
+		return m, nil
+	}
+	if msg, ok := msg.(OverridesAppliedMsg); ok {
+		over := msg.Overrides
+		m.appliedOverrides = &over
+		if m.runner != nil {
+			m.runner.Overrides = &over
+		}
+		m.viewState = ViewSteps
+		return m, nil
+	}
+	if msg, ok := msg.(OverridesCancelledMsg); ok {
+		_ = msg
+		m.appliedOverrides = nil
+		if m.runner != nil {
+			m.runner.Overrides = nil
+		}
+		m.viewState = ViewSteps
+		return m, nil
+	}
+	if msg, ok := msg.(URLPickedMsg); ok {
+		m.chatGPTURL = msg.URL
+		if m.runner != nil {
+			m.runner.ChatGPTURL = m.chatGPTURL
+		}
+		m.urlInput.SetValue(m.chatGPTURL)
+		m.isPickingURL = false
+		return m, nil
+	}
+	if _, ok := msg.(URLPickerCancelledMsg); ok {
+		m.isPickingURL = false
+		return m, nil
+	}
+
+	if m.viewState == ViewOverrides {
+		var cmd tea.Cmd
+		m.overridesFlow, cmd = m.overridesFlow.Update(msg)
+		return m, cmd
+	}
+
+	if m.viewState == ViewStepPreview {
+		switch msg := msg.(type) {
+		case clearPreviewNoticeMsg:
+			m.previewNotice = ""
+			return m, nil
+		case tea.KeyMsg:
+			switch msg.String() {
+			case "q":
+				return m, tea.Quit
+			case "b", "esc":
+				m.previewID = ""
+				m.previewNotice = ""
+				m.viewState = ViewSteps
+				m.setListPreviewContent(m.selectedItemID())
+				return m, nil
+			case "t":
+				m.previewWrap = !m.previewWrap
+				m.viewport.SetContent(m.stepPreviewContent())
+				return m, nil
+			case "c":
+				content := m.stepPlainTextFor(m.previewID)
+				if err := copyToClipboard(content); err != nil {
+					path, fallbackErr := writeClipboardFallback(content)
+					if fallbackErr != nil {
+						m.previewNotice = "Copy failed: " + err.Error()
+					} else {
+						m.previewNotice = "Copy failed; saved to " + path
+					}
+				} else {
+					m.previewNotice = "Copied to clipboard"
+				}
+				return m, tea.Tick(2*time.Second, func(time.Time) tea.Msg {
+					return clearPreviewNoticeMsg{}
+				})
+			}
+		}
+		var cmd tea.Cmd
+		m.viewport, cmd = m.viewport.Update(msg)
+		return m, cmd
+	}
+
+	switch m.viewState {
+	case ViewDone:
+		if msg, ok := msg.(tea.KeyMsg); ok {
+			switch msg.String() {
+			case "q":
+				return m, tea.Quit
+			case "b":
+				m.viewState = ViewSteps
+				m.setListPreviewContent(m.selectedItemID())
+				return m, nil
+			case "n":
+				m.resetState()
+				return m, nil
+			case "r":
+				// Rerun selected step (if we have one selected in list)
+				// Or rerun the whole sequence if that was the context?
+				// Requirement says "rerun a step ('r')". Assuming selected step.
+				// We need to transition to ViewSteps logic or trigger run directly.
+				m.viewState = ViewSteps // Go back to steps view? Or Running?
+				// To trigger run, we can fall through or simulate Enter.
+				// Let's just switch to steps and let user press Enter, or trigger run immediately?
+				// "trigger the execution logic for the specific failed step"
+				i, ok := m.list.SelectedItem().(item)
+				if ok {
+					m.running = true
+					m.viewState = ViewRunning
+					m.logLines = nil
+					m.viewport.SetContent("Re-running execution...")
+					return m, tea.Batch(m.runStep(i.id), m.waitForLogs(), m.spinner.Tick)
+				}
+			}
+		}
+		// In Done view, we might still want to handle window size?
+		if msg, ok := msg.(tea.WindowSizeMsg); ok {
+			m.handleWindowSize(msg)
+		}
+		return m, nil
+	}
+
+	// Filter Input Mode
+	if m.isFiltering {
+		switch msg := msg.(type) {
+		case tea.KeyMsg:
+			switch msg.String() {
+			case "enter":
+				var val float64
+				_, err := fmt.Sscanf(m.filterInput.Value(), "%f", &val)
+				if err == nil {
+					m.roiThreshold = val
+					m = m.refreshList()
+					m.persistFilterState()
+				}
+				m.isFiltering = false
+				m.filterInput.Blur()
+				return m, nil
+			case "esc":
+				m.isFiltering = false
+				m.filterInput.Blur()
+				return m, nil
+			}
+		}
+		var cmd tea.Cmd
+		m.filterInput, cmd = m.filterInput.Update(msg)
+		cmds = append(cmds, cmd)
+		return m, tea.Batch(cmds...)
+	}
+
+	// ChatGPT URL Input Mode
+	if m.isEditingURL {
+		switch msg := msg.(type) {
+		case tea.KeyMsg:
+			switch msg.String() {
+			case "enter":
+				if m.urlInput.IsValid() {
+					m.chatGPTURL = m.urlInput.Value()
+					if m.runner != nil {
+						m.runner.ChatGPTURL = m.chatGPTURL
+					}
+					m.isEditingURL = false
+					m.urlInput.Blur()
+					return m, nil
+				}
+			case "esc":
+				m.isEditingURL = false
+				m.urlInput.Blur()
+				return m, nil
+			}
+		}
+		var cmd tea.Cmd
+		m.urlInput, cmd = m.urlInput.Update(msg)
+		cmds = append(cmds, cmd)
+		return m, tea.Batch(cmds...)
+	}
+
+	// URL Picker Mode
+	if m.isPickingURL {
+		var cmd tea.Cmd
+		m.urlPicker, cmd = m.urlPicker.Update(msg)
+		return m, cmd
+	}
+
+	// Normal Steps View / Running
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "q":
+			if !m.running {
+				return m, tea.Quit
+			}
+		case "enter":
+			if !m.running {
+				i, ok := m.list.SelectedItem().(item)
+				if ok {
+					m.running = true
+					m.viewState = ViewRunning
+					m.runAll = false
+					m.logLines = nil
+					m.viewport.SetContent("Starting execution...")
+					return m, tea.Batch(m.runStep(i.id), m.waitForLogs(), m.spinner.Tick)
+				}
+			}
+		case "a":
+			if !m.running && len(m.list.Items()) > 0 {
+				m.running = true
+				m.viewState = ViewRunning
+				m.runAll = true
+				m.currentIdx = 0
+				m.logLines = nil
+				m.list.Select(0)
+				i := m.list.Items()[0].(item)
+				m.viewport.SetContent(fmt.Sprintf("Starting sequential run (Step 1/%d)...", len(m.list.Items())))
+				return m, tea.Batch(m.runStep(i.id), m.waitForLogs(), m.spinner.Tick)
+			}
+		case "f":
+			if !m.running {
+				m.isFiltering = true
+				m.filterInput.Focus()
+				m.filterInput.SetValue(fmt.Sprintf("%.1f", m.roiThreshold))
+				return m, textinput.Blink
+			}
+		case "m":
+			if !m.running {
+				if m.roiMode == "under" {
+					m.roiMode = "over"
+				} else {
+					m.roiMode = "under"
+				}
+				m = m.refreshList()
+				m.persistFilterState()
+				return m, nil
+			}
+		case "v":
+			if !m.running {
+				i, ok := m.list.SelectedItem().(item)
+				if ok {
+					m.previewID = i.id
+					m.viewState = ViewStepPreview
+					m.viewport.YOffset = 0
+					m.viewport.SetContent(m.stepPreviewContent())
+					return m, nil
+				}
+			}
+		case "u":
+			if !m.running {
+				m.isEditingURL = true
+				m.urlInput.SetValue(m.chatGPTURL)
+				m.urlInput.Focus()
+				return m, textinput.Blink
+			}
+		case "U":
+			if !m.running {
+				m.isPickingURL = true
+				return m, nil
+			}
+		case "o":
+			if !m.running {
+				return m, func() tea.Msg { return OverridesStartedMsg{} }
+			}
+		}
+
+	case StartAutoRunMsg:
+		if !m.running && len(m.list.Items()) > 0 {
+			m.running = true
+			m.viewState = ViewRunning
+			m.runAll = true
+			m.currentIdx = 0
+			m.logLines = nil
+			m.list.Select(0)
+			i := m.list.Items()[0].(item)
+			m.viewport.SetContent(fmt.Sprintf("Auto-running all steps (Step 1/%d)...", len(m.list.Items())))
+			return m, tea.Batch(m.runStep(i.id), m.waitForLogs(), m.spinner.Tick)
+		}
+
+	case tea.WindowSizeMsg:
+		m.handleWindowSize(msg)
+
+	case LogMsg:
+		m.logLines = append(m.logLines, string(msg))
+		m.viewport.SetContent(strings.Join(m.logLines, "\n"))
+		m.viewport.GotoBottom()
+		return m, m.waitForLogs()
+
+	case FinishedMsg:
+		m.recordWarnings()
+		if msg.Err != nil {
+			m.err = msg.Err
+			m.logLines = append(m.logLines, fmt.Sprintf("\n❌ ERROR: %v", msg.Err))
+			m.running = false
+			m.runAll = false
+			m.viewState = ViewDone // Or stay in steps? Requirement says ViewDone on completion?
+			// If error, maybe stay on steps or go to done with error?
+			// "Failed at step X" is a summary state.
+			m.viewState = ViewDone
+		} else {
+			m.logLines = append(m.logLines, "\n✅ SUCCESS")
+
+			if m.runAll {
+				m.currentIdx++
+				if m.currentIdx < len(m.list.Items()) {
+					m.list.Select(m.currentIdx)
+					i := m.list.Items()[m.currentIdx].(item)
+					m.logLines = append(m.logLines, fmt.Sprintf("\n--- Starting Step %d/%d ---\n", m.currentIdx+1, len(m.list.Items())))
+					return m, m.runStep(i.id)
+				} else {
+					m.logLines = append(m.logLines, "\n🏁 ALL STEPS COMPLETED")
+					m.running = false
+					m.runAll = false
+					m.viewState = ViewDone
+				}
+			} else {
+				m.running = false
+				m.viewState = ViewDone // Single step done
+			}
+		}
+		m.viewport.SetContent(strings.Join(m.logLines, "\n"))
+		m.viewport.GotoBottom()
+
+	case spinner.TickMsg:
+		var cmd tea.Cmd
+		m.spinner, cmd = m.spinner.Update(msg)
+		return m, cmd
+	}
+
+	if !m.running && !m.isFiltering && m.viewState == ViewSteps {
+		prevID := m.selectedItemID()
+		var cmd tea.Cmd
+		m.list, cmd = m.list.Update(msg)
+		cmds = append(cmds, cmd)
+		newID := m.selectedItemID()
+		if newID != "" && newID != prevID {
+			m.viewport.YOffset = 0
+			m.setListPreviewContent(newID)
+		}
+	}
+
+	return m, tea.Batch(cmds...)
+}
+
+func (m *Model) handleWindowSize(msg tea.WindowSizeMsg) {
+	m.width = msg.Width
+	m.height = msg.Height
+	if m.viewState == ViewStepPreview {
+		m.viewport.Width = msg.Width - 4
+		m.viewport.Height = msg.Height - 6
+		if m.viewport.Height < 1 {
+			m.viewport.Height = 1
+		}
+		m.viewport.SetContent(m.stepPreviewContent())
+		m.viewport.GotoTop()
+		return
+	}
+	contentHeight := msg.Height - 5
+	if contentHeight < 1 {
+		contentHeight = 1
+	}
+	m.list.SetSize(msg.Width/3, contentHeight)
+	m.viewport.Width = msg.Width - (msg.Width / 3) - 6
+	m.viewport.Height = contentHeight
+	if !m.running && m.viewState == ViewSteps {
+		m.setListPreviewContent(m.selectedItemID())
+	}
+}
+
+func (m *Model) resetState() {
+	// Reset RunState
+	m.state.StartTime = time.Now()
+	m.state.StepStatuses = make(map[string]state.StepStatus)
+
+	// Save cleared state to disk
+	if m.statePath != "" {
+		_ = state.SaveStateAtomic(m.statePath, m.state)
+	}
+
+	// Reset UI
+	m.logLines = nil
+	m.viewport.SetContent("State reset. Ready for new run.")
+	m.list.Select(0)
+	m.viewState = ViewSteps
+	m.running = false
+	m.runAll = false
+	m.appliedOverrides = nil
+	if m.runner != nil {
+		m.runner.Overrides = nil
+	}
+}
+
+func (m *Model) persistFilterState() {
+	if m.state == nil || m.statePath == "" {
+		return
+	}
+	m.state.ROIThreshold = m.roiThreshold
+	m.state.ROIMode = m.roiMode
+	_ = state.SaveStateAtomic(m.statePath, m.state)
+}
+
+func (m *Model) recordWarnings() {
+	if m.state == nil || m.statePath == "" || m.runner == nil {
+		return
+	}
+	warnings := m.runner.DrainWarnings()
+	if len(warnings) == 0 {
+		return
+	}
+	for _, w := range warnings {
+		m.state.Warnings = append(m.state.Warnings, state.Warning{
+			Scope:   w.Scope,
+			StepID:  w.StepID,
+			Line:    w.Line,
+			Token:   w.Token,
+			Message: w.Message,
+		})
+	}
+	_ = state.SaveStateAtomic(m.statePath, m.state)
+}
+
+func (m *Model) setLogContent() {
+	if len(m.logLines) == 0 {
+		return
+	}
+	m.viewport.SetContent(strings.Join(m.logLines, "\n"))
+	m.viewport.GotoBottom()
+}
+
+func (m *Model) stepPreviewContent() string {
+	return m.stepPreviewContentFor(m.previewID)
+}
+
+func (m *Model) stepPreviewContentFor(id string) string {
+	md, ok := m.stepMarkdownFor(id)
+	if !ok {
+		return md
+	}
+	width := m.previewRenderWidth()
+	rendered, err := render.RenderMarkdown(md, width, "auto")
+	if err != nil {
+		return m.stepPlainTextFor(id)
+	}
+	return rendered
+}
+
+func (m *Model) stepMarkdownFor(id string) (string, bool) {
+	if id == "" {
+		return "No step selected.", false
+	}
+	step := m.stepForID(id)
+	if step == nil {
+		return "Step not found.", false
+	}
+	header := fmt.Sprintf("## Step %s\n%s\n\n", step.ID, step.OriginalLine)
+	md := header + "```bash\n" + step.Code + "\n```\n"
+	return md, true
+}
+
+func (m *Model) stepPlainTextFor(id string) string {
+	if id == "" {
+		return "No step selected."
+	}
+	step := m.stepForID(id)
+	if step == nil {
+		return "Step not found."
+	}
+	header := fmt.Sprintf("Step %s\n%s\n", step.ID, step.OriginalLine)
+	return header + "\n" + step.Code
+}
+
+func (m *Model) stepForID(id string) *pack.Step {
+	for i := range m.pack.Steps {
+		if m.pack.Steps[i].ID == id {
+			return &m.pack.Steps[i]
+		}
+	}
+	return nil
+}
+
+func (m *Model) previewRenderWidth() int {
+	width := m.viewport.Width
+	if width <= 0 {
+		width = render.DefaultWidth
+	}
+	if !m.previewWrap {
+		if width < render.DefaultWidth {
+			width = render.DefaultWidth
+		}
+		width = width * 4
+	}
+	return width
+}
+
+func (m *Model) selectedItemID() string {
+	it, ok := m.list.SelectedItem().(item)
+	if !ok {
+		return ""
+	}
+	return it.id
+}
+
+func (m *Model) setListPreviewContent(id string) {
+	if id == "" {
+		m.viewport.SetContent("No step selected.")
+		return
+	}
+	m.viewport.SetContent(m.stepPreviewContentFor(id))
+	m.viewport.GotoTop()
+}
+
+type clearPreviewNoticeMsg struct{}
+
+func (m Model) View() string {
+	if m.width == 0 {
+		return "Initializing..."
+	}
+
+	if m.viewState == ViewDone {
+		return m.viewDone()
+	}
+
+	if m.viewState == ViewOverrides {
+		return m.overridesFlow.View(m.width, m.height)
+	}
+
+	if m.isFiltering {
+		return lipgloss.Place(m.width, m.height,
+			lipgloss.Center, lipgloss.Center,
+			lipgloss.JoinVertical(lipgloss.Center,
+				"Enter ROI Threshold:",
+				m.filterInput.View(),
+				"(Enter to apply, Esc to cancel)",
+			),
+		)
+	}
+
+	if m.isEditingURL {
+		return lipgloss.Place(m.width, m.height,
+			lipgloss.Center, lipgloss.Center,
+			lipgloss.JoinVertical(lipgloss.Center,
+				"ChatGPT URL (browser mode):",
+				m.urlInput.View(),
+				"(Enter to apply, Esc to cancel)",
+			),
+		)
+	}
+
+	if m.isPickingURL {
+		m.urlPicker.SetSize(m.width-4, m.height-4)
+		return lipgloss.Place(m.width, m.height,
+			lipgloss.Center, lipgloss.Center,
+			m.urlPicker.View(),
+		)
+	}
+
+	if m.viewState == ViewStepPreview {
+		m.viewport.Width = m.width - 4
+		m.viewport.Height = m.height - 6
+		title := lipgloss.NewStyle().Bold(true).Render("Step Preview")
+		help := "[b] Back  [q] Quit  [t] Wrap  [c] Copy  (scroll with ↑↓ / PgUp/PgDn)"
+		notice := ""
+		if m.previewNotice != "" {
+			notice = lipgloss.NewStyle().Foreground(lipgloss.Color("82")).Render(m.previewNotice)
+		}
+		content := lipgloss.JoinVertical(lipgloss.Left,
+			title,
+			help,
+			notice,
+			"",
+			m.viewport.View(),
+		)
+		return lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, content)
+	}
+
+	left := m.list.View()
+	right := m.viewport.View()
+
+	if m.running {
+		status := "Running..."
+		if m.runAll {
+			status = fmt.Sprintf("Running All (%d/%d)...", m.currentIdx+1, len(m.list.Items()))
+		}
+		right = m.spinner.View() + " " + status + "\n" + right
+	} else {
+		filterStatus := ""
+		if m.roiThreshold > 0 {
+			modeSym := ">="
+			if m.roiMode == "under" {
+				modeSym = "<"
+			}
+			filterStatus = fmt.Sprintf(" [Filter: ROI %s %.1f]", modeSym, m.roiThreshold)
+		}
+		if filterStatus == "" {
+			modeSym := ">="
+			if m.roiMode == "under" {
+				modeSym = "<"
+			}
+			filterStatus = fmt.Sprintf(" [Filter: ROI %s ∞]", modeSym)
+		}
+		overrideStatus := ""
+		if m.appliedOverrides != nil {
+			added := len(m.appliedOverrides.AddedFlags)
+			removed := len(m.appliedOverrides.RemovedFlags)
+			targeted := len(m.appliedOverrides.ApplyToSteps)
+			overrideStatus = fmt.Sprintf(" [Overrides: +%d -%d steps:%d]", added, removed, targeted)
+		}
+		urlStatus := ""
+		if m.chatGPTURL != "" {
+			urlStatus = " [ChatGPT URL: set]"
+		} else {
+			urlStatus = " [ChatGPT URL: none]"
+		}
+		statusLine := strings.TrimSpace(filterStatus + overrideStatus + urlStatus)
+		if statusLine != "" {
+			right = lipgloss.NewStyle().Foreground(lipgloss.Color("63")).Render(statusLine) + "\n" + right
+		}
+	}
+
+	help := m.stepsHelpBar(m.width)
+	rightWidth := m.viewport.Width
+	if rightWidth < 1 {
+		rightWidth = 1
+	}
+	right = lipgloss.NewStyle().Width(rightWidth).Render(right)
+	main := lipgloss.JoinHorizontal(lipgloss.Top, left, " | ", right)
+	return lipgloss.JoinVertical(lipgloss.Left, main, help)
+}
+
+func (m Model) viewDone() string {
+	title := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("42")).Render("Execution Complete")
+	if m.err != nil {
+		title = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("196")).Render("Execution Failed")
+	}
+
+	help := "[n] New Run  [r] Rerun  [b] Back to List  [q] Quit  [m] ROI Mode"
+
+	// Show the log viewport in the done screen too? Or just a summary?
+	// Requirement says "displays a summary".
+	// But viewing the logs is useful.
+	// I'll show the viewport in the center/bottom.
+
+	content := lipgloss.JoinVertical(lipgloss.Center,
+		title,
+		"",
+		m.viewport.View(),
+		"",
+		help,
+	)
+
+[TRUNCATED]
+```
+
+internal/tui/tui_test.go
+```
+package tui
+
+import (
+	"testing"
+
+	"github.com/user/oraclepack/internal/exec"
+	"github.com/user/oraclepack/internal/pack"
+	"github.com/user/oraclepack/internal/state"
+)
+
+func TestInitAutoRun(t *testing.T) {
+	p := &pack.Pack{
+		Steps: []pack.Step{
+			{ID: "01", Number: 1, Code: "echo hello"},
+		},
+	}
+	r := exec.NewRunner(exec.RunnerOptions{})
+	s := &state.RunState{}
+
+	// Test case 1: autoRun = true
+	modelAuto := NewModel(p, r, s, "", 0, "over", true)
+	cmdAuto := modelAuto.Init()
+	
+	if cmdAuto == nil {
+		t.Fatal("expected Init cmd to be non-nil when autoRun is true")
+	}
+	// Note: We can't easily assert the content of a Batch command in a unit test.
+
+	// Test case 2: autoRun = false
+	modelManual := NewModel(p, r, s, "", 0, "over", false)
+	// Even with autoRun false, we have textinput.Blink, so Init is not nil.
+	cmdManual := modelManual.Init()
+	if cmdManual == nil {
+		t.Fatal("expected Init cmd to be non-nil due to textinput.Blink")
+	}
+}
+```
+
+internal/tui/url_picker.go
+```
+package tui
+
+import (
+	"fmt"
+	"strings"
+
+	"github.com/charmbracelet/bubbles/list"
+	"github.com/charmbracelet/bubbles/textinput"
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+)
+
+type URLPickedMsg struct {
+	URL string
+}
+
+type URLPickerCancelledMsg struct{}
+
+type urlItem struct {
+	name  string
+	url   string
+	scope string
+}
+
+func (i urlItem) Title() string       { return i.name }
+func (i urlItem) Description() string { return fmt.Sprintf("%s • %s", i.scope, i.url) }
+func (i urlItem) FilterValue() string { return i.name }
+
+type URLPickerModel struct {
+	list list.Model
+
+	projectPath string
+	globalPath  string
+	project     URLStore
+	global      URLStore
+
+	editing   bool
+	editName  textinput.Model
+	editURL   textinput.Model
+	editScope string
+	editIdx   int
+	editIsNew bool
+
+	errMsg string
+}
+
+func NewURLPickerModel(projectPath, globalPath string) URLPickerModel {
+	project, _ := LoadURLStore(projectPath)
+	global, _ := LoadURLStore(globalPath)
+
+	items := makeURLItems(project, global)
+	l := list.New(items, list.NewDefaultDelegate(), 0, 0)
+	l.Title = "ChatGPT Project URLs"
+	l.SetFilteringEnabled(true)
+	selectDefault(&l, project, global)
+
+	name := textinput.New()
+	name.Placeholder = "Name (e.g., Core Project)"
+	name.CharLimit = 60
+	name.Width = 40
+
+	url := textinput.New()
+	url.Placeholder = "https://chatgpt.com/g/.../project"
+	url.CharLimit = 200
+	url.Width = 60
+
+	return URLPickerModel{
+		list:        l,
+		projectPath: projectPath,
+		globalPath:  globalPath,
+		project:     project,
+		global:      global,
+		editName:    name,
+		editURL:     url,
+	}
+}
+
+func (m URLPickerModel) Init() tea.Cmd {
+	return nil
+}
+
+func (m URLPickerModel) Update(msg tea.Msg) (URLPickerModel, tea.Cmd) {
+	if m.editing {
+		return m.updateEdit(msg)
+	}
+
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "esc":
+			return m, func() tea.Msg { return URLPickerCancelledMsg{} }
+		case "enter":
+			item, ok := m.list.SelectedItem().(urlItem)
+			if !ok {
+				return m, nil
+			}
+			m.touch(item)
+			return m, func() tea.Msg { return URLPickedMsg{URL: item.url} }
+		case "a":
+			m.startEdit(urlScopeProject, "", "", true)
+			return m, nil
+		case "e":
+			item, ok := m.list.SelectedItem().(urlItem)
+			if !ok {
+				return m, nil
+			}
+			m.startEdit(item.scope, item.name, item.url, false)
+			return m, nil
+		case "d":
+			item, ok := m.list.SelectedItem().(urlItem)
+			if !ok {
+				return m, nil
+			}
+			m.delete(item)
+			return m, nil
+		case "s":
+			item, ok := m.list.SelectedItem().(urlItem)
+			if !ok {
+				return m, nil
+			}
+			m.setDefault(item)
+			return m, nil
+		}
+	}
+
+	var cmd tea.Cmd
+	m.list, cmd = m.list.Update(msg)
+	return m, cmd
+}
+
+func (m *URLPickerModel) SetSize(width, height int) {
+	m.list.SetSize(width, height-4)
+}
+
+func (m URLPickerModel) View() string {
+	if m.editing {
+		return m.editView()
+	}
+
+	help := lipgloss.NewStyle().Faint(true).Render("[enter] use  [a] add  [e] edit  [d] delete  [s] default  [esc] cancel")
+	return m.list.View() + "\n" + help
+}
+
+func makeURLItems(project URLStore, global URLStore) []list.Item {
+	var items []list.Item
+	for _, it := range project.Items {
+		items = append(items, urlItem{name: it.Name, url: it.URL, scope: urlScopeProject})
+	}
+	for _, it := range global.Items {
+		items = append(items, urlItem{name: it.Name, url: it.URL, scope: urlScopeGlobal})
+	}
+	return items
+}
+
+func selectDefault(l *list.Model, project URLStore, global URLStore) {
+	if l == nil {
+		return
+	}
+	name, scope := defaultNameScope(project, global)
+	if name == "" {
+		return
+	}
+	for idx, item := range l.Items() {
+		if it, ok := item.(urlItem); ok && it.name == name && it.scope == scope {
+			l.Select(idx)
+			return
+		}
+	}
+}
+
+func defaultNameScope(project URLStore, global URLStore) (string, string) {
+	if project.Default != "" {
+		return project.Default, urlScopeProject
+	}
+	if global.Default != "" {
+		return global.Default, urlScopeGlobal
+	}
+	return "", ""
+}
+
+func (m URLPickerModel) DefaultURL() string {
+	name, scope := defaultNameScope(m.project, m.global)
+	if name == "" {
+		return ""
+	}
+	store := m.storeFor(scope)
+	if store == nil {
+		return ""
+	}
+	for _, it := range store.Items {
+		if it.Name == name {
+			return it.URL
+		}
+	}
+	return ""
+}
+
+func (m *URLPickerModel) refresh() {
+	m.list.SetItems(makeURLItems(m.project, m.global))
+	selectDefault(&m.list, m.project, m.global)
+}
+
+func (m *URLPickerModel) touch(item urlItem) {
+	store := m.storeFor(item.scope)
+	if store == nil {
+		return
+	}
+	for i := range store.Items {
+		if store.Items[i].Name == item.name {
+			store.Items[i].LastUsed = nowRFC3339()
+			break
+		}
+	}
+	_ = m.saveStores()
+}
+
+func (m *URLPickerModel) delete(item urlItem) {
+	store := m.storeFor(item.scope)
+	if store == nil {
+		return
+	}
+	var out []URLItem
+	for _, it := range store.Items {
+		if it.Name == item.name {
+			continue
+		}
+		out = append(out, it)
+	}
+	store.Items = out
+	if store.Default == item.name {
+		store.Default = ""
+	}
+	_ = m.saveStores()
+	m.refresh()
+}
+
+func (m *URLPickerModel) setDefault(item urlItem) {
+	store := m.storeFor(item.scope)
+	if store == nil {
+		return
+	}
+	store.Default = item.name
+	_ = m.saveStores()
+}
+
+func (m *URLPickerModel) startEdit(scope, name, url string, isNew bool) {
+	m.editing = true
+	m.editScope = scope
+	m.editIsNew = isNew
+	m.editName.SetValue(name)
+	m.editURL.SetValue(url)
+	m.editName.Focus()
+	m.editURL.Blur()
+	m.errMsg = ""
+}
+
+func (m URLPickerModel) editView() string {
+	scopeLabel := fmt.Sprintf("Scope: %s (g=global, p=project)", m.editScope)
+	if m.globalPath == "" && m.projectPath != "" {
+		scopeLabel = "Scope: project"
+		m.editScope = urlScopeProject
+	}
+	if m.projectPath == "" && m.globalPath != "" {
+		scopeLabel = "Scope: global"
+		m.editScope = urlScopeGlobal
+	}
+	lines := []string{
+		"Add / Edit ChatGPT URL",
+		scopeLabel,
+		"",
+		"Name:",
+		m.editName.View(),
+		"",
+		"URL:",
+		m.editURL.View(),
+		"",
+		"[tab] switch field  [enter] save  [esc] cancel",
+	}
+	if m.errMsg != "" {
+		lines = append(lines, "", lipgloss.NewStyle().Foreground(lipgloss.Color("196")).Render(m.errMsg))
+	}
+	return lipgloss.JoinVertical(lipgloss.Left, lines...)
+}
+
+func (m URLPickerModel) updateEdit(msg tea.Msg) (URLPickerModel, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "esc":
+			m.editing = false
+			return m, nil
+		case "tab":
+			if m.editName.Focused() {
+				m.editName.Blur()
+				m.editURL.Focus()
+			} else {
+				m.editURL.Blur()
+				m.editName.Focus()
+			}
+			return m, nil
+		case "g":
+			if m.globalPath != "" {
+				m.editScope = urlScopeGlobal
+			}
+		case "p":
+			if m.projectPath != "" {
+				m.editScope = urlScopeProject
+			}
+		case "enter":
+			name := strings.TrimSpace(m.editName.Value())
+			url := strings.TrimSpace(m.editURL.Value())
+			if name == "" || !isValidURL(url) {
+				m.errMsg = "Name and a valid URL are required."
+				return m, nil
+			}
+			m.saveEdit(name, url)
+			m.editing = false
+			m.refresh()
+			return m, nil
+		}
+	}
+
+	var cmd tea.Cmd
+	if m.editName.Focused() {
+		m.editName, cmd = m.editName.Update(msg)
+	} else {
+		m.editURL, cmd = m.editURL.Update(msg)
+	}
+	return m, cmd
+}
+
+func (m *URLPickerModel) saveEdit(name, url string) {
+	scope := m.editScope
+	if scope == "" {
+		scope = urlScopeProject
+	}
+
+	// remove from other store if scope changed
+	m.removeByName(name, urlScopeProject)
+	m.removeByName(name, urlScopeGlobal)
+
+	store := m.storeFor(scope)
+	if store == nil {
+		return
+	}
+	updated := false
+	for i := range store.Items {
+		if store.Items[i].Name == name {
+			store.Items[i].URL = url
+			store.Items[i].LastUsed = nowRFC3339()
+			updated = true
+			break
+		}
+	}
+	if !updated {
+		store.Items = append(store.Items, URLItem{Name: name, URL: url, LastUsed: nowRFC3339()})
+	}
+	_ = m.saveStores()
+}
+
+func (m *URLPickerModel) removeByName(name, scope string) {
+	store := m.storeFor(scope)
+	if store == nil {
+		return
+	}
+	var out []URLItem
+	for _, it := range store.Items {
+		if it.Name == name {
+			continue
+		}
+		out = append(out, it)
+	}
+	store.Items = out
+}
+
+func (m *URLPickerModel) storeFor(scope string) *URLStore {
+	switch scope {
+	case urlScopeProject:
+		if m.projectPath == "" {
+			return nil
+		}
+		return &m.project
+	case urlScopeGlobal:
+		if m.globalPath == "" {
+			return nil
+		}
+		return &m.global
+	default:
+		return nil
+	}
+}
+
+func (m *URLPickerModel) saveStores() error {
+	if err := SaveURLStore(m.projectPath, m.project); err != nil {
+		return err
+	}
+	if err := SaveURLStore(m.globalPath, m.global); err != nil {
+		return err
+	}
+	return nil
+}
+```
+
+internal/tui/url_store.go
+```
+package tui
+
+import (
+	"encoding/json"
+	"errors"
+	"os"
+	"path/filepath"
+	"strings"
+	"time"
+)
+
+const (
+	urlScopeProject = "project"
+	urlScopeGlobal  = "global"
+)
+
+type URLItem struct {
+	Name     string `json:"name"`
+	URL      string `json:"url"`
+	LastUsed string `json:"lastUsed,omitempty"`
+}
+
+type URLStore struct {
+	Default string    `json:"default"`
+	Items   []URLItem `json:"items"`
+}
+
+func LoadURLStore(path string) (URLStore, error) {
+	if path == "" {
+		return URLStore{}, nil
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return URLStore{}, nil
+		}
+		return URLStore{}, err
+	}
+	var store URLStore
+	if err := json.Unmarshal(data, &store); err != nil {
+		return URLStore{}, err
+	}
+	return store, nil
+}
+
+func SaveURLStore(path string, store URLStore) error {
+	if path == "" {
+		return nil
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return err
+	}
+	data, err := json.MarshalIndent(store, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path, data, 0o644)
+}
+
+func ProjectURLStorePath(statePath, packSource string) string {
+	if statePath != "" {
+		base := strings.TrimSuffix(statePath, ".state.json")
+		return base + ".chatgpt-urls.json"
+	}
+	if packSource == "" {
+		return ""
+	}
+	return packSource + ".chatgpt-urls.json"
+}
+
+func GlobalURLStorePath() string {
+	home, err := os.UserHomeDir()
+	if err != nil || home == "" {
+		return ""
+	}
+	return filepath.Join(home, ".oraclepack", "chatgpt-urls.json")
+}
+
+func nowRFC3339() string {
+	return time.Now().UTC().Format(time.RFC3339)
+}
+
+func isValidURL(value string) bool {
+	v := strings.TrimSpace(value)
+	if v == "" {
+		return false
+	}
+	return strings.HasPrefix(v, "http://") || strings.HasPrefix(v, "https://")
+}
+```
+
+internal/tui/url_store_test.go
+```
+package tui
+
+import (
+	"path/filepath"
+	"testing"
+)
+
+func TestURLStoreSaveLoad(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "urls.json")
+
+	store := URLStore{
+		Default: "Primary",
+		Items: []URLItem{{
+			Name: "Primary",
+			URL:  "https://chatgpt.com/g/primary",
+		}},
+	}
+
+	if err := SaveURLStore(path, store); err != nil {
+		t.Fatalf("failed to save store: %v", err)
+	}
+
+	loaded, err := LoadURLStore(path)
+	if err != nil {
+		t.Fatalf("failed to load store: %v", err)
+	}
+
+	if loaded.Default != store.Default {
+		t.Fatalf("expected default %q, got %q", store.Default, loaded.Default)
+	}
+	if len(loaded.Items) != 1 || loaded.Items[0].URL != store.Items[0].URL {
+		t.Fatalf("loaded items mismatch: %+v", loaded.Items)
+	}
+}
+
+func TestURLPickerDefaultURLPrefersProject(t *testing.T) {
+	dir := t.TempDir()
+	projectPath := filepath.Join(dir, "project.json")
+	globalPath := filepath.Join(dir, "global.json")
+
+	project := URLStore{
+		Default: "Project",
+		Items: []URLItem{{
+			Name: "Project",
+			URL:  "https://chatgpt.com/g/project",
+		}},
+	}
+	global := URLStore{
+		Default: "Global",
+		Items: []URLItem{{
+			Name: "Global",
+			URL:  "https://chatgpt.com/g/global",
+		}},
+	}
+
+	if err := SaveURLStore(projectPath, project); err != nil {
+		t.Fatalf("failed to save project store: %v", err)
+	}
+	if err := SaveURLStore(globalPath, global); err != nil {
+		t.Fatalf("failed to save global store: %v", err)
+	}
+
+	picker := NewURLPickerModel(projectPath, globalPath)
+	if got := picker.DefaultURL(); got != project.Items[0].URL {
+		t.Fatalf("expected project default URL %q, got %q", project.Items[0].URL, got)
+	}
+}
+```
+
+internal/exec/flags.go
+```
+package exec
+
+import "strings"
+
+// ApplyChatGPTURL ensures a single --chatgpt-url flag is present when url is set.
+// It removes any existing --chatgpt-url/--browser-url flags and their values.
+func ApplyChatGPTURL(flags []string, url string) []string {
+	var out []string
+	skipNext := false
+	for _, f := range flags {
+		if skipNext {
+			skipNext = false
+			continue
+		}
+		if f == "--chatgpt-url" || f == "--browser-url" {
+			skipNext = true
+			continue
+		}
+		if strings.HasPrefix(f, "--chatgpt-url=") || strings.HasPrefix(f, "--browser-url=") {
+			continue
+		}
+		out = append(out, f)
+	}
+	if url != "" {
+		out = append(out, "--chatgpt-url", url)
+	}
+	return out
+}
+```
+
+internal/exec/inject.go
+```
+package exec
+
+import "strings"
+
+// InjectFlags scans a script and appends flags to any 'oracle' command invocation.
+func InjectFlags(script string, flags []string) string {
+	if len(flags) == 0 {
+		return script
+	}
+
+	flagStr := strings.Join(flags, " ")
+
+	lines := strings.Split(script, "\n")
+	for i, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmed, "#") {
+			continue
+		}
+
+		insertIdx := oracleInsertIndex(line)
+		if insertIdx == -1 {
+			continue
+		}
+
+		lines[i] = insertFlagsInLine(line, insertIdx, flagStr)
+	}
+
+	return strings.Join(lines, "\n")
+}
+
+func oracleInsertIndex(line string) int {
+	i := 0
+	for i < len(line) && (line[i] == ' ' || line[i] == '\t') {
+		i++
+	}
+
+	if !strings.HasPrefix(line[i:], "oracle") {
+		return -1
+	}
+
+	end := i + len("oracle")
+	if end < len(line) {
+		next := line[end]
+		if next != ' ' && next != '\t' {
+			return -1
+		}
+	}
+
+	return end
+}
+
+func insertFlagsInLine(line string, insertIdx int, flags string) string {
+	prefix := line[:insertIdx]
+	rest := line[insertIdx:]
+	if rest == "" {
+		return prefix + " " + flags
+	}
+	if rest[0] == ' ' || rest[0] == '\t' {
+		return prefix + " " + flags + rest
+	}
+	return prefix + " " + flags + " " + rest
+}
+```
+
+internal/exec/inject_test.go
+```
+package exec
+
+import (
+	"testing"
+)
+
+func TestInjectFlags(t *testing.T) {
+	tests := []struct {
+		name     string
+		script   string
+		flags    []string
+		expected string
+	}{
+		{
+			"simple injection",
+			"oracle query 'hello'",
+			[]string{"--verbose"},
+			"oracle --verbose query 'hello'",
+		},
+		{
+			"indented injection",
+			"  oracle query 'hello'",
+			[]string{"--verbose"},
+			"  oracle --verbose query 'hello'",
+		},
+		{
+			"no injection needed",
+			"echo 'hello'",
+			[]string{"--verbose"},
+			"echo 'hello'",
+		},
+		{
+			"multiple lines",
+			"echo 'start'\noracle query\necho 'end'",
+			[]string{"--debug"},
+			"echo 'start'\noracle --debug query\necho 'end'",
+		},
+		{
+			"multiline with continuation",
+			"oracle \\\n  --json \\\n  --files",
+			[]string{"--flag"},
+			"oracle --flag \\\n  --json \\\n  --files",
+		},
+		{
+			"multiline with args and continuation",
+			"  oracle arg \\\n  --json",
+			[]string{"--flag"},
+			"  oracle --flag arg \\\n  --json",
+		},
+		{
+			"commented command",
+			"# oracle --json",
+			[]string{"--verbose"},
+			"# oracle --json",
+		},
+		{
+			"oracle as part of word",
+			"coracle query",
+			[]string{"--verbose"},
+			"coracle query",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := InjectFlags(tt.script, tt.flags)
+			if got != tt.expected {
+				t.Errorf("InjectFlags() = %q, want %q", got, tt.expected)
+			}
+		})
+	}
+}
+```
+
+internal/exec/oracle_scan.go
+```
+package exec
+
+import (
+	"regexp"
+	"strings"
+)
+
+var oracleCmdRegex = regexp.MustCompile(`^(\s*)(oracle)\b`)
+
+// OracleInvocation represents a detected oracle command in a script.
+type OracleInvocation struct {
+	StartLine   int    // 0-based start line index
+	EndLine     int    // 0-based end line index (inclusive)
+	Raw         string // The full command string (joined if multi-line)
+	Display     string // A trimmed version for UI display
+	Indentation string // The leading whitespace
+}
+
+// ExtractOracleInvocations extracts oracle invocations from a script.
+func ExtractOracleInvocations(script string) []OracleInvocation {
+	var invocations []OracleInvocation
+	lines := strings.Split(script, "\n")
+
+	for i := 0; i < len(lines); i++ {
+		line := lines[i]
+		trimmed := strings.TrimSpace(line)
+
+		// Skip comments
+		if strings.HasPrefix(trimmed, "#") {
+			continue
+		}
+
+		// Check for oracle command
+		loc := oracleCmdRegex.FindStringSubmatchIndex(line)
+		if loc != nil {
+			startLine := i
+			// Group 1 is the indentation
+			indentation := line[loc[2]:loc[3]]
+
+			var cmdBuilder strings.Builder
+			cmdBuilder.WriteString(line)
+
+			endLine := i
+			// Handle line continuations
+			// Check if line ends with backslash (ignoring trailing whitespace)
+			for {
+				if endLine+1 >= len(lines) {
+					break
+				}
+
+				// Check current line for continuation
+				currTrimmed := strings.TrimRight(lines[endLine], " \t")
+				if !strings.HasSuffix(currTrimmed, "\\") {
+					break
+				}
+
+				endLine++
+				cmdBuilder.WriteString("\n")
+				cmdBuilder.WriteString(lines[endLine])
+			}
+
+			raw := cmdBuilder.String()
+			invocations = append(invocations, OracleInvocation{
+				StartLine:   startLine,
+				EndLine:     endLine,
+				Raw:         raw,
+				Display:     strings.TrimSpace(raw),
+				Indentation: indentation,
+			})
+
+			i = endLine // Advance loop
+		}
+	}
+	return invocations
+}
+```
+
+internal/exec/oracle_scan_test.go
+```
+package exec
+
+import (
+	"reflect"
+	"testing"
+)
+
+func TestExtractOracleInvocations(t *testing.T) {
+	tests := []struct {
+		name   string
+		script string
+		want   []OracleInvocation
+	}{
+		{
+			name:   "Simple command",
+			script: "oracle --json",
+			want: []OracleInvocation{
+				{StartLine: 0, EndLine: 0, Raw: "oracle --json", Display: "oracle --json", Indentation: ""},
+			},
+		},
+		{
+			name:   "Indented command",
+			script: "  oracle --json",
+			want: []OracleInvocation{
+				{StartLine: 0, EndLine: 0, Raw: "  oracle --json", Display: "oracle --json", Indentation: "  "},
+			},
+		},
+		{
+			name: "Multiline command",
+			script: `oracle \
+  --json \
+  --files`,
+			want: []OracleInvocation{
+				{StartLine: 0, EndLine: 2, Raw: `oracle \
+  --json \
+  --files`, Display: `oracle \
+  --json \
+  --files`, Indentation: ""},
+			},
+		},
+		{
+			name: "Commented command",
+			script: `# oracle --json
+oracle --real`,
+			want: []OracleInvocation{
+				{StartLine: 1, EndLine: 1, Raw: "oracle --real", Display: "oracle --real", Indentation: ""},
+			},
+		},
+		{
+			name: "Multiple commands",
+			script: `
+echo start
+oracle --one
+echo mid
+oracle --two
+echo end
+`,
+			want: []OracleInvocation{
+				{StartLine: 2, EndLine: 2, Raw: "oracle --one", Display: "oracle --one", Indentation: ""},
+				{StartLine: 4, EndLine: 4, Raw: "oracle --two", Display: "oracle --two", Indentation: ""},
+			},
+		},
+		{
+			name:   "Oraclepack prefix (should not match)",
+			script: "oraclepack run",
+			want:   nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := ExtractOracleInvocations(tt.script)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("ExtractOracleInvocations() = %+v, want %+v", got, tt.want)
+			}
+		})
+	}
+}
+```
+
+internal/exec/oracle_validate.go
+```
+package exec
+
+import (
+	"bytes"
+	"context"
+	"os"
+	"os/exec"
+	"strings"
+
+	"github.com/user/oraclepack/internal/overrides"
+	"github.com/user/oraclepack/internal/pack"
+)
+
+// ValidationError captures a failed oracle validation for a step.
+type ValidationError struct {
+	StepID       string
+	Command      string
+	ErrorMessage string
+}
+
+// ValidateOverrides runs oracle --dry-run summary for targeted steps.
+func ValidateOverrides(
+	ctx context.Context,
+	steps []pack.Step,
+	over *overrides.RuntimeOverrides,
+	baseline []string,
+	opts RunnerOptions,
+) ([]ValidationError, error) {
+	if over == nil || over.ApplyToSteps == nil {
+		return nil, nil
+	}
+
+	shell := opts.Shell
+	if shell == "" {
+		shell = "/bin/bash"
+	}
+	env := append(os.Environ(), opts.Env...)
+
+	var results []ValidationError
+	for _, step := range steps {
+		if !over.ApplyToSteps[step.ID] {
+			continue
+		}
+
+		invocations := ExtractOracleInvocations(step.Code)
+		if len(invocations) == 0 {
+			continue
+		}
+
+		flags := over.EffectiveFlags(step.ID, baseline)
+		flags = append(flags, "--dry-run", "summary")
+
+		for _, inv := range invocations {
+			cmdStr := InjectFlags(inv.Raw, flags)
+			msg, err := execDryRun(ctx, shell, opts.WorkDir, env, cmdStr)
+			if err == nil {
+				continue
+			}
+
+			results = append(results, ValidationError{
+				StepID:       step.ID,
+				Command:      cmdStr,
+				ErrorMessage: msg,
+			})
+		}
+	}
+
+	return results, nil
+}
+
+func execDryRun(ctx context.Context, shell, workDir string, env []string, command string) (string, error) {
+	if pathVal := findEnvValue(env, "PATH"); pathVal != "" {
+		command = "export PATH=" + shellQuote(pathVal) + "; " + command
+	}
+
+	cmd := exec.CommandContext(ctx, shell, "-lc", command)
+	if workDir != "" {
+		cmd.Dir = workDir
+	}
+	cmd.Env = env
+
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	err := cmd.Run()
+	if err == nil {
+		return stdout.String(), nil
+	}
+	if stderr.Len() > 0 {
+		return strings.TrimSpace(stderr.String()), err
+	}
+	if stdout.Len() > 0 {
+		return strings.TrimSpace(stdout.String()), err
+	}
+	return err.Error(), err
+}
+
+func findEnvValue(env []string, key string) string {
+	prefix := key + "="
+	for _, entry := range env {
+		if strings.HasPrefix(entry, prefix) {
+			return strings.TrimPrefix(entry, prefix)
+		}
+	}
+	return ""
+}
+
+func shellQuote(value string) string {
+	if value == "" {
+		return "''"
+	}
+	return "'" + strings.ReplaceAll(value, "'", "'\\''") + "'"
+}
+```
+
+internal/exec/oracle_validate_test.go
+```
+package exec
+
+import (
+	"context"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+
+	"github.com/user/oraclepack/internal/overrides"
+	"github.com/user/oraclepack/internal/pack"
+)
+
+func TestValidateOverrides_Success(t *testing.T) {
+	dir := t.TempDir()
+	writeOracleStub(t, dir)
+
+	steps := []pack.Step{
+		{ID: "01", Code: "oracle --ok"},
+	}
+	over := &overrides.RuntimeOverrides{
+		ApplyToSteps: map[string]bool{"01": true},
+	}
+
+	_, err := ValidateOverrides(
+		context.Background(),
+		steps,
+		over,
+		[]string{"--base"},
+		RunnerOptions{
+			WorkDir: dir,
+			Env:     []string{"PATH=" + dir + string(os.PathListSeparator) + os.Getenv("PATH")},
+		},
+	)
+	if err != nil {
+		t.Fatalf("ValidateOverrides failed: %v", err)
+	}
+}
+
+func TestValidateOverrides_Error(t *testing.T) {
+	dir := t.TempDir()
+	writeOracleStub(t, dir)
+
+	steps := []pack.Step{
+		{ID: "01", Code: "oracle --bad"},
+	}
+	over := &overrides.RuntimeOverrides{
+		ApplyToSteps: map[string]bool{"01": true},
+	}
+
+	errs, err := ValidateOverrides(
+		context.Background(),
+		steps,
+		over,
+		nil,
+		RunnerOptions{
+			WorkDir: dir,
+			Env:     []string{"PATH=" + dir + string(os.PathListSeparator) + os.Getenv("PATH")},
+		},
+	)
+	if err != nil {
+		t.Fatalf("ValidateOverrides failed: %v", err)
+	}
+	if len(errs) != 1 {
+		t.Fatalf("expected 1 validation error, got %d", len(errs))
+	}
+	msg := errs[0].ErrorMessage
+	if !strings.Contains(msg, "invalid flag") && !strings.Contains(msg, "unknown option") {
+		t.Fatalf("unexpected error message: %q", msg)
+	}
+	if !strings.Contains(errs[0].Command, "--dry-run summary") {
+		t.Fatalf("expected command to include --dry-run summary, got %q", errs[0].Command)
+	}
+}
+
+func writeOracleStub(t *testing.T, dir string) {
+	t.Helper()
+	stub := `#!/bin/sh
+has_dry=0
+has_summary=0
+for arg in "$@"; do
+  if [ "$arg" = "--dry-run" ]; then has_dry=1; fi
+  if [ "$arg" = "summary" ]; then has_summary=1; fi
+  if [ "$arg" = "--bad" ]; then echo "invalid flag" 1>&2; exit 1; fi
+done
+if [ $has_dry -eq 0 ] || [ $has_summary -eq 0 ]; then
+  echo "missing dry run" 1>&2
+  exit 1
+fi
+exit 0
+`
+	path := filepath.Join(dir, "oracle")
+	if err := os.WriteFile(path, []byte(stub), 0o755); err != nil {
+		t.Fatalf("write oracle stub: %v", err)
+	}
+}
+```
+
+internal/exec/runner.go
+```
+package exec
+
+import (
+	"context"
+	"fmt"
+	"io"
+	"os"
+	"os/exec"
+
+	"github.com/user/oraclepack/internal/errors"
+	"github.com/user/oraclepack/internal/overrides"
+	"github.com/user/oraclepack/internal/pack"
+)
+
+// Runner handles the execution of shell scripts.
+type Runner struct {
+	Shell       string
+	WorkDir     string
+	Env         []string
+	OracleFlags []string
+	Overrides   *overrides.RuntimeOverrides
+	ChatGPTURL  string
+	warnings    []SanitizeWarning
+}
+
+// RunnerOptions configures a Runner.
+type RunnerOptions struct {
+	Shell       string
+	WorkDir     string
+	Env         []string
+	OracleFlags []string
+	Overrides   *overrides.RuntimeOverrides
+	ChatGPTURL  string
+}
+
+// NewRunner creates a new Runner with options.
+func NewRunner(opts RunnerOptions) *Runner {
+	shell := opts.Shell
+	if shell == "" {
+		shell = "/bin/bash"
+	}
+
+	return &Runner{
+		Shell:       shell,
+		WorkDir:     opts.WorkDir,
+		Env:         append(os.Environ(), opts.Env...),
+		OracleFlags: opts.OracleFlags,
+		Overrides:   opts.Overrides,
+		ChatGPTURL:  opts.ChatGPTURL,
+	}
+}
+
+// RunPrelude executes the prelude code.
+func (r *Runner) RunPrelude(ctx context.Context, p *pack.Prelude, logWriter io.Writer) error {
+	script, warnings := SanitizeScript(p.Code, "prelude", "")
+	r.recordWarnings(warnings, logWriter)
+	return r.run(ctx, script, logWriter)
+}
+
+// RunStep executes a single step's code.
+func (r *Runner) RunStep(ctx context.Context, s *pack.Step, logWriter io.Writer) error {
+	flags := ApplyChatGPTURL(r.OracleFlags, r.ChatGPTURL)
+	if r.Overrides != nil {
+		flags = r.Overrides.EffectiveFlags(s.ID, r.OracleFlags)
+		flags = ApplyChatGPTURL(flags, r.ChatGPTURL)
+	}
+	code := InjectFlags(s.Code, flags)
+	script, warnings := SanitizeScript(code, "step", s.ID)
+	r.recordWarnings(warnings, logWriter)
+	return r.run(ctx, script, logWriter)
+}
+
+func (r *Runner) recordWarnings(warnings []SanitizeWarning, logWriter io.Writer) {
+	if len(warnings) == 0 {
+		return
+	}
+	for _, w := range warnings {
+		r.warnings = append(r.warnings, w)
+		if logWriter != nil {
+			scope := w.Scope
+			if scope == "" {
+				scope = "script"
+			}
+			step := ""
+			if w.StepID != "" {
+				step = " step " + w.StepID
+			}
+			_, _ = fmt.Fprintf(logWriter, "⚠ oraclepack: sanitized label in %s%s line %d: %s\n", scope, step, w.Line, w.Token)
+		}
+	}
+}
+
+// DrainWarnings returns any sanitizer warnings collected since the last call.
+func (r *Runner) DrainWarnings() []SanitizeWarning {
+	if len(r.warnings) == 0 {
+		return nil
+	}
+	out := make([]SanitizeWarning, len(r.warnings))
+	copy(out, r.warnings)
+	r.warnings = nil
+	return out
+}
+
+func (r *Runner) run(ctx context.Context, script string, logWriter io.Writer) error {
+	// We use bash -lc to ensure login shell (paths, aliases, etc)
+	cmd := exec.CommandContext(ctx, r.Shell, "-lc", script)
+	cmd.Dir = r.WorkDir
+	cmd.Env = r.Env
+
+	// Standardize stdout and stderr to the logWriter
+	cmd.Stdout = logWriter
+	cmd.Stderr = logWriter
+
+	err := cmd.Run()
+	if err != nil {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+		return fmt.Errorf("%w: %v", errors.ErrExecutionFailed, err)
+	}
+
+	return nil
+}
+```
+
+internal/exec/runner_test.go
+```
+package exec
+
+import (
+	"context"
+	"strings"
+	"testing"
+
+	"github.com/user/oraclepack/internal/pack"
+)
+
+func TestRunner_RunStep(t *testing.T) {
+	r := NewRunner(RunnerOptions{})
+	
+	var lines []string
+	lw := &LineWriter{
+		Callback: func(line string) {
+			lines = append(lines, line)
+		},
+	}
+
+	step := &pack.Step{
+		Code: "echo 'hello world'",
+	}
+
+	err := r.RunStep(context.Background(), step, lw)
+	if err != nil {
+		t.Fatalf("RunStep failed: %v", err)
+	}
+	lw.Close()
+
+	found := false
+	for _, l := range lines {
+		if strings.TrimSpace(l) == "hello world" {
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		t.Errorf("expected 'hello world' in output, got: %v", lines)
+	}
+}
+
+func TestRunner_ContextCancellation(t *testing.T) {
+	r := NewRunner(RunnerOptions{})
+	
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // Cancel immediately
+
+	step := &pack.Step{
+		Code: "sleep 10",
+	}
+
+	err := r.RunStep(ctx, step, nil)
+	if err != context.Canceled {
+		t.Errorf("expected context.Canceled, got %v", err)
+	}
+}
+```
+
+internal/exec/sanitize.go
+```
+package exec
+
+import (
+	osexec "os/exec"
+	"regexp"
+	"strings"
+)
+
+// SanitizeWarning captures a label line that was converted to a safe echo.
+type SanitizeWarning struct {
+	Scope   string
+	StepID  string
+	Line    int
+	Token   string
+	Message string
+}
+
+var (
+	labelTokenRegex   = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_-]*$`)
+	heredocStartRegex = regexp.MustCompile(`<<-?\s*['"]?([A-Za-z0-9_]+)['"]?`)
+)
+
+var shellBuiltins = map[string]bool{
+	"alias":    true,
+	"bg":       true,
+	"break":    true,
+	"cd":       true,
+	"command":  true,
+	"continue": true,
+	"declare":  true,
+	"dirs":     true,
+	"echo":     true,
+	"eval":     true,
+	"exec":     true,
+	"exit":     true,
+	"export":   true,
+	"fg":       true,
+	"getopts":  true,
+	"hash":     true,
+	"help":     true,
+	"jobs":     true,
+	"local":    true,
+	"popd":     true,
+	"printf":   true,
+	"pushd":    true,
+	"pwd":      true,
+	"readonly": true,
+	"return":   true,
+	"set":      true,
+	"shift":    true,
+	"source":   true,
+	"test":     true,
+	"trap":     true,
+	"true":     true,
+	"type":     true,
+	"ulimit":   true,
+	"umask":    true,
+	"unalias":  true,
+	"unset":    true,
+	"wait":     true,
+	"false":    true,
+}
+
+var shellKeywords = map[string]bool{
+	"case":     true,
+	"do":       true,
+	"done":     true,
+	"elif":     true,
+	"else":     true,
+	"esac":     true,
+	"fi":       true,
+	"for":      true,
+	"function": true,
+	"if":       true,
+	"in":       true,
+	"select":   true,
+	"then":     true,
+	"time":     true,
+	"until":    true,
+	"while":    true,
+}
+
+// SanitizeScript converts bare label-like lines into safe echo statements.
+func SanitizeScript(script, scope, stepID string) (string, []SanitizeWarning) {
+	if script == "" {
+		return script, nil
+	}
+
+	lines := strings.Split(script, "\n")
+	var warnings []SanitizeWarning
+	var heredocEnd string
+
+	for i, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if heredocEnd != "" {
+			if trimmed == heredocEnd {
+				heredocEnd = ""
+			}
+			continue
+		}
+		if trimmed == "" || strings.HasPrefix(trimmed, "#") {
+			continue
+		}
+
+		if end := heredocStartToken(trimmed); end != "" {
+			heredocEnd = end
+			continue
+		}
+
+		fields := strings.Fields(trimmed)
+		if len(fields) != 1 {
+			continue
+		}
+		token := fields[0]
+		if !labelTokenRegex.MatchString(token) {
+			continue
+		}
+		lower := strings.ToLower(token)
+		if shellBuiltins[lower] || shellKeywords[lower] {
+			continue
+		}
+		if _, err := osexec.LookPath(token); err == nil {
+			continue
+		}
+
+		indent := line[:len(line)-len(strings.TrimLeft(line, " \t"))]
+		lines[i] = indent + "echo \"" + token + "\""
+		warnings = append(warnings, SanitizeWarning{
+			Scope:   scope,
+			StepID:  stepID,
+			Line:    i + 1,
+			Token:   token,
+			Message: "Converted bare label to echo",
+		})
+	}
+
+	return strings.Join(lines, "\n"), warnings
+}
+
+func heredocStartToken(line string) string {
+	match := heredocStartRegex.FindStringSubmatch(line)
+	if len(match) < 2 {
+		return ""
+	}
+	return match[1]
+}
+```
+
+internal/exec/sanitize_test.go
+```
+package exec
+
+import "testing"
+
+func TestSanitizeScript_LabelLine(t *testing.T) {
+	input := "GenerateReport\noracle --help\n"
+	got, warnings := SanitizeScript(input, "step", "01")
+	if len(warnings) != 1 {
+		t.Fatalf("expected 1 warning, got %d", len(warnings))
+	}
+	if warnings[0].Token != "GenerateReport" {
+		t.Fatalf("expected token GenerateReport, got %s", warnings[0].Token)
+	}
+	wantPrefix := "echo \"GenerateReport\""
+	if got[:len(wantPrefix)] != wantPrefix {
+		t.Fatalf("expected sanitized line to start with %q, got %q", wantPrefix, got)
+	}
+}
+
+func TestSanitizeScript_BuiltinUnchanged(t *testing.T) {
+	input := "echo\n"
+	got, warnings := SanitizeScript(input, "step", "01")
+	if len(warnings) != 0 {
+		t.Fatalf("expected no warnings, got %d", len(warnings))
+	}
+	if got != input {
+		t.Fatalf("expected script unchanged, got %q", got)
+	}
+}
+
+func TestSanitizeScript_HeredocUnchanged(t *testing.T) {
+	input := "cat <<'EOF'\nGenerateReport\nEOF\n"
+	got, warnings := SanitizeScript(input, "step", "01")
+	if len(warnings) != 0 {
+		t.Fatalf("expected no warnings, got %d", len(warnings))
+	}
+	if got != input {
+		t.Fatalf("expected heredoc unchanged, got %q", got)
+	}
+}
+```
+
+internal/exec/stream.go
+```
+package exec
+
+import (
+	"io"
+)
+
+// LineWriter is an io.Writer that splits output into lines and calls a callback.
+type LineWriter struct {
+	Callback func(string)
+	buffer   []byte
+}
+
+func (w *LineWriter) Write(p []byte) (n int, err error) {
+	for _, b := range p {
+		if b == '\n' {
+			w.Callback(string(w.buffer))
+			w.buffer = w.buffer[:0]
+		} else {
+			w.buffer = append(w.buffer, b)
+		}
+	}
+	return len(p), nil
+}
+
+// Close flushes any remaining data in the buffer.
+func (w *LineWriter) Close() error {
+	if len(w.buffer) > 0 {
+		w.Callback(string(w.buffer))
+		w.buffer = w.buffer[:0]
+	}
+	return nil
+}
+
+// MultiWriter handles multiple writers efficiently.
+func MultiWriter(writers ...io.Writer) io.Writer {
+	return io.MultiWriter(writers...)
+}
+```
+
+internal/overrides/merge.go
+```
+package overrides
+
+// EffectiveFlags calculates the final flags for a step.
+func (r *RuntimeOverrides) EffectiveFlags(stepID string, baseline []string) []string {
+	if r == nil || r.ApplyToSteps == nil || !r.ApplyToSteps[stepID] {
+		return baseline
+	}
+
+	var effective []string
+
+	// Map for removed flags
+	removed := make(map[string]bool)
+	for _, f := range r.RemovedFlags {
+		removed[f] = true
+	}
+
+	// Filter baseline
+	for _, flag := range baseline {
+		if !removed[flag] {
+			effective = append(effective, flag)
+		}
+	}
+
+	// Append added flags
+	effective = append(effective, r.AddedFlags...)
+
+	// Inject ChatGPTURL
+	if r.ChatGPTURL != "" {
+		effective = append(effective, "--chatgpt-url", r.ChatGPTURL)
+	}
+
+	return effective
+}
+```
+
+internal/overrides/merge_test.go
+```
+package overrides
+
+import (
+	"reflect"
+	"testing"
+)
+
+func TestEffectiveFlags(t *testing.T) {
+	tests := []struct {
+		name      string
+		overrides *RuntimeOverrides
+		stepID    string
+		baseline  []string
+		want      []string
+	}{
+		{
+			name:      "No overrides (nil)",
+			overrides: nil,
+			stepID:    "01",
+			baseline:  []string{"--json"},
+			want:      []string{"--json"},
+		},
+		{
+			name: "Step not targeted",
+			overrides: &RuntimeOverrides{
+				ApplyToSteps: map[string]bool{"02": true},
+				AddedFlags:   []string{"--verbose"},
+			},
+			stepID:   "01",
+			baseline: []string{"--json"},
+			want:     []string{"--json"},
+		},
+		{
+			name: "Step targeted: Add flags",
+			overrides: &RuntimeOverrides{
+				ApplyToSteps: map[string]bool{"01": true},
+				AddedFlags:   []string{"--verbose"},
+			},
+			stepID:   "01",
+			baseline: []string{"--json"},
+			want:     []string{"--json", "--verbose"},
+		},
+		{
+			name: "Step targeted: Remove flags",
+			overrides: &RuntimeOverrides{
+				ApplyToSteps: map[string]bool{"01": true},
+				RemovedFlags: []string{"--json"},
+			},
+			stepID:   "01",
+			baseline: []string{"--json", "--other"},
+			want:     []string{"--other"},
+		},
+		{
+			name: "Step targeted: Add and Remove",
+			overrides: &RuntimeOverrides{
+				ApplyToSteps: map[string]bool{"01": true},
+				AddedFlags:   []string{"--new"},
+				RemovedFlags: []string{"--old"},
+			},
+			stepID:   "01",
+			baseline: []string{"--old", "--keep"},
+			want:     []string{"--keep", "--new"},
+		},
+		{
+			name: "Step targeted: Inject ChatGPT URL",
+			overrides: &RuntimeOverrides{
+				ApplyToSteps: map[string]bool{"01": true},
+				ChatGPTURL:   "https://chat.openai.com/share/123",
+			},
+			stepID:   "01",
+			baseline: []string{"--json"},
+			want:     []string{"--json", "--chatgpt-url", "https://chat.openai.com/share/123"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.overrides.EffectiveFlags(tt.stepID, tt.baseline)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("EffectiveFlags() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+```
+
+internal/overrides/types.go
+```
+package overrides
+
+// RuntimeOverrides holds configuration for runtime flag modifications.
+type RuntimeOverrides struct {
+	AddedFlags   []string        // Flags to append (e.g., "--model=gpt-4")
+	RemovedFlags []string        // Flags to remove (e.g., "--json")
+	ChatGPTURL   string          // Optional URL to inject via --chatgpt-url
+	ApplyToSteps map[string]bool // Set of step IDs to apply overrides to. If empty, applies to none.
+}
 ```
 
 .tickets/PRD-TUI/Oraclepack TUI Integration.md
@@ -5093,45 +10023,7 @@ Current Behavior (Actual):
 - Not provided
 
 Expected Behavior:
-- TUI provides an explicit entry point for the PRD Generator run that applies the correct ChatGPT URL specifically to PRD generation step(s).
-
-Reproduction Steps:
-- Not provided
-
-Requirements / Constraints:
-- Must use existing URL picker/store (no hardcoded URL in pack/repo).
-- Must apply ChatGPT URL override to targeted PRD step(s), not necessarily globally.
-
-Evidence:
-- “Add a TUI toggle like: `[ ] Generate enhanced PRD via PRD Generator Project`”
-- “prompt user to pick the PRD-generator URL… run `prd-generator.pack.md`… apply `RuntimeOverrides{ChatGPTURL: <picked>, ApplyToSteps: {"01": true}}`…”
-
-Open Items / Unknowns:
-- Whether step ID is always `01` or determined dynamically (“or whichever step calls oracle”).
-- Whether auto-selecting “PRD Generator” is required behavior or best-effort fallback.
-
-Risks / Dependencies:
-- Depends on ticketify generating `prd-generator.pack.md` and `prd_context.md` (T6).
-
-Acceptance Criteria:
-- [ ] TUI displays a toggle/option labeled as specified (or equivalent).
-- [ ] When enabled, user can select (or auto-select) the PRD Generator ChatGPT URL entry.
-- [ ] TUI runs `prd-generator.pack.md`.
-- [ ] The PRD generation step(s) run with the selected ChatGPT URL override applied via `ApplyToSteps`.
-- [ ] Non-PRD steps (if any) are not forced to use the PRD Generator URL unless targeted.
-
-Priority & Severity (if inferable from input text):
-- Priority: Not provided
-- Severity: Not provided
-
-Source:
-- “[ ] Generate enhanced PRD via PRD Generator Project”
-- “prompt user to pick the PRD-generator URL… run… apply `RuntimeOverrides{ChatGPTURL: <picked>, ApplyToSteps: {"01": true}}`”
-- “without hardcoding URLs into packs or repos…”
-```
-
-[1]: https://help.openai.com/en/articles/10169521-using-projects-in-chatgpt?utm_source=chatgpt.com "Projects in ChatGPT"
-[2]: https://spec.commonmark.org/0.12/?utm_source=chatgpt.com "Fenced code blocks"
+[TRUNCATED]
 ```
 
 .tickets/PRD-TUI/PRD-generator URL routing.md
@@ -8304,69 +13196,6 @@ async def oraclepack_read_file(params: ReadFileInput) -> Any:
         return {"path": str(p), "truncated": truncated, "content": text}
 
     note = f"\n\n(content truncated to {max_bytes} bytes)" if truncated else ""
-    return f"# {p.name}\n\n{_md_codeblock('text', text)}{note}"
-
-
-@mcp.tool(
-    name="oraclepack_taskify_detect_stage2",
-    annotations={
-        "title": "Detect Stage-2 oraclepack outputs",
-        "readOnlyHint": True,
-        "destructiveHint": False,
-        "idempotentHint": True,
-        "openWorldHint": False,
-    },
-)
-async def oraclepack_taskify_detect_stage2(params: TaskifyDetectStage2Input) -> Any:
-    repo_root = resolve_under_roots(Path(params.repo_root), cfg.allowed_roots)
-    res = detect_stage2(stage2_path=params.stage2_path, repo_root=repo_root)
-
-    payload = {
-        "kind": res.kind,
-        "stage2_path": str(res.stage2_path),
-        "out_dir": str(res.out_dir),
-        "notes": res.notes,
-    }
-
-    if params.response_format == ResponseFormat.json:
-        return payload
-
-    lines = ["# Stage-2 resolution", ""]
-    lines.append(f"- **kind**: `{payload['kind']}`")
-    lines.append(f"- **stage2_path**: `{payload['stage2_path']}`")
-    lines.append(f"- **out_dir**: `{payload['out_dir']}`")
-    if payload["notes"]:
-        lines.append("- **notes**:")
-        lines += [f"  - {n}" for n in payload["notes"]]
-    return "\n".join(lines)
-
-
-@mcp.tool(
-    name="oraclepack_taskify_validate_stage2",
-    annotations={
-        "title": "Validate Stage-2 directory outputs (01-*.md..20-*.md)",
-        "readOnlyHint": True,
-        "destructiveHint": False,
-        "idempotentHint": True,
-        "openWorldHint": False,
-    },
-)
-async def oraclepack_taskify_validate_stage2(params: TaskifyValidateStage2Input) -> Any:
-    out_dir = resolve_under_roots(Path(params.out_dir), cfg.allowed_roots)
-    if not out_dir.is_dir():
-        raise FileNotFoundError(f"out_dir is not a directory: {out_dir}")
-
-    report = validate_stage2_dir(out_dir)
-    if params.response_format == ResponseFormat.json:
-        return report
-
-    lines = [f"# Stage-2 validation: `{out_dir}`", ""]
-    lines.append(f"- **ok**: {report['ok']}")
-    if report["missing"]:
-        lines.append("- **missing**:")
-        lines += [f"  - {m}" for m in report["missing"]]
-    if report["ambiguous"]:
-        lines.append("- **ambiguous**:")
 [TRUNCATED]
 ```
 
@@ -9515,4936 +14344,148 @@ Labels (optional):
 ---
 ```
 
-internal/app/app.go
-```
-package app
-
-import (
-	"fmt"
-	"os"
-
-	"github.com/user/oraclepack/internal/exec"
-	"github.com/user/oraclepack/internal/pack"
-	"github.com/user/oraclepack/internal/state"
-)
-
-// Config holds application-wide configuration.
-type Config struct {
-	PackPath     string
-	StatePath    string
-	ReportPath   string
-	StopOnFail   bool
-	Resume       bool
-	Verbose      bool
-	DryRun       bool
-	OracleFlags  []string
-	WorkDir      string
-	OutDir       string // CLI override for output directory
-	ROIThreshold float64
-	ROIMode      string // "over" or "under"
-}
-
-// App orchestrates the execution flow.
-type App struct {
-	Config Config
-	Pack   *pack.Pack
-	State  *state.RunState
-	Runner *exec.Runner
-}
-
-// New creates a new application instance.
-func New(cfg Config) *App {
-	return &App{
-		Config: cfg,
-		Runner: exec.NewRunner(exec.RunnerOptions{
-			WorkDir:     cfg.WorkDir,
-			OracleFlags: cfg.OracleFlags,
-		}),
-	}
-}
-
-// LoadPack loads and validates the pack.
-func (a *App) LoadPack() error {
-	data, err := os.ReadFile(a.Config.PackPath)
-	if err != nil {
-		return err
-	}
-
-	p, err := pack.Parse(data)
-	if err != nil {
-		return err
-	}
-
-	if err := p.Validate(); err != nil {
-		return err
-	}
-
-	a.Pack = p
-	a.Pack.Source = a.Config.PackPath
-	return nil
-}
-
-// LoadState loads or initializes the state.
-func (a *App) LoadState() error {
-	if a.Config.Resume {
-		s, err := state.LoadState(a.Config.StatePath)
-		if err == nil {
-			a.State = s
-			return nil
-		}
-	}
-
-	a.State = &state.RunState{
-		SchemaVersion: 1,
-		StepStatuses:  make(map[string]state.StepStatus),
-	}
-	return nil
-}
-
-// Prepare resolves configuration and prepares the runtime environment.
-func (a *App) Prepare() error {
-	if a.Pack == nil {
-		if err := a.LoadPack(); err != nil {
-			return err
-		}
-	}
-
-	// Resolve Output Directory
-	// Precedence: CLI > Pack > Default (.)
-	outDir := a.Config.OutDir
-	if outDir == "" && a.Pack.OutDir != "" {
-		outDir = a.Pack.OutDir
-	}
-	if outDir == "" {
-		outDir = "."
-	}
-
-	// Provision Directory
-	if err := os.MkdirAll(outDir, 0755); err != nil {
-		return fmt.Errorf("failed to create output directory %s: %w", outDir, err)
-	}
-
-	// Update Runner
-	// We do NOT set WorkDir to outDir, so execution happens in the project root.
-	// This preserves relative path resolution for -f flags.
-	// a.Runner.WorkDir = outDir 
-	
-	// Add out_dir to Env so scripts can reference it
-	a.Runner.Env = append(a.Runner.Env, fmt.Sprintf("out_dir=%s", outDir))
-
-	return nil
-}
-```
-
-internal/app/app_test.go
-```
-package app
-
-import (
-	"bytes"
-	"context"
-	"os"
-	"testing"
-)
-
-func TestApp_RunPlain(t *testing.T) {
-	packContent := `
-# Test Pack
-` + "```" + `bash
-# 01)
-echo "step 1"
-# 02)
-echo "step 2"
-` + "```" + `
-`
-	packFile := "test.md"
-	stateFile := "test_state.json"
-	reportFile := "test_report.json"
-	defer os.Remove(packFile)
-	defer os.Remove(stateFile)
-	defer os.Remove(reportFile)
-
-	os.WriteFile(packFile, []byte(packContent), 0644)
-
-	cfg := Config{
-		PackPath:   packFile,
-		StatePath:  stateFile,
-		ReportPath: reportFile,
-	}
-
-	a := New(cfg)
-	if err := a.Prepare(); err != nil {
-		t.Fatalf("Prepare failed: %v", err)
-	}
-	if err := a.LoadState(); err != nil {
-		t.Fatalf("LoadState failed: %v", err)
-	}
-	
-	var out bytes.Buffer
-	err := a.RunPlain(context.Background(), &out)
-	if err != nil {
-		t.Fatalf("RunPlain failed: %v", err)
-	}
-
-	output := out.String()
-	if !contains(output, "step 1") || !contains(output, "step 2") {
-		t.Errorf("output missing steps: %s", output)
-	}
-
-	if _, err := os.Stat(stateFile); os.IsNotExist(err) {
-		t.Error("state file was not created")
-	}
-
-	if _, err := os.Stat(reportFile); os.IsNotExist(err) {
-		t.Error("report file was not created")
-	}
-}
-
-func contains(s, substr string) bool {
-	return len(s) >= len(substr) && (s == substr || (len(substr) > 0 && (s[:len(substr)] == substr || contains(s[1:], substr))))
-}
-```
-
-internal/app/run.go
-```
-package app
-
-import (
-	"context"
-	"encoding/json"
-	"fmt"
-	"io"
-	"os"
-	"path/filepath"
-	"time"
-
-	"github.com/user/oraclepack/internal/report"
-	"github.com/user/oraclepack/internal/state"
-)
-
-func (a *App) RunPlain(ctx context.Context, out io.Writer) error {
-	// Assumes a.Prepare() and a.LoadState() have been called by the CLI entrypoint.
-	if a.Pack == nil {
-		return fmt.Errorf("pack not loaded")
-	}
-	if a.State == nil {
-		return fmt.Errorf("state not loaded")
-	}
-
-	if a.State.StartTime.IsZero() {
-		a.State.StartTime = time.Now()
-	}
-
-	fmt.Fprintf(out, "Running pack: %s\n", a.Config.PackPath)
-	fmt.Fprintf(out, "Output directory: %s\n", a.Runner.WorkDir)
-
-	// Prelude
-	if a.Pack.Prelude.Code != "" {
-		fmt.Fprintln(out, "Executing prelude...")
-		err := a.Runner.RunPrelude(ctx, &a.Pack.Prelude, out)
-		a.recordWarnings()
-		if err != nil {
-			return fmt.Errorf("prelude failed: %w", err)
-		}
-	}
-
-	for _, step := range a.Pack.Steps {
-		// Filter by ROI
-		if a.Config.ROIThreshold > 0 {
-			if a.Config.ROIMode == "under" {
-				// "under" is strictly less than
-				if step.ROI >= a.Config.ROIThreshold {
-					fmt.Fprintf(out, "Skipping step %s (ROI %.2f >= %.2f)\n", step.ID, step.ROI, a.Config.ROIThreshold)
-					continue
-				}
-			} else {
-				// "over" is greater than or equal to (3.3 or higher)
-				if step.ROI < a.Config.ROIThreshold {
-					fmt.Fprintf(out, "Skipping step %s (ROI %.2f < %.2f)\n", step.ID, step.ROI, a.Config.ROIThreshold)
-					continue
-				}
-			}
-		}
-
-		// Check resume
-		if s, ok := a.State.StepStatuses[step.ID]; ok && s.Status == state.StatusSuccess {
-			fmt.Fprintf(out, "Skipping step %s (already succeeded)\n", step.ID)
-			continue
-		}
-
-		fmt.Fprintf(out, "\n>>> Step %s: %s\n", step.ID, step.OriginalLine)
-
-		status := state.StepStatus{
-			Status:    state.StatusRunning,
-			StartedAt: time.Now(),
-		}
-		a.State.StepStatuses[step.ID] = status
-		a.saveState()
-
-		// Execute
-		err := a.Runner.RunStep(ctx, &step, out)
-		a.recordWarnings()
-
-		status.EndedAt = time.Now()
-		if err != nil {
-			status.Status = state.StatusFailed
-			status.Error = err.Error()
-			a.State.StepStatuses[step.ID] = status
-			a.saveState()
-
-			if a.Config.StopOnFail {
-				a.finalize(out)
-				return err
-			}
-			continue
-		}
-
-		status.Status = state.StatusSuccess
-		status.ExitCode = 0
-		a.State.StepStatuses[step.ID] = status
-		a.saveState()
-	}
-
-	a.finalize(out)
-	return nil
-}
-
-func (a *App) recordWarnings() {
-	if a.State == nil || a.Runner == nil {
-		return
-	}
-	warnings := a.Runner.DrainWarnings()
-	if len(warnings) == 0 {
-		return
-	}
-	for _, w := range warnings {
-		a.State.Warnings = append(a.State.Warnings, state.Warning{
-			Scope:   w.Scope,
-			StepID:  w.StepID,
-			Line:    w.Line,
-			Token:   w.Token,
-			Message: w.Message,
-		})
-	}
-	a.saveState()
-}
-
-func (a *App) saveState() {
-	if a.Config.StatePath != "" {
-		_ = state.SaveStateAtomic(a.Config.StatePath, a.State)
-	}
-}
-
-func (a *App) finalize(out io.Writer) {
-	if a.Config.ReportPath != "" {
-		rep := report.GenerateReport(a.State, filepath.Base(a.Config.PackPath))
-		data, _ := json.MarshalIndent(rep, "", "  ")
-		_ = os.WriteFile(a.Config.ReportPath, data, 0644)
-		fmt.Fprintf(out, "\nReport written to %s\n", a.Config.ReportPath)
-	}
-}
-```
-
-internal/app/run_test.go
-```
-package app
-
-import (
-	"bytes"
-	"context"
-	"os"
-	"strings"
-	"testing"
-)
-
-func TestApp_RunPlain_ROI(t *testing.T) {
-	packContent := `
-# ROI Test Pack
-` + "```" + `bash
-# 01) ROI=5.0
-echo "high"
-# 02) ROI=3.3
-echo "threshold"
-# 03) ROI=1.0
-echo "low"
-` + "```" + `
-`
-	packFile := "roi_test.md"
-	defer os.Remove(packFile)
-	os.WriteFile(packFile, []byte(packContent), 0644)
-
-	// Test Case 1: Filter OVER 3.3 (Should run 5.0 and 3.3)
-	t.Run("Filter Over 3.3", func(t *testing.T) {
-		var out bytes.Buffer
-		cfg := Config{
-			PackPath:     packFile,
-			ROIThreshold: 3.3,
-			ROIMode:      "over",
-		}
-		app := New(cfg)
-		if err := app.Prepare(); err != nil {
-			t.Fatalf("Prepare failed: %v", err)
-		}
-		if err := app.LoadState(); err != nil {
-			t.Fatalf("LoadState failed: %v", err)
-		}
-		if err := app.RunPlain(context.Background(), &out); err != nil {
-			t.Fatalf("RunPlain failed: %v", err)
-		}
-		output := out.String()
-		if !strings.Contains(output, "Step 01") {
-			t.Error("expected Step 01 (5.0) to run")
-		}
-		if !strings.Contains(output, "Step 02") {
-			t.Error("expected Step 02 (3.3) to run (inclusive)")
-		}
-		if strings.Contains(output, "Step 03") && !strings.Contains(output, "Skipping step 03") {
-			t.Error("expected Step 03 (1.0) to be skipped")
-		}
-	})
-
-	// Test Case 2: Filter UNDER 3.3 (Should run 1.0 only)
-	t.Run("Filter Under 3.3", func(t *testing.T) {
-		var out bytes.Buffer
-		cfg := Config{
-			PackPath:     packFile,
-			ROIThreshold: 3.3,
-			ROIMode:      "under",
-		}
-		app := New(cfg)
-		if err := app.Prepare(); err != nil {
-			t.Fatalf("Prepare failed: %v", err)
-		}
-		if err := app.LoadState(); err != nil {
-			t.Fatalf("LoadState failed: %v", err)
-		}
-		if err := app.RunPlain(context.Background(), &out); err != nil {
-			t.Fatalf("RunPlain failed: %v", err)
-		}
-		output := out.String()
-		if strings.Contains(output, "Step 01") && !strings.Contains(output, "Skipping step 01") {
-			t.Error("expected Step 01 (5.0) to be skipped")
-		}
-		if strings.Contains(output, "Step 02") && !strings.Contains(output, "Skipping step 02") {
-			t.Error("expected Step 02 (3.3) to be skipped (exclusive)")
-		}
-		if !strings.Contains(output, "Step 03") {
-			t.Error("expected Step 03 (1.0) to run")
-		}
-	})
-}
-```
-
-internal/cli/cmds.go
-```
-package cli
-
-import (
-	"fmt"
-
-	"github.com/spf13/cobra"
-	"github.com/user/oraclepack/internal/app"
-)
-
-var validateCmd = &cobra.Command{
-	Use:   "validate [pack.md]",
-	Short: "Validate an oracle pack",
-	Args:  cobra.ExactArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg := app.Config{PackPath: args[0]}
-		a := app.New(cfg)
-		if err := a.LoadPack(); err != nil {
-			return err
-		}
-		fmt.Println("Pack is valid.")
-		return nil
-	},
-}
-
-var listCmd = &cobra.Command{
-	Use:   "list [pack.md]",
-	Short: "List steps in an oracle pack",
-	Args:  cobra.ExactArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg := app.Config{PackPath: args[0]}
-		a := app.New(cfg)
-		if err := a.LoadPack(); err != nil {
-			return err
-		}
-		for _, s := range a.Pack.Steps {
-			fmt.Printf("%s: %s\n", s.ID, s.OriginalLine)
-		}
-		return nil
-	},
-}
-
-func init() {
-	rootCmd.AddCommand(validateCmd)
-	rootCmd.AddCommand(listCmd)
-}
-```
-
-internal/cli/root.go
-```
-package cli
-
-import (
-	"fmt"
-	"os"
-
-	"github.com/spf13/cobra"
-	"github.com/user/oraclepack/internal/errors"
-)
-
-var (
-	noTUI     bool
-	oracleBin string
-	outDir    string
-)
-
-var rootCmd = &cobra.Command{
-	Use:   "oraclepack",
-	Short: "Oracle Pack Runner",
-	Long:  `A polished TUI-driven runner for oracle-based interactive bash steps.`,
-}
-
-// Execute adds all child commands to the root command and sets flags appropriately.
-func Execute() {
-	if err := rootCmd.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(errors.ExitCode(err))
-	}
-}
-
-func init() {
-	rootCmd.PersistentFlags().BoolVar(&noTUI, "no-tui", false, "Disable the TUI and run in plain terminal mode")
-	rootCmd.PersistentFlags().StringVar(&oracleBin, "oracle-bin", "oracle", "Path to the oracle binary")
-	rootCmd.PersistentFlags().StringVarP(&outDir, "out-dir", "o", "", "Output directory for step execution")
-}
-```
-
-internal/cli/run.go
-```
-package cli
-
-import (
-	"context"
-	"os"
-	"path/filepath"
-	"strings"
-
-	"github.com/spf13/cobra"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/user/oraclepack/internal/app"
-	"github.com/user/oraclepack/internal/tui"
-)
-
-var (
-	yes          bool
-	resume       bool
-	stopOnFail   bool
-	roiThreshold float64
-	roiMode      string
-	runAll       bool
-)
-
-var runCmd = &cobra.Command{
-	Use:   "run [pack.md]",
-	Short: "Run an oracle pack",
-	Args:  cobra.ExactArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		packPath := args[0]
-		
-		// Setup paths
-		base := strings.TrimSuffix(filepath.Base(packPath), filepath.Ext(packPath))
-		statePath := base + ".state.json"
-		reportPath := base + ".report.json"
-
-		cfg := app.Config{
-			PackPath:     packPath,
-			StatePath:    statePath,
-			ReportPath:   reportPath,
-			Resume:       resume,
-			StopOnFail:   stopOnFail,
-			WorkDir:      ".",
-			OutDir:       outDir,
-			ROIThreshold: roiThreshold,
-			ROIMode:      roiMode,
-		}
-
-		a := app.New(cfg)
-		// Prepare the application (loads pack, resolves out_dir, provisions env)
-		if err := a.Prepare(); err != nil {
-			return err
-		}
-		
-		if err := a.LoadState(); err != nil {
-			return err
-		}
-
-		if noTUI {
-			return a.RunPlain(context.Background(), os.Stdout)
-		}
-
-		m := tui.NewModel(a.Pack, a.Runner, a.State, cfg.StatePath, cfg.ROIThreshold, cfg.ROIMode, runAll)
-		p := tea.NewProgram(m, tea.WithAltScreen())
-		_, err := p.Run()
-		return err
-	},
-}
-
-func init() {
-	runCmd.Flags().BoolVarP(&yes, "yes", "y", false, "Auto-approve all steps")
-	runCmd.Flags().BoolVar(&resume, "resume", false, "Resume from last successful step")
-	runCmd.Flags().BoolVar(&stopOnFail, "stop-on-fail", true, "Stop execution if a step fails")
-	runCmd.Flags().Float64Var(&roiThreshold, "roi-threshold", 0.0, "Filter steps by ROI threshold")
-	runCmd.Flags().StringVar(&roiMode, "roi-mode", "over", "ROI filter mode ('over' or 'under')")
-	runCmd.Flags().BoolVar(&runAll, "run-all", false, "Automatically run all steps sequentially on start")
-	rootCmd.AddCommand(runCmd)
-}
-```
-
-internal/errors/errors.go
-```
-package errors
-
-import (
-	"errors"
-)
-
-var (
-	// ErrInvalidPack is returned when the Markdown pack is malformed.
-	ErrInvalidPack = errors.New("invalid pack structure")
-	// ErrExecutionFailed is returned when a shell command fails.
-	ErrExecutionFailed = errors.New("execution failed")
-	// ErrConfigInvalid is returned when CLI flags or environment variables are incorrect.
-	ErrConfigInvalid = errors.New("invalid configuration")
-)
-
-// ExitCode returns the appropriate exit code for a given error.
-func ExitCode(err error) int {
-	if err == nil {
-		return 0
-	}
-
-	if errors.Is(err, ErrConfigInvalid) {
-		return 2
-	}
-
-	if errors.Is(err, ErrInvalidPack) {
-		return 3
-	}
-
-	if errors.Is(err, ErrExecutionFailed) {
-		return 4
-	}
-
-	return 1 // Generic error
-}
-```
-
-internal/errors/errors_test.go
-```
-package errors
-
-import (
-	"errors"
-	"fmt"
-	"testing"
-)
-
-func TestExitCode(t *testing.T) {
-	tests := []struct {
-		name     string
-		err      error
-		expected int
-	}{
-		{"nil error", nil, 0},
-		{"generic error", errors.New("generic"), 1},
-		{"invalid pack", ErrInvalidPack, 3},
-		{"execution failed", ErrExecutionFailed, 4},
-		{"config invalid", ErrConfigInvalid, 2},
-		{"wrapped invalid pack", fmt.Errorf("wrap: %w", ErrInvalidPack), 3},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := ExitCode(tt.err); got != tt.expected {
-				t.Errorf("ExitCode() = %v, want %v", got, tt.expected)
-			}
-		})
-	}
-}
-```
-
-internal/exec/flags.go
-```
-package exec
-
-import "strings"
-
-// ApplyChatGPTURL ensures a single --chatgpt-url flag is present when url is set.
-// It removes any existing --chatgpt-url/--browser-url flags and their values.
-func ApplyChatGPTURL(flags []string, url string) []string {
-	var out []string
-	skipNext := false
-	for _, f := range flags {
-		if skipNext {
-			skipNext = false
-			continue
-		}
-		if f == "--chatgpt-url" || f == "--browser-url" {
-			skipNext = true
-			continue
-		}
-		if strings.HasPrefix(f, "--chatgpt-url=") || strings.HasPrefix(f, "--browser-url=") {
-			continue
-		}
-		out = append(out, f)
-	}
-	if url != "" {
-		out = append(out, "--chatgpt-url", url)
-	}
-	return out
-}
-```
-
-internal/exec/inject.go
-```
-package exec
-
-import "strings"
-
-// InjectFlags scans a script and appends flags to any 'oracle' command invocation.
-func InjectFlags(script string, flags []string) string {
-	if len(flags) == 0 {
-		return script
-	}
-
-	flagStr := strings.Join(flags, " ")
-
-	lines := strings.Split(script, "\n")
-	for i, line := range lines {
-		trimmed := strings.TrimSpace(line)
-		if strings.HasPrefix(trimmed, "#") {
-			continue
-		}
-
-		insertIdx := oracleInsertIndex(line)
-		if insertIdx == -1 {
-			continue
-		}
-
-		lines[i] = insertFlagsInLine(line, insertIdx, flagStr)
-	}
-
-	return strings.Join(lines, "\n")
-}
-
-func oracleInsertIndex(line string) int {
-	i := 0
-	for i < len(line) && (line[i] == ' ' || line[i] == '\t') {
-		i++
-	}
-
-	if !strings.HasPrefix(line[i:], "oracle") {
-		return -1
-	}
-
-	end := i + len("oracle")
-	if end < len(line) {
-		next := line[end]
-		if next != ' ' && next != '\t' {
-			return -1
-		}
-	}
-
-	return end
-}
-
-func insertFlagsInLine(line string, insertIdx int, flags string) string {
-	prefix := line[:insertIdx]
-	rest := line[insertIdx:]
-	if rest == "" {
-		return prefix + " " + flags
-	}
-	if rest[0] == ' ' || rest[0] == '\t' {
-		return prefix + " " + flags + rest
-	}
-	return prefix + " " + flags + " " + rest
-}
-```
-
-internal/exec/inject_test.go
-```
-package exec
-
-import (
-	"testing"
-)
-
-func TestInjectFlags(t *testing.T) {
-	tests := []struct {
-		name     string
-		script   string
-		flags    []string
-		expected string
-	}{
-		{
-			"simple injection",
-			"oracle query 'hello'",
-			[]string{"--verbose"},
-			"oracle --verbose query 'hello'",
-		},
-		{
-			"indented injection",
-			"  oracle query 'hello'",
-			[]string{"--verbose"},
-			"  oracle --verbose query 'hello'",
-		},
-		{
-			"no injection needed",
-			"echo 'hello'",
-			[]string{"--verbose"},
-			"echo 'hello'",
-		},
-		{
-			"multiple lines",
-			"echo 'start'\noracle query\necho 'end'",
-			[]string{"--debug"},
-			"echo 'start'\noracle --debug query\necho 'end'",
-		},
-		{
-			"multiline with continuation",
-			"oracle \\\n  --json \\\n  --files",
-			[]string{"--flag"},
-			"oracle --flag \\\n  --json \\\n  --files",
-		},
-		{
-			"multiline with args and continuation",
-			"  oracle arg \\\n  --json",
-			[]string{"--flag"},
-			"  oracle --flag arg \\\n  --json",
-		},
-		{
-			"commented command",
-			"# oracle --json",
-			[]string{"--verbose"},
-			"# oracle --json",
-		},
-		{
-			"oracle as part of word",
-			"coracle query",
-			[]string{"--verbose"},
-			"coracle query",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := InjectFlags(tt.script, tt.flags)
-			if got != tt.expected {
-				t.Errorf("InjectFlags() = %q, want %q", got, tt.expected)
-			}
-		})
-	}
-}
-```
-
-internal/exec/oracle_scan.go
-```
-package exec
-
-import (
-	"regexp"
-	"strings"
-)
-
-var oracleCmdRegex = regexp.MustCompile(`^(\s*)(oracle)\b`)
-
-// OracleInvocation represents a detected oracle command in a script.
-type OracleInvocation struct {
-	StartLine   int    // 0-based start line index
-	EndLine     int    // 0-based end line index (inclusive)
-	Raw         string // The full command string (joined if multi-line)
-	Display     string // A trimmed version for UI display
-	Indentation string // The leading whitespace
-}
-
-// ExtractOracleInvocations extracts oracle invocations from a script.
-func ExtractOracleInvocations(script string) []OracleInvocation {
-	var invocations []OracleInvocation
-	lines := strings.Split(script, "\n")
-
-	for i := 0; i < len(lines); i++ {
-		line := lines[i]
-		trimmed := strings.TrimSpace(line)
-
-		// Skip comments
-		if strings.HasPrefix(trimmed, "#") {
-			continue
-		}
-
-		// Check for oracle command
-		loc := oracleCmdRegex.FindStringSubmatchIndex(line)
-		if loc != nil {
-			startLine := i
-			// Group 1 is the indentation
-			indentation := line[loc[2]:loc[3]]
-
-			var cmdBuilder strings.Builder
-			cmdBuilder.WriteString(line)
-
-			endLine := i
-			// Handle line continuations
-			// Check if line ends with backslash (ignoring trailing whitespace)
-			for {
-				if endLine+1 >= len(lines) {
-					break
-				}
-
-				// Check current line for continuation
-				currTrimmed := strings.TrimRight(lines[endLine], " \t")
-				if !strings.HasSuffix(currTrimmed, "\\") {
-					break
-				}
-
-				endLine++
-				cmdBuilder.WriteString("\n")
-				cmdBuilder.WriteString(lines[endLine])
-			}
-
-			raw := cmdBuilder.String()
-			invocations = append(invocations, OracleInvocation{
-				StartLine:   startLine,
-				EndLine:     endLine,
-				Raw:         raw,
-				Display:     strings.TrimSpace(raw),
-				Indentation: indentation,
-			})
-
-			i = endLine // Advance loop
-		}
-	}
-	return invocations
-}
-```
-
-internal/exec/oracle_scan_test.go
-```
-package exec
-
-import (
-	"reflect"
-	"testing"
-)
-
-func TestExtractOracleInvocations(t *testing.T) {
-	tests := []struct {
-		name   string
-		script string
-		want   []OracleInvocation
-	}{
-		{
-			name:   "Simple command",
-			script: "oracle --json",
-			want: []OracleInvocation{
-				{StartLine: 0, EndLine: 0, Raw: "oracle --json", Display: "oracle --json", Indentation: ""},
-			},
-		},
-		{
-			name:   "Indented command",
-			script: "  oracle --json",
-			want: []OracleInvocation{
-				{StartLine: 0, EndLine: 0, Raw: "  oracle --json", Display: "oracle --json", Indentation: "  "},
-			},
-		},
-		{
-			name: "Multiline command",
-			script: `oracle \
-  --json \
-  --files`,
-			want: []OracleInvocation{
-				{StartLine: 0, EndLine: 2, Raw: `oracle \
-  --json \
-  --files`, Display: `oracle \
-  --json \
-  --files`, Indentation: ""},
-			},
-		},
-		{
-			name: "Commented command",
-			script: `# oracle --json
-oracle --real`,
-			want: []OracleInvocation{
-				{StartLine: 1, EndLine: 1, Raw: "oracle --real", Display: "oracle --real", Indentation: ""},
-			},
-		},
-		{
-			name: "Multiple commands",
-			script: `
-echo start
-oracle --one
-echo mid
-oracle --two
-echo end
-`,
-			want: []OracleInvocation{
-				{StartLine: 2, EndLine: 2, Raw: "oracle --one", Display: "oracle --one", Indentation: ""},
-				{StartLine: 4, EndLine: 4, Raw: "oracle --two", Display: "oracle --two", Indentation: ""},
-			},
-		},
-		{
-			name:   "Oraclepack prefix (should not match)",
-			script: "oraclepack run",
-			want:   nil,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := ExtractOracleInvocations(tt.script)
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("ExtractOracleInvocations() = %+v, want %+v", got, tt.want)
-			}
-		})
-	}
-}
-```
-
-internal/exec/oracle_validate.go
-```
-package exec
-
-import (
-	"bytes"
-	"context"
-	"os"
-	"os/exec"
-	"strings"
-
-	"github.com/user/oraclepack/internal/overrides"
-	"github.com/user/oraclepack/internal/pack"
-)
-
-// ValidationError captures a failed oracle validation for a step.
-type ValidationError struct {
-	StepID       string
-	Command      string
-	ErrorMessage string
-}
-
-// ValidateOverrides runs oracle --dry-run summary for targeted steps.
-func ValidateOverrides(
-	ctx context.Context,
-	steps []pack.Step,
-	over *overrides.RuntimeOverrides,
-	baseline []string,
-	opts RunnerOptions,
-) ([]ValidationError, error) {
-	if over == nil || over.ApplyToSteps == nil {
-		return nil, nil
-	}
-
-	shell := opts.Shell
-	if shell == "" {
-		shell = "/bin/bash"
-	}
-	env := append(os.Environ(), opts.Env...)
-
-	var results []ValidationError
-	for _, step := range steps {
-		if !over.ApplyToSteps[step.ID] {
-			continue
-		}
-
-		invocations := ExtractOracleInvocations(step.Code)
-		if len(invocations) == 0 {
-			continue
-		}
-
-		flags := over.EffectiveFlags(step.ID, baseline)
-		flags = append(flags, "--dry-run", "summary")
-
-		for _, inv := range invocations {
-			cmdStr := InjectFlags(inv.Raw, flags)
-			msg, err := execDryRun(ctx, shell, opts.WorkDir, env, cmdStr)
-			if err == nil {
-				continue
-			}
-
-			results = append(results, ValidationError{
-				StepID:       step.ID,
-				Command:      cmdStr,
-				ErrorMessage: msg,
-			})
-		}
-	}
-
-	return results, nil
-}
-
-func execDryRun(ctx context.Context, shell, workDir string, env []string, command string) (string, error) {
-	if pathVal := findEnvValue(env, "PATH"); pathVal != "" {
-		command = "export PATH=" + shellQuote(pathVal) + "; " + command
-	}
-
-	cmd := exec.CommandContext(ctx, shell, "-lc", command)
-	if workDir != "" {
-		cmd.Dir = workDir
-	}
-	cmd.Env = env
-
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-
-	err := cmd.Run()
-	if err == nil {
-		return stdout.String(), nil
-	}
-	if stderr.Len() > 0 {
-		return strings.TrimSpace(stderr.String()), err
-	}
-	if stdout.Len() > 0 {
-		return strings.TrimSpace(stdout.String()), err
-	}
-	return err.Error(), err
-}
-
-func findEnvValue(env []string, key string) string {
-	prefix := key + "="
-	for _, entry := range env {
-		if strings.HasPrefix(entry, prefix) {
-			return strings.TrimPrefix(entry, prefix)
-		}
-	}
-	return ""
-}
-
-func shellQuote(value string) string {
-	if value == "" {
-		return "''"
-	}
-	return "'" + strings.ReplaceAll(value, "'", "'\\''") + "'"
-}
-```
-
-internal/exec/oracle_validate_test.go
-```
-package exec
-
-import (
-	"context"
-	"os"
-	"path/filepath"
-	"strings"
-	"testing"
-
-	"github.com/user/oraclepack/internal/overrides"
-	"github.com/user/oraclepack/internal/pack"
-)
-
-func TestValidateOverrides_Success(t *testing.T) {
-	dir := t.TempDir()
-	writeOracleStub(t, dir)
-
-	steps := []pack.Step{
-		{ID: "01", Code: "oracle --ok"},
-	}
-	over := &overrides.RuntimeOverrides{
-		ApplyToSteps: map[string]bool{"01": true},
-	}
-
-	_, err := ValidateOverrides(
-		context.Background(),
-		steps,
-		over,
-		[]string{"--base"},
-		RunnerOptions{
-			WorkDir: dir,
-			Env:     []string{"PATH=" + dir + string(os.PathListSeparator) + os.Getenv("PATH")},
-		},
-	)
-	if err != nil {
-		t.Fatalf("ValidateOverrides failed: %v", err)
-	}
-}
-
-func TestValidateOverrides_Error(t *testing.T) {
-	dir := t.TempDir()
-	writeOracleStub(t, dir)
-
-	steps := []pack.Step{
-		{ID: "01", Code: "oracle --bad"},
-	}
-	over := &overrides.RuntimeOverrides{
-		ApplyToSteps: map[string]bool{"01": true},
-	}
-
-	errs, err := ValidateOverrides(
-		context.Background(),
-		steps,
-		over,
-		nil,
-		RunnerOptions{
-			WorkDir: dir,
-			Env:     []string{"PATH=" + dir + string(os.PathListSeparator) + os.Getenv("PATH")},
-		},
-	)
-	if err != nil {
-		t.Fatalf("ValidateOverrides failed: %v", err)
-	}
-	if len(errs) != 1 {
-		t.Fatalf("expected 1 validation error, got %d", len(errs))
-	}
-	msg := errs[0].ErrorMessage
-	if !strings.Contains(msg, "invalid flag") && !strings.Contains(msg, "unknown option") {
-		t.Fatalf("unexpected error message: %q", msg)
-	}
-	if !strings.Contains(errs[0].Command, "--dry-run summary") {
-		t.Fatalf("expected command to include --dry-run summary, got %q", errs[0].Command)
-	}
-}
-
-func writeOracleStub(t *testing.T, dir string) {
-	t.Helper()
-	stub := `#!/bin/sh
-has_dry=0
-has_summary=0
-for arg in "$@"; do
-  if [ "$arg" = "--dry-run" ]; then has_dry=1; fi
-  if [ "$arg" = "summary" ]; then has_summary=1; fi
-  if [ "$arg" = "--bad" ]; then echo "invalid flag" 1>&2; exit 1; fi
-done
-if [ $has_dry -eq 0 ] || [ $has_summary -eq 0 ]; then
-  echo "missing dry run" 1>&2
-  exit 1
-fi
-exit 0
-`
-	path := filepath.Join(dir, "oracle")
-	if err := os.WriteFile(path, []byte(stub), 0o755); err != nil {
-		t.Fatalf("write oracle stub: %v", err)
-	}
-}
-```
-
-internal/exec/runner.go
-```
-package exec
-
-import (
-	"context"
-	"fmt"
-	"io"
-	"os"
-	"os/exec"
-
-	"github.com/user/oraclepack/internal/errors"
-	"github.com/user/oraclepack/internal/overrides"
-	"github.com/user/oraclepack/internal/pack"
-)
-
-// Runner handles the execution of shell scripts.
-type Runner struct {
-	Shell       string
-	WorkDir     string
-	Env         []string
-	OracleFlags []string
-	Overrides   *overrides.RuntimeOverrides
-	ChatGPTURL  string
-	warnings    []SanitizeWarning
-}
-
-// RunnerOptions configures a Runner.
-type RunnerOptions struct {
-	Shell       string
-	WorkDir     string
-	Env         []string
-	OracleFlags []string
-	Overrides   *overrides.RuntimeOverrides
-	ChatGPTURL  string
-}
-
-// NewRunner creates a new Runner with options.
-func NewRunner(opts RunnerOptions) *Runner {
-	shell := opts.Shell
-	if shell == "" {
-		shell = "/bin/bash"
-	}
-
-	return &Runner{
-		Shell:       shell,
-		WorkDir:     opts.WorkDir,
-		Env:         append(os.Environ(), opts.Env...),
-		OracleFlags: opts.OracleFlags,
-		Overrides:   opts.Overrides,
-		ChatGPTURL:  opts.ChatGPTURL,
-	}
-}
-
-// RunPrelude executes the prelude code.
-func (r *Runner) RunPrelude(ctx context.Context, p *pack.Prelude, logWriter io.Writer) error {
-	script, warnings := SanitizeScript(p.Code, "prelude", "")
-	r.recordWarnings(warnings, logWriter)
-	return r.run(ctx, script, logWriter)
-}
-
-// RunStep executes a single step's code.
-func (r *Runner) RunStep(ctx context.Context, s *pack.Step, logWriter io.Writer) error {
-	flags := ApplyChatGPTURL(r.OracleFlags, r.ChatGPTURL)
-	if r.Overrides != nil {
-		flags = r.Overrides.EffectiveFlags(s.ID, r.OracleFlags)
-		flags = ApplyChatGPTURL(flags, r.ChatGPTURL)
-	}
-	code := InjectFlags(s.Code, flags)
-	script, warnings := SanitizeScript(code, "step", s.ID)
-	r.recordWarnings(warnings, logWriter)
-	return r.run(ctx, script, logWriter)
-}
-
-func (r *Runner) recordWarnings(warnings []SanitizeWarning, logWriter io.Writer) {
-	if len(warnings) == 0 {
-		return
-	}
-	for _, w := range warnings {
-		r.warnings = append(r.warnings, w)
-		if logWriter != nil {
-			scope := w.Scope
-			if scope == "" {
-				scope = "script"
-			}
-			step := ""
-			if w.StepID != "" {
-				step = " step " + w.StepID
-			}
-			_, _ = fmt.Fprintf(logWriter, "⚠ oraclepack: sanitized label in %s%s line %d: %s\n", scope, step, w.Line, w.Token)
-		}
-	}
-}
-
-// DrainWarnings returns any sanitizer warnings collected since the last call.
-func (r *Runner) DrainWarnings() []SanitizeWarning {
-	if len(r.warnings) == 0 {
-		return nil
-	}
-	out := make([]SanitizeWarning, len(r.warnings))
-	copy(out, r.warnings)
-	r.warnings = nil
-	return out
-}
-
-func (r *Runner) run(ctx context.Context, script string, logWriter io.Writer) error {
-	// We use bash -lc to ensure login shell (paths, aliases, etc)
-	cmd := exec.CommandContext(ctx, r.Shell, "-lc", script)
-	cmd.Dir = r.WorkDir
-	cmd.Env = r.Env
-
-	// Standardize stdout and stderr to the logWriter
-	cmd.Stdout = logWriter
-	cmd.Stderr = logWriter
-
-	err := cmd.Run()
-	if err != nil {
-		if ctx.Err() != nil {
-			return ctx.Err()
-		}
-		return fmt.Errorf("%w: %v", errors.ErrExecutionFailed, err)
-	}
-
-	return nil
-}
-```
-
-internal/exec/runner_test.go
-```
-package exec
-
-import (
-	"context"
-	"strings"
-	"testing"
-
-	"github.com/user/oraclepack/internal/pack"
-)
-
-func TestRunner_RunStep(t *testing.T) {
-	r := NewRunner(RunnerOptions{})
-	
-	var lines []string
-	lw := &LineWriter{
-		Callback: func(line string) {
-			lines = append(lines, line)
-		},
-	}
-
-	step := &pack.Step{
-		Code: "echo 'hello world'",
-	}
-
-	err := r.RunStep(context.Background(), step, lw)
-	if err != nil {
-		t.Fatalf("RunStep failed: %v", err)
-	}
-	lw.Close()
-
-	found := false
-	for _, l := range lines {
-		if strings.TrimSpace(l) == "hello world" {
-			found = true
-			break
-		}
-	}
-
-	if !found {
-		t.Errorf("expected 'hello world' in output, got: %v", lines)
-	}
-}
-
-func TestRunner_ContextCancellation(t *testing.T) {
-	r := NewRunner(RunnerOptions{})
-	
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel() // Cancel immediately
-
-	step := &pack.Step{
-		Code: "sleep 10",
-	}
-
-	err := r.RunStep(ctx, step, nil)
-	if err != context.Canceled {
-		t.Errorf("expected context.Canceled, got %v", err)
-	}
-}
-```
-
-internal/exec/sanitize.go
-```
-package exec
-
-import (
-	osexec "os/exec"
-	"regexp"
-	"strings"
-)
-
-// SanitizeWarning captures a label line that was converted to a safe echo.
-type SanitizeWarning struct {
-	Scope   string
-	StepID  string
-	Line    int
-	Token   string
-	Message string
-}
-
-var (
-	labelTokenRegex   = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_-]*$`)
-	heredocStartRegex = regexp.MustCompile(`<<-?\s*['"]?([A-Za-z0-9_]+)['"]?`)
-)
-
-var shellBuiltins = map[string]bool{
-	"alias":    true,
-	"bg":       true,
-	"break":    true,
-	"cd":       true,
-	"command":  true,
-	"continue": true,
-	"declare":  true,
-	"dirs":     true,
-	"echo":     true,
-	"eval":     true,
-	"exec":     true,
-	"exit":     true,
-	"export":   true,
-	"fg":       true,
-	"getopts":  true,
-	"hash":     true,
-	"help":     true,
-	"jobs":     true,
-	"local":    true,
-	"popd":     true,
-	"printf":   true,
-	"pushd":    true,
-	"pwd":      true,
-	"readonly": true,
-	"return":   true,
-	"set":      true,
-	"shift":    true,
-	"source":   true,
-	"test":     true,
-	"trap":     true,
-	"true":     true,
-	"type":     true,
-	"ulimit":   true,
-	"umask":    true,
-	"unalias":  true,
-	"unset":    true,
-	"wait":     true,
-	"false":    true,
-}
-
-var shellKeywords = map[string]bool{
-	"case":     true,
-	"do":       true,
-	"done":     true,
-	"elif":     true,
-	"else":     true,
-	"esac":     true,
-	"fi":       true,
-	"for":      true,
-	"function": true,
-	"if":       true,
-	"in":       true,
-	"select":   true,
-	"then":     true,
-	"time":     true,
-	"until":    true,
-	"while":    true,
-}
-
-// SanitizeScript converts bare label-like lines into safe echo statements.
-func SanitizeScript(script, scope, stepID string) (string, []SanitizeWarning) {
-	if script == "" {
-		return script, nil
-	}
-
-	lines := strings.Split(script, "\n")
-	var warnings []SanitizeWarning
-	var heredocEnd string
-
-	for i, line := range lines {
-		trimmed := strings.TrimSpace(line)
-		if heredocEnd != "" {
-			if trimmed == heredocEnd {
-				heredocEnd = ""
-			}
-			continue
-		}
-		if trimmed == "" || strings.HasPrefix(trimmed, "#") {
-			continue
-		}
-
-		if end := heredocStartToken(trimmed); end != "" {
-			heredocEnd = end
-			continue
-		}
-
-		fields := strings.Fields(trimmed)
-		if len(fields) != 1 {
-			continue
-		}
-		token := fields[0]
-		if !labelTokenRegex.MatchString(token) {
-			continue
-		}
-		lower := strings.ToLower(token)
-		if shellBuiltins[lower] || shellKeywords[lower] {
-			continue
-		}
-		if _, err := osexec.LookPath(token); err == nil {
-			continue
-		}
-
-		indent := line[:len(line)-len(strings.TrimLeft(line, " \t"))]
-		lines[i] = indent + "echo \"" + token + "\""
-		warnings = append(warnings, SanitizeWarning{
-			Scope:   scope,
-			StepID:  stepID,
-			Line:    i + 1,
-			Token:   token,
-			Message: "Converted bare label to echo",
-		})
-	}
-
-	return strings.Join(lines, "\n"), warnings
-}
-
-func heredocStartToken(line string) string {
-	match := heredocStartRegex.FindStringSubmatch(line)
-	if len(match) < 2 {
-		return ""
-	}
-	return match[1]
-}
-```
-
-internal/exec/sanitize_test.go
-```
-package exec
-
-import "testing"
-
-func TestSanitizeScript_LabelLine(t *testing.T) {
-	input := "GenerateReport\noracle --help\n"
-	got, warnings := SanitizeScript(input, "step", "01")
-	if len(warnings) != 1 {
-		t.Fatalf("expected 1 warning, got %d", len(warnings))
-	}
-	if warnings[0].Token != "GenerateReport" {
-		t.Fatalf("expected token GenerateReport, got %s", warnings[0].Token)
-	}
-	wantPrefix := "echo \"GenerateReport\""
-	if got[:len(wantPrefix)] != wantPrefix {
-		t.Fatalf("expected sanitized line to start with %q, got %q", wantPrefix, got)
-	}
-}
-
-func TestSanitizeScript_BuiltinUnchanged(t *testing.T) {
-	input := "echo\n"
-	got, warnings := SanitizeScript(input, "step", "01")
-	if len(warnings) != 0 {
-		t.Fatalf("expected no warnings, got %d", len(warnings))
-	}
-	if got != input {
-		t.Fatalf("expected script unchanged, got %q", got)
-	}
-}
-
-func TestSanitizeScript_HeredocUnchanged(t *testing.T) {
-	input := "cat <<'EOF'\nGenerateReport\nEOF\n"
-	got, warnings := SanitizeScript(input, "step", "01")
-	if len(warnings) != 0 {
-		t.Fatalf("expected no warnings, got %d", len(warnings))
-	}
-	if got != input {
-		t.Fatalf("expected heredoc unchanged, got %q", got)
-	}
-}
-```
-
-internal/exec/stream.go
-```
-package exec
-
-import (
-	"io"
-)
-
-// LineWriter is an io.Writer that splits output into lines and calls a callback.
-type LineWriter struct {
-	Callback func(string)
-	buffer   []byte
-}
-
-func (w *LineWriter) Write(p []byte) (n int, err error) {
-	for _, b := range p {
-		if b == '\n' {
-			w.Callback(string(w.buffer))
-			w.buffer = w.buffer[:0]
-		} else {
-			w.buffer = append(w.buffer, b)
-		}
-	}
-	return len(p), nil
-}
-
-// Close flushes any remaining data in the buffer.
-func (w *LineWriter) Close() error {
-	if len(w.buffer) > 0 {
-		w.Callback(string(w.buffer))
-		w.buffer = w.buffer[:0]
-	}
-	return nil
-}
-
-// MultiWriter handles multiple writers efficiently.
-func MultiWriter(writers ...io.Writer) io.Writer {
-	return io.MultiWriter(writers...)
-}
-```
-
-internal/overrides/merge.go
-```
-package overrides
-
-// EffectiveFlags calculates the final flags for a step.
-func (r *RuntimeOverrides) EffectiveFlags(stepID string, baseline []string) []string {
-	if r == nil || r.ApplyToSteps == nil || !r.ApplyToSteps[stepID] {
-		return baseline
-	}
-
-	var effective []string
-
-	// Map for removed flags
-	removed := make(map[string]bool)
-	for _, f := range r.RemovedFlags {
-		removed[f] = true
-	}
-
-	// Filter baseline
-	for _, flag := range baseline {
-		if !removed[flag] {
-			effective = append(effective, flag)
-		}
-	}
-
-	// Append added flags
-	effective = append(effective, r.AddedFlags...)
-
-	// Inject ChatGPTURL
-	if r.ChatGPTURL != "" {
-		effective = append(effective, "--chatgpt-url", r.ChatGPTURL)
-	}
-
-	return effective
-}
-```
-
-internal/overrides/merge_test.go
-```
-package overrides
-
-import (
-	"reflect"
-	"testing"
-)
-
-func TestEffectiveFlags(t *testing.T) {
-	tests := []struct {
-		name      string
-		overrides *RuntimeOverrides
-		stepID    string
-		baseline  []string
-		want      []string
-	}{
-		{
-			name:      "No overrides (nil)",
-			overrides: nil,
-			stepID:    "01",
-			baseline:  []string{"--json"},
-			want:      []string{"--json"},
-		},
-		{
-			name: "Step not targeted",
-			overrides: &RuntimeOverrides{
-				ApplyToSteps: map[string]bool{"02": true},
-				AddedFlags:   []string{"--verbose"},
-			},
-			stepID:   "01",
-			baseline: []string{"--json"},
-			want:     []string{"--json"},
-		},
-		{
-			name: "Step targeted: Add flags",
-			overrides: &RuntimeOverrides{
-				ApplyToSteps: map[string]bool{"01": true},
-				AddedFlags:   []string{"--verbose"},
-			},
-			stepID:   "01",
-			baseline: []string{"--json"},
-			want:     []string{"--json", "--verbose"},
-		},
-		{
-			name: "Step targeted: Remove flags",
-			overrides: &RuntimeOverrides{
-				ApplyToSteps: map[string]bool{"01": true},
-				RemovedFlags: []string{"--json"},
-			},
-			stepID:   "01",
-			baseline: []string{"--json", "--other"},
-			want:     []string{"--other"},
-		},
-		{
-			name: "Step targeted: Add and Remove",
-			overrides: &RuntimeOverrides{
-				ApplyToSteps: map[string]bool{"01": true},
-				AddedFlags:   []string{"--new"},
-				RemovedFlags: []string{"--old"},
-			},
-			stepID:   "01",
-			baseline: []string{"--old", "--keep"},
-			want:     []string{"--keep", "--new"},
-		},
-		{
-			name: "Step targeted: Inject ChatGPT URL",
-			overrides: &RuntimeOverrides{
-				ApplyToSteps: map[string]bool{"01": true},
-				ChatGPTURL:   "https://chat.openai.com/share/123",
-			},
-			stepID:   "01",
-			baseline: []string{"--json"},
-			want:     []string{"--json", "--chatgpt-url", "https://chat.openai.com/share/123"},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := tt.overrides.EffectiveFlags(tt.stepID, tt.baseline)
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("EffectiveFlags() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-```
-
-internal/overrides/types.go
-```
-package overrides
-
-// RuntimeOverrides holds configuration for runtime flag modifications.
-type RuntimeOverrides struct {
-	AddedFlags   []string        // Flags to append (e.g., "--model=gpt-4")
-	RemovedFlags []string        // Flags to remove (e.g., "--json")
-	ChatGPTURL   string          // Optional URL to inject via --chatgpt-url
-	ApplyToSteps map[string]bool // Set of step IDs to apply overrides to. If empty, applies to none.
-}
-```
-
-internal/pack/parser.go
-```
-package pack
-
-import (
-	"bufio"
-	"fmt"
-	"regexp"
-	"strconv"
-	"strings"
-
-	"github.com/user/oraclepack/internal/errors"
-)
-
-var (
-	bashFenceRegex = regexp.MustCompile("(?s)```bash\n(.*?)\n```")
-	// Updated regex to support ")", " —", and " -" separators
-	stepHeaderRegex = regexp.MustCompile(`^#\s*(\d{2})(?:\)|[\s]+[—-])`)
-	roiRegex        = regexp.MustCompile(`ROI=(\d+(\.\d+)?)`)
-	outDirRegex    = regexp.MustCompile(`(?m)^out_dir=["']?([^"'\s]+)["']?`)
-	writeOutputRegex = regexp.MustCompile(`(?m)--write-output`)
-)
-
-// Parse reads a Markdown content and returns a Pack.
-func Parse(content []byte) (*Pack, error) {
-	match := bashFenceRegex.FindSubmatch(content)
-	if match == nil || len(match) < 2 {
-		return nil, fmt.Errorf("%w: no bash code block found", errors.ErrInvalidPack)
-	}
-
-	bashCode := string(match[1])
-	pack := &Pack{}
-	
-	scanner := bufio.NewScanner(strings.NewReader(bashCode))
-	var currentStep *Step
-	var preludeLines []string
-	var inSteps bool
-
-	for scanner.Scan() {
-		line := scanner.Text()
-		headerMatch := stepHeaderRegex.FindStringSubmatch(strings.TrimSpace(line))
-
-		if len(headerMatch) > 1 {
-			inSteps = true
-			if currentStep != nil {
-				pack.Steps = append(pack.Steps, *currentStep)
-			}
-			num, _ := strconv.Atoi(headerMatch[1])
-			
-			// Extract ROI if present
-			var roi float64
-			cleanedLine := line
-			roiMatch := roiRegex.FindStringSubmatch(line)
-			if len(roiMatch) > 1 {
-				val, err := strconv.ParseFloat(roiMatch[1], 64)
-				if err == nil {
-					roi = val
-					// Remove ROI tag from display title, but keep original line intact?
-					// The task says "strip from Step.Title". Step struct currently has `OriginalLine`.
-					// I'll assume OriginalLine is what is displayed, or I should add a Title field.
-					// Looking at Step struct: ID, Number, Code, OriginalLine.
-					// I'll remove it from OriginalLine for now or add a Title field.
-					// The existing TUI uses OriginalLine as description. 
-					// Let's clean OriginalLine for display purposes or add a dedicated Title field.
-					// Adding a dedicated Title field seems cleaner but requires struct change.
-					// For now, I'll strip it from OriginalLine to match the prompt requirement "cleaner UI display".
-					cleanedLine = strings.Replace(cleanedLine, roiMatch[0], "", 1)
-					cleanedLine = strings.TrimSpace(cleanedLine)
-					// Fix any double spaces or trailing separators if needed, but simple replace is a good start.
-				}
-			}
-
-			currentStep = &Step{
-				ID:           headerMatch[1],
-				Number:       num,
-				OriginalLine: cleanedLine,
-				ROI:          roi,
-			}
-			continue
-		}
-
-		if inSteps {
-			currentStep.Code += line + "\n"
-		} else {
-			preludeLines = append(preludeLines, line)
-		}
-	}
-
-	if currentStep != nil {
-		pack.Steps = append(pack.Steps, *currentStep)
-	}
-
-	pack.Prelude.Code = strings.Join(preludeLines, "\n")
-	pack.DeriveMetadata()
-
-	return pack, nil
-}
-
-// DeriveMetadata extracts configuration from the prelude.
-func (p *Pack) DeriveMetadata() {
-	outDirMatch := outDirRegex.FindStringSubmatch(p.Prelude.Code)
-	if len(outDirMatch) > 1 {
-		p.OutDir = outDirMatch[1]
-	}
-
-	if writeOutputRegex.MatchString(p.Prelude.Code) {
-		p.WriteOutput = true
-	}
-}
-
-// Validate checks if the pack follows all rules.
-func (p *Pack) Validate() error {
-	if len(p.Steps) == 0 {
-		return fmt.Errorf("%w: at least one step is required", errors.ErrInvalidPack)
-	}
-
-	seen := make(map[int]bool)
-	for i, step := range p.Steps {
-		if step.Number <= 0 {
-			return fmt.Errorf("%w: invalid step number %d", errors.ErrInvalidPack, step.Number)
-		}
-		if seen[step.Number] {
-			return fmt.Errorf("%w: duplicate step number %d", errors.ErrInvalidPack, step.Number)
-		}
-		seen[step.Number] = true
-
-		// Optional: Ensure sequential starting from 1
-		if step.Number != i+1 {
-			return fmt.Errorf("%w: steps must be sequential starting from 1 (expected %d, got %d)", errors.ErrInvalidPack, i+1, step.Number)
-		}
-	}
-
-	return nil
-}
-```
-
-internal/pack/parser_test.go
-```
-package pack
-
-import (
-	"strings"
-	"testing"
-)
-
-func TestParse(t *testing.T) {
-	content := []byte(`
-# My Pack
-Some description.
-
-` + "```" + `bash
-out_dir="dist"
---write-output
-
-# 01)
-echo "hello"
-
-# 02)
-echo "world"
-` + "```" + `
-`)
-
-	p, err := Parse(content)
-	if err != nil {
-		t.Fatalf("Parse failed: %v", err)
-	}
-
-	if p.OutDir != "dist" {
-		t.Errorf("expected OutDir dist, got %s", p.OutDir)
-	}
-
-	if !p.WriteOutput {
-		t.Errorf("expected WriteOutput true, got false")
-	}
-
-	if len(p.Steps) != 2 {
-		t.Errorf("expected 2 steps, got %d", len(p.Steps))
-	}
-
-	if p.Steps[0].ID != "01" || p.Steps[0].Number != 1 {
-		t.Errorf("step 1 mismatch: %+v", p.Steps[0])
-	}
-
-	if err := p.Validate(); err != nil {
-		t.Errorf("Validate failed: %v", err)
-	}
-}
-
-func TestParseVariants(t *testing.T) {
-	tests := []struct {
-		name    string
-		content string
-	}{
-		{
-			"em dash",
-			`
-` + "```" + `bash
-# 01 — ROI=...
-echo "step 1"
-` + "```" + `
-`,
-		},
-		{
-			"hyphen",
-			`
-` + "```" + `bash
-# 01 - ROI=...
-echo "step 1"
-` + "```" + `
-`,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			p, err := Parse([]byte(tt.content))
-			if err != nil {
-				t.Fatalf("Parse failed: %v", err)
-			}
-			if len(p.Steps) != 1 {
-				t.Errorf("expected 1 step, got %d", len(p.Steps))
-			}
-		})
-	}
-}
-
-func TestParseROI(t *testing.T) {
-	content := []byte(`
-` + "```" + `bash
-# 01) ROI=4.5 clean me
-echo "high value"
-
-# 02) ROI=0.5
-echo "low value"
-
-# 03) No ROI
-echo "default"
-` + "```" + `
-`)
-
-	p, err := Parse(content)
-	if err != nil {
-		t.Fatalf("Parse failed: %v", err)
-	}
-
-	if len(p.Steps) != 3 {
-		t.Fatalf("expected 3 steps, got %d", len(p.Steps))
-	}
-
-	if p.Steps[0].ROI != 4.5 {
-		t.Errorf("step 1 ROI mismatch: expected 4.5, got %f", p.Steps[0].ROI)
-	}
-	if strings.Contains(p.Steps[0].OriginalLine, "ROI=4.5") {
-		t.Errorf("step 1 title was not cleaned: %q", p.Steps[0].OriginalLine)
-	}
-
-	if p.Steps[1].ROI != 0.5 {
-		t.Errorf("step 2 ROI mismatch: expected 0.5, got %f", p.Steps[1].ROI)
-	}
-
-	if p.Steps[2].ROI != 0.0 {
-		t.Errorf("step 3 ROI mismatch: expected 0.0, got %f", p.Steps[2].ROI)
-	}
-}
-
-func TestValidateErrors(t *testing.T) {
-	tests := []struct {
-		name    string
-		pack    *Pack
-		wantErr string
-	}{
-		{
-			"no steps",
-			&Pack{},
-			"at least one step is required",
-		},
-		{
-			"duplicate steps",
-			&Pack{
-				Steps: []Step{
-					{Number: 1, ID: "01"},
-					{Number: 1, ID: "01"},
-				},
-			},
-			"duplicate step number 1",
-		},
-		{
-			"non-sequential",
-			&Pack{
-				Steps: []Step{
-					{Number: 1, ID: "01"},
-					{Number: 3, ID: "03"},
-				},
-			},
-			"steps must be sequential starting from 1",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := tt.pack.Validate()
-			if err == nil {
-				t.Error("expected error, got nil")
-			} else if !contains(err.Error(), tt.wantErr) {
-				t.Errorf("expected error containing %q, got %q", tt.wantErr, err.Error())
-			}
-		})
-	}
-}
-
-func contains(s, substr string) bool {
-	return len(s) >= len(substr) && (s == substr || (len(substr) > 0 && (s[:len(substr)] == substr || contains(s[1:], substr))))
-}
-```
-
-internal/pack/types.go
-```
-package pack
-
-// Pack represents a parsed oracle pack.
-type Pack struct {
-	Prelude     Prelude
-	Steps       []Step
-	Source      string
-	OutDir      string
-	WriteOutput bool
-}
-
-// Prelude contains the shell code that runs before any steps.
-type Prelude struct {
-	Code string
-}
-
-// Step represents an individual executable step within the pack.
-type Step struct {
-	ID           string  // e.g., "01"
-	Number       int     // e.g., 1
-	Code         string  // The bash code
-	OriginalLine string  // The header line, e.g., "# 01)"
-	ROI          float64 // Return on Investment value extracted from header
-}
-```
-
-internal/render/render.go
-```
-package render
-
-import (
-	"sync"
-
-	"github.com/charmbracelet/glamour"
-	"github.com/user/oraclepack/internal/pack"
-)
-
-const (
-	DefaultStyle = "dark"
-	DefaultWidth = 80
-)
-
-type rendererKey struct {
-	width int
-	style string
-}
-
-var (
-	rendererMu    sync.Mutex
-	rendererCache = map[rendererKey]*glamour.TermRenderer{}
-)
-
-// RenderMarkdown renders markdown text as ANSI-styled text.
-func RenderMarkdown(text string, width int, style string) (string, error) {
-	if width <= 0 {
-		width = DefaultWidth
-	}
-	if style == "" {
-		style = DefaultStyle
-	}
-
-	r, err := rendererFor(width, style)
-	if err != nil {
-		return "", err
-	}
-
-	return r.Render(text)
-}
-
-// RenderStepCode renders a step's code block for preview.
-func RenderStepCode(s pack.Step, width int, style string) (string, error) {
-	md := "```bash\n" + s.Code + "\n```"
-	return RenderMarkdown(md, width, style)
-}
-
-func rendererFor(width int, style string) (*glamour.TermRenderer, error) {
-	key := rendererKey{width: width, style: style}
-
-	rendererMu.Lock()
-	r := rendererCache[key]
-	rendererMu.Unlock()
-	if r != nil {
-		return r, nil
-	}
-
-	opts := []glamour.TermRendererOption{glamour.WithWordWrap(width)}
-	if style == "auto" {
-		opts = append(opts, glamour.WithAutoStyle())
-	} else {
-		opts = append(opts, glamour.WithStandardStyle(style))
-	}
-
-	r, err := glamour.NewTermRenderer(opts...)
-	if err != nil {
-		return nil, err
-	}
-
-	rendererMu.Lock()
-	rendererCache[key] = r
-	rendererMu.Unlock()
-	return r, nil
-}
-```
-
-internal/render/render_test.go
-```
-package render
-
-import (
-	"strings"
-	"testing"
-)
-
-func TestRenderMarkdown(t *testing.T) {
-	text := "# Hello\n**bold**"
-	got, err := RenderMarkdown(text, 40, DefaultStyle)
-	if err != nil {
-		t.Fatalf("RenderMarkdown failed: %v", err)
-	}
-
-	// ANSI escape codes start with \x1b[
-	if !strings.Contains(got, "\x1b[") {
-		t.Errorf("expected ANSI codes in output, got: %q", got)
-	}
-}
-```
-
-internal/report/generate.go
-```
-package report
-
-import (
-	"time"
-
-	"github.com/user/oraclepack/internal/state"
-)
-
-// GenerateReport creates a ReportV1 from a RunState.
-func GenerateReport(s *state.RunState, packName string) *ReportV1 {
-	report := &ReportV1{
-		PackInfo: PackInfo{
-			Name: packName,
-			Hash: s.PackHash,
-		},
-		GeneratedAt: time.Now(),
-		Steps:       []StepReport{},
-	}
-
-	var totalDuration time.Duration
-	success, failure, skipped := 0, 0, 0
-
-	for id, status := range s.StepStatuses {
-		duration := status.EndedAt.Sub(status.StartedAt)
-		if status.EndedAt.IsZero() || status.StartedAt.IsZero() {
-			duration = 0
-		}
-
-		totalDuration += duration
-
-		sr := StepReport{
-			ID:         id,
-			Status:     string(status.Status),
-			ExitCode:   status.ExitCode,
-			Duration:   duration,
-			DurationMs: duration.Milliseconds(),
-			Error:      status.Error,
-		}
-		report.Steps = append(report.Steps, sr)
-
-		switch status.Status {
-		case state.StatusSuccess:
-			success++
-		case state.StatusFailed:
-			failure++
-		case state.StatusSkipped:
-			skipped++
-		}
-	}
-
-	report.Summary = Summary{
-		TotalSteps:      len(s.StepStatuses),
-		SuccessCount:    success,
-		FailureCount:    failure,
-		SkippedCount:    skipped,
-		TotalDuration:   totalDuration,
-		TotalDurationMs: totalDuration.Milliseconds(),
-	}
-
-	if len(s.Warnings) > 0 {
-		report.Warnings = make([]Warning, 0, len(s.Warnings))
-		for _, w := range s.Warnings {
-			report.Warnings = append(report.Warnings, Warning{
-				Scope:   w.Scope,
-				StepID:  w.StepID,
-				Line:    w.Line,
-				Token:   w.Token,
-				Message: w.Message,
-			})
-		}
-	}
-
-	return report
-}
-```
-
-internal/report/report_test.go
-```
-package report
-
-import (
-	"testing"
-	"time"
-
-	"github.com/user/oraclepack/internal/state"
-)
-
-func TestGenerateReport(t *testing.T) {
-	s := &state.RunState{
-		PackHash: "hash123",
-		StepStatuses: map[string]state.StepStatus{
-			"01": {
-				Status:    state.StatusSuccess,
-				StartedAt: time.Now().Add(-1 * time.Second),
-				EndedAt:   time.Now(),
-			},
-		},
-	}
-
-	rep := GenerateReport(s, "my-pack")
-
-	if rep.PackInfo.Name != "my-pack" {
-		t.Errorf("expected name my-pack, got %s", rep.PackInfo.Name)
-	}
-
-	if rep.Summary.TotalSteps != 1 {
-		t.Errorf("expected 1 total step, got %d", rep.Summary.TotalSteps)
-	}
-
-	if rep.Summary.SuccessCount != 1 {
-		t.Errorf("expected 1 success, got %d", rep.Summary.SuccessCount)
-	}
-}
-```
-
-internal/report/types.go
-```
-package report
-
-import (
-	"time"
-)
-
-// ReportV1 represents the final machine-readable summary.
-type ReportV1 struct {
-	Summary     Summary      `json:"summary"`
-	PackInfo    PackInfo     `json:"pack_info"`
-	Steps       []StepReport `json:"steps"`
-	Warnings    []Warning    `json:"warnings,omitempty"`
-	GeneratedAt time.Time    `json:"generated_at"`
-}
-
-type Summary struct {
-	TotalSteps      int           `json:"total_steps"`
-	SuccessCount    int           `json:"success_count"`
-	FailureCount    int           `json:"failure_count"`
-	SkippedCount    int           `json:"skipped_count"`
-	TotalDuration   time.Duration `json:"total_duration"`
-	TotalDurationMs int64         `json:"total_duration_ms"`
-}
-
-type PackInfo struct {
-	Name string `json:"name"`
-	Hash string `json:"hash"`
-}
-
-type StepReport struct {
-	ID         string        `json:"id"`
-	Status     string        `json:"status"`
-	ExitCode   int           `json:"exit_code"`
-	Duration   time.Duration `json:"duration"`
-	DurationMs int64         `json:"duration_ms"`
-	Error      string        `json:"error,omitempty"`
-}
-
-// Warning captures non-fatal execution notes surfaced during a run.
-type Warning struct {
-	Scope   string `json:"scope"`
-	StepID  string `json:"step_id,omitempty"`
-	Line    int    `json:"line"`
-	Token   string `json:"token"`
-	Message string `json:"message"`
-}
-```
-
-internal/state/persist.go
-```
-package state
-
-import (
-	"encoding/json"
-	"fmt"
-	"os"
-)
-
-// SaveStateAtomic saves the state to a file atomically.
-func SaveStateAtomic(path string, state *RunState) error {
-	data, err := json.MarshalIndent(state, "", "  ")
-	if err != nil {
-		return fmt.Errorf("marshal state: %w", err)
-	}
-
-	tempPath := path + ".tmp"
-	if err := os.WriteFile(tempPath, data, 0644); err != nil {
-		return fmt.Errorf("write temp file: %w", err)
-	}
-
-	if err := os.Rename(tempPath, path); err != nil {
-		os.Remove(tempPath)
-		return fmt.Errorf("rename temp file: %w", err)
-	}
-
-	return nil
-}
-
-// LoadState loads the state from a file.
-func LoadState(path string) (*RunState, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, fmt.Errorf("state file not found: %w", err)
-		}
-		return nil, fmt.Errorf("read state file: %w", err)
-	}
-
-	var state RunState
-	if err := json.Unmarshal(data, &state); err != nil {
-		return nil, fmt.Errorf("unmarshal state: %w", err)
-	}
-
-	return &state, nil
-}
-```
-
-internal/state/state_test.go
-```
-package state
-
-import (
-	"os"
-	"testing"
-)
-
-func TestStatePersistence(t *testing.T) {
-	tmpFile := "test_state.json"
-	defer os.Remove(tmpFile)
-
-	s := &RunState{
-		SchemaVersion: 1,
-		PackHash:      "abc",
-		StepStatuses: map[string]StepStatus{
-			"01": {Status: StatusSuccess, ExitCode: 0},
-		},
-	}
-
-	if err := SaveStateAtomic(tmpFile, s); err != nil {
-		t.Fatalf("SaveStateAtomic failed: %v", err)
-	}
-
-	loaded, err := LoadState(tmpFile)
-	if err != nil {
-		t.Fatalf("LoadState failed: %v", err)
-	}
-
-	if loaded.PackHash != s.PackHash {
-		t.Errorf("expected hash %s, got %s", s.PackHash, loaded.PackHash)
-	}
-
-	if loaded.StepStatuses["01"].Status != StatusSuccess {
-		t.Errorf("expected status success, got %s", loaded.StepStatuses["01"].Status)
-	}
-}
-```
-
-internal/state/types.go
-```
-package state
-
-import (
-	"time"
-)
-
-type Status string
-
-const (
-	StatusPending Status = "pending"
-	StatusRunning Status = "running"
-	StatusSuccess Status = "success"
-	StatusFailed  Status = "failed"
-	StatusSkipped Status = "skipped"
-)
-
-// RunState tracks the execution progress of an oracle pack.
-type RunState struct {
-	SchemaVersion int                   `json:"schema_version"`
-	PackHash      string                `json:"pack_hash"`
-	StartTime     time.Time             `json:"start_time"`
-	StepStatuses  map[string]StepStatus `json:"step_statuses"`
-	ROIThreshold  float64               `json:"roi_threshold,omitempty"`
-	ROIMode       string                `json:"roi_mode,omitempty"`
-	Warnings      []Warning             `json:"warnings,omitempty"`
-}
-
-// StepStatus holds the outcome of an individual step.
-type StepStatus struct {
-	Status    Status    `json:"status"`
-	ExitCode  int       `json:"exit_code"`
-	StartedAt time.Time `json:"started_at"`
-	EndedAt   time.Time `json:"ended_at"`
-	Error     string    `json:"error,omitempty"`
-}
-
-// Warning captures a non-fatal execution note (e.g., sanitized labels).
-type Warning struct {
-	Scope   string `json:"scope"`
-	StepID  string `json:"step_id,omitempty"`
-	Line    int    `json:"line"`
-	Token   string `json:"token"`
-	Message string `json:"message"`
-}
-```
-
-internal/tui/clipboard.go
-```
-package tui
-
-import (
-	"fmt"
-	"os"
-	"os/exec"
-	"runtime"
-	"strings"
-)
-
-func copyToClipboard(content string) error {
-	var cmd *exec.Cmd
-	switch runtime.GOOS {
-	case "darwin":
-		cmd = exec.Command("pbcopy")
-	case "linux":
-		if _, err := exec.LookPath("wl-copy"); err == nil {
-			cmd = exec.Command("wl-copy")
-		} else if _, err := exec.LookPath("xclip"); err == nil {
-			cmd = exec.Command("xclip", "-selection", "clipboard")
-		} else if _, err := exec.LookPath("xsel"); err == nil {
-			cmd = exec.Command("xsel", "--clipboard", "--input")
-		} else {
-			return err
-		}
-	case "windows":
-		cmd = exec.Command("cmd", "/c", "clip")
-	default:
-		return exec.ErrNotFound
-	}
-
-	cmd.Stdin = strings.NewReader(content)
-	return cmd.Run()
-}
-
-func writeClipboardFallback(content string) (string, error) {
-	file, err := os.CreateTemp("", "oraclepack-step-*.txt")
-	if err != nil {
-		return "", fmt.Errorf("create temp file: %w", err)
-	}
-	defer file.Close()
-	if _, err := file.WriteString(content); err != nil {
-		return "", fmt.Errorf("write temp file: %w", err)
-	}
-	return file.Name(), nil
-}
-```
-
-internal/tui/filter_test.go
-```
-package tui
-
-import (
-	"os"
-	"path/filepath"
-	"testing"
-
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/user/oraclepack/internal/exec"
-	"github.com/user/oraclepack/internal/pack"
-	"github.com/user/oraclepack/internal/state"
-)
-
-func TestFilterLogic(t *testing.T) {
-	// Setup pack with steps having different ROI
-	p := &pack.Pack{
-		Steps: []pack.Step{
-			{ID: "01", ROI: 1.0, OriginalLine: "Step 1"},
-			{ID: "02", ROI: 5.0, OriginalLine: "Step 2"},
-			{ID: "03", ROI: 10.0, OriginalLine: "Step 3"},
-		},
-	}
-	r := exec.NewRunner(exec.RunnerOptions{})
-	s := &state.RunState{}
-
-	// Initialize model with no filter (threshold 0)
-	m := NewModel(p, r, s, "", 0, "over", false)
-
-	if len(m.list.Items()) != 3 {
-		t.Fatalf("expected 3 items initially, got %d", len(m.list.Items()))
-	}
-
-	// Apply filter: ROI >= 5.0
-	m.roiThreshold = 5.0
-	m.roiMode = "over"
-	m = m.refreshList()
-
-	if len(m.list.Items()) != 2 {
-		t.Errorf("expected 2 items after filtering >= 5.0, got %d", len(m.list.Items()))
-	}
-
-	// Verify items are 02 and 03
-	items := m.list.Items()
-	if items[0].(item).id != "02" {
-		t.Errorf("expected first item to be 02, got %s", items[0].(item).id)
-	}
-	if items[1].(item).id != "03" {
-		t.Errorf("expected second item to be 03, got %s", items[1].(item).id)
-	}
-
-	// Apply filter: ROI < 5.0 ("under")
-	m.roiThreshold = 5.0
-	m.roiMode = "under"
-	m = m.refreshList()
-
-	if len(m.list.Items()) != 1 {
-		t.Errorf("expected 1 item after filtering < 5.0, got %d", len(m.list.Items()))
-	}
-	if m.list.Items()[0].(item).id != "01" {
-		t.Errorf("expected item to be 01, got %s", m.list.Items()[0].(item).id)
-	}
-}
-
-func TestROIModeTogglePersists(t *testing.T) {
-	dir := t.TempDir()
-	statePath := filepath.Join(dir, "state.json")
-	p := &pack.Pack{
-		Steps: []pack.Step{
-			{ID: "01", ROI: 1.0, OriginalLine: "Step 1"},
-		},
-	}
-	r := exec.NewRunner(exec.RunnerOptions{})
-	s := &state.RunState{SchemaVersion: 1}
-
-	m := NewModel(p, r, s, statePath, 0, "over", false)
-
-	updated, _ := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("m")})
-	m2 := updated.(Model)
-	if m2.roiMode != "under" {
-		t.Fatalf("expected roiMode to toggle to under, got %s", m2.roiMode)
-	}
-
-	loaded, err := state.LoadState(statePath)
-	if err != nil {
-		t.Fatalf("failed to load state: %v", err)
-	}
-	if loaded.ROIMode != "under" {
-		t.Fatalf("expected persisted roiMode under, got %s", loaded.ROIMode)
-	}
-
-	if err := os.Remove(statePath); err != nil {
-		t.Fatalf("failed to cleanup state file: %v", err)
-	}
-}
-```
-
-internal/tui/overrides_confirm.go
-```
-package tui
-
-import (
-	"fmt"
-	"sort"
-	"strings"
-
-	"github.com/user/oraclepack/internal/exec"
-	"github.com/user/oraclepack/internal/overrides"
-)
-
-type ValidationResultMsg struct {
-	Errors []exec.ValidationError
-	Err    error
-}
-
-type OverridesConfirmModel struct {
-	validating bool
-	errMsg     string
-	errors     []exec.ValidationError
-}
-
-func (m OverridesConfirmModel) View(over overrides.RuntimeOverrides, baseline []string) string {
-	added := strings.Join(over.AddedFlags, ", ")
-	if added == "" {
-		added = "(none)"
-	}
-	removed := strings.Join(over.RemovedFlags, ", ")
-	if removed == "" {
-		removed = "(none)"
-	}
-	targeted := len(over.ApplyToSteps)
-	targetList := formatTargetList(over.ApplyToSteps, 5)
-	effective := effectiveFlagsSummary(over, baseline)
-	lines := []string{
-		"Summary:",
-		fmt.Sprintf("Added flags: %s", added),
-		fmt.Sprintf("Removed flags: %s", removed),
-		fmt.Sprintf("Targeted steps: %d%s", targeted, targetList),
-		fmt.Sprintf("Effective flags: %s", effective),
-		"",
-		"[Enter] Validate  [Esc] Cancel",
-	}
-
-	if m.validating {
-		lines = append(lines, "", "Validating overrides...")
-	}
-	if m.errMsg != "" {
-		lines = append(lines, "", "Validation failed:", m.errMsg)
-	}
-	if len(m.errors) > 0 {
-		lines = append(lines, "", fmt.Sprintf("Validation errors (%d):", len(m.errors)))
-		lines = append(lines, formatValidationErrors(m.errors, 6)...)
-	}
-
-	return strings.Join(lines, "\n")
-}
-
-func formatTargetList(targets map[string]bool, limit int) string {
-	if len(targets) == 0 || limit <= 0 {
-		return ""
-	}
-	ids := make([]string, 0, len(targets))
-	for id := range targets {
-		ids = append(ids, id)
-	}
-	sort.Strings(ids)
-	if len(ids) <= limit {
-		return fmt.Sprintf(" (%s)", strings.Join(ids, ", "))
-	}
-	return fmt.Sprintf(" (%s, +%d more)", strings.Join(ids[:limit], ", "), len(ids)-limit)
-}
-
-func effectiveFlagsSummary(over overrides.RuntimeOverrides, baseline []string) string {
-	if len(over.ApplyToSteps) == 0 {
-		return "(no steps targeted)"
-	}
-	var first string
-	for id := range over.ApplyToSteps {
-		first = id
-		break
-	}
-	flags := over.EffectiveFlags(first, baseline)
-	if len(flags) == 0 {
-		return "(none)"
-	}
-	return strings.Join(flags, " ")
-}
-
-func formatValidationErrors(errors []exec.ValidationError, limit int) []string {
-	if limit <= 0 {
-		return nil
-	}
-	lines := []string{}
-	for i, err := range errors {
-		if i >= limit {
-			lines = append(lines, fmt.Sprintf("- (+%d more)", len(errors)-limit))
-			break
-		}
-		msg := strings.TrimSpace(err.ErrorMessage)
-		if msg == "" {
-			msg = "(no error message)"
-		}
-		lines = append(lines, fmt.Sprintf("- Step %s: %s", err.StepID, firstLine(msg)))
-	}
-	return lines
-}
-
-func firstLine(msg string) string {
-	if idx := strings.IndexByte(msg, '\n'); idx != -1 {
-		return msg[:idx]
-	}
-	return msg
-}
-```
-
-internal/tui/overrides_flags.go
-```
-package tui
-
-import (
-	"fmt"
-	"io"
-
-	"github.com/charmbracelet/bubbles/list"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
-)
-
-type FlagItem struct {
-	Flag       string
-	Desc       string
-	IsBaseline bool
-	Selected   bool
-}
-
-func (i FlagItem) Title() string       { return i.Flag }
-func (i FlagItem) Description() string { return i.Desc }
-func (i FlagItem) FilterValue() string { return i.Flag }
-
-type FlagsPickerModel struct {
-	list list.Model
-}
-
-func NewFlagsPickerModel(baseline []string) FlagsPickerModel {
-	baselineSet := make(map[string]bool, len(baseline))
-	for _, f := range baseline {
-		baselineSet[f] = true
-	}
-
-	curated := []FlagItem{
-		{Flag: "--files-report", Desc: "Show per-file token usage"},
-		{Flag: "--render", Desc: "Print assembled markdown bundle"},
-		{Flag: "--render-plain", Desc: "Render markdown without ANSI"},
-		{Flag: "--copy", Desc: "Copy assembled markdown bundle"},
-		{Flag: "--wait", Desc: "Wait for background API runs"},
-	}
-
-	items := make([]list.Item, 0, len(curated))
-	for _, c := range curated {
-		c.IsBaseline = baselineSet[c.Flag]
-		if c.IsBaseline {
-			c.Selected = true
-		}
-		items = append(items, c)
-	}
-
-	delegate := newFlagsDelegate()
-	l := list.New(items, delegate, 0, 0)
-	l.Title = "Oracle Flags"
-	l.SetFilteringEnabled(true)
-
-	return FlagsPickerModel{list: l}
-}
-
-func (m FlagsPickerModel) Init() tea.Cmd {
-	return nil
-}
-
-func (m FlagsPickerModel) Update(msg tea.Msg) (FlagsPickerModel, tea.Cmd) {
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		if msg.String() == " " {
-			idx := m.list.Index()
-			item, ok := m.list.SelectedItem().(FlagItem)
-			if ok && !item.IsBaseline {
-				item.Selected = !item.Selected
-				_ = m.list.SetItem(idx, item)
-			}
-		}
-	}
-
-	var cmd tea.Cmd
-	m.list, cmd = m.list.Update(msg)
-	return m, cmd
-}
-
-func (m *FlagsPickerModel) SetSize(width, height int) {
-	m.list.SetSize(width, height)
-}
-
-func (m FlagsPickerModel) View() string {
-	return m.list.View()
-}
-
-func (m FlagsPickerModel) SelectedFlags() []string {
-	var flags []string
-	for _, item := range m.list.Items() {
-		if fi, ok := item.(FlagItem); ok && fi.Selected && !fi.IsBaseline {
-			flags = append(flags, fi.Flag)
-		}
-	}
-	return flags
-}
-
-type flagsDelegate struct {
-	list.DefaultDelegate
-}
-
-func newFlagsDelegate() flagsDelegate {
-	d := list.NewDefaultDelegate()
-	return flagsDelegate{DefaultDelegate: d}
-}
-
-func (d flagsDelegate) Render(w io.Writer, m list.Model, index int, item list.Item) {
-	fi, ok := item.(FlagItem)
-	if !ok {
-		d.DefaultDelegate.Render(w, m, index, item)
-		return
-	}
-
-	checked := fi.Selected || fi.IsBaseline
-	marker := "[ ]"
-	if checked {
-		marker = "[x]"
-	}
-	if fi.IsBaseline {
-		marker = "[*]"
-	}
-
-	label := fi.Flag
-	if fi.Desc != "" {
-		label = fmt.Sprintf("%s - %s", fi.Flag, fi.Desc)
-	}
-	if fi.IsBaseline {
-		label = label + " (base)"
-	}
-
-	line := fmt.Sprintf("%s %s", marker, label)
-	if index == m.Index() {
-		line = d.Styles.SelectedTitle.Render(line)
-	} else {
-		line = d.Styles.NormalTitle.Render(line)
-	}
-	if fi.IsBaseline {
-		line = lipgloss.NewStyle().Faint(true).Render(line)
-	}
-
-	fmt.Fprintln(w, line)
-}
-```
-
-internal/tui/overrides_flow.go
-```
-package tui
-
-import (
-	"context"
-	"fmt"
-
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
-	"github.com/user/oraclepack/internal/exec"
-	"github.com/user/oraclepack/internal/overrides"
-	"github.com/user/oraclepack/internal/pack"
-)
-
-type OverridesStep int
-
-const (
-	OverridesFlags OverridesStep = iota
-	OverridesSteps
-	OverridesConfirm
-)
-
-type OverridesStartedMsg struct{}
-
-type OverridesAppliedMsg struct {
-	Overrides overrides.RuntimeOverrides
-}
-
-type OverridesCancelledMsg struct{}
-
-type OverridesFlowModel struct {
-	step    OverridesStep
-	flags   FlagsPickerModel
-	steps   StepsPickerModel
-	confirm OverridesConfirmModel
-
-	packSteps        []pack.Step
-	baseline         []string
-	runnerOpts       exec.RunnerOptions
-	pendingOverrides overrides.RuntimeOverrides
-}
-
-func NewOverridesFlowModel(steps []pack.Step, baseline []string, opts exec.RunnerOptions) OverridesFlowModel {
-	return OverridesFlowModel{
-		step:       OverridesFlags,
-		flags:      NewFlagsPickerModel(nil),
-		steps:      NewStepsPickerModel(steps),
-		confirm:    OverridesConfirmModel{},
-		packSteps:  steps,
-		baseline:   exec.ApplyChatGPTURL(baseline, opts.ChatGPTURL),
-		runnerOpts: opts,
-	}
-}
-
-func (m OverridesFlowModel) Init() tea.Cmd {
-	return nil
-}
-
-func (m OverridesFlowModel) Update(msg tea.Msg) (OverridesFlowModel, tea.Cmd) {
-	var cmd tea.Cmd
-	if m.step == OverridesFlags {
-		m.flags, cmd = m.flags.Update(msg)
-	}
-	if m.step == OverridesSteps {
-		m.steps, cmd = m.steps.Update(msg)
-	}
-	if m.step == OverridesConfirm {
-		switch v := msg.(type) {
-		case ValidationResultMsg:
-			m.confirm.validating = false
-			m.confirm.errors = v.Errors
-			if v.Err != nil {
-				m.confirm.errMsg = v.Err.Error()
-				return m, nil
-			}
-			if len(v.Errors) > 0 {
-				m.confirm.errMsg = fmt.Sprintf("%d validation errors detected.", len(v.Errors))
-				return m, nil
-			}
-			return m, func() tea.Msg { return OverridesAppliedMsg{Overrides: m.pendingOverrides} }
-		}
-	}
-
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "esc":
-			return m, func() tea.Msg { return OverridesCancelledMsg{} }
-		case "shift+tab", "backspace":
-			if m.step > OverridesFlags {
-				m.step--
-			}
-		case "enter", "tab":
-			if m.step == OverridesConfirm {
-				if m.confirm.validating {
-					return m, nil
-				}
-				m.pendingOverrides = m.currentOverrides()
-				m.confirm.validating = true
-				m.confirm.errMsg = ""
-				m.confirm.errors = nil
-				return m, m.validateCmd(m.pendingOverrides)
-			}
-			m.step++
-		}
-	}
-
-	return m, cmd
-}
-
-func (m OverridesFlowModel) View(width, height int) string {
-	title := lipgloss.NewStyle().Bold(true).Render("Overrides Wizard")
-	step := fmt.Sprintf("Step %d/3", int(m.step)+1)
-	body := fmt.Sprintf("Current step: %s\n\n[Enter] Next  [Esc] Cancel", overridesStepName(m.step))
-
-	var content string
-	if m.step == OverridesFlags {
-		m.flags.SetSize(width-4, height-8)
-		content = lipgloss.JoinVertical(lipgloss.Left,
-			title,
-			step,
-			"",
-			m.flags.View(),
-			"",
-			body,
-		)
-	} else if m.step == OverridesSteps {
-		m.steps.SetSize(width-4, height-8)
-		content = lipgloss.JoinVertical(lipgloss.Left,
-			title,
-			step,
-			"",
-			m.steps.View(),
-			"",
-			body,
-		)
-	} else if m.step == OverridesConfirm {
-		content = lipgloss.JoinVertical(lipgloss.Left,
-			title,
-			step,
-			"",
-			m.confirm.View(m.currentOverrides(), m.baseline),
-		)
-	} else {
-		content = lipgloss.JoinVertical(lipgloss.Left,
-			title,
-			step,
-			"",
-			body,
-		)
-	}
-
-	return lipgloss.Place(width, height, lipgloss.Center, lipgloss.Center, content)
-}
-
-func (m OverridesFlowModel) currentOverrides() overrides.RuntimeOverrides {
-	return overrides.RuntimeOverrides{
-		AddedFlags:   m.flags.SelectedFlags(),
-		RemovedFlags: nil,
-		ApplyToSteps: m.steps.SelectedSteps(),
-	}
-}
-
-func (m OverridesFlowModel) validateCmd(over overrides.RuntimeOverrides) tea.Cmd {
-	return func() tea.Msg {
-		errs, err := exec.ValidateOverrides(context.Background(), m.packSteps, &over, m.baseline, m.runnerOpts)
-		return ValidationResultMsg{Errors: errs, Err: err}
-	}
-}
-
-func overridesStepName(step OverridesStep) string {
-	switch step {
-	case OverridesFlags:
-		return "Flags"
-	case OverridesSteps:
-		return "Target Steps"
-	case OverridesConfirm:
-		return "Confirm"
-	default:
-		return "Unknown"
-	}
-}
-```
-
-internal/tui/overrides_steps.go
-```
-package tui
-
-import (
-	"fmt"
-	"io"
-
-	"github.com/charmbracelet/bubbles/list"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
-	"github.com/user/oraclepack/internal/pack"
-)
-
-type StepItem struct {
-	ID       string
-	TitleTxt string
-	DescTxt  string
-	Selected bool
-}
-
-func (i StepItem) Title() string       { return i.TitleTxt }
-func (i StepItem) Description() string { return i.DescTxt }
-func (i StepItem) FilterValue() string { return i.TitleTxt }
-
-type StepsPickerModel struct {
-	list list.Model
-}
-
-func NewStepsPickerModel(steps []pack.Step) StepsPickerModel {
-	items := make([]list.Item, 0, len(steps))
-	for _, s := range steps {
-		items = append(items, StepItem{
-			ID:       s.ID,
-			TitleTxt: fmt.Sprintf("Step %s", s.ID),
-			DescTxt:  s.OriginalLine,
-			Selected: true,
-		})
-	}
-
-	delegate := newStepsDelegate()
-	l := list.New(items, delegate, 0, 0)
-	l.Title = "Target Steps"
-	l.SetFilteringEnabled(true)
-
-	return StepsPickerModel{list: l}
-}
-
-func (m StepsPickerModel) Init() tea.Cmd {
-	return nil
-}
-
-func (m StepsPickerModel) Update(msg tea.Msg) (StepsPickerModel, tea.Cmd) {
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "a", "A":
-			m = m.setAll(true)
-			return m, nil
-		case "i":
-			m = m.invert()
-			return m, nil
-		case "n":
-			m = m.setAll(false)
-			return m, nil
-		case " ":
-			idx := m.list.Index()
-			item, ok := m.list.SelectedItem().(StepItem)
-			if ok {
-				item.Selected = !item.Selected
-				_ = m.list.SetItem(idx, item)
-			}
-		}
-	}
-
-	var cmd tea.Cmd
-	m.list, cmd = m.list.Update(msg)
-	return m, cmd
-}
-
-func (m *StepsPickerModel) SetSize(width, height int) {
-	m.list.SetSize(width, height)
-}
-
-func (m StepsPickerModel) View() string {
-	help := lipgloss.NewStyle().Faint(true).Render("[space] toggle  [a] all  [i] invert  [n] none")
-	return m.list.View() + "\n" + help
-}
-
-func (m StepsPickerModel) SelectedSteps() map[string]bool {
-	selected := make(map[string]bool)
-	for _, item := range m.list.Items() {
-		if si, ok := item.(StepItem); ok && si.Selected {
-			selected[si.ID] = true
-		}
-	}
-	return selected
-}
-
-func (m StepsPickerModel) setAll(value bool) StepsPickerModel {
-	for idx, item := range m.list.Items() {
-		si, ok := item.(StepItem)
-		if !ok {
-			continue
-		}
-		si.Selected = value
-		_ = m.list.SetItem(idx, si)
-	}
-	return m
-}
-
-func (m StepsPickerModel) invert() StepsPickerModel {
-	for idx, item := range m.list.Items() {
-		si, ok := item.(StepItem)
-		if !ok {
-			continue
-		}
-		si.Selected = !si.Selected
-		_ = m.list.SetItem(idx, si)
-	}
-	return m
-}
-
-type stepsDelegate struct {
-	list.DefaultDelegate
-}
-
-func newStepsDelegate() stepsDelegate {
-	d := list.NewDefaultDelegate()
-	return stepsDelegate{DefaultDelegate: d}
-}
-
-func (d stepsDelegate) Render(w io.Writer, m list.Model, index int, item list.Item) {
-	si, ok := item.(StepItem)
-	if !ok {
-		d.DefaultDelegate.Render(w, m, index, item)
-		return
-	}
-
-	marker := "[ ]"
-	if si.Selected {
-		marker = "[x]"
-	}
-
-	label := si.TitleTxt
-	if si.DescTxt != "" {
-		label = fmt.Sprintf("%s - %s", si.TitleTxt, si.DescTxt)
-	}
-
-	line := fmt.Sprintf("%s %s", marker, label)
-	if index == m.Index() {
-		line = d.Styles.SelectedTitle.Render(line)
-	} else {
-		line = d.Styles.NormalTitle.Render(line)
-	}
-
-	fmt.Fprintln(w, line)
-}
-```
-
-internal/tui/overrides_url.go
-```
-package tui
-
-import (
-	"strings"
-
-	"github.com/charmbracelet/bubbles/textinput"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
-)
-
-type URLInputModel struct {
-	input textinput.Model
-	err   string
-}
-
-func NewURLInputModel() URLInputModel {
-	ti := textinput.New()
-	ti.Placeholder = "https://chat.openai.com/project/..."
-	ti.CharLimit = 200
-	ti.Width = 50
-
-	return URLInputModel{input: ti}
-}
-
-func (m URLInputModel) Init() tea.Cmd {
-	return textinput.Blink
-}
-
-func (m URLInputModel) Update(msg tea.Msg) (URLInputModel, tea.Cmd) {
-	var cmd tea.Cmd
-	m.input, cmd = m.input.Update(msg)
-	m.err = ""
-	if !m.IsValid() {
-		m.err = "Invalid URL (must start with http:// or https://)"
-	}
-	return m, cmd
-}
-
-func (m URLInputModel) Value() string {
-	return strings.TrimSpace(m.input.Value())
-}
-
-func (m URLInputModel) IsValid() bool {
-	v := m.Value()
-	if v == "" {
-		return true
-	}
-	return strings.HasPrefix(v, "http://") || strings.HasPrefix(v, "https://")
-}
-
-func (m URLInputModel) View() string {
-	body := m.input.View()
-	if m.err != "" {
-		body = body + "\n" + lipgloss.NewStyle().Foreground(lipgloss.Color("196")).Render(m.err)
-	}
-	return body
-}
-
-func (m *URLInputModel) SetValue(v string) {
-	m.input.SetValue(v)
-}
-
-func (m *URLInputModel) Focus() {
-	m.input.Focus()
-}
-
-func (m *URLInputModel) Blur() {
-	m.input.Blur()
-}
-```
-
-internal/tui/preview_test.go
-```
-package tui
-
-import (
-	"strings"
-	"testing"
-
-	"github.com/user/oraclepack/internal/exec"
-	"github.com/user/oraclepack/internal/pack"
-	"github.com/user/oraclepack/internal/state"
-)
-
-func TestStepPreviewContentUnwrapped(t *testing.T) {
-	p := &pack.Pack{
-		Steps: []pack.Step{
-			{ID: "01", OriginalLine: "Step 1", Code: "echo hello"},
-		},
-	}
-	r := exec.NewRunner(exec.RunnerOptions{})
-	s := &state.RunState{}
-	m := NewModel(p, r, s, "", 0, "over", false)
-	m.width = 80
-	m.previewID = "01"
-	m.previewWrap = false
-
-	content := m.stepPreviewContent()
-	if !strings.Contains(content, "Step 01") {
-		t.Fatalf("expected header to include step id, got %q", content)
-	}
-	if !strings.Contains(content, "echo hello") {
-		t.Fatalf("expected content to include code, got %q", content)
-	}
-}
-```
-
-internal/tui/tui.go
-```
-package tui
-
-import (
-	"context"
-	"fmt"
-	"strings"
-	"time"
-
-	"github.com/charmbracelet/bubbles/list"
-	"github.com/charmbracelet/bubbles/spinner"
-	"github.com/charmbracelet/bubbles/textinput"
-	"github.com/charmbracelet/bubbles/viewport"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
-	"github.com/user/oraclepack/internal/exec"
-	"github.com/user/oraclepack/internal/overrides"
-	"github.com/user/oraclepack/internal/pack"
-	"github.com/user/oraclepack/internal/render"
-	"github.com/user/oraclepack/internal/state"
-)
-
-type ViewState int
-
-const (
-	ViewSteps ViewState = iota
-	ViewRunning
-	ViewDone
-	ViewOverrides
-	ViewStepPreview
-)
-
-type item struct {
-	id     string
-	title  string
-	desc   string
-	status state.Status
-}
-
-func (i item) Title() string       { return i.title }
-func (i item) Description() string { return i.desc }
-func (i item) FilterValue() string { return i.title }
-
-type Model struct {
-	list        list.Model
-	viewport    viewport.Model
-	spinner     spinner.Model
-	filterInput textinput.Model
-	urlInput    URLInputModel
-	urlPicker   URLPickerModel
-	pack        *pack.Pack
-	runner      *exec.Runner
-	state       *state.RunState
-	statePath   string
-
-	width  int
-	height int
-
-	viewState     ViewState
-	running       bool
-	runAll        bool // State for sequential execution
-	currentIdx    int
-	autoRun       bool // Config to auto-start on init
-	previewID     string
-	previewWrap   bool
-	previewNotice string
-
-	// Filtering state
-	allSteps     []item // Store all items to support dynamic filtering
-	roiThreshold float64
-	roiMode      string
-	isFiltering  bool
-	isEditingURL bool
-	isPickingURL bool
-
-	overridesFlow    OverridesFlowModel
-	appliedOverrides *overrides.RuntimeOverrides
-	chatGPTURL       string
-
-	err      error
-	logLines []string
-	logChan  chan string
-}
-
-func NewModel(p *pack.Pack, r *exec.Runner, s *state.RunState, statePath string, roiThreshold float64, roiMode string, autoRun bool) Model {
-	if s != nil {
-		if s.ROIThreshold > 0 {
-			roiThreshold = s.ROIThreshold
-		}
-		if s.ROIMode != "" {
-			roiMode = s.ROIMode
-		}
-	}
-	var allItems []item
-	for _, step := range p.Steps {
-		allItems = append(allItems, item{
-			id:    step.ID,
-			title: fmt.Sprintf("Step %s", step.ID),
-			desc:  step.OriginalLine,
-		})
-	}
-
-	ti := textinput.New()
-	ti.Placeholder = "Enter ROI threshold (e.g. 2.5)"
-	ti.CharLimit = 10
-	ti.Width = 20
-
-	l := list.New([]list.Item{}, list.NewDefaultDelegate(), 0, 0)
-	l.Title = "Oracle Pack Steps"
-
-	sp := spinner.New()
-	sp.Spinner = spinner.Dot
-	sp.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
-
-	vp := viewport.New(0, 0)
-	vp.SetContent("Press Enter to run selected, 'a' to run all filtered steps, 'f' to set ROI threshold, 'm' to toggle ROI mode, 'v' to view step, 'o' to configure overrides, 'u' for ChatGPT URL, 'U' to pick a saved URL.")
-
-	projectPath := ProjectURLStorePath(statePath, p.Source)
-	globalPath := GlobalURLStorePath()
-	urlPicker := NewURLPickerModel(projectPath, globalPath)
-	resolvedURL := r.ChatGPTURL
-	if resolvedURL == "" {
-		resolvedURL = urlPicker.DefaultURL()
-	}
-	if resolvedURL != "" {
-		r.ChatGPTURL = resolvedURL
-	}
-
-	m := Model{
-		list:          l,
-		viewport:      vp,
-		spinner:       sp,
-		filterInput:   ti,
-		urlInput:      NewURLInputModel(),
-		urlPicker:     urlPicker,
-		pack:          p,
-		runner:        r,
-		state:         s,
-		statePath:     statePath,
-		autoRun:       autoRun,
-		allSteps:      allItems,
-		roiThreshold:  roiThreshold,
-		roiMode:       roiMode,
-		logChan:       make(chan string, 100),
-		viewState:     ViewSteps,
-		overridesFlow: NewOverridesFlowModel(p.Steps, r.OracleFlags, RunnerOptionsFromRunner(r)),
-		chatGPTURL:    resolvedURL,
-		previewWrap:   true,
-	}
-	m.urlInput.SetValue(resolvedURL)
-	m.urlInput.Blur()
-
-	// Apply initial filter
-	return m.refreshList()
-}
-
-func (m Model) refreshList() Model {
-	var filtered []list.Item
-	for _, it := range m.allSteps {
-		// Find the original step to check ROI
-		var step *pack.Step
-		for _, s := range m.pack.Steps {
-			if s.ID == it.id {
-				step = &s
-				break
-			}
-		}
-		if step == nil {
-			continue
-		}
-
-		if m.roiThreshold > 0 {
-			if m.roiMode == "under" {
-				if step.ROI >= m.roiThreshold {
-					continue
-				}
-			} else {
-				if step.ROI < m.roiThreshold {
-					continue
-				}
-			}
-		}
-		filtered = append(filtered, it)
-	}
-	m.list.SetItems(filtered)
-	return m
-}
-
-type StartAutoRunMsg struct{}
-
-func (m Model) Init() tea.Cmd {
-	var cmds []tea.Cmd
-	if m.autoRun {
-		cmds = append(cmds, func() tea.Msg { return StartAutoRunMsg{} })
-	}
-	cmds = append(cmds, textinput.Blink)
-	return tea.Batch(cmds...)
-}
-
-type LogMsg string
-type FinishedMsg struct {
-	Err error
-	ID  string
-}
-
-func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var cmds []tea.Cmd
-
-	// Global keys (Quit)
-	if msg, ok := msg.(tea.KeyMsg); ok {
-		switch msg.String() {
-		case "ctrl+c":
-			return m, tea.Quit
-		}
-	}
-
-	if msg, ok := msg.(OverridesStartedMsg); ok {
-		_ = msg
-		m.viewState = ViewOverrides
-		m.overridesFlow = NewOverridesFlowModel(m.pack.Steps, m.runner.OracleFlags, RunnerOptionsFromRunner(m.runner))
-		return m, nil
-	}
-	if msg, ok := msg.(OverridesAppliedMsg); ok {
-		over := msg.Overrides
-		m.appliedOverrides = &over
-		if m.runner != nil {
-			m.runner.Overrides = &over
-		}
-		m.viewState = ViewSteps
-		return m, nil
-	}
-	if msg, ok := msg.(OverridesCancelledMsg); ok {
-		_ = msg
-		m.appliedOverrides = nil
-		if m.runner != nil {
-			m.runner.Overrides = nil
-		}
-		m.viewState = ViewSteps
-		return m, nil
-	}
-	if msg, ok := msg.(URLPickedMsg); ok {
-		m.chatGPTURL = msg.URL
-		if m.runner != nil {
-			m.runner.ChatGPTURL = m.chatGPTURL
-		}
-		m.urlInput.SetValue(m.chatGPTURL)
-		m.isPickingURL = false
-		return m, nil
-	}
-	if _, ok := msg.(URLPickerCancelledMsg); ok {
-		m.isPickingURL = false
-		return m, nil
-	}
-
-	if m.viewState == ViewOverrides {
-		var cmd tea.Cmd
-		m.overridesFlow, cmd = m.overridesFlow.Update(msg)
-		return m, cmd
-	}
-
-	if m.viewState == ViewStepPreview {
-		switch msg := msg.(type) {
-		case clearPreviewNoticeMsg:
-			m.previewNotice = ""
-			return m, nil
-		case tea.KeyMsg:
-			switch msg.String() {
-			case "q":
-				return m, tea.Quit
-			case "b", "esc":
-				m.previewID = ""
-				m.previewNotice = ""
-				m.viewState = ViewSteps
-				m.setListPreviewContent(m.selectedItemID())
-				return m, nil
-			case "t":
-				m.previewWrap = !m.previewWrap
-				m.viewport.SetContent(m.stepPreviewContent())
-				return m, nil
-			case "c":
-				content := m.stepPlainTextFor(m.previewID)
-				if err := copyToClipboard(content); err != nil {
-					path, fallbackErr := writeClipboardFallback(content)
-					if fallbackErr != nil {
-						m.previewNotice = "Copy failed: " + err.Error()
-					} else {
-						m.previewNotice = "Copy failed; saved to " + path
-					}
-				} else {
-					m.previewNotice = "Copied to clipboard"
-				}
-				return m, tea.Tick(2*time.Second, func(time.Time) tea.Msg {
-					return clearPreviewNoticeMsg{}
-				})
-			}
-		}
-		var cmd tea.Cmd
-		m.viewport, cmd = m.viewport.Update(msg)
-		return m, cmd
-	}
-
-	switch m.viewState {
-	case ViewDone:
-		if msg, ok := msg.(tea.KeyMsg); ok {
-			switch msg.String() {
-			case "q":
-				return m, tea.Quit
-			case "b":
-				m.viewState = ViewSteps
-				m.setListPreviewContent(m.selectedItemID())
-				return m, nil
-			case "n":
-				m.resetState()
-				return m, nil
-			case "r":
-				// Rerun selected step (if we have one selected in list)
-				// Or rerun the whole sequence if that was the context?
-				// Requirement says "rerun a step ('r')". Assuming selected step.
-				// We need to transition to ViewSteps logic or trigger run directly.
-				m.viewState = ViewSteps // Go back to steps view? Or Running?
-				// To trigger run, we can fall through or simulate Enter.
-				// Let's just switch to steps and let user press Enter, or trigger run immediately?
-				// "trigger the execution logic for the specific failed step"
-				i, ok := m.list.SelectedItem().(item)
-				if ok {
-					m.running = true
-					m.viewState = ViewRunning
-					m.logLines = nil
-					m.viewport.SetContent("Re-running execution...")
-					return m, tea.Batch(m.runStep(i.id), m.waitForLogs(), m.spinner.Tick)
-				}
-			}
-		}
-		// In Done view, we might still want to handle window size?
-		if msg, ok := msg.(tea.WindowSizeMsg); ok {
-			m.handleWindowSize(msg)
-		}
-		return m, nil
-	}
-
-	// Filter Input Mode
-	if m.isFiltering {
-		switch msg := msg.(type) {
-		case tea.KeyMsg:
-			switch msg.String() {
-			case "enter":
-				var val float64
-				_, err := fmt.Sscanf(m.filterInput.Value(), "%f", &val)
-				if err == nil {
-					m.roiThreshold = val
-					m = m.refreshList()
-					m.persistFilterState()
-				}
-				m.isFiltering = false
-				m.filterInput.Blur()
-				return m, nil
-			case "esc":
-				m.isFiltering = false
-				m.filterInput.Blur()
-				return m, nil
-			}
-		}
-		var cmd tea.Cmd
-		m.filterInput, cmd = m.filterInput.Update(msg)
-		cmds = append(cmds, cmd)
-		return m, tea.Batch(cmds...)
-	}
-
-	// ChatGPT URL Input Mode
-	if m.isEditingURL {
-		switch msg := msg.(type) {
-		case tea.KeyMsg:
-			switch msg.String() {
-			case "enter":
-				if m.urlInput.IsValid() {
-					m.chatGPTURL = m.urlInput.Value()
-					if m.runner != nil {
-						m.runner.ChatGPTURL = m.chatGPTURL
-					}
-					m.isEditingURL = false
-					m.urlInput.Blur()
-					return m, nil
-				}
-			case "esc":
-				m.isEditingURL = false
-				m.urlInput.Blur()
-				return m, nil
-			}
-		}
-		var cmd tea.Cmd
-		m.urlInput, cmd = m.urlInput.Update(msg)
-		cmds = append(cmds, cmd)
-		return m, tea.Batch(cmds...)
-	}
-
-	// URL Picker Mode
-	if m.isPickingURL {
-		var cmd tea.Cmd
-		m.urlPicker, cmd = m.urlPicker.Update(msg)
-		return m, cmd
-	}
-
-	// Normal Steps View / Running
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "q":
-			if !m.running {
-				return m, tea.Quit
-			}
-		case "enter":
-			if !m.running {
-				i, ok := m.list.SelectedItem().(item)
-				if ok {
-					m.running = true
-					m.viewState = ViewRunning
-					m.runAll = false
-					m.logLines = nil
-					m.viewport.SetContent("Starting execution...")
-					return m, tea.Batch(m.runStep(i.id), m.waitForLogs(), m.spinner.Tick)
-				}
-			}
-		case "a":
-			if !m.running && len(m.list.Items()) > 0 {
-				m.running = true
-				m.viewState = ViewRunning
-				m.runAll = true
-				m.currentIdx = 0
-				m.logLines = nil
-				m.list.Select(0)
-				i := m.list.Items()[0].(item)
-				m.viewport.SetContent(fmt.Sprintf("Starting sequential run (Step 1/%d)...", len(m.list.Items())))
-				return m, tea.Batch(m.runStep(i.id), m.waitForLogs(), m.spinner.Tick)
-			}
-		case "f":
-			if !m.running {
-				m.isFiltering = true
-				m.filterInput.Focus()
-				m.filterInput.SetValue(fmt.Sprintf("%.1f", m.roiThreshold))
-				return m, textinput.Blink
-			}
-		case "m":
-			if !m.running {
-				if m.roiMode == "under" {
-					m.roiMode = "over"
-				} else {
-					m.roiMode = "under"
-				}
-				m = m.refreshList()
-				m.persistFilterState()
-				return m, nil
-			}
-		case "v":
-			if !m.running {
-				i, ok := m.list.SelectedItem().(item)
-				if ok {
-					m.previewID = i.id
-					m.viewState = ViewStepPreview
-					m.viewport.YOffset = 0
-					m.viewport.SetContent(m.stepPreviewContent())
-					return m, nil
-				}
-			}
-		case "u":
-			if !m.running {
-				m.isEditingURL = true
-				m.urlInput.SetValue(m.chatGPTURL)
-				m.urlInput.Focus()
-				return m, textinput.Blink
-			}
-		case "U":
-			if !m.running {
-				m.isPickingURL = true
-				return m, nil
-			}
-		case "o":
-			if !m.running {
-				return m, func() tea.Msg { return OverridesStartedMsg{} }
-			}
-		}
-
-	case StartAutoRunMsg:
-		if !m.running && len(m.list.Items()) > 0 {
-			m.running = true
-			m.viewState = ViewRunning
-			m.runAll = true
-			m.currentIdx = 0
-			m.logLines = nil
-			m.list.Select(0)
-			i := m.list.Items()[0].(item)
-			m.viewport.SetContent(fmt.Sprintf("Auto-running all steps (Step 1/%d)...", len(m.list.Items())))
-			return m, tea.Batch(m.runStep(i.id), m.waitForLogs(), m.spinner.Tick)
-		}
-
-	case tea.WindowSizeMsg:
-		m.handleWindowSize(msg)
-
-	case LogMsg:
-		m.logLines = append(m.logLines, string(msg))
-		m.viewport.SetContent(strings.Join(m.logLines, "\n"))
-		m.viewport.GotoBottom()
-		return m, m.waitForLogs()
-
-	case FinishedMsg:
-		m.recordWarnings()
-		if msg.Err != nil {
-			m.err = msg.Err
-			m.logLines = append(m.logLines, fmt.Sprintf("\n❌ ERROR: %v", msg.Err))
-			m.running = false
-			m.runAll = false
-			m.viewState = ViewDone // Or stay in steps? Requirement says ViewDone on completion?
-			// If error, maybe stay on steps or go to done with error?
-			// "Failed at step X" is a summary state.
-			m.viewState = ViewDone
-		} else {
-			m.logLines = append(m.logLines, "\n✅ SUCCESS")
-
-			if m.runAll {
-				m.currentIdx++
-				if m.currentIdx < len(m.list.Items()) {
-					m.list.Select(m.currentIdx)
-					i := m.list.Items()[m.currentIdx].(item)
-					m.logLines = append(m.logLines, fmt.Sprintf("\n--- Starting Step %d/%d ---\n", m.currentIdx+1, len(m.list.Items())))
-					return m, m.runStep(i.id)
-				} else {
-					m.logLines = append(m.logLines, "\n🏁 ALL STEPS COMPLETED")
-					m.running = false
-					m.runAll = false
-					m.viewState = ViewDone
-				}
-			} else {
-				m.running = false
-				m.viewState = ViewDone // Single step done
-			}
-		}
-		m.viewport.SetContent(strings.Join(m.logLines, "\n"))
-		m.viewport.GotoBottom()
-
-	case spinner.TickMsg:
-		var cmd tea.Cmd
-		m.spinner, cmd = m.spinner.Update(msg)
-		return m, cmd
-	}
-
-	if !m.running && !m.isFiltering && m.viewState == ViewSteps {
-		prevID := m.selectedItemID()
-		var cmd tea.Cmd
-		m.list, cmd = m.list.Update(msg)
-		cmds = append(cmds, cmd)
-		newID := m.selectedItemID()
-		if newID != "" && newID != prevID {
-			m.viewport.YOffset = 0
-			m.setListPreviewContent(newID)
-		}
-	}
-
-	return m, tea.Batch(cmds...)
-}
-
-func (m *Model) handleWindowSize(msg tea.WindowSizeMsg) {
-	m.width = msg.Width
-	m.height = msg.Height
-	if m.viewState == ViewStepPreview {
-		m.viewport.Width = msg.Width - 4
-		m.viewport.Height = msg.Height - 6
-		if m.viewport.Height < 1 {
-			m.viewport.Height = 1
-		}
-		m.viewport.SetContent(m.stepPreviewContent())
-		m.viewport.GotoTop()
-		return
-	}
-	contentHeight := msg.Height - 5
-	if contentHeight < 1 {
-		contentHeight = 1
-	}
-	m.list.SetSize(msg.Width/3, contentHeight)
-	m.viewport.Width = msg.Width - (msg.Width / 3) - 6
-	m.viewport.Height = contentHeight
-	if !m.running && m.viewState == ViewSteps {
-		m.setListPreviewContent(m.selectedItemID())
-	}
-}
-
-func (m *Model) resetState() {
-	// Reset RunState
-	m.state.StartTime = time.Now()
-	m.state.StepStatuses = make(map[string]state.StepStatus)
-
-	// Save cleared state to disk
-	if m.statePath != "" {
-		_ = state.SaveStateAtomic(m.statePath, m.state)
-	}
-
-	// Reset UI
-	m.logLines = nil
-	m.viewport.SetContent("State reset. Ready for new run.")
-	m.list.Select(0)
-	m.viewState = ViewSteps
-	m.running = false
-	m.runAll = false
-	m.appliedOverrides = nil
-	if m.runner != nil {
-		m.runner.Overrides = nil
-	}
-}
-
-func (m *Model) persistFilterState() {
-	if m.state == nil || m.statePath == "" {
-		return
-	}
-	m.state.ROIThreshold = m.roiThreshold
-	m.state.ROIMode = m.roiMode
-	_ = state.SaveStateAtomic(m.statePath, m.state)
-}
-
-func (m *Model) recordWarnings() {
-	if m.state == nil || m.statePath == "" || m.runner == nil {
-		return
-	}
-	warnings := m.runner.DrainWarnings()
-	if len(warnings) == 0 {
-		return
-	}
-	for _, w := range warnings {
-		m.state.Warnings = append(m.state.Warnings, state.Warning{
-			Scope:   w.Scope,
-			StepID:  w.StepID,
-			Line:    w.Line,
-			Token:   w.Token,
-			Message: w.Message,
-		})
-	}
-	_ = state.SaveStateAtomic(m.statePath, m.state)
-}
-
-func (m *Model) setLogContent() {
-	if len(m.logLines) == 0 {
-		return
-	}
-	m.viewport.SetContent(strings.Join(m.logLines, "\n"))
-	m.viewport.GotoBottom()
-}
-
-func (m *Model) stepPreviewContent() string {
-	return m.stepPreviewContentFor(m.previewID)
-}
-
-func (m *Model) stepPreviewContentFor(id string) string {
-	md, ok := m.stepMarkdownFor(id)
-	if !ok {
-		return md
-	}
-	width := m.previewRenderWidth()
-	rendered, err := render.RenderMarkdown(md, width, "auto")
-	if err != nil {
-		return m.stepPlainTextFor(id)
-	}
-	return rendered
-}
-
-func (m *Model) stepMarkdownFor(id string) (string, bool) {
-	if id == "" {
-		return "No step selected.", false
-	}
-	step := m.stepForID(id)
-	if step == nil {
-		return "Step not found.", false
-	}
-	header := fmt.Sprintf("## Step %s\n%s\n\n", step.ID, step.OriginalLine)
-	md := header + "```bash\n" + step.Code + "\n```\n"
-	return md, true
-}
-
-func (m *Model) stepPlainTextFor(id string) string {
-	if id == "" {
-		return "No step selected."
-	}
-	step := m.stepForID(id)
-	if step == nil {
-		return "Step not found."
-	}
-	header := fmt.Sprintf("Step %s\n%s\n", step.ID, step.OriginalLine)
-	return header + "\n" + step.Code
-}
-
-func (m *Model) stepForID(id string) *pack.Step {
-	for i := range m.pack.Steps {
-		if m.pack.Steps[i].ID == id {
-			return &m.pack.Steps[i]
-		}
-	}
-	return nil
-}
-
-func (m *Model) previewRenderWidth() int {
-	width := m.viewport.Width
-	if width <= 0 {
-		width = render.DefaultWidth
-	}
-	if !m.previewWrap {
-		if width < render.DefaultWidth {
-			width = render.DefaultWidth
-		}
-		width = width * 4
-	}
-	return width
-}
-
-func (m *Model) selectedItemID() string {
-	it, ok := m.list.SelectedItem().(item)
-	if !ok {
-		return ""
-	}
-	return it.id
-}
-
-func (m *Model) setListPreviewContent(id string) {
-	if id == "" {
-		m.viewport.SetContent("No step selected.")
-		return
-	}
-	m.viewport.SetContent(m.stepPreviewContentFor(id))
-	m.viewport.GotoTop()
-}
-
-type clearPreviewNoticeMsg struct{}
-
-func (m Model) View() string {
-	if m.width == 0 {
-		return "Initializing..."
-	}
-
-	if m.viewState == ViewDone {
-		return m.viewDone()
-	}
-
-	if m.viewState == ViewOverrides {
-		return m.overridesFlow.View(m.width, m.height)
-	}
-
-	if m.isFiltering {
-		return lipgloss.Place(m.width, m.height,
-			lipgloss.Center, lipgloss.Center,
-			lipgloss.JoinVertical(lipgloss.Center,
-				"Enter ROI Threshold:",
-				m.filterInput.View(),
-				"(Enter to apply, Esc to cancel)",
-			),
-		)
-	}
-
-	if m.isEditingURL {
-		return lipgloss.Place(m.width, m.height,
-			lipgloss.Center, lipgloss.Center,
-			lipgloss.JoinVertical(lipgloss.Center,
-				"ChatGPT URL (browser mode):",
-				m.urlInput.View(),
-				"(Enter to apply, Esc to cancel)",
-			),
-		)
-	}
-
-	if m.isPickingURL {
-		m.urlPicker.SetSize(m.width-4, m.height-4)
-		return lipgloss.Place(m.width, m.height,
-			lipgloss.Center, lipgloss.Center,
-			m.urlPicker.View(),
-		)
-	}
-
-	if m.viewState == ViewStepPreview {
-		m.viewport.Width = m.width - 4
-		m.viewport.Height = m.height - 6
-		title := lipgloss.NewStyle().Bold(true).Render("Step Preview")
-		help := "[b] Back  [q] Quit  [t] Wrap  [c] Copy  (scroll with ↑↓ / PgUp/PgDn)"
-		notice := ""
-		if m.previewNotice != "" {
-			notice = lipgloss.NewStyle().Foreground(lipgloss.Color("82")).Render(m.previewNotice)
-		}
-		content := lipgloss.JoinVertical(lipgloss.Left,
-			title,
-			help,
-			notice,
-			"",
-			m.viewport.View(),
-		)
-		return lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, content)
-	}
-
-	left := m.list.View()
-	right := m.viewport.View()
-
-	if m.running {
-		status := "Running..."
-		if m.runAll {
-			status = fmt.Sprintf("Running All (%d/%d)...", m.currentIdx+1, len(m.list.Items()))
-		}
-		right = m.spinner.View() + " " + status + "\n" + right
-	} else {
-		filterStatus := ""
-		if m.roiThreshold > 0 {
-			modeSym := ">="
-			if m.roiMode == "under" {
-				modeSym = "<"
-			}
-			filterStatus = fmt.Sprintf(" [Filter: ROI %s %.1f]", modeSym, m.roiThreshold)
-		}
-		if filterStatus == "" {
-			modeSym := ">="
-			if m.roiMode == "under" {
-				modeSym = "<"
-			}
-			filterStatus = fmt.Sprintf(" [Filter: ROI %s ∞]", modeSym)
-		}
-		overrideStatus := ""
-		if m.appliedOverrides != nil {
-			added := len(m.appliedOverrides.AddedFlags)
-			removed := len(m.appliedOverrides.RemovedFlags)
-			targeted := len(m.appliedOverrides.ApplyToSteps)
-			overrideStatus = fmt.Sprintf(" [Overrides: +%d -%d steps:%d]", added, removed, targeted)
-		}
-		urlStatus := ""
-		if m.chatGPTURL != "" {
-			urlStatus = " [ChatGPT URL: set]"
-		} else {
-			urlStatus = " [ChatGPT URL: none]"
-		}
-		statusLine := strings.TrimSpace(filterStatus + overrideStatus + urlStatus)
-		if statusLine != "" {
-			right = lipgloss.NewStyle().Foreground(lipgloss.Color("63")).Render(statusLine) + "\n" + right
-		}
-	}
-
-	help := m.stepsHelpBar(m.width)
-	rightWidth := m.viewport.Width
-	if rightWidth < 1 {
-		rightWidth = 1
-	}
-	right = lipgloss.NewStyle().Width(rightWidth).Render(right)
-	main := lipgloss.JoinHorizontal(lipgloss.Top, left, " | ", right)
-	return lipgloss.JoinVertical(lipgloss.Left, main, help)
-}
-
-func (m Model) viewDone() string {
-	title := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("42")).Render("Execution Complete")
-	if m.err != nil {
-		title = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("196")).Render("Execution Failed")
-	}
-
-	help := "[n] New Run  [r] Rerun  [b] Back to List  [q] Quit  [m] ROI Mode"
-
-	// Show the log viewport in the done screen too? Or just a summary?
-	// Requirement says "displays a summary".
-	// But viewing the logs is useful.
-	// I'll show the viewport in the center/bottom.
-
-	content := lipgloss.JoinVertical(lipgloss.Center,
-		title,
-		"",
-		m.viewport.View(),
-		"",
-		help,
-	)
-
-	return lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, content)
-}
-
-func (m Model) stepsHelpBar(width int) string {
-	help := "[enter] run  [a] run all  [f] filter ROI  [m] ROI mode  [v] view  [o] overrides  [u] url  [U] url picker  [q] quit"
-	if m.running {
-		help = "[q] quit  [running] wait for completion"
-	}
-	style := lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
-	if width > 0 {
-		style = style.Width(width)
-	}
-	return style.Render(help)
-}
-
-func (m Model) waitForLogs() tea.Cmd {
-	return func() tea.Msg {
-		line, ok := <-m.logChan
-		if !ok {
-			return nil
-		}
-		return LogMsg(line)
-	}
-}
-
-func (m Model) runStep(id string) tea.Cmd {
-	return func() tea.Msg {
-		var step *pack.Step
-		for _, s := range m.pack.Steps {
-			if s.ID == id {
-				step = &s
-				break
-			}
-		}
-
-		if step == nil {
-			return FinishedMsg{Err: fmt.Errorf("step not found"), ID: id}
-		}
-
-		lw := &exec.LineWriter{
-			Callback: func(line string) {
-				m.logChan <- line
-			},
-		}
-
-		err := m.runner.RunStep(context.Background(), step, lw)
-		lw.Close()
-		return FinishedMsg{Err: err, ID: id}
-	}
-}
-
-func RunnerOptionsFromRunner(r *exec.Runner) exec.RunnerOptions {
-	if r == nil {
-		return exec.RunnerOptions{}
-	}
-	return exec.RunnerOptions{
-		Shell:       r.Shell,
-		WorkDir:     r.WorkDir,
-		Env:         r.Env,
-		OracleFlags: r.OracleFlags,
-		Overrides:   r.Overrides,
-		ChatGPTURL:  r.ChatGPTURL,
-	}
-}
-```
-
-internal/tui/tui_test.go
-```
-package tui
-
-import (
-	"testing"
-
-	"github.com/user/oraclepack/internal/exec"
-	"github.com/user/oraclepack/internal/pack"
-	"github.com/user/oraclepack/internal/state"
-)
-
-func TestInitAutoRun(t *testing.T) {
-	p := &pack.Pack{
-		Steps: []pack.Step{
-			{ID: "01", Number: 1, Code: "echo hello"},
-		},
-	}
-	r := exec.NewRunner(exec.RunnerOptions{})
-	s := &state.RunState{}
-
-	// Test case 1: autoRun = true
-	modelAuto := NewModel(p, r, s, "", 0, "over", true)
-	cmdAuto := modelAuto.Init()
-	
-	if cmdAuto == nil {
-		t.Fatal("expected Init cmd to be non-nil when autoRun is true")
-	}
-	// Note: We can't easily assert the content of a Batch command in a unit test.
-
-	// Test case 2: autoRun = false
-	modelManual := NewModel(p, r, s, "", 0, "over", false)
-	// Even with autoRun false, we have textinput.Blink, so Init is not nil.
-	cmdManual := modelManual.Init()
-	if cmdManual == nil {
-		t.Fatal("expected Init cmd to be non-nil due to textinput.Blink")
-	}
-}
-```
-
-internal/tui/url_picker.go
-```
-package tui
-
-import (
-	"fmt"
-	"strings"
-
-	"github.com/charmbracelet/bubbles/list"
-	"github.com/charmbracelet/bubbles/textinput"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
-)
-
-type URLPickedMsg struct {
-	URL string
-}
-
-type URLPickerCancelledMsg struct{}
-
-type urlItem struct {
-	name  string
-	url   string
-	scope string
-}
-
-func (i urlItem) Title() string       { return i.name }
-func (i urlItem) Description() string { return fmt.Sprintf("%s • %s", i.scope, i.url) }
-func (i urlItem) FilterValue() string { return i.name }
-
-type URLPickerModel struct {
-	list list.Model
-
-	projectPath string
-	globalPath  string
-	project     URLStore
-	global      URLStore
-
-	editing   bool
-	editName  textinput.Model
-	editURL   textinput.Model
-	editScope string
-	editIdx   int
-	editIsNew bool
-
-	errMsg string
-}
-
-func NewURLPickerModel(projectPath, globalPath string) URLPickerModel {
-	project, _ := LoadURLStore(projectPath)
-	global, _ := LoadURLStore(globalPath)
-
-	items := makeURLItems(project, global)
-	l := list.New(items, list.NewDefaultDelegate(), 0, 0)
-	l.Title = "ChatGPT Project URLs"
-	l.SetFilteringEnabled(true)
-	selectDefault(&l, project, global)
-
-	name := textinput.New()
-	name.Placeholder = "Name (e.g., Core Project)"
-	name.CharLimit = 60
-	name.Width = 40
-
-	url := textinput.New()
-	url.Placeholder = "https://chatgpt.com/g/.../project"
-	url.CharLimit = 200
-	url.Width = 60
-
-	return URLPickerModel{
-		list:        l,
-		projectPath: projectPath,
-		globalPath:  globalPath,
-		project:     project,
-		global:      global,
-		editName:    name,
-		editURL:     url,
-	}
-}
-
-func (m URLPickerModel) Init() tea.Cmd {
-	return nil
-}
-
-func (m URLPickerModel) Update(msg tea.Msg) (URLPickerModel, tea.Cmd) {
-	if m.editing {
-		return m.updateEdit(msg)
-	}
-
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "esc":
-			return m, func() tea.Msg { return URLPickerCancelledMsg{} }
-		case "enter":
-			item, ok := m.list.SelectedItem().(urlItem)
-			if !ok {
-				return m, nil
-			}
-			m.touch(item)
-			return m, func() tea.Msg { return URLPickedMsg{URL: item.url} }
-		case "a":
-			m.startEdit(urlScopeProject, "", "", true)
-			return m, nil
-		case "e":
-			item, ok := m.list.SelectedItem().(urlItem)
-			if !ok {
-				return m, nil
-			}
-			m.startEdit(item.scope, item.name, item.url, false)
-			return m, nil
-		case "d":
-			item, ok := m.list.SelectedItem().(urlItem)
-			if !ok {
-				return m, nil
-			}
-			m.delete(item)
-			return m, nil
-		case "s":
-			item, ok := m.list.SelectedItem().(urlItem)
-			if !ok {
-				return m, nil
-			}
-			m.setDefault(item)
-			return m, nil
-		}
-	}
-
-	var cmd tea.Cmd
-	m.list, cmd = m.list.Update(msg)
-	return m, cmd
-}
-
-func (m *URLPickerModel) SetSize(width, height int) {
-	m.list.SetSize(width, height-4)
-}
-
-func (m URLPickerModel) View() string {
-	if m.editing {
-		return m.editView()
-	}
-
-	help := lipgloss.NewStyle().Faint(true).Render("[enter] use  [a] add  [e] edit  [d] delete  [s] default  [esc] cancel")
-	return m.list.View() + "\n" + help
-}
-
-func makeURLItems(project URLStore, global URLStore) []list.Item {
-	var items []list.Item
-	for _, it := range project.Items {
-		items = append(items, urlItem{name: it.Name, url: it.URL, scope: urlScopeProject})
-	}
-	for _, it := range global.Items {
-		items = append(items, urlItem{name: it.Name, url: it.URL, scope: urlScopeGlobal})
-	}
-	return items
-}
-
-func selectDefault(l *list.Model, project URLStore, global URLStore) {
-	if l == nil {
-		return
-	}
-	name, scope := defaultNameScope(project, global)
-	if name == "" {
-		return
-	}
-	for idx, item := range l.Items() {
-		if it, ok := item.(urlItem); ok && it.name == name && it.scope == scope {
-			l.Select(idx)
-			return
-		}
-	}
-}
-
-func defaultNameScope(project URLStore, global URLStore) (string, string) {
-	if project.Default != "" {
-		return project.Default, urlScopeProject
-	}
-	if global.Default != "" {
-		return global.Default, urlScopeGlobal
-	}
-	return "", ""
-}
-
-func (m URLPickerModel) DefaultURL() string {
-	name, scope := defaultNameScope(m.project, m.global)
-	if name == "" {
-		return ""
-	}
-	store := m.storeFor(scope)
-	if store == nil {
-		return ""
-	}
-	for _, it := range store.Items {
-		if it.Name == name {
-			return it.URL
-		}
-	}
-	return ""
-}
-
-func (m *URLPickerModel) refresh() {
-	m.list.SetItems(makeURLItems(m.project, m.global))
-	selectDefault(&m.list, m.project, m.global)
-}
-
-func (m *URLPickerModel) touch(item urlItem) {
-	store := m.storeFor(item.scope)
-	if store == nil {
-		return
-	}
-	for i := range store.Items {
-		if store.Items[i].Name == item.name {
-			store.Items[i].LastUsed = nowRFC3339()
-			break
-		}
-	}
-	_ = m.saveStores()
-}
-
-func (m *URLPickerModel) delete(item urlItem) {
-	store := m.storeFor(item.scope)
-	if store == nil {
-		return
-	}
-	var out []URLItem
-	for _, it := range store.Items {
-		if it.Name == item.name {
-			continue
-		}
-		out = append(out, it)
-	}
-	store.Items = out
-	if store.Default == item.name {
-		store.Default = ""
-	}
-	_ = m.saveStores()
-	m.refresh()
-}
-
-func (m *URLPickerModel) setDefault(item urlItem) {
-	store := m.storeFor(item.scope)
-	if store == nil {
-		return
-	}
-	store.Default = item.name
-	_ = m.saveStores()
-}
-
-func (m *URLPickerModel) startEdit(scope, name, url string, isNew bool) {
-	m.editing = true
-	m.editScope = scope
-	m.editIsNew = isNew
-	m.editName.SetValue(name)
-	m.editURL.SetValue(url)
-	m.editName.Focus()
-	m.editURL.Blur()
-	m.errMsg = ""
-}
-
-func (m URLPickerModel) editView() string {
-	scopeLabel := fmt.Sprintf("Scope: %s (g=global, p=project)", m.editScope)
-	if m.globalPath == "" && m.projectPath != "" {
-		scopeLabel = "Scope: project"
-		m.editScope = urlScopeProject
-	}
-	if m.projectPath == "" && m.globalPath != "" {
-		scopeLabel = "Scope: global"
-		m.editScope = urlScopeGlobal
-	}
-	lines := []string{
-		"Add / Edit ChatGPT URL",
-		scopeLabel,
-		"",
-		"Name:",
-		m.editName.View(),
-		"",
-		"URL:",
-		m.editURL.View(),
-		"",
-		"[tab] switch field  [enter] save  [esc] cancel",
-	}
-	if m.errMsg != "" {
-		lines = append(lines, "", lipgloss.NewStyle().Foreground(lipgloss.Color("196")).Render(m.errMsg))
-	}
-	return lipgloss.JoinVertical(lipgloss.Left, lines...)
-}
-
-func (m URLPickerModel) updateEdit(msg tea.Msg) (URLPickerModel, tea.Cmd) {
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "esc":
-			m.editing = false
-			return m, nil
-		case "tab":
-			if m.editName.Focused() {
-				m.editName.Blur()
-				m.editURL.Focus()
-			} else {
-				m.editURL.Blur()
-				m.editName.Focus()
-			}
-			return m, nil
-		case "g":
-			if m.globalPath != "" {
-				m.editScope = urlScopeGlobal
-			}
-		case "p":
-			if m.projectPath != "" {
-				m.editScope = urlScopeProject
-			}
-		case "enter":
-			name := strings.TrimSpace(m.editName.Value())
-			url := strings.TrimSpace(m.editURL.Value())
-			if name == "" || !isValidURL(url) {
-				m.errMsg = "Name and a valid URL are required."
-				return m, nil
-			}
-			m.saveEdit(name, url)
-			m.editing = false
-			m.refresh()
-			return m, nil
-		}
-	}
-
-	var cmd tea.Cmd
-	if m.editName.Focused() {
-		m.editName, cmd = m.editName.Update(msg)
-	} else {
-		m.editURL, cmd = m.editURL.Update(msg)
-	}
-	return m, cmd
-}
-
-func (m *URLPickerModel) saveEdit(name, url string) {
-	scope := m.editScope
-	if scope == "" {
-		scope = urlScopeProject
-	}
-
-	// remove from other store if scope changed
-	m.removeByName(name, urlScopeProject)
-	m.removeByName(name, urlScopeGlobal)
-
-	store := m.storeFor(scope)
-	if store == nil {
-		return
-	}
-	updated := false
-	for i := range store.Items {
-		if store.Items[i].Name == name {
-			store.Items[i].URL = url
-			store.Items[i].LastUsed = nowRFC3339()
-			updated = true
-			break
-		}
-	}
-	if !updated {
-		store.Items = append(store.Items, URLItem{Name: name, URL: url, LastUsed: nowRFC3339()})
-	}
-	_ = m.saveStores()
-}
-
-func (m *URLPickerModel) removeByName(name, scope string) {
-	store := m.storeFor(scope)
-	if store == nil {
-		return
-	}
-	var out []URLItem
-	for _, it := range store.Items {
-		if it.Name == name {
-			continue
-		}
-		out = append(out, it)
-	}
-	store.Items = out
-}
-
-func (m *URLPickerModel) storeFor(scope string) *URLStore {
-	switch scope {
-	case urlScopeProject:
-		if m.projectPath == "" {
-			return nil
-		}
-		return &m.project
-	case urlScopeGlobal:
-		if m.globalPath == "" {
-			return nil
-		}
-		return &m.global
-	default:
-		return nil
-	}
-}
-
-func (m *URLPickerModel) saveStores() error {
-	if err := SaveURLStore(m.projectPath, m.project); err != nil {
-		return err
-	}
-	if err := SaveURLStore(m.globalPath, m.global); err != nil {
-		return err
-	}
-	return nil
-}
-```
-
-internal/tui/url_store.go
-```
-package tui
-
-import (
-	"encoding/json"
-	"errors"
-	"os"
-	"path/filepath"
-	"strings"
-	"time"
-)
-
-const (
-	urlScopeProject = "project"
-	urlScopeGlobal  = "global"
-)
-
-type URLItem struct {
-	Name     string `json:"name"`
-	URL      string `json:"url"`
-	LastUsed string `json:"lastUsed,omitempty"`
-}
-
-type URLStore struct {
-	Default string    `json:"default"`
-	Items   []URLItem `json:"items"`
-}
-
-func LoadURLStore(path string) (URLStore, error) {
-	if path == "" {
-		return URLStore{}, nil
-	}
-	data, err := os.ReadFile(path)
-	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			return URLStore{}, nil
-		}
-		return URLStore{}, err
-	}
-	var store URLStore
-	if err := json.Unmarshal(data, &store); err != nil {
-		return URLStore{}, err
-	}
-	return store, nil
-}
-
-func SaveURLStore(path string, store URLStore) error {
-	if path == "" {
-		return nil
-	}
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-		return err
-	}
-	data, err := json.MarshalIndent(store, "", "  ")
-	if err != nil {
-		return err
-	}
-	return os.WriteFile(path, data, 0o644)
-}
-
-func ProjectURLStorePath(statePath, packSource string) string {
-	if statePath != "" {
-		base := strings.TrimSuffix(statePath, ".state.json")
-		return base + ".chatgpt-urls.json"
-	}
-	if packSource == "" {
-		return ""
-	}
-	return packSource + ".chatgpt-urls.json"
-}
-
-func GlobalURLStorePath() string {
-	home, err := os.UserHomeDir()
-	if err != nil || home == "" {
-		return ""
-	}
-	return filepath.Join(home, ".oraclepack", "chatgpt-urls.json")
-}
-
-func nowRFC3339() string {
-	return time.Now().UTC().Format(time.RFC3339)
-}
-
-func isValidURL(value string) bool {
-	v := strings.TrimSpace(value)
-	if v == "" {
-		return false
-	}
-	return strings.HasPrefix(v, "http://") || strings.HasPrefix(v, "https://")
-}
-```
-
-internal/tui/url_store_test.go
-```
-package tui
-
-import (
-	"path/filepath"
-	"testing"
-)
-
-func TestURLStoreSaveLoad(t *testing.T) {
-	dir := t.TempDir()
-	path := filepath.Join(dir, "urls.json")
-
-	store := URLStore{
-		Default: "Primary",
-		Items: []URLItem{{
-			Name: "Primary",
-			URL:  "https://chatgpt.com/g/primary",
-		}},
-	}
-
-	if err := SaveURLStore(path, store); err != nil {
-		t.Fatalf("failed to save store: %v", err)
-	}
-
-	loaded, err := LoadURLStore(path)
-	if err != nil {
-		t.Fatalf("failed to load store: %v", err)
-	}
-
-	if loaded.Default != store.Default {
-		t.Fatalf("expected default %q, got %q", store.Default, loaded.Default)
-	}
-	if len(loaded.Items) != 1 || loaded.Items[0].URL != store.Items[0].URL {
-		t.Fatalf("loaded items mismatch: %+v", loaded.Items)
-	}
-}
-
-func TestURLPickerDefaultURLPrefersProject(t *testing.T) {
-	dir := t.TempDir()
-	projectPath := filepath.Join(dir, "project.json")
-	globalPath := filepath.Join(dir, "global.json")
-
-	project := URLStore{
-		Default: "Project",
-		Items: []URLItem{{
-			Name: "Project",
-			URL:  "https://chatgpt.com/g/project",
-		}},
-	}
-	global := URLStore{
-		Default: "Global",
-		Items: []URLItem{{
-			Name: "Global",
-			URL:  "https://chatgpt.com/g/global",
-		}},
-	}
-
-	if err := SaveURLStore(projectPath, project); err != nil {
-		t.Fatalf("failed to save project store: %v", err)
-	}
-	if err := SaveURLStore(globalPath, global); err != nil {
-		t.Fatalf("failed to save global store: %v", err)
-	}
-
-	picker := NewURLPickerModel(projectPath, globalPath)
-	if got := picker.DefaultURL(); got != project.Items[0].URL {
-		t.Fatalf("expected project default URL %q, got %q", project.Items[0].URL, got)
-	}
+docs/oracle-questions-2026-01-08/_groups.json
+```
+{
+  "PRD-TUI": [
+    ".tickets/PRD-TUI/Oraclepack TUI Integration.md",
+    ".tickets/PRD-TUI/PRD-generator URL routing.md"
+  ],
+  "actions": [
+    ".tickets/actions/Enable Action Packs Dispatch.md",
+    ".tickets/actions/Improving Oraclepack Workflow.md",
+    ".tickets/actions/Oraclepack Action Pack Integration.md",
+    ".tickets/actions/Oraclepack Action Pack Issue.md",
+    ".tickets/actions/Oraclepack Action Packs.md",
+    ".tickets/actions/Oraclepack Compatibility Issues.md"
+  ],
+  "mcp": [
+    ".tickets/mcp/Expose Oraclepack as MCP.md",
+    ".tickets/mcp/MCP Server for Oraclepack.md",
+    ".tickets/mcp/gaps-still-not-covered.md",
+    ".tickets/mcp/gaps_part2-mcp-builder.md",
+    ".tickets/mcp/oraclepack-MCP.md",
+    ".tickets/mcp/oraclepack_mcp_server.md"
+  ],
+  "misc": [
+    ".tickets/Oraclepack File Storage.md",
+    ".tickets/Oraclepack Schema Approach.md",
+    ".tickets/Oraclepack bash fix.md",
+    ".tickets/Publish OraclePack MCP.md"
+  ],
+  "other": [
+    ".tickets/other/Oraclepack Pipeline Improvements.md",
+    ".tickets/other/Oraclepack Prompt Generator.md",
+    ".tickets/other/Oraclepack Workflow Enhancement.md",
+    ".tickets/other/Verbose Payload Rendering TUI.md"
+  ]
+}
+```
+
+docs/oracle-questions-2026-01-08/manifest.json
+```
+{
+  "groups": [
+    {
+      "attached_paths": [
+        ".tickets/PRD-TUI/Oraclepack TUI Integration.md",
+        ".tickets/PRD-TUI/PRD-generator URL routing.md"
+      ],
+      "group": "PRD-TUI",
+      "original_tickets": [
+        ".tickets/PRD-TUI/Oraclepack TUI Integration.md",
+        ".tickets/PRD-TUI/PRD-generator URL routing.md"
+      ],
+      "out_dir": "docs/oracle-questions-2026-01-08/prd-tui",
+      "pack_path": "docs/oracle-questions-2026-01-08/packs/prd-tui.md",
+      "part": 1,
+      "slug": "prd-tui"
+    },
+    {
+      "attached_paths": [
+        ".tickets/actions/Enable Action Packs Dispatch.md",
+        ".tickets/actions/Improving Oraclepack Workflow.md",
+        ".tickets/actions/Oraclepack Action Pack Integration.md",
+        ".tickets/actions/Oraclepack Action Pack Issue.md",
+        ".tickets/actions/Oraclepack Action Packs.md",
+        ".tickets/actions/Oraclepack Compatibility Issues.md"
+      ],
+      "group": "actions",
+      "original_tickets": [
+        ".tickets/actions/Enable Action Packs Dispatch.md",
+        ".tickets/actions/Improving Oraclepack Workflow.md",
+        ".tickets/actions/Oraclepack Action Pack Integration.md",
+        ".tickets/actions/Oraclepack Action Pack Issue.md",
+        ".tickets/actions/Oraclepack Action Packs.md",
+        ".tickets/actions/Oraclepack Compatibility Issues.md"
+      ],
+      "out_dir": "docs/oracle-questions-2026-01-08/actions",
+      "pack_path": "docs/oracle-questions-2026-01-08/packs/actions.md",
+      "part": 1,
+      "slug": "actions"
+    },
+    {
+      "attached_paths": [
+        ".tickets/mcp/Expose Oraclepack as MCP.md",
+        ".tickets/mcp/MCP Server for Oraclepack.md",
+        ".tickets/mcp/gaps-still-not-covered.md",
+        ".tickets/mcp/gaps_part2-mcp-builder.md",
+        ".tickets/mcp/oraclepack-MCP.md",
+        ".tickets/mcp/oraclepack_mcp_server.md"
+      ],
+      "group": "mcp",
+      "original_tickets": [
+        ".tickets/mcp/Expose Oraclepack as MCP.md",
+        ".tickets/mcp/MCP Server for Oraclepack.md",
+        ".tickets/mcp/gaps-still-not-covered.md",
+        ".tickets/mcp/gaps_part2-mcp-builder.md",
+        ".tickets/mcp/oraclepack-MCP.md",
+        ".tickets/mcp/oraclepack_mcp_server.md"
+      ],
+      "out_dir": "docs/oracle-questions-2026-01-08/mcp",
+      "pack_path": "docs/oracle-questions-2026-01-08/packs/mcp.md",
+      "part": 1,
+      "slug": "mcp"
+    },
+    {
+      "attached_paths": [
+        ".tickets/Oraclepack File Storage.md",
+        ".tickets/Oraclepack Schema Approach.md",
+        ".tickets/Oraclepack bash fix.md",
+        ".tickets/Publish OraclePack MCP.md"
+      ],
+      "group": "misc",
+      "original_tickets": [
+        ".tickets/Oraclepack File Storage.md",
+        ".tickets/Oraclepack Schema Approach.md",
+        ".tickets/Oraclepack bash fix.md",
+        ".tickets/Publish OraclePack MCP.md"
+      ],
+      "out_dir": "docs/oracle-questions-2026-01-08/misc",
+      "pack_path": "docs/oracle-questions-2026-01-08/packs/misc.md",
+      "part": 1,
+      "slug": "misc"
+    },
+    {
+      "attached_paths": [
+        ".tickets/other/Oraclepack Pipeline Improvements.md",
+        ".tickets/other/Oraclepack Prompt Generator.md",
+        ".tickets/other/Oraclepack Workflow Enhancement.md",
+        ".tickets/other/Verbose Payload Rendering TUI.md"
+      ],
+      "group": "other",
+      "original_tickets": [
+        ".tickets/other/Oraclepack Pipeline Improvements.md",
+        ".tickets/other/Oraclepack Prompt Generator.md",
+        ".tickets/other/Oraclepack Workflow Enhancement.md",
+        ".tickets/other/Verbose Payload Rendering TUI.md"
+      ],
+      "out_dir": "docs/oracle-questions-2026-01-08/other",
+      "pack_path": "docs/oracle-questions-2026-01-08/packs/other.md",
+      "part": 1,
+      "slug": "other"
+    }
+  ]
 }
 ```
 
@@ -14454,6 +14495,62 @@ Signature: 8a477f597d28d172789f06886806bc55
 # This file is a cache directory tag created by pytest.
 # For information about cache directory tags, see:
 #	https://bford.info/cachedir/spec.html
+```
+
+oraclepack-mcp-server/oraclepack_mcp_server.egg-info/PKG-INFO
+```
+Metadata-Version: 2.4
+Name: oraclepack-mcp-server
+Version: 0.1.0
+Summary: MCP wrapper for oraclepack CLI
+Author: Oraclepack Contributor
+Requires-Python: >=3.10
+Requires-Dist: mcp[cli]>=0.1.0
+Requires-Dist: pydantic-settings>=2.0.0
+Requires-Dist: pydantic>=2.0.0
+```
+
+oraclepack-mcp-server/oraclepack_mcp_server.egg-info/SOURCES.txt
+```
+README.md
+pyproject.toml
+oraclepack_mcp_server/__init__.py
+oraclepack_mcp_server/__main__.py
+oraclepack_mcp_server/config.py
+oraclepack_mcp_server/oraclepack_cli.py
+oraclepack_mcp_server/security.py
+oraclepack_mcp_server/server.py
+oraclepack_mcp_server/taskify.py
+oraclepack_mcp_server.egg-info/PKG-INFO
+oraclepack_mcp_server.egg-info/SOURCES.txt
+oraclepack_mcp_server.egg-info/dependency_links.txt
+oraclepack_mcp_server.egg-info/entry_points.txt
+oraclepack_mcp_server.egg-info/requires.txt
+oraclepack_mcp_server.egg-info/top_level.txt
+tests/test_config.py
+```
+
+oraclepack-mcp-server/oraclepack_mcp_server.egg-info/dependency_links.txt
+```
+
+```
+
+oraclepack-mcp-server/oraclepack_mcp_server.egg-info/entry_points.txt
+```
+[console_scripts]
+oraclepack-mcp = oraclepack_mcp_server.__main__:main
+```
+
+oraclepack-mcp-server/oraclepack_mcp_server.egg-info/requires.txt
+```
+mcp[cli]>=0.1.0
+pydantic-settings>=2.0.0
+pydantic>=2.0.0
+```
+
+oraclepack-mcp-server/oraclepack_mcp_server.egg-info/top_level.txt
+```
+oraclepack_mcp_server
 ```
 
 oraclepack-mcp-server/oraclepack_mcp_server/__init__.py
@@ -15039,62 +15136,6 @@ This pack contains {len(steps)} steps: {', '.join(steps)}.
 ## Security Note
 Execution tools require `ORACLEPACK_ENABLE_EXEC=1` in the server environment.
 """
-```
-
-oraclepack-mcp-server/oraclepack_mcp_server.egg-info/PKG-INFO
-```
-Metadata-Version: 2.4
-Name: oraclepack-mcp-server
-Version: 0.1.0
-Summary: MCP wrapper for oraclepack CLI
-Author: Oraclepack Contributor
-Requires-Python: >=3.10
-Requires-Dist: mcp[cli]>=0.1.0
-Requires-Dist: pydantic-settings>=2.0.0
-Requires-Dist: pydantic>=2.0.0
-```
-
-oraclepack-mcp-server/oraclepack_mcp_server.egg-info/SOURCES.txt
-```
-README.md
-pyproject.toml
-oraclepack_mcp_server/__init__.py
-oraclepack_mcp_server/__main__.py
-oraclepack_mcp_server/config.py
-oraclepack_mcp_server/oraclepack_cli.py
-oraclepack_mcp_server/security.py
-oraclepack_mcp_server/server.py
-oraclepack_mcp_server/taskify.py
-oraclepack_mcp_server.egg-info/PKG-INFO
-oraclepack_mcp_server.egg-info/SOURCES.txt
-oraclepack_mcp_server.egg-info/dependency_links.txt
-oraclepack_mcp_server.egg-info/entry_points.txt
-oraclepack_mcp_server.egg-info/requires.txt
-oraclepack_mcp_server.egg-info/top_level.txt
-tests/test_config.py
-```
-
-oraclepack-mcp-server/oraclepack_mcp_server.egg-info/dependency_links.txt
-```
-
-```
-
-oraclepack-mcp-server/oraclepack_mcp_server.egg-info/entry_points.txt
-```
-[console_scripts]
-oraclepack-mcp = oraclepack_mcp_server.__main__:main
-```
-
-oraclepack-mcp-server/oraclepack_mcp_server.egg-info/requires.txt
-```
-mcp[cli]>=0.1.0
-pydantic-settings>=2.0.0
-pydantic>=2.0.0
-```
-
-oraclepack-mcp-server/oraclepack_mcp_server.egg-info/top_level.txt
-```
-oraclepack_mcp_server
 ```
 
 oraclepack-mcp-server/tests/test_cli.py
@@ -15692,6 +15733,135 @@ This skill produces:
 - Optional linter: `scripts/lint_attachments.py`
 ```
 
+skills/oraclepack-tickets-pack-grouped/SKILL.md
+```
+---
+name: oraclepack-tickets-pack-grouped
+description: Generate multiple runner-ingestible oraclepack Stage-1 packs grouped by ticket topic/domain (subdir + deterministic inference) with direct ticket attachments. Use when the user wants per-topic/per-domain mini-packs, grouped via subdirectory discovery and inferred assignment of loose tickets, with strict 20-step schema and validation.
+---
+
+# oraclepack-tickets-pack-grouped (Stage 1)
+
+## Goal
+
+Produce **multiple** ticket-driven Stage-1 packs, one per inferred topic/domain, with direct ticket attachments. Each pack is schema-safe and self-contained.
+
+## Use this skill
+
+Use when the user wants separate packs per topic/domain, grouped by `.tickets/` subdirectories plus deterministic inference for loose tickets.
+
+## Inputs (parse trailing KEY=value; last-one-wins)
+
+Supported keys (defaults in parentheses):
+- `codebase_name` (`Unknown`)
+- `out_dir` (`docs/oracle-questions-YYYY-MM-DD`)
+- `oracle_cmd` (`oracle`)
+- `oracle_flags` (`--files-report`)
+- `extra_files` (empty; appended literally)
+- `ticket_root` (`.tickets`)
+- `ticket_glob` (`**/*.md`)
+- `ticket_paths` (empty; comma-separated explicit files; if present, ignore glob)
+- `ticket_max_files` (`25`)
+- `group_mode` (`subdir+infer`)
+- `group_min_score` (`0.08`)
+- `group_max_files` (`25`)
+- `group_max_chars` (`200000`)
+- `dedupe_mode` (`report`)
+- `dedupe_jaccard` (`0.55`)
+- `dedupe_overlap_hi` (`0.80`)
+- `dedupe_overlap_lo` (`0.70`)
+- `dedupe_delta_min` (`0.15`)
+- `dedupe_body_chars` (`2000`)
+- `mode` (`tickets-grouped-direct`)
+
+Notes:
+- `YYYY-MM-DD` is computed at pack generation time for default `out_dir`.
+- If oracle flag support is uncertain, omit unsupported flags; never invent flags.
+
+## Workflow (deterministic)
+
+1) Read:
+- `references/ticket-grouping.md`
+- `references/attachment-minimization.md`
+- `references/tickets-pack-template.md`
+
+2) Ask user if custom args are needed (numbered picker):
+
+```
+1) Use defaults (no args)
+2) Provide custom args
+```
+
+If `2`, ask for KEY=value args and run with those; otherwise run with defaults.
+
+3) Generate packs (deterministic grouping + per-group pack files):
+
+```bash
+python3 /home/user/.codex/skills/oraclepack-tickets-pack-grouped/scripts/generate_grouped_packs.py \
+  codebase_name=oraclepack \
+  out_dir=docs/oracle-questions-2026-01-08
+```
+
+Outputs:
+- `{{out_dir}}/packs/*.md` (one pack per group/part)
+- `{{out_dir}}/_groups.json` (group -> ticket list)
+
+4) Size control (mandatory; fail fast):
+- Run `oracle --dry-run summary --files-report ...` for the **largest** group pack (or each pack if unsure).
+- Enforce caps:
+  - browser: ≤ 60,000 tokens total input per step
+  - api: ≤ 180,000 tokens total input per step
+- If exceeded, reduce via `group_max_files` or use explicit `ticket_paths`.
+
+5) Validate every pack (mandatory):
+
+```bash
+python3 /home/user/.codex/skills/oraclepack-tickets-pack-grouped/scripts/validate_pack.py <pack.md>
+python3 /home/user/.codex/skills/oraclepack-tickets-pack-grouped/scripts/lint_attachments.py <pack.md>
+```
+
+## Sharded packs workflow (topic/domain mini-packs)
+
+Use this when you want a manifest-driven, sharded pack per topic/domain with bundle attachments:
+
+First ask the user which args mode to use:
+
+```
+1) Use defaults (no args)
+2) Provide custom args
+```
+
+If `2`, collect args and use them in the commands below.
+
+```bash
+python3 /home/user/.codex/skills/oraclepack-tickets-pack-grouped/scripts/shard_tickets.py \\
+  --ticket-root .tickets \\
+  --out-dir docs/oracle-questions-sharded
+
+python3 /home/user/.codex/skills/oraclepack-tickets-pack-grouped/scripts/render_group_packs.py \\
+  --manifest docs/oracle-questions-sharded/manifest.json \\
+  --out-dir docs/oracle-questions-sharded
+
+python3 /home/user/.codex/skills/oraclepack-tickets-pack-grouped/scripts/validate_shards.py \\
+  --manifest docs/oracle-questions-sharded/manifest.json
+```
+
+## Failure behavior
+
+- If no tickets resolve, packs still generate with empty attachments.
+- Step 01 prompt must request exact missing ticket file/path pattern(s).
+
+## Output contract
+
+Each pack MUST:
+- Have exactly one `bash` fence
+- Have exactly 20 steps (01..20)
+- Include ROI header tokens
+- Include `--write-output` with a group-specific `out_dir`
+- Attach tickets directly via `${ticket_args[@]}`
+- End with Coverage check outside the bash fence
+```
+
 .config/mcp/mcp-builder/SKILL.md
 ```
 ---
@@ -16064,6 +16234,136 @@ You do **not**:
 5) “Regenerate this pack but fix headers and coverage check so it validates.”
 ```
 
+.config/skills/oraclepack-pipeline-improver/SKILL.md
+```
+---
+name: oraclepack-pipeline-improver
+description: Improve an oraclepack (Go wrapper around @steipete/oracle) pipeline by specifying/implementing deterministic validate→run→actionize behavior:strict pack validation, run manifests, stable run directories, resume/rerun semantics, concurrency/backoff, optional caching, and a Stage 3 “Actionizer” that converts 20 oracle outputs into actionable engineering work artifacts.
+metadata:
+  short-description: Deterministic oraclepack validate/run/actionize pipeline spec + implementation rails
+---
+
+## Quick start
+
+Use this skill when the user wants to:
+
+- make oraclepack runs deterministic and resume-safe,
+- add a strict validator and machine-readable outputs,
+- add Stage 3 “actionize” to convert the 20 question outputs into an actionable backlog/change plan,
+- make the pipeline CI-friendly and path-safe.
+
+Interpret the user’s free-text `{{args}}` as the target subset (validate/run/actionize/caching/CI) plus any paths to focus on.
+
+If repo context or current CLI behavior is missing, write **Unknown/TODO** and proceed with a spec-first answer.
+
+## Workflow
+
+### 1) Establish “observed vs proposed”
+
+1. List what inputs are available (repo files, current CLI help text, sample pack md, run output dirs).
+2. Split all statements into:
+   - **Observed** (backed by provided evidence),
+   - **Proposed** (the target contract to implement),
+   - **Unknown/TODO** (needs files/flags not provided).
+
+### 2) Define the target pipeline contract (deterministic by default)
+
+Produce a concrete contract for:
+
+- `oraclepack validate` (strict + JSON output),
+- `oraclepack run` (stable run dir + `run.json`/`steps.json` + outputs + resume/rerun),
+- `oraclepack actionize` (reads run dir and produces `actionizer/` artifacts),
+- CI mode behavior (non-interactive, structured logs, policy-driven exit codes),
+- Path safety for output writing.
+
+Use:
+
+- references/cli-contract.md
+- references/run-manifest-spec.md
+- references/actionizer-spec.md
+
+### 3) Map contract → implementation deltas (minimal, additive, backward-compatible)
+
+1. Identify current commands/flags and current on-disk layout (Observed).
+2. Propose additive changes:
+   - new flags and new subcommands should not break existing pack schema without an explicit migration path,
+   - new on-disk outputs should be in `.oraclepack/runs/<pack_id>/...` without removing legacy output locations (unless requested).
+3. For each proposed change, specify:
+   - code touchpoints (files/modules: **Unknown** if repo not provided),
+   - acceptance tests and fixtures,
+   - failure modes and user-visible error messages.
+
+### 4) Stage 1 prompt shaping (pack generation) to help Stage 3 parse reliably
+
+If the workflow includes Stage 1 pack generation:
+
+- propose embedding **mini-metadata inside each prompt** (does not change pack schema),
+- keep metadata parseable and consistent.
+
+Use references/stage1-prompt-metadata.md.
+
+### 5) Produce final deliverables (spec + plan, optionally code)
+
+Deliverables should be:
+
+1. **Pipeline contract** (validate/run/actionize + CI + safety).
+2. **On-disk schemas** (`run.json`, `steps.json`, `normalized.jsonl`, `backlog.md`, `change-plan.md`).
+3. **Acceptance criteria** and a minimal test plan.
+4. **Implementation plan** (ordered steps, smallest shippable increments).
+5. If code context is provided and the user wants implementation: output concrete file edits + new files.
+
+## Output contract
+
+Unless the user asks for something else, output a single Markdown report with:
+
+- **Scope** (what parts of validate/run/actionize/CI/caching are included)
+- **Observed current behavior** (or **Unknown**)
+- **Proposed contract** (link to reference sections where applicable)
+- **Disk layout + schemas**
+- **Acceptance criteria**
+- **Implementation plan** (phased; smallest first)
+- **Risks / unknowns**
+- **Missing inputs** (exact paths/flags/help output needed)
+
+If asked to generate templates, use the assets:
+
+- assets/backlog-template.md
+- assets/change-plan-template.md
+- assets/normalized.example.jsonl
+
+## Failure modes
+
+- Missing repo / CLI help / sample run dirs → mark **Unknown** and provide a spec-first response.
+- Missing definitions for CI thresholds / policies → include **TODO** defaults and clearly label them as policy choices.
+- Any “current behavior” claim without evidence → downgrade to **Unknown**.
+
+## Invocation examples
+
+1) Add strict validator + JSON output:
+
+- `$oraclepack-pipeline-improver Add oraclepack validate --strict --json; define schema checks and CI gating exit codes`
+
+1) Deterministic run dir + resume/rerun:
+
+- `$oraclepack-pipeline-improver Specify .oraclepack/runs/<pack_id>/ layout, run.json/steps.json, resume default, --rerun failed|all|01,03`
+
+1) Concurrency + backoff policy:
+
+- `$oraclepack-pipeline-improver Add --max-parallel N and transient error retry budget/backoff rules`
+
+1) Stage 3 Actionizer:
+
+- `$oraclepack-pipeline-improver Implement oraclepack actionize; generate normalized.jsonl + backlog.md + change-plan.md with stable IDs`
+
+1) CI mode:
+
+- `$oraclepack-pipeline-improver Provide run --ci --non-interactive --json-log and actionize --ci; policy-driven exit codes`
+
+1) Stage 1 prompt metadata shaping:
+
+- `$oraclepack-pipeline-improver Add prompt-embedded metadata (QuestionId/Category/Reference/ExpectedArtifacts) without changing pack schema`
+```
+
 .config/mcp/oraclepack-taskify/SKILL.md
 ```
 ---
@@ -16210,136 +16510,6 @@ Important: if the environment does not provide a compatible `tm autopilot`, Step
 - `$oraclepack-taskify out_dir=oracle-out mode=pipelines tag=oraclepack-top top_n=10`
 - `$oraclepack-taskify out_dir=oracle-out mode=autopilot tag=oraclepack-top pack_path=docs/oracle-actions-pack-2026-01-05.md`
 - `$oraclepack-taskify out_dir=oracle-out extra_files=README.md,package.json`
-```
-
-.config/skills/oraclepack-pipeline-improver/SKILL.md
-```
----
-name: oraclepack-pipeline-improver
-description: Improve an oraclepack (Go wrapper around @steipete/oracle) pipeline by specifying/implementing deterministic validate→run→actionize behavior:strict pack validation, run manifests, stable run directories, resume/rerun semantics, concurrency/backoff, optional caching, and a Stage 3 “Actionizer” that converts 20 oracle outputs into actionable engineering work artifacts.
-metadata:
-  short-description: Deterministic oraclepack validate/run/actionize pipeline spec + implementation rails
----
-
-## Quick start
-
-Use this skill when the user wants to:
-
-- make oraclepack runs deterministic and resume-safe,
-- add a strict validator and machine-readable outputs,
-- add Stage 3 “actionize” to convert the 20 question outputs into an actionable backlog/change plan,
-- make the pipeline CI-friendly and path-safe.
-
-Interpret the user’s free-text `{{args}}` as the target subset (validate/run/actionize/caching/CI) plus any paths to focus on.
-
-If repo context or current CLI behavior is missing, write **Unknown/TODO** and proceed with a spec-first answer.
-
-## Workflow
-
-### 1) Establish “observed vs proposed”
-
-1. List what inputs are available (repo files, current CLI help text, sample pack md, run output dirs).
-2. Split all statements into:
-   - **Observed** (backed by provided evidence),
-   - **Proposed** (the target contract to implement),
-   - **Unknown/TODO** (needs files/flags not provided).
-
-### 2) Define the target pipeline contract (deterministic by default)
-
-Produce a concrete contract for:
-
-- `oraclepack validate` (strict + JSON output),
-- `oraclepack run` (stable run dir + `run.json`/`steps.json` + outputs + resume/rerun),
-- `oraclepack actionize` (reads run dir and produces `actionizer/` artifacts),
-- CI mode behavior (non-interactive, structured logs, policy-driven exit codes),
-- Path safety for output writing.
-
-Use:
-
-- references/cli-contract.md
-- references/run-manifest-spec.md
-- references/actionizer-spec.md
-
-### 3) Map contract → implementation deltas (minimal, additive, backward-compatible)
-
-1. Identify current commands/flags and current on-disk layout (Observed).
-2. Propose additive changes:
-   - new flags and new subcommands should not break existing pack schema without an explicit migration path,
-   - new on-disk outputs should be in `.oraclepack/runs/<pack_id>/...` without removing legacy output locations (unless requested).
-3. For each proposed change, specify:
-   - code touchpoints (files/modules: **Unknown** if repo not provided),
-   - acceptance tests and fixtures,
-   - failure modes and user-visible error messages.
-
-### 4) Stage 1 prompt shaping (pack generation) to help Stage 3 parse reliably
-
-If the workflow includes Stage 1 pack generation:
-
-- propose embedding **mini-metadata inside each prompt** (does not change pack schema),
-- keep metadata parseable and consistent.
-
-Use references/stage1-prompt-metadata.md.
-
-### 5) Produce final deliverables (spec + plan, optionally code)
-
-Deliverables should be:
-
-1. **Pipeline contract** (validate/run/actionize + CI + safety).
-2. **On-disk schemas** (`run.json`, `steps.json`, `normalized.jsonl`, `backlog.md`, `change-plan.md`).
-3. **Acceptance criteria** and a minimal test plan.
-4. **Implementation plan** (ordered steps, smallest shippable increments).
-5. If code context is provided and the user wants implementation: output concrete file edits + new files.
-
-## Output contract
-
-Unless the user asks for something else, output a single Markdown report with:
-
-- **Scope** (what parts of validate/run/actionize/CI/caching are included)
-- **Observed current behavior** (or **Unknown**)
-- **Proposed contract** (link to reference sections where applicable)
-- **Disk layout + schemas**
-- **Acceptance criteria**
-- **Implementation plan** (phased; smallest first)
-- **Risks / unknowns**
-- **Missing inputs** (exact paths/flags/help output needed)
-
-If asked to generate templates, use the assets:
-
-- assets/backlog-template.md
-- assets/change-plan-template.md
-- assets/normalized.example.jsonl
-
-## Failure modes
-
-- Missing repo / CLI help / sample run dirs → mark **Unknown** and provide a spec-first response.
-- Missing definitions for CI thresholds / policies → include **TODO** defaults and clearly label them as policy choices.
-- Any “current behavior” claim without evidence → downgrade to **Unknown**.
-
-## Invocation examples
-
-1) Add strict validator + JSON output:
-
-- `$oraclepack-pipeline-improver Add oraclepack validate --strict --json; define schema checks and CI gating exit codes`
-
-1) Deterministic run dir + resume/rerun:
-
-- `$oraclepack-pipeline-improver Specify .oraclepack/runs/<pack_id>/ layout, run.json/steps.json, resume default, --rerun failed|all|01,03`
-
-1) Concurrency + backoff policy:
-
-- `$oraclepack-pipeline-improver Add --max-parallel N and transient error retry budget/backoff rules`
-
-1) Stage 3 Actionizer:
-
-- `$oraclepack-pipeline-improver Implement oraclepack actionize; generate normalized.jsonl + backlog.md + change-plan.md with stable IDs`
-
-1) CI mode:
-
-- `$oraclepack-pipeline-improver Provide run --ci --non-interactive --json-log and actionize --ci; policy-driven exit codes`
-
-1) Stage 1 prompt metadata shaping:
-
-- `$oraclepack-pipeline-improver Add prompt-embedded metadata (QuestionId/Category/Reference/ExpectedArtifacts) without changing pack schema`
 ```
 
 .config/skills/oraclepack-tickets-pack/SKILL.md
@@ -16524,6 +16694,76 @@ This skill produces:
 {"data_mtime":1767891128,"dep_lines":[1,1,1,1,1],"dep_prios":[5,5,30,30,30],"dependencies":["_collections_abc","builtins","_frozen_importlib","abc","typing"],"hash":"b533e3bac0da22e9dc59fd0341a2de22ba566c4b","id":"collections.abc","ignore_all":true,"interface_hash":"0a835857d00a605356d4831091f66b795d38403d","mtime":1762029370,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/collections/abc.pyi","plugin_data":null,"size":79,"suppressed":[],"version_id":"1.15.0"}
 ```
 
+.mypy_cache/3.12/importlib/__init__.data.json
+```
+{".class":"MypyFile","_fullname":"importlib","future_import_flags":[],"is_partial_stub_package":false,"is_stub":true,"names":{".class":"SymbolTable","Loader":{".class":"SymbolTableNode","cross_ref":"importlib._abc.Loader","kind":"Gdef","module_hidden":true,"module_public":false},"ModuleType":{".class":"SymbolTableNode","cross_ref":"types.ModuleType","kind":"Gdef","module_hidden":true,"module_public":false},"__all__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_inferred","has_explicit_value"],"fullname":"importlib.__all__","name":"__all__","type":{".class":"Instance","args":["builtins.str"],"extra_attrs":null,"type_ref":"builtins.list"}}},"__annotations__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.__annotations__","name":"__annotations__","type":{".class":"Instance","args":["builtins.str",{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":6}],"extra_attrs":null,"type_ref":"builtins.dict"}}},"__doc__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.__doc__","name":"__doc__","type":"builtins.str"}},"__file__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.__file__","name":"__file__","type":"builtins.str"}},"__import__":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib.__import__","kind":"Gdef"},"__name__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.__name__","name":"__name__","type":"builtins.str"}},"__package__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.__package__","name":"__package__","type":"builtins.str"}},"__path__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.__path__","name":"__path__","type":{".class":"Instance","args":["builtins.str"],"extra_attrs":null,"type_ref":"builtins.list"}}},"__spec__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.__spec__","name":"__spec__","type":"_frozen_importlib.ModuleSpec"}},"import_module":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,1],"arg_names":["name","package"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.import_module","name":"import_module","type":{".class":"CallableType","arg_kinds":[0,1],"arg_names":["name","package"],"arg_types":["builtins.str",{".class":"UnionType","items":["builtins.str",{".class":"NoneType"}],"uses_pep604_syntax":true}],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"import_module","ret_type":"types.ModuleType","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"invalidate_caches":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[],"arg_names":[],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.invalidate_caches","name":"invalidate_caches","type":{".class":"CallableType","arg_kinds":[],"arg_names":[],"arg_types":[],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"invalidate_caches","ret_type":{".class":"NoneType"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"reload":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0],"arg_names":["module"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.reload","name":"reload","type":{".class":"CallableType","arg_kinds":[0],"arg_names":["module"],"arg_types":["types.ModuleType"],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"reload","ret_type":"types.ModuleType","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"sys":{".class":"SymbolTableNode","cross_ref":"sys","kind":"Gdef","module_hidden":true,"module_public":false}},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/importlib/__init__.pyi"}
+```
+
+.mypy_cache/3.12/importlib/__init__.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[2,3,1,4,1,1,1,1,1],"dep_prios":[5,5,10,5,5,30,30,30,30],"dependencies":["importlib._bootstrap","importlib.abc","sys","types","builtins","_frozen_importlib","_typeshed","abc","typing"],"hash":"696eed73d030a0492323852b916bb4655325693b","id":"importlib","ignore_all":true,"interface_hash":"2f6b9e91b142fb668e81bf14198347e7189c5a60","mtime":1762029371,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/importlib/__init__.pyi","plugin_data":null,"size":569,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/importlib/_abc.data.json
+```
+{".class":"MypyFile","_fullname":"importlib._abc","future_import_flags":[],"is_partial_stub_package":false,"is_stub":true,"names":{".class":"SymbolTable","ABCMeta":{".class":"SymbolTableNode","cross_ref":"abc.ABCMeta","kind":"Gdef","module_hidden":true,"module_public":false},"Loader":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["builtins.object"],"dataclass_transform_spec":null,"declared_metaclass":"abc.ABCMeta","defn":{".class":"ClassDef","fullname":"importlib._abc.Loader","name":"Loader","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":[],"fullname":"importlib._abc.Loader","has_param_spec_type":false,"metaclass_type":"abc.ABCMeta","metadata":{},"module_name":"importlib._abc","mro":["importlib._abc.Loader","builtins.object"],"names":{".class":"SymbolTable","create_module":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0],"arg_names":["self","spec"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib._abc.Loader.create_module","name":"create_module","type":{".class":"CallableType","arg_kinds":[0,0],"arg_names":["self","spec"],"arg_types":["importlib._abc.Loader","_frozen_importlib.ModuleSpec"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"create_module of Loader","ret_type":{".class":"UnionType","items":["types.ModuleType",{".class":"NoneType"}],"uses_pep604_syntax":true},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"exec_module":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0],"arg_names":["self","module"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib._abc.Loader.exec_module","name":"exec_module","type":{".class":"CallableType","arg_kinds":[0,0],"arg_names":["self","module"],"arg_types":["importlib._abc.Loader","types.ModuleType"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"exec_module of Loader","ret_type":{".class":"NoneType"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"load_module":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0],"arg_names":["self","fullname"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib._abc.Loader.load_module","name":"load_module","type":{".class":"CallableType","arg_kinds":[0,0],"arg_names":["self","fullname"],"arg_types":["importlib._abc.Loader","builtins.str"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"load_module of Loader","ret_type":"types.ModuleType","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}}},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"ModuleSpec":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib.ModuleSpec","kind":"Gdef","module_hidden":true,"module_public":false},"__annotations__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib._abc.__annotations__","name":"__annotations__","type":{".class":"Instance","args":["builtins.str",{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":6}],"extra_attrs":null,"type_ref":"builtins.dict"}}},"__doc__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib._abc.__doc__","name":"__doc__","type":"builtins.str"}},"__file__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib._abc.__file__","name":"__file__","type":"builtins.str"}},"__name__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib._abc.__name__","name":"__name__","type":"builtins.str"}},"__package__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib._abc.__package__","name":"__package__","type":"builtins.str"}},"__spec__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib._abc.__spec__","name":"__spec__","type":"_frozen_importlib.ModuleSpec"}},"sys":{".class":"SymbolTableNode","cross_ref":"sys","kind":"Gdef","module_hidden":true,"module_public":false},"types":{".class":"SymbolTableNode","cross_ref":"types","kind":"Gdef","module_hidden":true,"module_public":false}},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/importlib/_abc.pyi"}
+```
+
+.mypy_cache/3.12/importlib/_abc.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[4,1,2,3,1,1,1,1],"dep_prios":[5,10,10,5,5,30,30,30],"dependencies":["importlib.machinery","sys","types","abc","builtins","_frozen_importlib","_typeshed","typing"],"hash":"0d42dcd951013ab41bdf924bf5ec37f00714a257","id":"importlib._abc","ignore_all":true,"interface_hash":"679f0dfcb9881dfe1fb70a5710f8c36fa5434f0b","mtime":1762029371,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/importlib/_abc.pyi","plugin_data":null,"size":609,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/importlib/_bootstrap.data.json
+```
+{".class":"MypyFile","_fullname":"importlib._bootstrap","future_import_flags":[],"is_partial_stub_package":false,"is_stub":true,"names":{".class":"SymbolTable","BuiltinImporter":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib.BuiltinImporter","kind":"Gdef"},"FrozenImporter":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib.FrozenImporter","kind":"Gdef"},"ModuleSpec":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib.ModuleSpec","kind":"Gdef"},"__annotations__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib._bootstrap.__annotations__","name":"__annotations__","type":{".class":"Instance","args":["builtins.str",{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":6}],"extra_attrs":null,"type_ref":"builtins.dict"}}},"__doc__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib._bootstrap.__doc__","name":"__doc__","type":"builtins.str"}},"__file__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib._bootstrap.__file__","name":"__file__","type":"builtins.str"}},"__import__":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib.__import__","kind":"Gdef"},"__name__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib._bootstrap.__name__","name":"__name__","type":"builtins.str"}},"__package__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib._bootstrap.__package__","name":"__package__","type":"builtins.str"}},"__spec__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib._bootstrap.__spec__","name":"__spec__","type":"_frozen_importlib.ModuleSpec"}},"_init_module_attrs":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib._init_module_attrs","kind":"Gdef"},"module_from_spec":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib.module_from_spec","kind":"Gdef"},"spec_from_loader":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib.spec_from_loader","kind":"Gdef"}},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/importlib/_bootstrap.pyi"}
+```
+
+.mypy_cache/3.12/importlib/_bootstrap.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[1,1,1,1],"dep_prios":[5,5,30,30],"dependencies":["_frozen_importlib","builtins","abc","typing"],"hash":"91c3b137c6c392ec8ff0705874f87160198ae9af","id":"importlib._bootstrap","ignore_all":true,"interface_hash":"359042224562ef4fe5a1ba87464aa3c2c1b1616c","mtime":1762029371,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/importlib/_bootstrap.pyi","plugin_data":null,"size":129,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/importlib/_bootstrap_external.data.json
+```
+{".class":"MypyFile","_fullname":"importlib._bootstrap_external","future_import_flags":[],"is_partial_stub_package":false,"is_stub":true,"names":{".class":"SymbolTable","BYTECODE_SUFFIXES":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.BYTECODE_SUFFIXES","kind":"Gdef"},"DEBUG_BYTECODE_SUFFIXES":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.DEBUG_BYTECODE_SUFFIXES","kind":"Gdef"},"EXTENSION_SUFFIXES":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.EXTENSION_SUFFIXES","kind":"Gdef"},"ExtensionFileLoader":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.ExtensionFileLoader","kind":"Gdef"},"FileFinder":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.FileFinder","kind":"Gdef"},"FileLoader":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.FileLoader","kind":"Gdef"},"MAGIC_NUMBER":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.MAGIC_NUMBER","kind":"Gdef"},"NamespaceLoader":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.NamespaceLoader","kind":"Gdef"},"OPTIMIZED_BYTECODE_SUFFIXES":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.OPTIMIZED_BYTECODE_SUFFIXES","kind":"Gdef"},"PathFinder":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.PathFinder","kind":"Gdef"},"SOURCE_SUFFIXES":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.SOURCE_SUFFIXES","kind":"Gdef"},"SourceFileLoader":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.SourceFileLoader","kind":"Gdef"},"SourceLoader":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.SourceLoader","kind":"Gdef"},"SourcelessFileLoader":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.SourcelessFileLoader","kind":"Gdef"},"WindowsRegistryFinder":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.WindowsRegistryFinder","kind":"Gdef"},"_NamespaceLoader":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external._NamespaceLoader","kind":"Gdef"},"__annotations__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib._bootstrap_external.__annotations__","name":"__annotations__","type":{".class":"Instance","args":["builtins.str",{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":6}],"extra_attrs":null,"type_ref":"builtins.dict"}}},"__doc__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib._bootstrap_external.__doc__","name":"__doc__","type":"builtins.str"}},"__file__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib._bootstrap_external.__file__","name":"__file__","type":"builtins.str"}},"__name__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib._bootstrap_external.__name__","name":"__name__","type":"builtins.str"}},"__package__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib._bootstrap_external.__package__","name":"__package__","type":"builtins.str"}},"__spec__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib._bootstrap_external.__spec__","name":"__spec__","type":"_frozen_importlib.ModuleSpec"}},"cache_from_source":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.cache_from_source","kind":"Gdef"},"decode_source":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.decode_source","kind":"Gdef"},"path_sep":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.path_sep","kind":"Gdef"},"path_sep_tuple":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.path_sep_tuple","kind":"Gdef"},"path_separators":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.path_separators","kind":"Gdef"},"source_from_cache":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.source_from_cache","kind":"Gdef"},"spec_from_file_location":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.spec_from_file_location","kind":"Gdef"}},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/importlib/_bootstrap_external.pyi"}
+```
+
+.mypy_cache/3.12/importlib/_bootstrap_external.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[1,1,1,1,1],"dep_prios":[5,5,30,30,30],"dependencies":["_frozen_importlib_external","builtins","_frozen_importlib","abc","typing"],"hash":"68022b896ef0de6f8da7d6c9d4d434abd95c0da6","id":"importlib._bootstrap_external","ignore_all":true,"interface_hash":"29e4625cfe94a51fc807e0b0cc0d848246201dc4","mtime":1762029371,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/importlib/_bootstrap_external.pyi","plugin_data":null,"size":117,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/importlib/abc.data.json
+```
+[TRUNCATED]
+```
+
+.mypy_cache/3.12/importlib/abc.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[6,7,8,28,1,2,3,4,5,7,9,10,1,1,1,1,1,1,1],"dep_prios":[5,10,5,5,10,10,10,5,5,20,5,5,5,30,30,30,30,30,30],"dependencies":["collections.abc","importlib._bootstrap_external","importlib.machinery","importlib._abc","_ast","sys","types","_typeshed","abc","importlib","io","typing","builtins","_collections_abc","_frozen_importlib","_frozen_importlib_external","_io","ast","os"],"hash":"1cb0e78eb5b401e80f23dcaa5278ea291f53e7dc","id":"importlib.abc","ignore_all":true,"interface_hash":"4d824e1682260fe00c898198ef9162a97549eb07","mtime":1762029371,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/importlib/abc.pyi","plugin_data":null,"size":7123,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/importlib/machinery.data.json
+```
+{".class":"MypyFile","_fullname":"importlib.machinery","future_import_flags":[],"is_partial_stub_package":false,"is_stub":true,"names":{".class":"SymbolTable","BYTECODE_SUFFIXES":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.BYTECODE_SUFFIXES","kind":"Gdef"},"BuiltinImporter":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib.BuiltinImporter","kind":"Gdef"},"DEBUG_BYTECODE_SUFFIXES":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.DEBUG_BYTECODE_SUFFIXES","kind":"Gdef"},"EXTENSION_SUFFIXES":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.EXTENSION_SUFFIXES","kind":"Gdef"},"ExtensionFileLoader":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.ExtensionFileLoader","kind":"Gdef"},"FileFinder":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.FileFinder","kind":"Gdef"},"FrozenImporter":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib.FrozenImporter","kind":"Gdef"},"ModuleSpec":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib.ModuleSpec","kind":"Gdef"},"NamespaceLoader":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.NamespaceLoader","kind":"Gdef"},"OPTIMIZED_BYTECODE_SUFFIXES":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.OPTIMIZED_BYTECODE_SUFFIXES","kind":"Gdef"},"PathFinder":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.PathFinder","kind":"Gdef"},"SOURCE_SUFFIXES":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.SOURCE_SUFFIXES","kind":"Gdef"},"SourceFileLoader":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.SourceFileLoader","kind":"Gdef"},"SourcelessFileLoader":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.SourcelessFileLoader","kind":"Gdef"},"WindowsRegistryFinder":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.WindowsRegistryFinder","kind":"Gdef"},"__annotations__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.machinery.__annotations__","name":"__annotations__","type":{".class":"Instance","args":["builtins.str",{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":6}],"extra_attrs":null,"type_ref":"builtins.dict"}}},"__doc__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.machinery.__doc__","name":"__doc__","type":"builtins.str"}},"__file__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.machinery.__file__","name":"__file__","type":"builtins.str"}},"__name__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.machinery.__name__","name":"__name__","type":"builtins.str"}},"__package__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.machinery.__package__","name":"__package__","type":"builtins.str"}},"__spec__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.machinery.__spec__","name":"__spec__","type":"_frozen_importlib.ModuleSpec"}},"all_suffixes":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[],"arg_names":[],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.machinery.all_suffixes","name":"all_suffixes","type":{".class":"CallableType","arg_kinds":[],"arg_names":[],"arg_types":[],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"all_suffixes","ret_type":{".class":"Instance","args":["builtins.str"],"extra_attrs":null,"type_ref":"builtins.list"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"sys":{".class":"SymbolTableNode","cross_ref":"sys","kind":"Gdef","module_hidden":true,"module_public":false}},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/importlib/machinery.pyi"}
+```
+
+.mypy_cache/3.12/importlib/machinery.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[2,3,1,1,1,1,1,1],"dep_prios":[5,5,10,5,30,30,30,30],"dependencies":["importlib._bootstrap","importlib._bootstrap_external","sys","builtins","_frozen_importlib","_typeshed","abc","typing"],"hash":"a306f9942e253d05433d97fbf1113fd4f35bdb58","id":"importlib.machinery","ignore_all":true,"interface_hash":"e008efc8995a7c3798e9267cf617f11c6cac286e","mtime":1762029371,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/importlib/machinery.pyi","plugin_data":null,"size":839,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/importlib/readers.data.json
+```
+{".class":"MypyFile","_fullname":"importlib.readers","future_import_flags":[],"is_partial_stub_package":false,"is_stub":true,"names":{".class":"SymbolTable","BufferedReader":{".class":"SymbolTableNode","cross_ref":"_io.BufferedReader","kind":"Gdef","module_hidden":true,"module_public":false},"FileReader":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["importlib.abc.TraversableResources"],"dataclass_transform_spec":null,"declared_metaclass":null,"defn":{".class":"ClassDef","fullname":"importlib.readers.FileReader","name":"FileReader","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":[],"fullname":"importlib.readers.FileReader","has_param_spec_type":false,"metaclass_type":"abc.ABCMeta","metadata":{},"module_name":"importlib.readers","mro":["importlib.readers.FileReader","importlib.abc.TraversableResources","importlib.abc.ResourceReader","builtins.object"],"names":{".class":"SymbolTable","__init__":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0],"arg_names":["self","loader"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.readers.FileReader.__init__","name":"__init__","type":{".class":"CallableType","arg_kinds":[0,0],"arg_names":["self","loader"],"arg_types":["importlib.readers.FileReader",{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":1}],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"__init__ of FileReader","ret_type":{".class":"NoneType"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"files":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0],"arg_names":["self"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.readers.FileReader.files","name":"files","type":{".class":"CallableType","arg_kinds":[0],"arg_names":["self"],"arg_types":["importlib.readers.FileReader"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"files of FileReader","ret_type":"pathlib.Path","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"path":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"Var","flags":["is_initialized_in_class","is_ready"],"fullname":"importlib.readers.FileReader.path","name":"path","type":"pathlib.Path"}},"resource_path":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0],"arg_names":["self","resource"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.readers.FileReader.resource_path","name":"resource_path","type":{".class":"CallableType","arg_kinds":[0,0],"arg_names":["self","resource"],"arg_types":["importlib.readers.FileReader",{".class":"TypeAliasType","args":[],"type_ref":"_typeshed.StrPath"}],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"resource_path of FileReader","ret_type":"builtins.str","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}}},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"Incomplete":{".class":"SymbolTableNode","cross_ref":"_typeshed.Incomplete","kind":"Gdef","module_hidden":true,"module_public":false},"Iterable":{".class":"SymbolTableNode","cross_ref":"typing.Iterable","kind":"Gdef","module_hidden":true,"module_public":false},"Iterator":{".class":"SymbolTableNode","cross_ref":"typing.Iterator","kind":"Gdef","module_hidden":true,"module_public":false},"Literal":{".class":"SymbolTableNode","cross_ref":"typing.Literal","kind":"Gdef","module_hidden":true,"module_public":false},"MultiplexedPath":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["importlib.abc.Traversable"],"dataclass_transform_spec":null,"declared_metaclass":null,"defn":{".class":"ClassDef","fullname":"importlib.readers.MultiplexedPath","name":"MultiplexedPath","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":[],"fullname":"importlib.readers.MultiplexedPath","has_param_spec_type":false,"metaclass_type":"abc.ABCMeta","metadata":{},"module_name":"importlib.readers","mro":["importlib.readers.MultiplexedPath","importlib.abc.Traversable","builtins.object"],"names":{".class":"SymbolTable","__init__":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,2],"arg_names":["self","paths"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.readers.MultiplexedPath.__init__","name":"__init__","type":{".class":"CallableType","arg_kinds":[0,2],"arg_names":["self","paths"],"arg_types":["importlib.readers.MultiplexedPath","importlib.abc.Traversable"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"__init__ of MultiplexedPath","ret_type":{".class":"NoneType"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"is_dir":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0],"arg_names":["self"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.readers.MultiplexedPath.is_dir","name":"is_dir","type":{".class":"CallableType","arg_kinds":[0],"arg_names":["self"],"arg_types":["importlib.readers.MultiplexedPath"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"is_dir of MultiplexedPath","ret_type":{".class":"LiteralType","fallback":"builtins.bool","value":true},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"is_file":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0],"arg_names":["self"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.readers.MultiplexedPath.is_file","name":"is_file","type":{".class":"CallableType","arg_kinds":[0],"arg_names":["self"],"arg_types":["importlib.readers.MultiplexedPath"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"is_file of MultiplexedPath","ret_type":{".class":"LiteralType","fallback":"builtins.bool","value":false},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"iterdir":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0],"arg_names":["self"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.readers.MultiplexedPath.iterdir","name":"iterdir","type":{".class":"CallableType","arg_kinds":[0],"arg_names":["self"],"arg_types":["importlib.readers.MultiplexedPath"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"iterdir of MultiplexedPath","ret_type":{".class":"Instance","args":["importlib.abc.Traversable"],"extra_attrs":null,"type_ref":"typing.Iterator"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"joinpath":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,2],"arg_names":["self","descendants"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.readers.MultiplexedPath.joinpath","name":"joinpath","type":{".class":"CallableType","arg_kinds":[0,2],"arg_names":["self","descendants"],"arg_types":["importlib.readers.MultiplexedPath","builtins.str"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"joinpath of MultiplexedPath","ret_type":"importlib.abc.Traversable","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"name":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"Decorator","func":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0],"arg_names":["self"],"dataclass_transform_spec":null,"deprecated":null,"flags":["is_property","is_decorated"],"fullname":"importlib.readers.MultiplexedPath.name","name":"name","type":{".class":"CallableType","arg_kinds":[0],"arg_names":["self"],"arg_types":["importlib.readers.MultiplexedPath"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"name of MultiplexedPath","ret_type":"builtins.str","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}},"is_overload":false,"var":{".class":"Var","flags":["is_initialized_in_class","is_property","is_ready","is_inferred"],"fullname":"importlib.readers.MultiplexedPath.name","name":"name","type":{".class":"CallableType","arg_kinds":[0],"arg_names":["self"],"arg_types":["importlib.readers.MultiplexedPath"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"name of MultiplexedPath","ret_type":"builtins.str","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}}},"open":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,2,4],"arg_names":["self","args","kwargs"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.readers.MultiplexedPath.open","name":"open","type":{".class":"CallableType","arg_kinds":[0,2,4],"arg_names":["self","args","kwargs"],"arg_types":["importlib.readers.MultiplexedPath",{".class":"UninhabitedType"},{".class":"UninhabitedType"}],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"open of MultiplexedPath","ret_type":{".class":"UninhabitedType"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"read_bytes":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0],"arg_names":["self"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.readers.MultiplexedPath.read_bytes","name":"read_bytes","type":{".class":"CallableType","arg_kinds":[0],"arg_names":["self"],"arg_types":["importlib.readers.MultiplexedPath"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"read_bytes of MultiplexedPath","ret_type":{".class":"UninhabitedType"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"read_text":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,2,4],"arg_names":["self","args","kwargs"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.readers.MultiplexedPath.read_text","name":"read_text","type":{".class":"CallableType","arg_kinds":[0,2,4],"arg_names":["self","args","kwargs"],"arg_types":["importlib.readers.MultiplexedPath",{".class":"UninhabitedType"},{".class":"UninhabitedType"}],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"read_text of MultiplexedPath","ret_type":{".class":"UninhabitedType"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}}},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"NamespaceReader":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["importlib.abc.TraversableResources"],"dataclass_transform_spec":null,"declared_metaclass":null,"defn":{".class":"ClassDef","fullname":"importlib.readers.NamespaceReader","name":"NamespaceReader","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":[],"fullname":"importlib.readers.NamespaceReader","has_param_spec_type":false,"metaclass_type":"abc.ABCMeta","metadata":{},"module_name":"importlib.readers","mro":["importlib.readers.NamespaceReader","importlib.abc.TraversableResources","importlib.abc.ResourceReader","builtins.object"],"names":{".class":"SymbolTable","__init__":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0],"arg_names":["self","namespace_path"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.readers.NamespaceReader.__init__","name":"__init__","type":{".class":"CallableType","arg_kinds":[0,0],"arg_names":["self","namespace_path"],"arg_types":["importlib.readers.NamespaceReader",{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":1}],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"__init__ of NamespaceReader","ret_type":{".class":"NoneType"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"files":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0],"arg_names":["self"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.readers.NamespaceReader.files","name":"files","type":{".class":"CallableType","arg_kinds":[0],"arg_names":["self"],"arg_types":["importlib.readers.NamespaceReader"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"files of NamespaceReader","ret_type":"importlib.readers.MultiplexedPath","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"path":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"Var","flags":["is_initialized_in_class","is_ready"],"fullname":"importlib.readers.NamespaceReader.path","name":"path","type":"importlib.readers.MultiplexedPath"}},"resource_path":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0],"arg_names":["self","resource"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.readers.NamespaceReader.resource_path","name":"resource_path","type":{".class":"CallableType","arg_kinds":[0,0],"arg_names":["self","resource"],"arg_types":["importlib.readers.NamespaceReader","builtins.str"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"resource_path of NamespaceReader","ret_type":"builtins.str","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}}},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"Never":{".class":"SymbolTableNode","cross_ref":"typing.Never","kind":"Gdef","module_hidden":true,"module_public":false},"NoReturn":{".class":"SymbolTableNode","cross_ref":"typing.NoReturn","kind":"Gdef","module_hidden":true,"module_public":false},"StrPath":{".class":"SymbolTableNode","cross_ref":"_typeshed.StrPath","kind":"Gdef","module_hidden":true,"module_public":false},"TypeVar":{".class":"SymbolTableNode","cross_ref":"typing.TypeVar","kind":"Gdef","module_hidden":true,"module_public":false},"ZipReader":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["importlib.abc.TraversableResources"],"dataclass_transform_spec":null,"declared_metaclass":null,"defn":{".class":"ClassDef","fullname":"importlib.readers.ZipReader","name":"ZipReader","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":[],"fullname":"importlib.readers.ZipReader","has_param_spec_type":false,"metaclass_type":"abc.ABCMeta","metadata":{},"module_name":"importlib.readers","mro":["importlib.readers.ZipReader","importlib.abc.TraversableResources","importlib.abc.ResourceReader","builtins.object"],"names":{".class":"SymbolTable","__init__":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0,0],"arg_names":["self","loader","module"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.readers.ZipReader.__init__","name":"__init__","type":{".class":"CallableType","arg_kinds":[0,0,0],"arg_names":["self","loader","module"],"arg_types":["importlib.readers.ZipReader",{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":1},"builtins.str"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"__init__ of ZipReader","ret_type":{".class":"NoneType"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"archive":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"Var","flags":["is_initialized_in_class","is_ready"],"fullname":"importlib.readers.ZipReader.archive","name":"archive","type":{".class":"TypeAliasType","args":[],"type_ref":"_typeshed.Incomplete"}}},"files":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0],"arg_names":["self"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.readers.ZipReader.files","name":"files","type":{".class":"CallableType","arg_kinds":[0],"arg_names":["self"],"arg_types":["importlib.readers.ZipReader"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"files of ZipReader","ret_type":"zipfile._path.Path","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"is_resource":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0],"arg_names":["self","path"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.readers.ZipReader.is_resource","name":"is_resource","type":{".class":"CallableType","arg_kinds":[0,0],"arg_names":["self","path"],"arg_types":["importlib.readers.ZipReader",{".class":"TypeAliasType","args":[],"type_ref":"_typeshed.StrPath"}],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"is_resource of ZipReader","ret_type":"builtins.bool","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"open_resource":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0],"arg_names":["self","resource"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.readers.ZipReader.open_resource","name":"open_resource","type":{".class":"CallableType","arg_kinds":[0,0],"arg_names":["self","resource"],"arg_types":["importlib.readers.ZipReader","builtins.str"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"open_resource of ZipReader","ret_type":"_io.BufferedReader","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"prefix":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"Var","flags":["is_initialized_in_class","is_ready"],"fullname":"importlib.readers.ZipReader.prefix","name":"prefix","type":"builtins.str"}}},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"__all__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_inferred","has_explicit_value"],"fullname":"importlib.readers.__all__","name":"__all__","type":{".class":"Instance","args":["builtins.str"],"extra_attrs":null,"type_ref":"builtins.list"}}},"__annotations__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.readers.__annotations__","name":"__annotations__","type":{".class":"Instance","args":["builtins.str",{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":6}],"extra_attrs":null,"type_ref":"builtins.dict"}}},"__doc__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.readers.__doc__","name":"__doc__","type":"builtins.str"}},"__file__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.readers.__file__","name":"__file__","type":"builtins.str"}},"__name__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.readers.__name__","name":"__name__","type":"builtins.str"}},"__package__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.readers.__package__","name":"__package__","type":"builtins.str"}},"__spec__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.readers.__spec__","name":"__spec__","type":"_frozen_importlib.ModuleSpec"}},"abc":{".class":"SymbolTableNode","cross_ref":"importlib.resources.abc","kind":"Gdef","module_hidden":true,"module_public":false},"pathlib":{".class":"SymbolTableNode","cross_ref":"pathlib","kind":"Gdef","module_hidden":true,"module_public":false},"sys":{".class":"SymbolTableNode","cross_ref":"sys","kind":"Gdef","module_hidden":true,"module_public":false},"zipfile":{".class":"SymbolTableNode","cross_ref":"zipfile","kind":"Gdef","module_hidden":true,"module_public":false}},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/importlib/readers.pyi"}
+```
+
+.mypy_cache/3.12/importlib/readers.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[15,9,15,5,6,7,8,10,11,12,15,1,1,1,1,1,1,1,1],"dep_prios":[10,5,20,10,10,10,5,5,5,5,20,5,30,30,30,30,30,30,30],"dependencies":["importlib.resources.abc","collections.abc","importlib.resources","pathlib","sys","zipfile","_typeshed","io","typing","typing_extensions","importlib","builtins","_frozen_importlib","_io","abc","importlib.abc","os","types","zipfile._path"],"hash":"5527c48630fb2b623985ff211aabecfaba9fa570","id":"importlib.readers","ignore_all":true,"interface_hash":"195c3fcc79e512613b09739f7a932b24537778c6","mtime":1762029371,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/importlib/readers.pyi","plugin_data":null,"size":2584,"suppressed":[],"version_id":"1.15.0"}
+```
+
 .mypy_cache/3.12/email/__init__.data.json
 ```
 {".class":"MypyFile","_fullname":"email","future_import_flags":[],"is_partial_stub_package":false,"is_stub":true,"names":{".class":"SymbolTable","Callable":{".class":"SymbolTableNode","cross_ref":"typing.Callable","kind":"Gdef","module_hidden":true,"module_public":false},"IO":{".class":"SymbolTableNode","cross_ref":"typing.IO","kind":"Gdef","module_hidden":true,"module_public":false},"Message":{".class":"SymbolTableNode","cross_ref":"email.message.Message","kind":"Gdef","module_hidden":true,"module_public":false},"Policy":{".class":"SymbolTableNode","cross_ref":"email._policybase.Policy","kind":"Gdef","module_hidden":true,"module_public":false},"TypeAlias":{".class":"SymbolTableNode","cross_ref":"typing.TypeAlias","kind":"Gdef","module_hidden":true,"module_public":false},"_ParamType":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"TypeAlias","alias_tvars":[],"column":0,"fullname":"email._ParamType","line":31,"no_args":false,"normalized":false,"python_3_12_type_alias":false,"target":{".class":"UnionType","items":["builtins.str",{".class":"TupleType","implicit":false,"items":[{".class":"UnionType","items":["builtins.str",{".class":"NoneType"}],"uses_pep604_syntax":true},{".class":"UnionType","items":["builtins.str",{".class":"NoneType"}],"uses_pep604_syntax":true},"builtins.str"],"partial_fallback":{".class":"Instance","args":[{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":6}],"extra_attrs":null,"type_ref":"builtins.tuple"}}],"uses_pep604_syntax":true}}},"_ParamsType":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"TypeAlias","alias_tvars":[],"column":0,"fullname":"email._ParamsType","line":32,"no_args":false,"normalized":false,"python_3_12_type_alias":false,"target":{".class":"UnionType","items":["builtins.str",{".class":"NoneType"},{".class":"TupleType","implicit":false,"items":["builtins.str",{".class":"UnionType","items":["builtins.str",{".class":"NoneType"}],"uses_pep604_syntax":true},"builtins.str"],"partial_fallback":{".class":"Instance","args":[{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":6}],"extra_attrs":null,"type_ref":"builtins.tuple"}}],"uses_pep604_syntax":true}}},"__all__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_inferred","has_explicit_value"],"fullname":"email.__all__","name":"__all__","type":{".class":"Instance","args":["builtins.str"],"extra_attrs":null,"type_ref":"builtins.list"}}},"__annotations__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"email.__annotations__","name":"__annotations__","type":{".class":"Instance","args":["builtins.str",{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":6}],"extra_attrs":null,"type_ref":"builtins.dict"}}},"__doc__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"email.__doc__","name":"__doc__","type":"builtins.str"}},"__file__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"email.__file__","name":"__file__","type":"builtins.str"}},"__name__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"email.__name__","name":"__name__","type":"builtins.str"}},"__package__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"email.__package__","name":"__package__","type":"builtins.str"}},"__path__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"email.__path__","name":"__path__","type":{".class":"Instance","args":["builtins.str"],"extra_attrs":null,"type_ref":"builtins.list"}}},"__spec__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"email.__spec__","name":"__spec__","type":"_frozen_importlib.ModuleSpec"}},"message_from_binary_file":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,1,5],"arg_names":["fp","_class","policy"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"email.message_from_binary_file","name":"message_from_binary_file","type":{".class":"CallableType","arg_kinds":[0,1,5],"arg_names":["fp","_class","policy"],"arg_types":[{".class":"Instance","args":["builtins.bytes"],"extra_attrs":null,"type_ref":"typing.IO"},{".class":"CallableType","arg_kinds":[],"arg_names":[],"arg_types":[],"bound_args":[],"def_extras":{},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":null,"ret_type":{".class":"Instance","args":["builtins.str","builtins.str"],"extra_attrs":null,"type_ref":"email.message.Message"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]},{".class":"Instance","args":[{".class":"Instance","args":["builtins.str","builtins.str"],"extra_attrs":null,"type_ref":"email.message.Message"}],"extra_attrs":null,"type_ref":"email._policybase.Policy"}],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"message_from_binary_file","ret_type":{".class":"Instance","args":["builtins.str","builtins.str"],"extra_attrs":null,"type_ref":"email.message.Message"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"message_from_bytes":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,1,5],"arg_names":["s","_class","policy"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"email.message_from_bytes","name":"message_from_bytes","type":{".class":"CallableType","arg_kinds":[0,1,5],"arg_names":["s","_class","policy"],"arg_types":[{".class":"UnionType","items":["builtins.bytes","builtins.bytearray"],"uses_pep604_syntax":true},{".class":"CallableType","arg_kinds":[],"arg_names":[],"arg_types":[],"bound_args":[],"def_extras":{},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":null,"ret_type":{".class":"Instance","args":["builtins.str","builtins.str"],"extra_attrs":null,"type_ref":"email.message.Message"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]},{".class":"Instance","args":[{".class":"Instance","args":["builtins.str","builtins.str"],"extra_attrs":null,"type_ref":"email.message.Message"}],"extra_attrs":null,"type_ref":"email._policybase.Policy"}],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"message_from_bytes","ret_type":{".class":"Instance","args":["builtins.str","builtins.str"],"extra_attrs":null,"type_ref":"email.message.Message"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"message_from_file":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,1,5],"arg_names":["fp","_class","policy"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"email.message_from_file","name":"message_from_file","type":{".class":"CallableType","arg_kinds":[0,1,5],"arg_names":["fp","_class","policy"],"arg_types":[{".class":"Instance","args":["builtins.str"],"extra_attrs":null,"type_ref":"typing.IO"},{".class":"CallableType","arg_kinds":[],"arg_names":[],"arg_types":[],"bound_args":[],"def_extras":{},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":null,"ret_type":{".class":"Instance","args":["builtins.str","builtins.str"],"extra_attrs":null,"type_ref":"email.message.Message"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]},{".class":"Instance","args":[{".class":"Instance","args":["builtins.str","builtins.str"],"extra_attrs":null,"type_ref":"email.message.Message"}],"extra_attrs":null,"type_ref":"email._policybase.Policy"}],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"message_from_file","ret_type":{".class":"Instance","args":["builtins.str","builtins.str"],"extra_attrs":null,"type_ref":"email.message.Message"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"message_from_string":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,1,5],"arg_names":["s","_class","policy"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"email.message_from_string","name":"message_from_string","type":{".class":"CallableType","arg_kinds":[0,1,5],"arg_names":["s","_class","policy"],"arg_types":["builtins.str",{".class":"CallableType","arg_kinds":[],"arg_names":[],"arg_types":[],"bound_args":[],"def_extras":{},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":null,"ret_type":{".class":"Instance","args":["builtins.str","builtins.str"],"extra_attrs":null,"type_ref":"email.message.Message"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]},{".class":"Instance","args":[{".class":"Instance","args":["builtins.str","builtins.str"],"extra_attrs":null,"type_ref":"email.message.Message"}],"extra_attrs":null,"type_ref":"email._policybase.Policy"}],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"message_from_string","ret_type":{".class":"Instance","args":["builtins.str","builtins.str"],"extra_attrs":null,"type_ref":"email.message.Message"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}}},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/email/__init__.pyi"}
@@ -16604,76 +16844,6 @@ This skill produces:
 {"data_mtime":1767891128,"dep_lines":[1,2,3,4,5,6,1,1,1,1],"dep_prios":[5,5,5,5,5,5,5,30,30,30],"dependencies":["collections.abc","email._policybase","email.contentmanager","email.message","typing","typing_extensions","builtins","_frozen_importlib","abc","types"],"hash":"3e9ef188686de06c51666ef86d0cf6242ccf1995","id":"email.policy","ignore_all":true,"interface_hash":"f315c50ebd654c9f54e0a3943fa0768668516f2d","mtime":1762029370,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/email/policy.pyi","plugin_data":null,"size":2910,"suppressed":[],"version_id":"1.15.0"}
 ```
 
-.mypy_cache/3.12/importlib/__init__.data.json
-```
-{".class":"MypyFile","_fullname":"importlib","future_import_flags":[],"is_partial_stub_package":false,"is_stub":true,"names":{".class":"SymbolTable","Loader":{".class":"SymbolTableNode","cross_ref":"importlib._abc.Loader","kind":"Gdef","module_hidden":true,"module_public":false},"ModuleType":{".class":"SymbolTableNode","cross_ref":"types.ModuleType","kind":"Gdef","module_hidden":true,"module_public":false},"__all__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_inferred","has_explicit_value"],"fullname":"importlib.__all__","name":"__all__","type":{".class":"Instance","args":["builtins.str"],"extra_attrs":null,"type_ref":"builtins.list"}}},"__annotations__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.__annotations__","name":"__annotations__","type":{".class":"Instance","args":["builtins.str",{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":6}],"extra_attrs":null,"type_ref":"builtins.dict"}}},"__doc__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.__doc__","name":"__doc__","type":"builtins.str"}},"__file__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.__file__","name":"__file__","type":"builtins.str"}},"__import__":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib.__import__","kind":"Gdef"},"__name__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.__name__","name":"__name__","type":"builtins.str"}},"__package__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.__package__","name":"__package__","type":"builtins.str"}},"__path__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.__path__","name":"__path__","type":{".class":"Instance","args":["builtins.str"],"extra_attrs":null,"type_ref":"builtins.list"}}},"__spec__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.__spec__","name":"__spec__","type":"_frozen_importlib.ModuleSpec"}},"import_module":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,1],"arg_names":["name","package"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.import_module","name":"import_module","type":{".class":"CallableType","arg_kinds":[0,1],"arg_names":["name","package"],"arg_types":["builtins.str",{".class":"UnionType","items":["builtins.str",{".class":"NoneType"}],"uses_pep604_syntax":true}],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"import_module","ret_type":"types.ModuleType","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"invalidate_caches":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[],"arg_names":[],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.invalidate_caches","name":"invalidate_caches","type":{".class":"CallableType","arg_kinds":[],"arg_names":[],"arg_types":[],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"invalidate_caches","ret_type":{".class":"NoneType"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"reload":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0],"arg_names":["module"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.reload","name":"reload","type":{".class":"CallableType","arg_kinds":[0],"arg_names":["module"],"arg_types":["types.ModuleType"],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"reload","ret_type":"types.ModuleType","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"sys":{".class":"SymbolTableNode","cross_ref":"sys","kind":"Gdef","module_hidden":true,"module_public":false}},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/importlib/__init__.pyi"}
-```
-
-.mypy_cache/3.12/importlib/__init__.meta.json
-```
-{"data_mtime":1767891128,"dep_lines":[2,3,1,4,1,1,1,1,1],"dep_prios":[5,5,10,5,5,30,30,30,30],"dependencies":["importlib._bootstrap","importlib.abc","sys","types","builtins","_frozen_importlib","_typeshed","abc","typing"],"hash":"696eed73d030a0492323852b916bb4655325693b","id":"importlib","ignore_all":true,"interface_hash":"2f6b9e91b142fb668e81bf14198347e7189c5a60","mtime":1762029371,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/importlib/__init__.pyi","plugin_data":null,"size":569,"suppressed":[],"version_id":"1.15.0"}
-```
-
-.mypy_cache/3.12/importlib/_abc.data.json
-```
-{".class":"MypyFile","_fullname":"importlib._abc","future_import_flags":[],"is_partial_stub_package":false,"is_stub":true,"names":{".class":"SymbolTable","ABCMeta":{".class":"SymbolTableNode","cross_ref":"abc.ABCMeta","kind":"Gdef","module_hidden":true,"module_public":false},"Loader":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["builtins.object"],"dataclass_transform_spec":null,"declared_metaclass":"abc.ABCMeta","defn":{".class":"ClassDef","fullname":"importlib._abc.Loader","name":"Loader","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":[],"fullname":"importlib._abc.Loader","has_param_spec_type":false,"metaclass_type":"abc.ABCMeta","metadata":{},"module_name":"importlib._abc","mro":["importlib._abc.Loader","builtins.object"],"names":{".class":"SymbolTable","create_module":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0],"arg_names":["self","spec"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib._abc.Loader.create_module","name":"create_module","type":{".class":"CallableType","arg_kinds":[0,0],"arg_names":["self","spec"],"arg_types":["importlib._abc.Loader","_frozen_importlib.ModuleSpec"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"create_module of Loader","ret_type":{".class":"UnionType","items":["types.ModuleType",{".class":"NoneType"}],"uses_pep604_syntax":true},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"exec_module":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0],"arg_names":["self","module"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib._abc.Loader.exec_module","name":"exec_module","type":{".class":"CallableType","arg_kinds":[0,0],"arg_names":["self","module"],"arg_types":["importlib._abc.Loader","types.ModuleType"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"exec_module of Loader","ret_type":{".class":"NoneType"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"load_module":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0],"arg_names":["self","fullname"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib._abc.Loader.load_module","name":"load_module","type":{".class":"CallableType","arg_kinds":[0,0],"arg_names":["self","fullname"],"arg_types":["importlib._abc.Loader","builtins.str"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"load_module of Loader","ret_type":"types.ModuleType","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}}},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"ModuleSpec":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib.ModuleSpec","kind":"Gdef","module_hidden":true,"module_public":false},"__annotations__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib._abc.__annotations__","name":"__annotations__","type":{".class":"Instance","args":["builtins.str",{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":6}],"extra_attrs":null,"type_ref":"builtins.dict"}}},"__doc__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib._abc.__doc__","name":"__doc__","type":"builtins.str"}},"__file__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib._abc.__file__","name":"__file__","type":"builtins.str"}},"__name__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib._abc.__name__","name":"__name__","type":"builtins.str"}},"__package__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib._abc.__package__","name":"__package__","type":"builtins.str"}},"__spec__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib._abc.__spec__","name":"__spec__","type":"_frozen_importlib.ModuleSpec"}},"sys":{".class":"SymbolTableNode","cross_ref":"sys","kind":"Gdef","module_hidden":true,"module_public":false},"types":{".class":"SymbolTableNode","cross_ref":"types","kind":"Gdef","module_hidden":true,"module_public":false}},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/importlib/_abc.pyi"}
-```
-
-.mypy_cache/3.12/importlib/_abc.meta.json
-```
-{"data_mtime":1767891128,"dep_lines":[4,1,2,3,1,1,1,1],"dep_prios":[5,10,10,5,5,30,30,30],"dependencies":["importlib.machinery","sys","types","abc","builtins","_frozen_importlib","_typeshed","typing"],"hash":"0d42dcd951013ab41bdf924bf5ec37f00714a257","id":"importlib._abc","ignore_all":true,"interface_hash":"679f0dfcb9881dfe1fb70a5710f8c36fa5434f0b","mtime":1762029371,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/importlib/_abc.pyi","plugin_data":null,"size":609,"suppressed":[],"version_id":"1.15.0"}
-```
-
-.mypy_cache/3.12/importlib/_bootstrap.data.json
-```
-{".class":"MypyFile","_fullname":"importlib._bootstrap","future_import_flags":[],"is_partial_stub_package":false,"is_stub":true,"names":{".class":"SymbolTable","BuiltinImporter":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib.BuiltinImporter","kind":"Gdef"},"FrozenImporter":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib.FrozenImporter","kind":"Gdef"},"ModuleSpec":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib.ModuleSpec","kind":"Gdef"},"__annotations__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib._bootstrap.__annotations__","name":"__annotations__","type":{".class":"Instance","args":["builtins.str",{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":6}],"extra_attrs":null,"type_ref":"builtins.dict"}}},"__doc__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib._bootstrap.__doc__","name":"__doc__","type":"builtins.str"}},"__file__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib._bootstrap.__file__","name":"__file__","type":"builtins.str"}},"__import__":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib.__import__","kind":"Gdef"},"__name__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib._bootstrap.__name__","name":"__name__","type":"builtins.str"}},"__package__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib._bootstrap.__package__","name":"__package__","type":"builtins.str"}},"__spec__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib._bootstrap.__spec__","name":"__spec__","type":"_frozen_importlib.ModuleSpec"}},"_init_module_attrs":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib._init_module_attrs","kind":"Gdef"},"module_from_spec":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib.module_from_spec","kind":"Gdef"},"spec_from_loader":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib.spec_from_loader","kind":"Gdef"}},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/importlib/_bootstrap.pyi"}
-```
-
-.mypy_cache/3.12/importlib/_bootstrap.meta.json
-```
-{"data_mtime":1767891128,"dep_lines":[1,1,1,1],"dep_prios":[5,5,30,30],"dependencies":["_frozen_importlib","builtins","abc","typing"],"hash":"91c3b137c6c392ec8ff0705874f87160198ae9af","id":"importlib._bootstrap","ignore_all":true,"interface_hash":"359042224562ef4fe5a1ba87464aa3c2c1b1616c","mtime":1762029371,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/importlib/_bootstrap.pyi","plugin_data":null,"size":129,"suppressed":[],"version_id":"1.15.0"}
-```
-
-.mypy_cache/3.12/importlib/_bootstrap_external.data.json
-```
-{".class":"MypyFile","_fullname":"importlib._bootstrap_external","future_import_flags":[],"is_partial_stub_package":false,"is_stub":true,"names":{".class":"SymbolTable","BYTECODE_SUFFIXES":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.BYTECODE_SUFFIXES","kind":"Gdef"},"DEBUG_BYTECODE_SUFFIXES":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.DEBUG_BYTECODE_SUFFIXES","kind":"Gdef"},"EXTENSION_SUFFIXES":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.EXTENSION_SUFFIXES","kind":"Gdef"},"ExtensionFileLoader":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.ExtensionFileLoader","kind":"Gdef"},"FileFinder":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.FileFinder","kind":"Gdef"},"FileLoader":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.FileLoader","kind":"Gdef"},"MAGIC_NUMBER":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.MAGIC_NUMBER","kind":"Gdef"},"NamespaceLoader":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.NamespaceLoader","kind":"Gdef"},"OPTIMIZED_BYTECODE_SUFFIXES":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.OPTIMIZED_BYTECODE_SUFFIXES","kind":"Gdef"},"PathFinder":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.PathFinder","kind":"Gdef"},"SOURCE_SUFFIXES":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.SOURCE_SUFFIXES","kind":"Gdef"},"SourceFileLoader":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.SourceFileLoader","kind":"Gdef"},"SourceLoader":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.SourceLoader","kind":"Gdef"},"SourcelessFileLoader":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.SourcelessFileLoader","kind":"Gdef"},"WindowsRegistryFinder":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.WindowsRegistryFinder","kind":"Gdef"},"_NamespaceLoader":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external._NamespaceLoader","kind":"Gdef"},"__annotations__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib._bootstrap_external.__annotations__","name":"__annotations__","type":{".class":"Instance","args":["builtins.str",{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":6}],"extra_attrs":null,"type_ref":"builtins.dict"}}},"__doc__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib._bootstrap_external.__doc__","name":"__doc__","type":"builtins.str"}},"__file__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib._bootstrap_external.__file__","name":"__file__","type":"builtins.str"}},"__name__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib._bootstrap_external.__name__","name":"__name__","type":"builtins.str"}},"__package__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib._bootstrap_external.__package__","name":"__package__","type":"builtins.str"}},"__spec__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib._bootstrap_external.__spec__","name":"__spec__","type":"_frozen_importlib.ModuleSpec"}},"cache_from_source":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.cache_from_source","kind":"Gdef"},"decode_source":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.decode_source","kind":"Gdef"},"path_sep":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.path_sep","kind":"Gdef"},"path_sep_tuple":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.path_sep_tuple","kind":"Gdef"},"path_separators":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.path_separators","kind":"Gdef"},"source_from_cache":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.source_from_cache","kind":"Gdef"},"spec_from_file_location":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.spec_from_file_location","kind":"Gdef"}},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/importlib/_bootstrap_external.pyi"}
-```
-
-.mypy_cache/3.12/importlib/_bootstrap_external.meta.json
-```
-{"data_mtime":1767891128,"dep_lines":[1,1,1,1,1],"dep_prios":[5,5,30,30,30],"dependencies":["_frozen_importlib_external","builtins","_frozen_importlib","abc","typing"],"hash":"68022b896ef0de6f8da7d6c9d4d434abd95c0da6","id":"importlib._bootstrap_external","ignore_all":true,"interface_hash":"29e4625cfe94a51fc807e0b0cc0d848246201dc4","mtime":1762029371,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/importlib/_bootstrap_external.pyi","plugin_data":null,"size":117,"suppressed":[],"version_id":"1.15.0"}
-```
-
-.mypy_cache/3.12/importlib/abc.data.json
-```
-[TRUNCATED]
-```
-
-.mypy_cache/3.12/importlib/abc.meta.json
-```
-{"data_mtime":1767891128,"dep_lines":[6,7,8,28,1,2,3,4,5,7,9,10,1,1,1,1,1,1,1],"dep_prios":[5,10,5,5,10,10,10,5,5,20,5,5,5,30,30,30,30,30,30],"dependencies":["collections.abc","importlib._bootstrap_external","importlib.machinery","importlib._abc","_ast","sys","types","_typeshed","abc","importlib","io","typing","builtins","_collections_abc","_frozen_importlib","_frozen_importlib_external","_io","ast","os"],"hash":"1cb0e78eb5b401e80f23dcaa5278ea291f53e7dc","id":"importlib.abc","ignore_all":true,"interface_hash":"4d824e1682260fe00c898198ef9162a97549eb07","mtime":1762029371,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/importlib/abc.pyi","plugin_data":null,"size":7123,"suppressed":[],"version_id":"1.15.0"}
-```
-
-.mypy_cache/3.12/importlib/machinery.data.json
-```
-{".class":"MypyFile","_fullname":"importlib.machinery","future_import_flags":[],"is_partial_stub_package":false,"is_stub":true,"names":{".class":"SymbolTable","BYTECODE_SUFFIXES":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.BYTECODE_SUFFIXES","kind":"Gdef"},"BuiltinImporter":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib.BuiltinImporter","kind":"Gdef"},"DEBUG_BYTECODE_SUFFIXES":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.DEBUG_BYTECODE_SUFFIXES","kind":"Gdef"},"EXTENSION_SUFFIXES":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.EXTENSION_SUFFIXES","kind":"Gdef"},"ExtensionFileLoader":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.ExtensionFileLoader","kind":"Gdef"},"FileFinder":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.FileFinder","kind":"Gdef"},"FrozenImporter":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib.FrozenImporter","kind":"Gdef"},"ModuleSpec":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib.ModuleSpec","kind":"Gdef"},"NamespaceLoader":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.NamespaceLoader","kind":"Gdef"},"OPTIMIZED_BYTECODE_SUFFIXES":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.OPTIMIZED_BYTECODE_SUFFIXES","kind":"Gdef"},"PathFinder":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.PathFinder","kind":"Gdef"},"SOURCE_SUFFIXES":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.SOURCE_SUFFIXES","kind":"Gdef"},"SourceFileLoader":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.SourceFileLoader","kind":"Gdef"},"SourcelessFileLoader":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.SourcelessFileLoader","kind":"Gdef"},"WindowsRegistryFinder":{".class":"SymbolTableNode","cross_ref":"_frozen_importlib_external.WindowsRegistryFinder","kind":"Gdef"},"__annotations__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.machinery.__annotations__","name":"__annotations__","type":{".class":"Instance","args":["builtins.str",{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":6}],"extra_attrs":null,"type_ref":"builtins.dict"}}},"__doc__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.machinery.__doc__","name":"__doc__","type":"builtins.str"}},"__file__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.machinery.__file__","name":"__file__","type":"builtins.str"}},"__name__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.machinery.__name__","name":"__name__","type":"builtins.str"}},"__package__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.machinery.__package__","name":"__package__","type":"builtins.str"}},"__spec__":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.machinery.__spec__","name":"__spec__","type":"_frozen_importlib.ModuleSpec"}},"all_suffixes":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[],"arg_names":[],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.machinery.all_suffixes","name":"all_suffixes","type":{".class":"CallableType","arg_kinds":[],"arg_names":[],"arg_types":[],"bound_args":[],"def_extras":{"first_arg":null},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"all_suffixes","ret_type":{".class":"Instance","args":["builtins.str"],"extra_attrs":null,"type_ref":"builtins.list"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"sys":{".class":"SymbolTableNode","cross_ref":"sys","kind":"Gdef","module_hidden":true,"module_public":false}},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/importlib/machinery.pyi"}
-```
-
-.mypy_cache/3.12/importlib/machinery.meta.json
-```
-{"data_mtime":1767891128,"dep_lines":[2,3,1,1,1,1,1,1],"dep_prios":[5,5,10,5,30,30,30,30],"dependencies":["importlib._bootstrap","importlib._bootstrap_external","sys","builtins","_frozen_importlib","_typeshed","abc","typing"],"hash":"a306f9942e253d05433d97fbf1113fd4f35bdb58","id":"importlib.machinery","ignore_all":true,"interface_hash":"e008efc8995a7c3798e9267cf617f11c6cac286e","mtime":1762029371,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/importlib/machinery.pyi","plugin_data":null,"size":839,"suppressed":[],"version_id":"1.15.0"}
-```
-
-.mypy_cache/3.12/importlib/readers.data.json
-```
-{".class":"MypyFile","_fullname":"importlib.readers","future_import_flags":[],"is_partial_stub_package":false,"is_stub":true,"names":{".class":"SymbolTable","BufferedReader":{".class":"SymbolTableNode","cross_ref":"_io.BufferedReader","kind":"Gdef","module_hidden":true,"module_public":false},"FileReader":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["importlib.abc.TraversableResources"],"dataclass_transform_spec":null,"declared_metaclass":null,"defn":{".class":"ClassDef","fullname":"importlib.readers.FileReader","name":"FileReader","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":[],"fullname":"importlib.readers.FileReader","has_param_spec_type":false,"metaclass_type":"abc.ABCMeta","metadata":{},"module_name":"importlib.readers","mro":["importlib.readers.FileReader","importlib.abc.TraversableResources","importlib.abc.ResourceReader","builtins.object"],"names":{".class":"SymbolTable","__init__":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0],"arg_names":["self","loader"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.readers.FileReader.__init__","name":"__init__","type":{".class":"CallableType","arg_kinds":[0,0],"arg_names":["self","loader"],"arg_types":["importlib.readers.FileReader",{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":1}],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"__init__ of FileReader","ret_type":{".class":"NoneType"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"files":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0],"arg_names":["self"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.readers.FileReader.files","name":"files","type":{".class":"CallableType","arg_kinds":[0],"arg_names":["self"],"arg_types":["importlib.readers.FileReader"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"files of FileReader","ret_type":"pathlib.Path","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"path":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"Var","flags":["is_initialized_in_class","is_ready"],"fullname":"importlib.readers.FileReader.path","name":"path","type":"pathlib.Path"}},"resource_path":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0],"arg_names":["self","resource"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.readers.FileReader.resource_path","name":"resource_path","type":{".class":"CallableType","arg_kinds":[0,0],"arg_names":["self","resource"],"arg_types":["importlib.readers.FileReader",{".class":"TypeAliasType","args":[],"type_ref":"_typeshed.StrPath"}],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"resource_path of FileReader","ret_type":"builtins.str","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}}},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"Incomplete":{".class":"SymbolTableNode","cross_ref":"_typeshed.Incomplete","kind":"Gdef","module_hidden":true,"module_public":false},"Iterable":{".class":"SymbolTableNode","cross_ref":"typing.Iterable","kind":"Gdef","module_hidden":true,"module_public":false},"Iterator":{".class":"SymbolTableNode","cross_ref":"typing.Iterator","kind":"Gdef","module_hidden":true,"module_public":false},"Literal":{".class":"SymbolTableNode","cross_ref":"typing.Literal","kind":"Gdef","module_hidden":true,"module_public":false},"MultiplexedPath":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["importlib.abc.Traversable"],"dataclass_transform_spec":null,"declared_metaclass":null,"defn":{".class":"ClassDef","fullname":"importlib.readers.MultiplexedPath","name":"MultiplexedPath","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":[],"fullname":"importlib.readers.MultiplexedPath","has_param_spec_type":false,"metaclass_type":"abc.ABCMeta","metadata":{},"module_name":"importlib.readers","mro":["importlib.readers.MultiplexedPath","importlib.abc.Traversable","builtins.object"],"names":{".class":"SymbolTable","__init__":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,2],"arg_names":["self","paths"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.readers.MultiplexedPath.__init__","name":"__init__","type":{".class":"CallableType","arg_kinds":[0,2],"arg_names":["self","paths"],"arg_types":["importlib.readers.MultiplexedPath","importlib.abc.Traversable"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"__init__ of MultiplexedPath","ret_type":{".class":"NoneType"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"is_dir":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0],"arg_names":["self"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.readers.MultiplexedPath.is_dir","name":"is_dir","type":{".class":"CallableType","arg_kinds":[0],"arg_names":["self"],"arg_types":["importlib.readers.MultiplexedPath"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"is_dir of MultiplexedPath","ret_type":{".class":"LiteralType","fallback":"builtins.bool","value":true},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"is_file":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0],"arg_names":["self"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.readers.MultiplexedPath.is_file","name":"is_file","type":{".class":"CallableType","arg_kinds":[0],"arg_names":["self"],"arg_types":["importlib.readers.MultiplexedPath"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"is_file of MultiplexedPath","ret_type":{".class":"LiteralType","fallback":"builtins.bool","value":false},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"iterdir":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0],"arg_names":["self"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.readers.MultiplexedPath.iterdir","name":"iterdir","type":{".class":"CallableType","arg_kinds":[0],"arg_names":["self"],"arg_types":["importlib.readers.MultiplexedPath"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"iterdir of MultiplexedPath","ret_type":{".class":"Instance","args":["importlib.abc.Traversable"],"extra_attrs":null,"type_ref":"typing.Iterator"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"joinpath":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,2],"arg_names":["self","descendants"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.readers.MultiplexedPath.joinpath","name":"joinpath","type":{".class":"CallableType","arg_kinds":[0,2],"arg_names":["self","descendants"],"arg_types":["importlib.readers.MultiplexedPath","builtins.str"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"joinpath of MultiplexedPath","ret_type":"importlib.abc.Traversable","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"name":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"Decorator","func":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0],"arg_names":["self"],"dataclass_transform_spec":null,"deprecated":null,"flags":["is_property","is_decorated"],"fullname":"importlib.readers.MultiplexedPath.name","name":"name","type":{".class":"CallableType","arg_kinds":[0],"arg_names":["self"],"arg_types":["importlib.readers.MultiplexedPath"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"name of MultiplexedPath","ret_type":"builtins.str","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}},"is_overload":false,"var":{".class":"Var","flags":["is_initialized_in_class","is_property","is_ready","is_inferred"],"fullname":"importlib.readers.MultiplexedPath.name","name":"name","type":{".class":"CallableType","arg_kinds":[0],"arg_names":["self"],"arg_types":["importlib.readers.MultiplexedPath"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"name of MultiplexedPath","ret_type":"builtins.str","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}}},"open":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,2,4],"arg_names":["self","args","kwargs"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.readers.MultiplexedPath.open","name":"open","type":{".class":"CallableType","arg_kinds":[0,2,4],"arg_names":["self","args","kwargs"],"arg_types":["importlib.readers.MultiplexedPath",{".class":"UninhabitedType"},{".class":"UninhabitedType"}],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"open of MultiplexedPath","ret_type":{".class":"UninhabitedType"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"read_bytes":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0],"arg_names":["self"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.readers.MultiplexedPath.read_bytes","name":"read_bytes","type":{".class":"CallableType","arg_kinds":[0],"arg_names":["self"],"arg_types":["importlib.readers.MultiplexedPath"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"read_bytes of MultiplexedPath","ret_type":{".class":"UninhabitedType"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"read_text":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,2,4],"arg_names":["self","args","kwargs"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.readers.MultiplexedPath.read_text","name":"read_text","type":{".class":"CallableType","arg_kinds":[0,2,4],"arg_names":["self","args","kwargs"],"arg_types":["importlib.readers.MultiplexedPath",{".class":"UninhabitedType"},{".class":"UninhabitedType"}],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"read_text of MultiplexedPath","ret_type":{".class":"UninhabitedType"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}}},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"NamespaceReader":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["importlib.abc.TraversableResources"],"dataclass_transform_spec":null,"declared_metaclass":null,"defn":{".class":"ClassDef","fullname":"importlib.readers.NamespaceReader","name":"NamespaceReader","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":[],"fullname":"importlib.readers.NamespaceReader","has_param_spec_type":false,"metaclass_type":"abc.ABCMeta","metadata":{},"module_name":"importlib.readers","mro":["importlib.readers.NamespaceReader","importlib.abc.TraversableResources","importlib.abc.ResourceReader","builtins.object"],"names":{".class":"SymbolTable","__init__":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0],"arg_names":["self","namespace_path"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.readers.NamespaceReader.__init__","name":"__init__","type":{".class":"CallableType","arg_kinds":[0,0],"arg_names":["self","namespace_path"],"arg_types":["importlib.readers.NamespaceReader",{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":1}],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"__init__ of NamespaceReader","ret_type":{".class":"NoneType"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"files":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0],"arg_names":["self"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.readers.NamespaceReader.files","name":"files","type":{".class":"CallableType","arg_kinds":[0],"arg_names":["self"],"arg_types":["importlib.readers.NamespaceReader"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"files of NamespaceReader","ret_type":"importlib.readers.MultiplexedPath","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"path":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"Var","flags":["is_initialized_in_class","is_ready"],"fullname":"importlib.readers.NamespaceReader.path","name":"path","type":"importlib.readers.MultiplexedPath"}},"resource_path":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0],"arg_names":["self","resource"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.readers.NamespaceReader.resource_path","name":"resource_path","type":{".class":"CallableType","arg_kinds":[0,0],"arg_names":["self","resource"],"arg_types":["importlib.readers.NamespaceReader","builtins.str"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"resource_path of NamespaceReader","ret_type":"builtins.str","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}}},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"Never":{".class":"SymbolTableNode","cross_ref":"typing.Never","kind":"Gdef","module_hidden":true,"module_public":false},"NoReturn":{".class":"SymbolTableNode","cross_ref":"typing.NoReturn","kind":"Gdef","module_hidden":true,"module_public":false},"StrPath":{".class":"SymbolTableNode","cross_ref":"_typeshed.StrPath","kind":"Gdef","module_hidden":true,"module_public":false},"TypeVar":{".class":"SymbolTableNode","cross_ref":"typing.TypeVar","kind":"Gdef","module_hidden":true,"module_public":false},"ZipReader":{".class":"SymbolTableNode","kind":"Gdef","node":{".class":"TypeInfo","_promote":[],"abstract_attributes":[],"alt_promote":null,"bases":["importlib.abc.TraversableResources"],"dataclass_transform_spec":null,"declared_metaclass":null,"defn":{".class":"ClassDef","fullname":"importlib.readers.ZipReader","name":"ZipReader","type_vars":[]},"deletable_attributes":[],"deprecated":null,"flags":[],"fullname":"importlib.readers.ZipReader","has_param_spec_type":false,"metaclass_type":"abc.ABCMeta","metadata":{},"module_name":"importlib.readers","mro":["importlib.readers.ZipReader","importlib.abc.TraversableResources","importlib.abc.ResourceReader","builtins.object"],"names":{".class":"SymbolTable","__init__":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0,0],"arg_names":["self","loader","module"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.readers.ZipReader.__init__","name":"__init__","type":{".class":"CallableType","arg_kinds":[0,0,0],"arg_names":["self","loader","module"],"arg_types":["importlib.readers.ZipReader",{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":1},"builtins.str"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"__init__ of ZipReader","ret_type":{".class":"NoneType"},"type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"archive":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"Var","flags":["is_initialized_in_class","is_ready"],"fullname":"importlib.readers.ZipReader.archive","name":"archive","type":{".class":"TypeAliasType","args":[],"type_ref":"_typeshed.Incomplete"}}},"files":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0],"arg_names":["self"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.readers.ZipReader.files","name":"files","type":{".class":"CallableType","arg_kinds":[0],"arg_names":["self"],"arg_types":["importlib.readers.ZipReader"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"files of ZipReader","ret_type":"zipfile._path.Path","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"is_resource":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0],"arg_names":["self","path"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.readers.ZipReader.is_resource","name":"is_resource","type":{".class":"CallableType","arg_kinds":[0,0],"arg_names":["self","path"],"arg_types":["importlib.readers.ZipReader",{".class":"TypeAliasType","args":[],"type_ref":"_typeshed.StrPath"}],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"is_resource of ZipReader","ret_type":"builtins.bool","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"open_resource":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"FuncDef","abstract_status":0,"arg_kinds":[0,0],"arg_names":["self","resource"],"dataclass_transform_spec":null,"deprecated":null,"flags":[],"fullname":"importlib.readers.ZipReader.open_resource","name":"open_resource","type":{".class":"CallableType","arg_kinds":[0,0],"arg_names":["self","resource"],"arg_types":["importlib.readers.ZipReader","builtins.str"],"bound_args":[],"def_extras":{"first_arg":"self"},"fallback":"builtins.function","from_concatenate":false,"implicit":false,"imprecise_arg_kinds":false,"is_ellipsis_args":false,"name":"open_resource of ZipReader","ret_type":"_io.BufferedReader","type_guard":null,"type_is":null,"unpack_kwargs":false,"variables":[]}}},"prefix":{".class":"SymbolTableNode","kind":"Mdef","node":{".class":"Var","flags":["is_initialized_in_class","is_ready"],"fullname":"importlib.readers.ZipReader.prefix","name":"prefix","type":"builtins.str"}}},"self_type":null,"slots":null,"tuple_type":null,"type_vars":[],"typeddict_type":null}},"__all__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_inferred","has_explicit_value"],"fullname":"importlib.readers.__all__","name":"__all__","type":{".class":"Instance","args":["builtins.str"],"extra_attrs":null,"type_ref":"builtins.list"}}},"__annotations__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.readers.__annotations__","name":"__annotations__","type":{".class":"Instance","args":["builtins.str",{".class":"AnyType","missing_import_name":null,"source_any":null,"type_of_any":6}],"extra_attrs":null,"type_ref":"builtins.dict"}}},"__doc__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.readers.__doc__","name":"__doc__","type":"builtins.str"}},"__file__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.readers.__file__","name":"__file__","type":"builtins.str"}},"__name__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.readers.__name__","name":"__name__","type":"builtins.str"}},"__package__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.readers.__package__","name":"__package__","type":"builtins.str"}},"__spec__":{".class":"SymbolTableNode","kind":"Gdef","module_public":false,"node":{".class":"Var","flags":["is_ready"],"fullname":"importlib.readers.__spec__","name":"__spec__","type":"_frozen_importlib.ModuleSpec"}},"abc":{".class":"SymbolTableNode","cross_ref":"importlib.resources.abc","kind":"Gdef","module_hidden":true,"module_public":false},"pathlib":{".class":"SymbolTableNode","cross_ref":"pathlib","kind":"Gdef","module_hidden":true,"module_public":false},"sys":{".class":"SymbolTableNode","cross_ref":"sys","kind":"Gdef","module_hidden":true,"module_public":false},"zipfile":{".class":"SymbolTableNode","cross_ref":"zipfile","kind":"Gdef","module_hidden":true,"module_public":false}},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/importlib/readers.pyi"}
-```
-
-.mypy_cache/3.12/importlib/readers.meta.json
-```
-{"data_mtime":1767891128,"dep_lines":[15,9,15,5,6,7,8,10,11,12,15,1,1,1,1,1,1,1,1],"dep_prios":[10,5,20,10,10,10,5,5,5,5,20,5,30,30,30,30,30,30,30],"dependencies":["importlib.resources.abc","collections.abc","importlib.resources","pathlib","sys","zipfile","_typeshed","io","typing","typing_extensions","importlib","builtins","_frozen_importlib","_io","abc","importlib.abc","os","types","zipfile._path"],"hash":"5527c48630fb2b623985ff211aabecfaba9fa570","id":"importlib.readers","ignore_all":true,"interface_hash":"195c3fcc79e512613b09739f7a932b24537778c6","mtime":1762029371,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/importlib/readers.pyi","plugin_data":null,"size":2584,"suppressed":[],"version_id":"1.15.0"}
-```
-
 .mypy_cache/3.12/os/__init__.data.json
 ```
 [TRUNCATED]
@@ -16722,6 +16892,3511 @@ This skill produces:
 .mypy_cache/3.12/zipfile/__init__.meta.json
 ```
 {"data_mtime":1767891128,"dep_lines":[4,293,1,2,3,6,7,8,9,1,1,1,1,1],"dep_prios":[5,5,5,10,5,5,5,5,5,5,30,30,30,30],"dependencies":["collections.abc","zipfile._path","io","sys","_typeshed","os","types","typing","typing_extensions","builtins","_collections_abc","_frozen_importlib","_io","abc"],"hash":"8fc6699ae0c00ae6b83f2797cf0e4e82c9c29e8d","id":"zipfile","ignore_all":true,"interface_hash":"1b8099e3947a81abb54f0573215cb799da70bee4","mtime":1762029371,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/zipfile/__init__.pyi","plugin_data":null,"size":12704,"suppressed":[],"version_id":"1.15.0"}
+```
+
+docs/oracle-questions-2026-01-08/actions/01-contracts-interfaces-ticket-surface.md
+```
+Direct answer (public surface changes; backwards-compat called out)
+
+Clarify/document Action Pack execution semantics: steps run as bash -lc ..., and oraclepack’s “special handling” (flag injection/override validation) only applies to commands that begin with oracle (today). This is a user-facing CLI/TUI documentation surface change (README and/or oraclepack-tui.md-style docs). 
+
+Oraclepack_Compatibility_Issues
+
+ 
+
+Oraclepack_Compatibility_Issues
+
+Dispatcher/command-detection contract expansion: update command detection from an oracle-anchored regex (noted as ^(\\s*)(oracle)\\b) so non-oracle tools (tm/task-master, codex, gemini) can be treated as first-class step commands for override/dispatch purposes. Back-compat constraint: preserve existing behavior for oracle ... commands. 
+
+Oraclepack_Compatibility_Issues
+
+ 
+
+Oraclepack_Compatibility_Issues
+
+Override validation behavior change (TUI/CI surface): today validation runs oracle --dry-run summary on detected oracle invocations and skips steps without oracle invocations; tickets imply extending or restructuring validation so steps containing tm/task-master, codex, gemini are not silently excluded. Back-compat constraint: do not regress the current oracle-only validation flow. 
+
+Oraclepack_Compatibility_Issues
+
+ 
+
+Oraclepack_Compatibility_Issues
+
+ticket-action-pack.md content contract change: replace placeholder steps (explicitly 09–13 and 16) with headless gemini + non-interactive codex exec automation, while keeping the pack ingestible (single bash fence, 20-step structure). Back-compat constraint: keep Steps 01–07 semantics unchanged. 
+
+Oraclepack_Compatibility_Issues
+
+ 
+
+Oraclepack_Compatibility_Issues
+
+New output artifact interface for the action workflow: introduce/standardize generated files under .oraclepack/ticketify/ (e.g., next.json, codex-implement.md, codex-verify.md and/or gemini-review.json, PR.md) as “expected outputs” of those steps. Back-compat constraint: paths must match the step examples; don’t move or rename without versioning. 
+
+Oraclepack_Compatibility_Issues
+
+ 
+
+Oraclepack_Compatibility_Issues
+
+Tool-availability/timeout behavior requirements become part of the pack’s operational contract: add command -v ... guards and documented “skip” behavior to avoid hard failures when codex/gemini are missing; also explicitly call out “interactive CLI blocks” risk. Back-compat constraint: default runs shouldn’t newly fail just because optional tools aren’t installed. 
+
+Oraclepack_Compatibility_Issues
+
+ 
+
+Oraclepack_Compatibility_Issues
+
+Taskify Action Pack generator surface: add an “agent-mode” option for taskify-generated packs (suggested mode=codex / mode=gemini) that swaps the existing autopilot entrypoint step with an agent implementation step, without changing the 20-step contract. Back-compat constraint: default mode should remain the current behavior; agent-mode must be opt-in. 
+
+Oraclepack_Compatibility_Issues
+
+ 
+
+Oraclepack_Compatibility_Issues
+
+“Pack schema” remains a hard compatibility boundary: multiple tickets restate that the Action Pack must remain oraclepack-ingestible (single `bas
+```
+
+docs/oracle-questions-2026-01-08/actions/02-contracts-interfaces-integration-points.md
+```
+Direct answer (external integrations, required config/contract changes, failure/timeout, rollout)
+
+Task Master CLI integration is assumed: Action Packs invoke task-master / tm for PRD parsing, complexity analysis, and task expansion; this implies the runtime environment must have Task Master installed and configured, and the pack writes/reads Task Master artifacts (e.g., .taskmaster/docs/tickets_prd.md, .oraclepack/ticketify/tm-complexity.json). 
+
+Oraclepack_Compatibility_Issues
+
+Codex CLI integration is implied for “implementation” and “verification”: placeholder steps (notably Step 10 and optionally Step 11) are intended to run codex exec non-interactively and emit .oraclepack/ticketify/codex-implement.md and .oraclepack/ticketify/codex-verify.md. 
+
+Oraclepack_Compatibility_Issues
+
+Gemini CLI integration is implied for “selection” and “PR drafting”: placeholder steps (notably Step 09 and Step 16, and optionally Step 11) are intended to run headless gemini and write .oraclepack/ticketify/next.json, .oraclepack/ticketify/PR.md, and optionally .oraclepack/ticketify/gemini-review.json. 
+
+Oraclepack_Compatibility_Issues
+
+Oracle CLI integration is the only integration that currently receives oraclepack’s special handling: oraclepack injects flags / performs validation only for commands beginning with oracle (regex anchored to ^(\\s*)(oracle)\\b), while tm/task-master, codex, gemini run as raw shell commands. 
+
+Oraclepack_Compatibility_Issues
+
+Required contract change (dispatcher/validation): extend oraclepack’s command detection + override/validation pipeline beyond oracle-prefixed commands so steps containing tm/task-master, codex, gemini are no longer excluded from override/validation purely due to prefix mismatch; must preserve existing oracle behavior. 
+
+Oraclepack_Compatibility_Issues
+
+Required pack-template change (ticketify Action Pack): replace the placeholder/echo-only steps (08–20) with real, headless commands in the suggested slots (09–13 and 16) and enforce deterministic output paths under .oraclepack/ticketify/ (e.g., next.json, codex-implement.md, codex-verify.md, gemini-review.json, PR.md). 
+
+Oraclepack_Compatibility_Issues
+
+Required generator change (taskify Action Packs): add an “agent-mode” switch (suggested mode=codex / mode=gemini) that swaps an existing step-slot (not an added step) “right after Task Master expands tasks,” keeping the 20-step contract intact. 
+
+Oraclepack_Compatibility_Issues
+
+Failure/timeout behavior implied by tickets: every step is executed as a literal bash -lc ... script; if a CLI is interactive it can block waiting for input, and if a binary is missing from PATH the step fails unless the step explicitly guards/skips via command -v ... checks. 
+
+Oraclepack_Compatibility_Issues
+
+Failure behavior implied by tickets: ROI filtering can skip steps that lack an ROI= annotation when a threshold > 0 is used (“ROI filter gotcha”), which can silently skip non-annotated automation steps unless you standardize ROI tags for them. 
+
+Oraclepack_Compatibility_Issues
+
+Minimal compat-safe rollout sequence: (1) document current semantics + failure modes (no behavior change), then (2) update ticket-action-pack.md placeholder steps using guarded command -v + non-interactive/headless flags (no oraclepack core change), then (3) introduce dispatcher/validation broadening behind an opt-in flag or “mode” to preserve default oracle-only semantics.
+
+Risks/unknowns
+
+The tickets explicitly note the spec gap: “exact desired behavior for applying overrides” to tm/task-master, codex, gemini (which flags, what validation) is not provided, so d
+```
+
+docs/oracle-questions-2026-01-08/actions/03-invariants-invariant-map.md
+```
+Direct answer (system invariants + where to enforce them)
+
+Invariant: Action Packs must be “oraclepack-ingestible”: a single bash code fence containing numbered step headers # NN) (and the broader workflow expects a fixed step contract). Enforce in a pack parser/validator (structural validation before execution) and in pack generators/templates (to prevent emitting invalid shapes). 
+
+Oraclepack_Compatibility_Issues
+
+ 
+
+Oraclepack_Compatibility_Issues
+
+Invariant: Step execution semantics are “literal shell”: each step is executed via bash -lc ..., in the project root; oraclepack does not change working directory to out_dir. Enforce by documenting as a non-changing contract, and by adding a “preflight” check in pack Step 01 if any later step assumes paths relative to out_dir. 
+
+Oraclepack_Compatibility_Issues
+
+Invariant: Oraclepack’s override/flag injection applies only to commands that begin with oracle (regex anchored to ^(\\s*)(oracle)\\b); tm/task-master, codex, gemini run directly and do not inherit oracle-specific transforms. Enforce in the override injection stage (explicitly scope the matcher to oracle unless/until dispatcher is extended) and in docs/TUI messaging to prevent incorrect user expectations. 
+
+Oraclepack_Compatibility_Issues
+
+ 
+
+Oraclepack_Compatibility_Issues
+
+Invariant: Override validation behavior in the TUI targets only detected oracle invocations (it runs oracle --dry-run summary and skips steps with no oracle invocations). Enforce in the TUI validation pipeline (make the “oracle-only validation” rule explicit) and ensure validate output clearly distinguishes “not validated (non-oracle)” vs “validated”. 
+
+Oraclepack_Compatibility_Issues
+
+ 
+
+Oraclepack_Compatibility_Issues
+
+Invariant: ROI filtering can skip steps that lack ROI= metadata when a threshold > 0 is used. Enforce in pack generation (always emit ROI metadata if packs are intended to be filtered) and in runtime (warn when filtering is enabled but steps have no ROI fields). 
+
+Oraclepack_Compatibility_Issues
+
+ 
+
+Oraclepack_Compatibility_Issues
+
+Invariant: Placeholder steps do not “magically dispatch” external agents—Steps 08–20 are effectively notes unless the step body contains real commands; if you add codex/gemini, oraclepack will attempt to run them as-is. Enforce via template hygiene (placeholders clearly marked; “agent-mode” packs replace placeholders with real commands) and via validation/docs (set expectations: “no commands, nothing happens”). 
+
+Oraclepack_Compatibility_Issues
+
+ 
+
+Oraclepack_Compatibility_Issues
+
+Invariant: Non-oracle tool availability and interactivity are execution blockers: missing binaries fail steps; interactive CLIs will block unless headless/non-interactive flags are used. Packs that include codex/gemini must include availability guards and skip behavior (e.g., command -v ...). Enforce inside the pack steps themselves (guards + deterministic skip semantics) and optionally in oraclepack preflight (detect missing binaries before running). 
+
+Oraclepack_Compatibility_Issues
+
+ 
+
+Oraclepack_Compatibility_Issues
+
+Invariant: Certain steps are expected to produce specific on-disk artifacts (e.g., .oraclepack/ticketify/_tickets_index.json, _actions.json, _actions.md, .taskmaster/docs/tickets_prd.md, plus later .oraclepack/ticketify/next.json, codex-implement.md, codex-verify.md/gemini-review.json, PR.md). Enforce by (a) pack-level preflight asserting prerequisites exi_
+```
+
+docs/oracle-questions-2026-01-08/actions/04-invariants-validation-boundaries.md
+```
+Direct answer (validation boundaries that must exist; with minimal validation plan)
+
+Pack structure boundary (parser-level): reject any “action pack” that is not oraclepack-ingestible: exactly one fenced bash block, and step headers in the # NN) form (sequential). This is explicitly treated as a global constraint in the ticket content and is the assumed execution contract. 
+
+Oraclepack_Compatibility_Issues
+
+ 
+
+oraclepack-llms-full
+
+Execution semantics boundary (runner-level): treat every step body as literal shell executed via bash -lc … from the project root, with no special routing unless the command begins with oracle. This must be documented and enforced as a “you get what you wrote” boundary to prevent false assumptions about dispatching/wrapping non-oracle tools. 
+
+Oraclepack_Compatibility_Issues
+
+Oracle-only transform/override boundary (validator + injector-level): override injection and “override validation” must only apply to commands that begin with oracle (regex anchored to oracle per ticket), and steps without oracle invocations must not be assumed validated by oracle dry-runs. Validation must therefore (a) detect oracle invocations precisely, and (b) warn (or at least report) that non-oracle steps are outside oracle override validation. 
+
+Oraclepack_Compatibility_Issues
+
+Tooling availability boundary (pack authoring + runtime guard-level): because non-oracle CLIs (tm/task-master, codex, gemini) run directly, packs must either (a) require them explicitly (hard fail), or (b) guard with command -v … and implement “skip” behavior. The ticket explicitly calls out “missing binary on PATH fails” and “interactive blocks” as common failure modes; validation should catch missing guards for steps intended to be optional/headless. 
+
+Oraclepack_Compatibility_Issues
+
+ 
+
+Oraclepack_Compatibility_Issues
+
+Ticket parsing boundary (ticketify step-level): before any “ticketify” logic runs, validate .tickets/ exists (and contains readable ticket files) because missing .tickets/ is called out as a primary failure note; then validate the expected index artifact(s) are produced (e.g., .oraclepack/ticketify/_tickets_index.json). 
+
+Oraclepack_Compatibility_Issues
+
+ 
+
+Oraclepack_Compatibility_Issues
+
+Artifact contract boundary (step-output-level): steps that claim to produce .oraclepack/ticketify/* outputs must be validated for deterministic paths and for actually writing the promised files (e.g., next.json, codex-implement.md, codex-verify.md, gemini-review.json, PR.md). The ticket’s acceptance criteria is already framed this way; validation should mirror it. 
+
+Oraclepack_Compatibility_Issues
+
+ROI filtering boundary (filter-level): if ROI-based filtering is enabled, steps without ROI= may be skipped; packs that rely on certain steps must include ROI tags (or validation must fail/warn when ROI thresholding would skip required steps). 
+
+Oraclepack_Compatibility_Issues
+
+Minimal validation plan (smallest set that covers the boundaries above):
+
+Static pack validation: run oraclepack validate <pack.md> for representative packs (gold pack, ticket-action-pack, and a mixed-tool pack). 
+
+oraclepack-llms-full
+
+Fixture-based parser regression: validate packs with (a) multiple code fences, (b) missing/duplicated/unsorted # NN) headers, (c) non-sequential numbering, and confirm deterministic errors (prevents schema drift). 
+
+oraclepack-llms-full
+
+Mixed-tool step cove
+```
+
+docs/oracle-questions-2026-01-08/actions/05-caching-state-state-artifacts.md
+```
+Direct answer (1–10 bullets, evidence-cited)
+
+Preserve the ticket discovery index: .oraclepack/ticketify/_tickets_index.json (produced by ticket-action-pack.md Step 01). It is explicitly called out as an output artifact and is the natural cache boundary for downstream “actions” inference. 
+
+Oraclepack_Compatibility_Issues
+
+Preserve the canonical actions outputs: _actions.json and _actions.md (produced by Step 02). These are explicitly named outputs; _actions.json is expected to follow a stable, machine-readable schema (metadata + up to 20 items) to support later automation. 
+
+Oraclepack_Compatibility_Issues
+
+ 
+
+oraclepack-llms-full
+
+Preserve the Task Master PRD artifact: .taskmaster/docs/tickets_prd.md (produced by Step 03). This is explicitly named as a written output and is a key handoff artifact into Task Master parsing/expansion. 
+
+Oraclepack_Compatibility_Issues
+
+Preserve Task Master analysis/expansion artifacts, especially .oraclepack/ticketify/tm-complexity.json; and preserve tasks.json as the post-expansion state boundary (agent-mode insertion is specified “after Task Master expands tasks” when these exist). 
+
+Oraclepack_Compatibility_Issues
+
+ 
+
+Oraclepack_Compatibility_Issues
+
+Preserve oraclepack run state and reporting outputs: ticket-action-pack.state.json and ticket-action-pack.report.json. These are explicitly named outputs and are the audit/resume boundary (the broader design expectation is “persist run state” + “machine-readable summary report” with stable schema/versioning). 
+
+Oraclepack_Compatibility_Issues
+
+ 
+
+oraclepack-llms-full
+
+Add and preserve new headless “agent” artifacts under .oraclepack/ticketify/ with deterministic paths: next.json (Step 09), codex-implement.md (Step 10), codex-verify.md and/or gemini-review.json (Step 11), and PR.md (Step 16). These paths are hard requirements in the ticket’s acceptance criteria. 
+
+Oraclepack_Compatibility_Issues
+
+ 
+
+Oraclepack_Compatibility_Issues
+
+Preserve the pack’s ingestible shape as a compatibility constraint: action packs must remain “oraclepack-ingestible” (single bash fence, # NN) step headers), and taskify “agent-mode” must keep the “20-step contract intact” by swapping a step slot rather than adding steps. 
+
+Oraclepack_Compatibility_Issues
+
+ 
+
+Oraclepack_Compatibility_Issues
+
+Treat “project-root execution” as a stability requirement for artifact paths: steps run via bash -lc in the project root and oraclepack does not chdir to out_dir, so all preserved artifacts must be written/read using repo-root-relative deterministic paths (not relying on CWD changes). 
+
+Oraclepack_Compatibility_Issues
+
+Back-compat requirement for overrides/validation: oraclepack’s special injection/validation currently targets only commands beginning with oracle (regex anchored to ^(\\s*)(oracle)\\b), so any stateful Codex/Gemini/Task Master artifacts must not depend on oracle-specific overrides unless dispatcher logic is explicitly extended. 
+
+Oraclepack_Compatibility_Issues
+
+ROI metadata stability affects whether artifacts exist at all: ROI filtering may skip steps without ROI= when thresholds are used, so steps that must produce the preserved artifacts should keep ROI headers (and not become “placeholder/notes” steps) to prevent accidental non-execution. 
+
+Oraclepack_Compatibility_Issues
+
+ 
+
+Oraclepack_Compatibility_Issues
+
+Risks/unknowns (bullets)
+
+Exact schemas are not specified (in the ticket) for .oraclepack/ticketify/_tickets_index.json, .oraclepack/ticketify/tm-complexity.json, .oraclepack/ticketify/next.json, and the exact fields/versions of ticket-action-pack.state.json / .report.json; without these, schema drift ris
+
+Oraclepack_Compatibility_Issues
+```
+
+docs/oracle-questions-2026-01-08/packs/actions.md
+```
+# Oracle Pack — oraclepack (Grouped Tickets Stage 1 — Direct Attach)
+
+## Parsed args
+- codebase_name: oraclepack
+- out_dir: docs/oracle-questions-2026-01-08/actions
+- oracle_cmd: oracle
+- oracle_flags: --files-report
+- extra_files: 
+- ticket_root: .tickets
+- ticket_glob: **/*.md
+- ticket_paths: .tickets/actions/Enable Action Packs Dispatch.md,.tickets/actions/Improving Oraclepack Workflow.md,.tickets/actions/Oraclepack Action Pack Integration.md,.tickets/actions/Oraclepack Action Pack Issue.md,.tickets/actions/Oraclepack Action Packs.md,.tickets/actions/Oraclepack Compatibility Issues.md
+- ticket_max_files: 6
+- group_name: actions
+- group_slug: actions
+- mode: tickets-grouped-direct
+
+Notes (contract):
+- Exactly one fenced `bash` block in this document.
+- No other ``` fences anywhere.
+- Exactly 20 steps, numbered 01..20 in order.
+- Step header: `# NN) ROI=... impact=... confidence=... effort=... horizon=... category=... reference=...`
+- Every step includes: `--write-output "docs/oracle-questions-2026-01-08/actions/NN-<slug>.md"` (double quotes required).
+- Steps must be self-contained and must not rely on shell variables created in previous steps.
+- Each step must attach tickets directly (no `_tickets_bundle.md` dependency).
+- Pack ends with a Coverage check section listing all 10 categories as OK or Missing(<step ids>).
+
+```bash
+set -euo pipefail
+
+mkdir -p "docs/oracle-questions-2026-01-08/actions"
+
+# 01) ROI=4.8 impact=6 confidence=0.80 effort=1 horizon=Immediate category=contracts/interfaces reference=actions
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/actions/Enable Action Packs Dispatch.md,.tickets/actions/Improving Oraclepack Workflow.md,.tickets/actions/Oraclepack Action Pack Integration.md,.tickets/actions/Oraclepack Action Pack Issue.md,.tickets/actions/Oraclepack Action Packs.md,.tickets/actions/Oraclepack Compatibility Issues.md".strip()
+MAX = int("6")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group 'actions'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-08/actions/01-contracts-interfaces-ticket-surface.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #01  (ticket-driven, group: actions)
+
+Reference: actions
+Category: contracts/interfaces
+Horizon: Immediate
+ROI: 4.8 (impact=6, confidence=0.80, effort=1)
+
+Question:
+Using the attached tickets as the primary context, list the public surface changes implied by the tickets (CLI/TUI/API/interfaces/contracts); call out backwards-compat constraints.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 02) ROI=4.6 impact=6 confidence=0.78 effort=1 horizon=Immediate category=contracts/interfaces reference=actions
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/actions/Enable Action Packs Dispatch.md,.tickets/actions/Improving Oraclepack Workflow.md,.tickets/actions/Oraclepack Action Pack Integration.md,.tickets/actions/Oraclepack Action Pack Issue.md,.tickets/actions/Oraclepack Action Packs.md,.tickets/actions/Oraclepack Compatibility Issues.md".strip()
+MAX = int("6")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group 'actions'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-08/actions/02-contracts-interfaces-integration-points.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #02  (ticket-driven, group: actions)
+
+Reference: actions
+Category: contracts/interfaces
+Horizon: Immediate
+ROI: 4.6 (impact=6, confidence=0.78, effort=1)
+
+Question:
+Using the attached tickets as the primary context, identify external integrations implied by the tickets; required config/contract changes; failure/timeout behavior; minimal compat-safe rollout.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 03) ROI=5.1 impact=7 confidence=0.74 effort=1 horizon=NearTerm category=invariants reference=actions
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/actions/Enable Action Packs Dispatch.md,.tickets/actions/Improving Oraclepack Workflow.md,.tickets/actions/Oraclepack Action Pack Integration.md,.tickets/actions/Oraclepack Action Pack Issue.md,.tickets/actions/Oraclepack Action Packs.md,.tickets/actions/Oraclepack Compatibility Issues.md".strip()
+MAX = int("6")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group 'actions'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-08/actions/03-invariants-invariant-map.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #03  (ticket-driven, group: actions)
+
+Reference: actions
+Category: invariants
+Horizon: NearTerm
+ROI: 5.1 (impact=7, confidence=0.74, effort=1)
+
+Question:
+Using the attached tickets as the primary context, extract system invariants implied by tickets (inputs/outputs, pack schema rules, step execution rules) and where to enforce them.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 04) ROI=5.0 impact=7 confidence=0.72 effort=2 horizon=NearTerm category=invariants reference=actions
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/actions/Enable Action Packs Dispatch.md,.tickets/actions/Improving Oraclepack Workflow.md,.tickets/actions/Oraclepack Action Pack Integration.md,.tickets/actions/Oraclepack Action Pack Issue.md,.tickets/actions/Oraclepack Action Packs.md,.tickets/actions/Oraclepack Compatibility Issues.md".strip()
+MAX = int("6")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group 'actions'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-08/actions/04-invariants-validation-boundaries.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #04  (ticket-driven, group: actions)
+
+Reference: actions
+Category: invariants
+Horizon: NearTerm
+ROI: 5.0 (impact=7, confidence=0.72, effort=2)
+
+Question:
+Using the attached tickets as the primary context, identify validation boundaries that must exist (ticket parsing, pack generation, pack validation); propose minimal validation plan.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 05) ROI=4.4 impact=6 confidence=0.78 effort=2 horizon=NearTerm category=caching/state reference=actions
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/actions/Enable Action Packs Dispatch.md,.tickets/actions/Improving Oraclepack Workflow.md,.tickets/actions/Oraclepack Action Pack Integration.md,.tickets/actions/Oraclepack Action Pack Issue.md,.tickets/actions/Oraclepack Action Packs.md,.tickets/actions/Oraclepack Compatibility Issues.md".strip()
+MAX = int("6")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group 'actions'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-08/actions/05-caching-state-state-artifacts.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #05  (ticket-driven, group: actions)
+
+Reference: actions
+Category: caching/state
+Horizon: NearTerm
+ROI: 4.4 (impact=6, confidence=0.78, effort=2)
+
+Question:
+Using the attached tickets as the primary context, identify state/artifacts that must be produced and preserved; schema/format expectations; stability/back-compat requirements.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 06) ROI=4.2 impact=6 confidence=0.75 effort=2 horizon=NearTerm category=caching/state reference=actions
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/actions/Enable Action Packs Dispatch.md,.tickets/actions/Improving Oraclepack Workflow.md,.tickets/actions/Oraclepack Action Pack Integration.md,.tickets/actions/Oraclepack Action Pack Issue.md,.tickets/actions/Oraclepack Action Packs.md,.tickets/actions/Oraclepack Compatibility Issues.md".strip()
+MAX = int("6")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group 'actions'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-08/actions/06-caching-state-cache-keys.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #06  (ticket-driven, group: actions)
+
+Reference: actions
+Category: caching/state
+Horizon: NearTerm
+ROI: 4.2 (impact=6, confidence=0.75, effort=2)
+
+Question:
+Using the attached tickets as the primary context, identify any caching opportunities/risks (discovery caches, pack outputs, oracle outputs); define cache keys, invalidation, and correctness risks.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 07) ROI=4.3 impact=6 confidence=0.70 effort=2 horizon=MidTerm category=background jobs reference=actions
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/actions/Enable Action Packs Dispatch.md,.tickets/actions/Improving Oraclepack Workflow.md,.tickets/actions/Oraclepack Action Pack Integration.md,.tickets/actions/Oraclepack Action Pack Issue.md,.tickets/actions/Oraclepack Action Packs.md,.tickets/actions/Oraclepack Compatibility Issues.md".strip()
+MAX = int("6")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group 'actions'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-08/actions/07-background-jobs-job-model.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #07  (ticket-driven, group: actions)
+
+Reference: actions
+Category: background jobs
+Horizon: MidTerm
+ROI: 4.3 (impact=6, confidence=0.70, effort=2)
+
+Question:
+Using the attached tickets as the primary context, identify any background/async work implied (jobs, queues, long-running operations); define responsibilities and interfaces.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 08) ROI=4.0 impact=6 confidence=0.68 effort=3 horizon=MidTerm category=background jobs reference=actions
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/actions/Enable Action Packs Dispatch.md,.tickets/actions/Improving Oraclepack Workflow.md,.tickets/actions/Oraclepack Action Pack Integration.md,.tickets/actions/Oraclepack Action Pack Issue.md,.tickets/actions/Oraclepack Action Packs.md,.tickets/actions/Oraclepack Compatibility Issues.md".strip()
+MAX = int("6")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group 'actions'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-08/actions/08-background-jobs-queue-failure.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #08  (ticket-driven, group: actions)
+
+Reference: actions
+Category: background jobs
+Horizon: MidTerm
+ROI: 4.0 (impact=6, confidence=0.68, effort=3)
+
+Question:
+Using the attached tickets as the primary context, define how background failures are handled (retries, idempotency, poison messages); define observability hooks.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 09) ROI=4.7 impact=7 confidence=0.76 effort=1 horizon=Immediate category=observability reference=actions
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/actions/Enable Action Packs Dispatch.md,.tickets/actions/Improving Oraclepack Workflow.md,.tickets/actions/Oraclepack Action Pack Integration.md,.tickets/actions/Oraclepack Action Pack Issue.md,.tickets/actions/Oraclepack Action Packs.md,.tickets/actions/Oraclepack Compatibility Issues.md".strip()
+MAX = int("6")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group 'actions'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-08/actions/09-observability-logging-metrics.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #09  (ticket-driven, group: actions)
+
+Reference: actions
+Category: observability
+Horizon: Immediate
+ROI: 4.7 (impact=7, confidence=0.76, effort=1)
+
+Question:
+[TRUNCATED]
+```
+
+docs/oracle-questions-2026-01-08/packs/mcp.md
+```
+# Oracle Pack — oraclepack (Grouped Tickets Stage 1 — Direct Attach)
+
+## Parsed args
+- codebase_name: oraclepack
+- out_dir: docs/oracle-questions-2026-01-08/mcp
+- oracle_cmd: oracle
+- oracle_flags: --files-report
+- extra_files: 
+- ticket_root: .tickets
+- ticket_glob: **/*.md
+- ticket_paths: .tickets/mcp/Expose Oraclepack as MCP.md,.tickets/mcp/MCP Server for Oraclepack.md,.tickets/mcp/gaps-still-not-covered.md,.tickets/mcp/gaps_part2-mcp-builder.md,.tickets/mcp/oraclepack-MCP.md,.tickets/mcp/oraclepack_mcp_server.md
+- ticket_max_files: 6
+- group_name: mcp
+- group_slug: mcp
+- mode: tickets-grouped-direct
+
+Notes (contract):
+- Exactly one fenced `bash` block in this document.
+- No other ``` fences anywhere.
+- Exactly 20 steps, numbered 01..20 in order.
+- Step header: `# NN) ROI=... impact=... confidence=... effort=... horizon=... category=... reference=...`
+- Every step includes: `--write-output "docs/oracle-questions-2026-01-08/mcp/NN-<slug>.md"` (double quotes required).
+- Steps must be self-contained and must not rely on shell variables created in previous steps.
+- Each step must attach tickets directly (no `_tickets_bundle.md` dependency).
+- Pack ends with a Coverage check section listing all 10 categories as OK or Missing(<step ids>).
+
+```bash
+set -euo pipefail
+
+mkdir -p "docs/oracle-questions-2026-01-08/mcp"
+
+# 01) ROI=4.8 impact=6 confidence=0.80 effort=1 horizon=Immediate category=contracts/interfaces reference=mcp
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/mcp/Expose Oraclepack as MCP.md,.tickets/mcp/MCP Server for Oraclepack.md,.tickets/mcp/gaps-still-not-covered.md,.tickets/mcp/gaps_part2-mcp-builder.md,.tickets/mcp/oraclepack-MCP.md,.tickets/mcp/oraclepack_mcp_server.md".strip()
+MAX = int("6")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group 'mcp'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-08/mcp/01-contracts-interfaces-ticket-surface.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #01  (ticket-driven, group: mcp)
+
+Reference: mcp
+Category: contracts/interfaces
+Horizon: Immediate
+ROI: 4.8 (impact=6, confidence=0.80, effort=1)
+
+Question:
+Using the attached tickets as the primary context, list the public surface changes implied by the tickets (CLI/TUI/API/interfaces/contracts); call out backwards-compat constraints.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 02) ROI=4.6 impact=6 confidence=0.78 effort=1 horizon=Immediate category=contracts/interfaces reference=mcp
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/mcp/Expose Oraclepack as MCP.md,.tickets/mcp/MCP Server for Oraclepack.md,.tickets/mcp/gaps-still-not-covered.md,.tickets/mcp/gaps_part2-mcp-builder.md,.tickets/mcp/oraclepack-MCP.md,.tickets/mcp/oraclepack_mcp_server.md".strip()
+MAX = int("6")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group 'mcp'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-08/mcp/02-contracts-interfaces-integration-points.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #02  (ticket-driven, group: mcp)
+
+Reference: mcp
+Category: contracts/interfaces
+Horizon: Immediate
+ROI: 4.6 (impact=6, confidence=0.78, effort=1)
+
+Question:
+Using the attached tickets as the primary context, identify external integrations implied by the tickets; required config/contract changes; failure/timeout behavior; minimal compat-safe rollout.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 03) ROI=5.1 impact=7 confidence=0.74 effort=1 horizon=NearTerm category=invariants reference=mcp
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/mcp/Expose Oraclepack as MCP.md,.tickets/mcp/MCP Server for Oraclepack.md,.tickets/mcp/gaps-still-not-covered.md,.tickets/mcp/gaps_part2-mcp-builder.md,.tickets/mcp/oraclepack-MCP.md,.tickets/mcp/oraclepack_mcp_server.md".strip()
+MAX = int("6")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group 'mcp'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-08/mcp/03-invariants-invariant-map.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #03  (ticket-driven, group: mcp)
+
+Reference: mcp
+Category: invariants
+Horizon: NearTerm
+ROI: 5.1 (impact=7, confidence=0.74, effort=1)
+
+Question:
+Using the attached tickets as the primary context, extract system invariants implied by tickets (inputs/outputs, pack schema rules, step execution rules) and where to enforce them.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 04) ROI=5.0 impact=7 confidence=0.72 effort=2 horizon=NearTerm category=invariants reference=mcp
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/mcp/Expose Oraclepack as MCP.md,.tickets/mcp/MCP Server for Oraclepack.md,.tickets/mcp/gaps-still-not-covered.md,.tickets/mcp/gaps_part2-mcp-builder.md,.tickets/mcp/oraclepack-MCP.md,.tickets/mcp/oraclepack_mcp_server.md".strip()
+MAX = int("6")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group 'mcp'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-08/mcp/04-invariants-validation-boundaries.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #04  (ticket-driven, group: mcp)
+
+Reference: mcp
+Category: invariants
+Horizon: NearTerm
+ROI: 5.0 (impact=7, confidence=0.72, effort=2)
+
+Question:
+Using the attached tickets as the primary context, identify validation boundaries that must exist (ticket parsing, pack generation, pack validation); propose minimal validation plan.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 05) ROI=4.4 impact=6 confidence=0.78 effort=2 horizon=NearTerm category=caching/state reference=mcp
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/mcp/Expose Oraclepack as MCP.md,.tickets/mcp/MCP Server for Oraclepack.md,.tickets/mcp/gaps-still-not-covered.md,.tickets/mcp/gaps_part2-mcp-builder.md,.tickets/mcp/oraclepack-MCP.md,.tickets/mcp/oraclepack_mcp_server.md".strip()
+MAX = int("6")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group 'mcp'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-08/mcp/05-caching-state-state-artifacts.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #05  (ticket-driven, group: mcp)
+
+Reference: mcp
+Category: caching/state
+Horizon: NearTerm
+ROI: 4.4 (impact=6, confidence=0.78, effort=2)
+
+Question:
+Using the attached tickets as the primary context, identify state/artifacts that must be produced and preserved; schema/format expectations; stability/back-compat requirements.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 06) ROI=4.2 impact=6 confidence=0.75 effort=2 horizon=NearTerm category=caching/state reference=mcp
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/mcp/Expose Oraclepack as MCP.md,.tickets/mcp/MCP Server for Oraclepack.md,.tickets/mcp/gaps-still-not-covered.md,.tickets/mcp/gaps_part2-mcp-builder.md,.tickets/mcp/oraclepack-MCP.md,.tickets/mcp/oraclepack_mcp_server.md".strip()
+MAX = int("6")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group 'mcp'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-08/mcp/06-caching-state-cache-keys.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #06  (ticket-driven, group: mcp)
+
+Reference: mcp
+Category: caching/state
+Horizon: NearTerm
+ROI: 4.2 (impact=6, confidence=0.75, effort=2)
+
+Question:
+Using the attached tickets as the primary context, identify any caching opportunities/risks (discovery caches, pack outputs, oracle outputs); define cache keys, invalidation, and correctness risks.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 07) ROI=4.3 impact=6 confidence=0.70 effort=2 horizon=MidTerm category=background jobs reference=mcp
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/mcp/Expose Oraclepack as MCP.md,.tickets/mcp/MCP Server for Oraclepack.md,.tickets/mcp/gaps-still-not-covered.md,.tickets/mcp/gaps_part2-mcp-builder.md,.tickets/mcp/oraclepack-MCP.md,.tickets/mcp/oraclepack_mcp_server.md".strip()
+MAX = int("6")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group 'mcp'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-08/mcp/07-background-jobs-job-model.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #07  (ticket-driven, group: mcp)
+
+Reference: mcp
+Category: background jobs
+Horizon: MidTerm
+ROI: 4.3 (impact=6, confidence=0.70, effort=2)
+
+Question:
+Using the attached tickets as the primary context, identify any background/async work implied (jobs, queues, long-running operations); define responsibilities and interfaces.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 08) ROI=4.0 impact=6 confidence=0.68 effort=3 horizon=MidTerm category=background jobs reference=mcp
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/mcp/Expose Oraclepack as MCP.md,.tickets/mcp/MCP Server for Oraclepack.md,.tickets/mcp/gaps-still-not-covered.md,.tickets/mcp/gaps_part2-mcp-builder.md,.tickets/mcp/oraclepack-MCP.md,.tickets/mcp/oraclepack_mcp_server.md".strip()
+MAX = int("6")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group 'mcp'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-08/mcp/08-background-jobs-queue-failure.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #08  (ticket-driven, group: mcp)
+
+Reference: mcp
+Category: background jobs
+Horizon: MidTerm
+ROI: 4.0 (impact=6, confidence=0.68, effort=3)
+
+Question:
+Using the attached tickets as the primary context, define how background failures are handled (retries, idempotency, poison messages); define observability hooks.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 09) ROI=4.7 impact=7 confidence=0.76 effort=1 horizon=Immediate category=observability reference=mcp
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/mcp/Expose Oraclepack as MCP.md,.tickets/mcp/MCP Server for Oraclepack.md,.tickets/mcp/gaps-still-not-covered.md,.tickets/mcp/gaps_part2-mcp-builder.md,.tickets/mcp/oraclepack-MCP.md,.tickets/mcp/oraclepack_mcp_server.md".strip()
+MAX = int("6")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group 'mcp'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-08/mcp/09-observability-logging-metrics.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #09  (ticket-driven, group: mcp)
+
+Reference: mcp
+Category: observability
+Horizon: Immediate
+ROI: 4.7 (impact=7, confidence=0.76, effort=1)
+
+Question:
+[TRUNCATED]
+```
+
+docs/oracle-questions-2026-01-08/packs/misc.md
+```
+# Oracle Pack — oraclepack (Grouped Tickets Stage 1 — Direct Attach)
+
+## Parsed args
+- codebase_name: oraclepack
+- out_dir: docs/oracle-questions-2026-01-08/misc
+- oracle_cmd: oracle
+- oracle_flags: --files-report
+- extra_files: 
+- ticket_root: .tickets
+- ticket_glob: **/*.md
+- ticket_paths: .tickets/Oraclepack File Storage.md,.tickets/Oraclepack Schema Approach.md,.tickets/Oraclepack bash fix.md,.tickets/Publish OraclePack MCP.md
+- ticket_max_files: 4
+- group_name: misc
+- group_slug: misc
+- mode: tickets-grouped-direct
+
+Notes (contract):
+- Exactly one fenced `bash` block in this document.
+- No other ``` fences anywhere.
+- Exactly 20 steps, numbered 01..20 in order.
+- Step header: `# NN) ROI=... impact=... confidence=... effort=... horizon=... category=... reference=...`
+- Every step includes: `--write-output "docs/oracle-questions-2026-01-08/misc/NN-<slug>.md"` (double quotes required).
+- Steps must be self-contained and must not rely on shell variables created in previous steps.
+- Each step must attach tickets directly (no `_tickets_bundle.md` dependency).
+- Pack ends with a Coverage check section listing all 10 categories as OK or Missing(<step ids>).
+
+```bash
+set -euo pipefail
+
+mkdir -p "docs/oracle-questions-2026-01-08/misc"
+
+# 01) ROI=4.8 impact=6 confidence=0.80 effort=1 horizon=Immediate category=contracts/interfaces reference=misc
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/Oraclepack File Storage.md,.tickets/Oraclepack Schema Approach.md,.tickets/Oraclepack bash fix.md,.tickets/Publish OraclePack MCP.md".strip()
+MAX = int("4")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group 'misc'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-08/misc/01-contracts-interfaces-ticket-surface.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #01  (ticket-driven, group: misc)
+
+Reference: misc
+Category: contracts/interfaces
+Horizon: Immediate
+ROI: 4.8 (impact=6, confidence=0.80, effort=1)
+
+Question:
+Using the attached tickets as the primary context, list the public surface changes implied by the tickets (CLI/TUI/API/interfaces/contracts); call out backwards-compat constraints.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 02) ROI=4.6 impact=6 confidence=0.78 effort=1 horizon=Immediate category=contracts/interfaces reference=misc
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/Oraclepack File Storage.md,.tickets/Oraclepack Schema Approach.md,.tickets/Oraclepack bash fix.md,.tickets/Publish OraclePack MCP.md".strip()
+MAX = int("4")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group 'misc'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-08/misc/02-contracts-interfaces-integration-points.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #02  (ticket-driven, group: misc)
+
+Reference: misc
+Category: contracts/interfaces
+Horizon: Immediate
+ROI: 4.6 (impact=6, confidence=0.78, effort=1)
+
+Question:
+Using the attached tickets as the primary context, identify external integrations implied by the tickets; required config/contract changes; failure/timeout behavior; minimal compat-safe rollout.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 03) ROI=5.1 impact=7 confidence=0.74 effort=1 horizon=NearTerm category=invariants reference=misc
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/Oraclepack File Storage.md,.tickets/Oraclepack Schema Approach.md,.tickets/Oraclepack bash fix.md,.tickets/Publish OraclePack MCP.md".strip()
+MAX = int("4")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group 'misc'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-08/misc/03-invariants-invariant-map.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #03  (ticket-driven, group: misc)
+
+Reference: misc
+Category: invariants
+Horizon: NearTerm
+ROI: 5.1 (impact=7, confidence=0.74, effort=1)
+
+Question:
+Using the attached tickets as the primary context, extract system invariants implied by tickets (inputs/outputs, pack schema rules, step execution rules) and where to enforce them.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 04) ROI=5.0 impact=7 confidence=0.72 effort=2 horizon=NearTerm category=invariants reference=misc
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/Oraclepack File Storage.md,.tickets/Oraclepack Schema Approach.md,.tickets/Oraclepack bash fix.md,.tickets/Publish OraclePack MCP.md".strip()
+MAX = int("4")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group 'misc'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-08/misc/04-invariants-validation-boundaries.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #04  (ticket-driven, group: misc)
+
+Reference: misc
+Category: invariants
+Horizon: NearTerm
+ROI: 5.0 (impact=7, confidence=0.72, effort=2)
+
+Question:
+Using the attached tickets as the primary context, identify validation boundaries that must exist (ticket parsing, pack generation, pack validation); propose minimal validation plan.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 05) ROI=4.4 impact=6 confidence=0.78 effort=2 horizon=NearTerm category=caching/state reference=misc
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/Oraclepack File Storage.md,.tickets/Oraclepack Schema Approach.md,.tickets/Oraclepack bash fix.md,.tickets/Publish OraclePack MCP.md".strip()
+MAX = int("4")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group 'misc'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-08/misc/05-caching-state-state-artifacts.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #05  (ticket-driven, group: misc)
+
+Reference: misc
+Category: caching/state
+Horizon: NearTerm
+ROI: 4.4 (impact=6, confidence=0.78, effort=2)
+
+Question:
+Using the attached tickets as the primary context, identify state/artifacts that must be produced and preserved; schema/format expectations; stability/back-compat requirements.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 06) ROI=4.2 impact=6 confidence=0.75 effort=2 horizon=NearTerm category=caching/state reference=misc
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/Oraclepack File Storage.md,.tickets/Oraclepack Schema Approach.md,.tickets/Oraclepack bash fix.md,.tickets/Publish OraclePack MCP.md".strip()
+MAX = int("4")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group 'misc'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-08/misc/06-caching-state-cache-keys.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #06  (ticket-driven, group: misc)
+
+Reference: misc
+Category: caching/state
+Horizon: NearTerm
+ROI: 4.2 (impact=6, confidence=0.75, effort=2)
+
+Question:
+Using the attached tickets as the primary context, identify any caching opportunities/risks (discovery caches, pack outputs, oracle outputs); define cache keys, invalidation, and correctness risks.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 07) ROI=4.3 impact=6 confidence=0.70 effort=2 horizon=MidTerm category=background jobs reference=misc
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/Oraclepack File Storage.md,.tickets/Oraclepack Schema Approach.md,.tickets/Oraclepack bash fix.md,.tickets/Publish OraclePack MCP.md".strip()
+MAX = int("4")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group 'misc'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-08/misc/07-background-jobs-job-model.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #07  (ticket-driven, group: misc)
+
+Reference: misc
+Category: background jobs
+Horizon: MidTerm
+ROI: 4.3 (impact=6, confidence=0.70, effort=2)
+
+Question:
+Using the attached tickets as the primary context, identify any background/async work implied (jobs, queues, long-running operations); define responsibilities and interfaces.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 08) ROI=4.0 impact=6 confidence=0.68 effort=3 horizon=MidTerm category=background jobs reference=misc
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/Oraclepack File Storage.md,.tickets/Oraclepack Schema Approach.md,.tickets/Oraclepack bash fix.md,.tickets/Publish OraclePack MCP.md".strip()
+MAX = int("4")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group 'misc'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-08/misc/08-background-jobs-queue-failure.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #08  (ticket-driven, group: misc)
+
+Reference: misc
+Category: background jobs
+Horizon: MidTerm
+ROI: 4.0 (impact=6, confidence=0.68, effort=3)
+
+Question:
+Using the attached tickets as the primary context, define how background failures are handled (retries, idempotency, poison messages); define observability hooks.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 09) ROI=4.7 impact=7 confidence=0.76 effort=1 horizon=Immediate category=observability reference=misc
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/Oraclepack File Storage.md,.tickets/Oraclepack Schema Approach.md,.tickets/Oraclepack bash fix.md,.tickets/Publish OraclePack MCP.md".strip()
+MAX = int("4")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group 'misc'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-08/misc/09-observability-logging-metrics.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #09  (ticket-driven, group: misc)
+
+Reference: misc
+Category: observability
+Horizon: Immediate
+ROI: 4.7 (impact=7, confidence=0.76, effort=1)
+
+Question:
+Using the attached tickets as the primary context, define what logging/metrics must exist to debug pack generation + step execution; propose minimal instrumentation plan.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 10) ROI=4.5 impact=7 confidence=0.74 effort=2 horizon=Immediate category=observability reference=misc
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/Oraclepack File Storage.md,.tickets/Oraclepack Schema Approach.md,.tickets/Oraclepack bash fix.md,.tickets/Publish OraclePack MCP.md".strip()
+MAX = int("4")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+[TRUNCATED]
+```
+
+docs/oracle-questions-2026-01-08/packs/other.md
+```
+# Oracle Pack — oraclepack (Grouped Tickets Stage 1 — Direct Attach)
+
+## Parsed args
+- codebase_name: oraclepack
+- out_dir: docs/oracle-questions-2026-01-08/other
+- oracle_cmd: oracle
+- oracle_flags: --files-report
+- extra_files: 
+- ticket_root: .tickets
+- ticket_glob: **/*.md
+- ticket_paths: .tickets/other/Oraclepack Pipeline Improvements.md,.tickets/other/Oraclepack Prompt Generator.md,.tickets/other/Oraclepack Workflow Enhancement.md,.tickets/other/Verbose Payload Rendering TUI.md
+- ticket_max_files: 4
+- group_name: other
+- group_slug: other
+- mode: tickets-grouped-direct
+
+Notes (contract):
+- Exactly one fenced `bash` block in this document.
+- No other ``` fences anywhere.
+- Exactly 20 steps, numbered 01..20 in order.
+- Step header: `# NN) ROI=... impact=... confidence=... effort=... horizon=... category=... reference=...`
+- Every step includes: `--write-output "docs/oracle-questions-2026-01-08/other/NN-<slug>.md"` (double quotes required).
+- Steps must be self-contained and must not rely on shell variables created in previous steps.
+- Each step must attach tickets directly (no `_tickets_bundle.md` dependency).
+- Pack ends with a Coverage check section listing all 10 categories as OK or Missing(<step ids>).
+
+```bash
+set -euo pipefail
+
+mkdir -p "docs/oracle-questions-2026-01-08/other"
+
+# 01) ROI=4.8 impact=6 confidence=0.80 effort=1 horizon=Immediate category=contracts/interfaces reference=other
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/other/Oraclepack Pipeline Improvements.md,.tickets/other/Oraclepack Prompt Generator.md,.tickets/other/Oraclepack Workflow Enhancement.md,.tickets/other/Verbose Payload Rendering TUI.md".strip()
+MAX = int("4")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group 'other'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-08/other/01-contracts-interfaces-ticket-surface.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #01  (ticket-driven, group: other)
+
+Reference: other
+Category: contracts/interfaces
+Horizon: Immediate
+ROI: 4.8 (impact=6, confidence=0.80, effort=1)
+
+Question:
+Using the attached tickets as the primary context, list the public surface changes implied by the tickets (CLI/TUI/API/interfaces/contracts); call out backwards-compat constraints.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 02) ROI=4.6 impact=6 confidence=0.78 effort=1 horizon=Immediate category=contracts/interfaces reference=other
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/other/Oraclepack Pipeline Improvements.md,.tickets/other/Oraclepack Prompt Generator.md,.tickets/other/Oraclepack Workflow Enhancement.md,.tickets/other/Verbose Payload Rendering TUI.md".strip()
+MAX = int("4")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group 'other'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-08/other/02-contracts-interfaces-integration-points.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #02  (ticket-driven, group: other)
+
+Reference: other
+Category: contracts/interfaces
+Horizon: Immediate
+ROI: 4.6 (impact=6, confidence=0.78, effort=1)
+
+Question:
+Using the attached tickets as the primary context, identify external integrations implied by the tickets; required config/contract changes; failure/timeout behavior; minimal compat-safe rollout.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 03) ROI=5.1 impact=7 confidence=0.74 effort=1 horizon=NearTerm category=invariants reference=other
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/other/Oraclepack Pipeline Improvements.md,.tickets/other/Oraclepack Prompt Generator.md,.tickets/other/Oraclepack Workflow Enhancement.md,.tickets/other/Verbose Payload Rendering TUI.md".strip()
+MAX = int("4")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group 'other'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-08/other/03-invariants-invariant-map.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #03  (ticket-driven, group: other)
+
+Reference: other
+Category: invariants
+Horizon: NearTerm
+ROI: 5.1 (impact=7, confidence=0.74, effort=1)
+
+Question:
+Using the attached tickets as the primary context, extract system invariants implied by tickets (inputs/outputs, pack schema rules, step execution rules) and where to enforce them.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 04) ROI=5.0 impact=7 confidence=0.72 effort=2 horizon=NearTerm category=invariants reference=other
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/other/Oraclepack Pipeline Improvements.md,.tickets/other/Oraclepack Prompt Generator.md,.tickets/other/Oraclepack Workflow Enhancement.md,.tickets/other/Verbose Payload Rendering TUI.md".strip()
+MAX = int("4")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group 'other'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-08/other/04-invariants-validation-boundaries.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #04  (ticket-driven, group: other)
+
+Reference: other
+Category: invariants
+Horizon: NearTerm
+ROI: 5.0 (impact=7, confidence=0.72, effort=2)
+
+Question:
+Using the attached tickets as the primary context, identify validation boundaries that must exist (ticket parsing, pack generation, pack validation); propose minimal validation plan.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 05) ROI=4.4 impact=6 confidence=0.78 effort=2 horizon=NearTerm category=caching/state reference=other
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/other/Oraclepack Pipeline Improvements.md,.tickets/other/Oraclepack Prompt Generator.md,.tickets/other/Oraclepack Workflow Enhancement.md,.tickets/other/Verbose Payload Rendering TUI.md".strip()
+MAX = int("4")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group 'other'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-08/other/05-caching-state-state-artifacts.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #05  (ticket-driven, group: other)
+
+Reference: other
+Category: caching/state
+Horizon: NearTerm
+ROI: 4.4 (impact=6, confidence=0.78, effort=2)
+
+Question:
+Using the attached tickets as the primary context, identify state/artifacts that must be produced and preserved; schema/format expectations; stability/back-compat requirements.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 06) ROI=4.2 impact=6 confidence=0.75 effort=2 horizon=NearTerm category=caching/state reference=other
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/other/Oraclepack Pipeline Improvements.md,.tickets/other/Oraclepack Prompt Generator.md,.tickets/other/Oraclepack Workflow Enhancement.md,.tickets/other/Verbose Payload Rendering TUI.md".strip()
+MAX = int("4")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group 'other'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-08/other/06-caching-state-cache-keys.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #06  (ticket-driven, group: other)
+
+Reference: other
+Category: caching/state
+Horizon: NearTerm
+ROI: 4.2 (impact=6, confidence=0.75, effort=2)
+
+Question:
+Using the attached tickets as the primary context, identify any caching opportunities/risks (discovery caches, pack outputs, oracle outputs); define cache keys, invalidation, and correctness risks.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 07) ROI=4.3 impact=6 confidence=0.70 effort=2 horizon=MidTerm category=background jobs reference=other
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/other/Oraclepack Pipeline Improvements.md,.tickets/other/Oraclepack Prompt Generator.md,.tickets/other/Oraclepack Workflow Enhancement.md,.tickets/other/Verbose Payload Rendering TUI.md".strip()
+MAX = int("4")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group 'other'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-08/other/07-background-jobs-job-model.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #07  (ticket-driven, group: other)
+
+Reference: other
+Category: background jobs
+Horizon: MidTerm
+ROI: 4.3 (impact=6, confidence=0.70, effort=2)
+
+Question:
+Using the attached tickets as the primary context, identify any background/async work implied (jobs, queues, long-running operations); define responsibilities and interfaces.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 08) ROI=4.0 impact=6 confidence=0.68 effort=3 horizon=MidTerm category=background jobs reference=other
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/other/Oraclepack Pipeline Improvements.md,.tickets/other/Oraclepack Prompt Generator.md,.tickets/other/Oraclepack Workflow Enhancement.md,.tickets/other/Verbose Payload Rendering TUI.md".strip()
+MAX = int("4")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group 'other'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-08/other/08-background-jobs-queue-failure.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #08  (ticket-driven, group: other)
+
+Reference: other
+Category: background jobs
+Horizon: MidTerm
+ROI: 4.0 (impact=6, confidence=0.68, effort=3)
+
+Question:
+Using the attached tickets as the primary context, define how background failures are handled (retries, idempotency, poison messages); define observability hooks.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 09) ROI=4.7 impact=7 confidence=0.76 effort=1 horizon=Immediate category=observability reference=other
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/other/Oraclepack Pipeline Improvements.md,.tickets/other/Oraclepack Prompt Generator.md,.tickets/other/Oraclepack Workflow Enhancement.md,.tickets/other/Verbose Payload Rendering TUI.md".strip()
+MAX = int("4")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group 'other'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-08/other/09-observability-logging-metrics.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #09  (ticket-driven, group: other)
+
+Reference: other
+Category: observability
+Horizon: Immediate
+ROI: 4.7 (impact=7, confidence=0.76, effort=1)
+
+Question:
+Using the attached tickets as the primary context, define what logging/metrics must exist to debug pack generation + step execution; propose minimal instrumentation plan.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 10) ROI=4.5 impact=7 confidence=0.74 effort=2 horizon=Immediate category=observability reference=other
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/other/Oraclepack Pipeline Improvements.md,.tickets/other/Oraclepack Prompt Generator.md,.tickets/other/Oraclepack Workflow Enhancement.md,.tickets/other/Verbose Payload Rendering TUI.md".strip()
+MAX = int("4")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+[TRUNCATED]
+```
+
+docs/oracle-questions-2026-01-08/packs/prd-tui.md
+```
+# Oracle Pack — oraclepack (Grouped Tickets Stage 1 — Direct Attach)
+
+## Parsed args
+- codebase_name: oraclepack
+- out_dir: docs/oracle-questions-2026-01-08/prd-tui
+- oracle_cmd: oracle
+- oracle_flags: --files-report
+- extra_files: 
+- ticket_root: .tickets
+- ticket_glob: **/*.md
+- ticket_paths: .tickets/PRD-TUI/Oraclepack TUI Integration.md,.tickets/PRD-TUI/PRD-generator URL routing.md
+- ticket_max_files: 2
+- group_name: PRD-TUI
+- group_slug: prd-tui
+- mode: tickets-grouped-direct
+
+Notes (contract):
+- Exactly one fenced `bash` block in this document.
+- No other ``` fences anywhere.
+- Exactly 20 steps, numbered 01..20 in order.
+- Step header: `# NN) ROI=... impact=... confidence=... effort=... horizon=... category=... reference=...`
+- Every step includes: `--write-output "docs/oracle-questions-2026-01-08/prd-tui/NN-<slug>.md"` (double quotes required).
+- Steps must be self-contained and must not rely on shell variables created in previous steps.
+- Each step must attach tickets directly (no `_tickets_bundle.md` dependency).
+- Pack ends with a Coverage check section listing all 10 categories as OK or Missing(<step ids>).
+
+```bash
+set -euo pipefail
+
+mkdir -p "docs/oracle-questions-2026-01-08/prd-tui"
+
+# 01) ROI=4.8 impact=6 confidence=0.80 effort=1 horizon=Immediate category=contracts/interfaces reference=prd-tui
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/PRD-TUI/Oraclepack TUI Integration.md,.tickets/PRD-TUI/PRD-generator URL routing.md".strip()
+MAX = int("2")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group 'PRD-TUI'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-08/prd-tui/01-contracts-interfaces-ticket-surface.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #01  (ticket-driven, group: PRD-TUI)
+
+Reference: prd-tui
+Category: contracts/interfaces
+Horizon: Immediate
+ROI: 4.8 (impact=6, confidence=0.80, effort=1)
+
+Question:
+Using the attached tickets as the primary context, list the public surface changes implied by the tickets (CLI/TUI/API/interfaces/contracts); call out backwards-compat constraints.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 02) ROI=4.6 impact=6 confidence=0.78 effort=1 horizon=Immediate category=contracts/interfaces reference=prd-tui
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/PRD-TUI/Oraclepack TUI Integration.md,.tickets/PRD-TUI/PRD-generator URL routing.md".strip()
+MAX = int("2")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group 'PRD-TUI'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-08/prd-tui/02-contracts-interfaces-integration-points.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #02  (ticket-driven, group: PRD-TUI)
+
+Reference: prd-tui
+Category: contracts/interfaces
+Horizon: Immediate
+ROI: 4.6 (impact=6, confidence=0.78, effort=1)
+
+Question:
+Using the attached tickets as the primary context, identify external integrations implied by the tickets; required config/contract changes; failure/timeout behavior; minimal compat-safe rollout.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 03) ROI=5.1 impact=7 confidence=0.74 effort=1 horizon=NearTerm category=invariants reference=prd-tui
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/PRD-TUI/Oraclepack TUI Integration.md,.tickets/PRD-TUI/PRD-generator URL routing.md".strip()
+MAX = int("2")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group 'PRD-TUI'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-08/prd-tui/03-invariants-invariant-map.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #03  (ticket-driven, group: PRD-TUI)
+
+Reference: prd-tui
+Category: invariants
+Horizon: NearTerm
+ROI: 5.1 (impact=7, confidence=0.74, effort=1)
+
+Question:
+Using the attached tickets as the primary context, extract system invariants implied by tickets (inputs/outputs, pack schema rules, step execution rules) and where to enforce them.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 04) ROI=5.0 impact=7 confidence=0.72 effort=2 horizon=NearTerm category=invariants reference=prd-tui
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/PRD-TUI/Oraclepack TUI Integration.md,.tickets/PRD-TUI/PRD-generator URL routing.md".strip()
+MAX = int("2")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group 'PRD-TUI'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-08/prd-tui/04-invariants-validation-boundaries.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #04  (ticket-driven, group: PRD-TUI)
+
+Reference: prd-tui
+Category: invariants
+Horizon: NearTerm
+ROI: 5.0 (impact=7, confidence=0.72, effort=2)
+
+Question:
+Using the attached tickets as the primary context, identify validation boundaries that must exist (ticket parsing, pack generation, pack validation); propose minimal validation plan.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 05) ROI=4.4 impact=6 confidence=0.78 effort=2 horizon=NearTerm category=caching/state reference=prd-tui
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/PRD-TUI/Oraclepack TUI Integration.md,.tickets/PRD-TUI/PRD-generator URL routing.md".strip()
+MAX = int("2")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group 'PRD-TUI'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-08/prd-tui/05-caching-state-state-artifacts.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #05  (ticket-driven, group: PRD-TUI)
+
+Reference: prd-tui
+Category: caching/state
+Horizon: NearTerm
+ROI: 4.4 (impact=6, confidence=0.78, effort=2)
+
+Question:
+Using the attached tickets as the primary context, identify state/artifacts that must be produced and preserved; schema/format expectations; stability/back-compat requirements.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 06) ROI=4.2 impact=6 confidence=0.75 effort=2 horizon=NearTerm category=caching/state reference=prd-tui
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/PRD-TUI/Oraclepack TUI Integration.md,.tickets/PRD-TUI/PRD-generator URL routing.md".strip()
+MAX = int("2")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group 'PRD-TUI'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-08/prd-tui/06-caching-state-cache-keys.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #06  (ticket-driven, group: PRD-TUI)
+
+Reference: prd-tui
+Category: caching/state
+Horizon: NearTerm
+ROI: 4.2 (impact=6, confidence=0.75, effort=2)
+
+Question:
+Using the attached tickets as the primary context, identify any caching opportunities/risks (discovery caches, pack outputs, oracle outputs); define cache keys, invalidation, and correctness risks.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 07) ROI=4.3 impact=6 confidence=0.70 effort=2 horizon=MidTerm category=background jobs reference=prd-tui
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/PRD-TUI/Oraclepack TUI Integration.md,.tickets/PRD-TUI/PRD-generator URL routing.md".strip()
+MAX = int("2")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group 'PRD-TUI'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-08/prd-tui/07-background-jobs-job-model.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #07  (ticket-driven, group: PRD-TUI)
+
+Reference: prd-tui
+Category: background jobs
+Horizon: MidTerm
+ROI: 4.3 (impact=6, confidence=0.70, effort=2)
+
+Question:
+Using the attached tickets as the primary context, identify any background/async work implied (jobs, queues, long-running operations); define responsibilities and interfaces.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 08) ROI=4.0 impact=6 confidence=0.68 effort=3 horizon=MidTerm category=background jobs reference=prd-tui
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/PRD-TUI/Oraclepack TUI Integration.md,.tickets/PRD-TUI/PRD-generator URL routing.md".strip()
+MAX = int("2")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group 'PRD-TUI'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-08/prd-tui/08-background-jobs-queue-failure.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #08  (ticket-driven, group: PRD-TUI)
+
+Reference: prd-tui
+Category: background jobs
+Horizon: MidTerm
+ROI: 4.0 (impact=6, confidence=0.68, effort=3)
+
+Question:
+Using the attached tickets as the primary context, define how background failures are handled (retries, idempotency, poison messages); define observability hooks.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 09) ROI=4.7 impact=7 confidence=0.76 effort=1 horizon=Immediate category=observability reference=prd-tui
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/PRD-TUI/Oraclepack TUI Integration.md,.tickets/PRD-TUI/PRD-generator URL routing.md".strip()
+MAX = int("2")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group 'PRD-TUI'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-08/prd-tui/09-observability-logging-metrics.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #09  (ticket-driven, group: PRD-TUI)
+
+Reference: prd-tui
+Category: observability
+Horizon: Immediate
+ROI: 4.7 (impact=7, confidence=0.76, effort=1)
+
+Question:
+Using the attached tickets as the primary context, define what logging/metrics must exist to debug pack generation + step execution; propose minimal instrumentation plan.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 10) ROI=4.5 impact=7 confidence=0.74 effort=2 horizon=Immediate category=observability reference=prd-tui
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/PRD-TUI/Oraclepack TUI Integration.md,.tickets/PRD-TUI/PRD-generator URL routing.md".strip()
+MAX = int("2")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+[TRUNCATED]
+```
+
+skills/oraclepack-pipeline-improver/assets/backlog-template.md
+```
+<!-- # path: oraclepack-pipeline-improver/assets/backlog-template.md -->
+# Oraclepack Actionizer Backlog
+
+Run:
+- pack_id: TODO
+- pack_hash: TODO
+- generated_at: TODO
+
+## Summary
+
+- Total tasks: TODO
+- Actionable: TODO
+- Blocked: TODO
+- Conflicts: TODO
+
+## P0 (do first)
+
+### <task_id> — <title>
+- Status: actionable | blocked | conflict | noop
+- Category: TODO
+- Reference: TODO
+- Expected artifacts: TODO
+- Actions:
+  - TODO
+- Evidence:
+  - Paths: TODO
+  - Symbols: TODO
+  - Commands: TODO
+- Done when:
+  - TODO
+
+## P1
+
+### <task_id> — <title>
+- (same fields)
+
+## Blocked / needs evidence
+
+### <task_id> — <title>
+- Missing inputs:
+  - TODO
+- Next smallest experiment (one action):
+  - TODO
+
+## Conflicts / needs resolution
+
+### <task_id> — <title>
+- Conflicting statements:
+  - TODO
+- What evidence resolves this:
+  - TODO
+- Proposed resolution (clearly marked as Proposed):
+  - TODO
+```
+
+skills/oraclepack-pipeline-improver/assets/change-plan-template.md
+```
+<!-- # path: oraclepack-pipeline-improver/assets/change-plan-template.md -->
+# Oraclepack Change Plan
+
+Run:
+- pack_id: TODO
+- pack_hash: TODO
+- generated_at: TODO
+
+## Principles
+
+- Smallest shippable increments first.
+- Every step has an acceptance check.
+- Unknowns are explicit; no guessing.
+
+## Phase 0 — Guardrails (validate + safety)
+
+1) Implement/confirm strict validation (validate --strict --json)
+- Scope:
+  - TODO
+- Acceptance:
+  - TODO (e.g., rejects non-20 packs; emits JSON summary)
+- Tests:
+  - TODO (fixtures for invalid packs)
+
+2) Path safety for output writing
+- Scope:
+  - TODO
+- Acceptance:
+  - TODO (rejects .. traversal / absolute escape)
+- Tests:
+  - TODO
+
+## Phase 1 — Deterministic runs (run dir + manifests + resume)
+
+3) Stable run dir + run.json / steps.json
+- Scope:
+  - TODO
+- Acceptance:
+  - TODO (creates .oraclepack/runs/<pack_id>/..., stable naming)
+- Tests:
+  - TODO
+
+4) Resume default + --rerun semantics
+- Scope:
+  - TODO
+- Acceptance:
+  - TODO (interrupt + rerun skips completed via hashes)
+- Tests:
+  - TODO
+
+## Phase 2 — Reliability (concurrency + retries + optional caching)
+
+5) Concurrency cap
+- Scope:
+  - TODO
+- Acceptance:
+  - TODO (never exceeds N parallel calls)
+
+6) Retry/backoff on transient errors
+- Scope:
+  - TODO
+- Acceptance:
+  - TODO (bounded retries; recorded in steps.json)
+
+7) Optional caching (if enabled)
+- Scope:
+  - TODO
+- Acceptance:
+  - TODO (unchanged inputs cause zero provider calls)
+
+## Phase 3 — Actionizer (Stage 3)
+
+8) Implement actionize command and artifacts
+- Scope:
+  - normalized.jsonl + backlog.md + change-plan.md
+- Acceptance:
+  - TODO (byte-identical output on rerun with unchanged inputs)
+
+## CI integration (optional)
+
+9) Add CI mode wiring (run --ci --non-interactive --json-log; actionize --ci)
+- Policy thresholds:
+  - TODO/Unknown
+- Acceptance:
+  - TODO (exit codes match policy)
+```
+
+skills/oraclepack-pipeline-improver/assets/normalized.example.jsonl
+```
+{"pack_id":"2026-01-05__nogit__deadbeef","pack_hash":"deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef","step_id":"07","task_id":"t_deadbeef_07_a1b2c3d4","title":"Define authorization boundary for server routes","status":"blocked","category":"permissions","reference":"src/server/auth/**","expected_artifacts":["src/server/auth/**","src/routes/**"],"actions":["Locate existing auth middleware/guards and document intended boundary","Add route guard checks or middleware wiring where missing"],"evidence":{"paths":["src/server/auth/**","src/routes/**"],"symbols":[],"commands":["ck --regex auth|permission|role src/server src/routes"]},"notes":["Auth wiring not evidenced in provided inputs"],"missing_inputs":["Repo paths containing current auth middleware or route guards (e.g., src/server/auth/**)","CLI help output for oraclepack validate/run/actionize (if already exists)"]}
+{"pack_id":"2026-01-05__nogit__deadbeef","pack_hash":"deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef","step_id":"13","task_id":"t_deadbeef_13_e5f6a7b8","title":"Bound upload persistence metadata and retention policy","status":"actionable","category":"caching/state","reference":"src/server/persistence/sessionUploads.server.ts","expected_artifacts":["src/server/persistence/**","docs/plans/**"],"actions":["Add explicit retention policy + max entries/size controls","Ensure metadata captured is sufficient for downstream analysis"],"evidence":{"paths":["src/server/persistence/sessionUploads.server.ts"],"symbols":["saveSessionUpload"],"commands":["ck --regex saveSessionUpload src"]},"notes":[],"missing_inputs":[]}
 ```
 
 skills/oraclepack-pipeline-improver/references/actionizer-spec.md
@@ -17035,40 +20710,79 @@ ExpectedArtifacts:
 If the Stage 1 generator cannot produce these, it should write `Unknown` values explicitly rather than omitting keys.
 ```
 
-skills/oraclepack-tickets-pack/scripts/lint_attachments.py
+skills/oraclepack-tickets-pack-common/scripts/validate_pack.py
 ```
 import argparse
 import re
 import sys
 from dataclasses import dataclass
-from pathlib import Path
-from typing import List, Tuple
+from pathlib import Path, PurePosixPath
+from typing import Dict, List, Tuple
+
+ALLOWED_CATEGORIES = [
+    "contracts/interfaces",
+    "invariants",
+    "caching/state",
+    "background jobs",
+    "observability",
+    "permissions",
+    "migrations",
+    "UX flows",
+    "failure modes",
+    "feature flags",
+]
+
+REQUIRED_HEADER_KEYS = [
+    "ROI",
+    "impact",
+    "confidence",
+    "effort",
+    "horizon",
+    "category",
+    "reference",
+]
 
 
-@dataclass
+@dataclass(frozen=True)
 class Step:
     n: str
-    header: str
-    lines: List[str]
+    header_line: str
+    block_lines: List[str]
+
+
+def _fail(errors: List[str]) -> None:
+    for e in errors:
+        print(f"[ERROR] {e}", file=sys.stderr)
+    sys.exit(1)
 
 
 def _read_text(path: Path) -> str:
-    try:
-        return path.read_text(encoding="utf-8")
-    except UnicodeDecodeError:
-        return path.read_text(encoding="utf-8", errors="replace")
+    return path.read_text(encoding="utf-8", errors="replace")
 
 
-def _extract_bash_fence(lines: List[str]) -> List[str]:
-    fence_idxs = [i for i, ln in enumerate(lines) if ln.startswith("```")]
-    if len(fence_idxs) != 2:
-        raise ValueError(f"Expected exactly one fenced block (2 fence lines). Found {len(fence_idxs)}.")
-    open_i, close_i = fence_idxs
-    if lines[open_i].rstrip("\n") != "```bash":
-        raise ValueError("Opening fence must be exactly ```bash.")
-    if lines[close_i].rstrip("\n") != "```":
-        raise ValueError("Closing fence must be exactly ```.")
-    return [ln.rstrip("\n") for ln in lines[open_i + 1 : close_i]]
+def _extract_single_bash_fence(lines: List[str]) -> Tuple[int, int, List[str], List[str]]:
+    start = None
+    for i, ln in enumerate(lines):
+        if ln.strip().lower() == "```bash":
+            if start is not None:
+                raise ValueError("Multiple ```bash fences found; expected exactly one.")
+            start = i
+
+    if start is None:
+        raise ValueError("No ```bash fence found; expected exactly one.")
+
+    end = None
+    for i in range(start + 1, len(lines)):
+        if lines[i].strip() == "```":
+            end = i
+            break
+
+    if end is None:
+        raise ValueError("No closing ``` found for the ```bash fence.")
+
+    fence_lines = [ln.rstrip("\n") for ln in lines[start + 1 : end]]
+    outside_lines = [ln.rstrip("\n") for i, ln in enumerate(lines) if i < start or i > end]
+    return start, end, fence_lines, outside_lines
 
 
 def _parse_steps(fence_lines: List[str]) -> List[Step]:
@@ -17086,326 +20800,88 @@ def _parse_steps(fence_lines: List[str]) -> List[Step]:
     for idx, (start_i, n) in enumerate(header_idxs):
         end_i = header_idxs[idx + 1][0] if idx + 1 < len(header_idxs) else len(fence_lines)
         block = fence_lines[start_i:end_i]
-        steps.append(Step(n=n, header=block[0], lines=block))
+        steps.append(Step(n=n, header_line=block[0], block_lines=block))
     return steps
 
 
-def _count_native_attachments(step: Step) -> int:
-    """
-    Counts -f/--file occurrences excluding:
-      - comment lines
-      - the literal extra_files line (immediately following the marker comment)
-    """
-    count = 0
-    ignore_next_nonempty = False
-
-    for ln in step.lines[1:]:
-        s = ln.strip()
-        if not s:
+def _parse_header_kv(header_line: str) -> Dict[str, str]:
+    out: Dict[str, str] = {}
+    tokens = header_line.strip().split()
+    i = 0
+    while i < len(tokens):
+        tok = tokens[i]
+        if "=" not in tok:
+            i += 1
             continue
-
-        # Detect extra_files marker comment; ignore next non-empty line.
-        if s.startswith("#") and "extra_files appended literally" in s.lower():
-            ignore_next_nonempty = True
-            continue
-
-        if ignore_next_nonempty:
-            # Skip counting attachments on the extra_files line itself.
-            ignore_next_nonempty = False
-            continue
-
-        if s.startswith("#"):
-            continue
-
-        count += len(re.findall(r"(?<!\S)(-f|--file)(?!\S)", ln))
-    return count
-
-def lint(path: Path) -> None:
-    raw = _read_text(path)
-    lines = raw.splitlines(True)
-    fence = _extract_bash_fence(lines)
-    steps = _parse_steps(fence)
-
-    errors: List[str] = []
-    for step in steps:
-        native = _count_native_attachments(step)
-        if native > 2:
-            errors.append(
-                f"Step {step.n}: has {native} native attachments; must be <= 2 (ticket bundle + at most one repo file)."
-            )
-
-    if errors:
-        for e in errors:
-            print(f"[ERROR] {e}", file=sys.stderr)
-        sys.exit(1)
-
-    print("[OK] Attachment lint passed (native attachments <= 2 per step; extra_files line excluded).")
-
-def main() -> None:
-    p = argparse.ArgumentParser(
-        description="Lint ticket-driven oraclepack Stage-1 packs for native attachments (<=2 per step, excluding literal extra_files line)."
-    )
-    p.add_argument("pack_path", help="Path to the Markdown pack file")
-    args = p.parse_args()
-
-    path = Path(args.pack_path)
-    if not path.exists():
-        print(f"[ERROR] File not found: {path}", file=sys.stderr)
-        sys.exit(1)
-
-    lint(path)
-
-
-if __name__ == "__main__":
-    main()
-```
-
-skills/oraclepack-tickets-pack/scripts/validate_pack.py
-```
-import argparse
-import re
-import sys
-from dataclasses import dataclass
-from pathlib import Path, PurePosixPath
-from typing import Dict, List, Tuple
-
-
-ALLOWED_CATEGORIES = [
-    "contracts/interfaces",
-    "invariants",
-    "caching/state",
-    "background jobs",
-    "observability",
-    "permissions",
-    "migrations",
-    "UX flows",
-    "failure modes",
-    "feature flags",
-]
-
-# Required header tokens, in strict order.
-HEADER_TOKEN_ORDER = [
-    "ROI=",
-    "impact=",
-    "confidence=",
-    "effort=",
-    "horizon=",
-    "category=",
-    "reference=",
-]
-
-
-@dataclass
-class Step:
-    n: str
-    header_line_no: int  # 1-based within fence
-    header_line: str
-    block_lines: List[str]
-
-
-def _fail(errors: List[str]) -> None:
-    for e in errors:
-        print(f"[ERROR] {e}", file=sys.stderr)
-    sys.exit(1)
-
-
-def _read_text(path: Path) -> str:
-    try:
-        return path.read_text(encoding="utf-8")
-    except UnicodeDecodeError:
-        return path.read_text(encoding="utf-8", errors="replace")
-
-
-def _extract_single_bash_fence(lines: List[str]) -> Tuple[int, int, List[str], List[str]]:
-    """
-    Enforces:
-      - exactly one fenced code block labeled bash
-      - no other fences anywhere
-      - opening fence line must be exactly ```bash
-      - closing fence line must be exactly ```
-    """
-    fence_locs = [i for i, ln in enumerate(lines) if re.match(r"^```", ln)]
-    if len(fence_locs) != 2:
-        # Show all fence-like lines to help debugging.
-        details = []
-        for i, ln in enumerate(lines):
-            if re.match(r"^```", ln):
-                details.append(f"line {i+1}: {ln.rstrip()}")
-        raise ValueError(
-            f"Expected exactly one fenced code block (2 fence lines), found {len(fence_locs)} fence line(s). "
-            + ("Fences: " + "; ".join(details) if details else "")
-        )
-
-    open_i, close_i = fence_locs
-    if lines[open_i].rstrip("\n") != "```bash":
-        raise ValueError("Opening fence must be exactly ```bash on its own line (no spaces).")
-    if lines[close_i].rstrip("\n") != "```":
-        raise ValueError("Closing fence must be exactly ``` on its own line (no spaces).")
-    if close_i <= open_i:
-        raise ValueError("Closing fence appears before opening fence.")
-
-    fence_lines = lines[open_i + 1 : close_i]
-    outside_lines = lines[:open_i] + lines[close_i + 1 :]
-    return open_i, close_i, fence_lines, outside_lines
-
-
-def _parse_steps(fence_lines: List[str]) -> List[Step]:
-    header_re = re.compile(r"^#\s*(\d{2})\)\s+")
-    header_idxs: List[Tuple[int, str]] = []
-    for i, ln in enumerate(fence_lines):
-        m = header_re.match(ln)
-        if m:
-            header_idxs.append((i, m.group(1)))
-
-    if len(header_idxs) != 20:
-        raise ValueError(f"Expected exactly 20 step headers inside bash fence, found {len(header_idxs)}.")
-
-    expected = [f"{i:02d}" for i in range(1, 21)]
-    got = [n for _, n in header_idxs]
-    if got != expected:
-        raise ValueError(f"Step numbering must be sequential 01..20. Got: {got}")
-
-    steps: List[Step] = []
-    for idx, (start_i, n) in enumerate(header_idxs):
-        end_i = header_idxs[idx + 1][0] if idx + 1 < len(header_idxs) else len(fence_lines)
-        block = fence_lines[start_i:end_i]
-        steps.append(
-            Step(
-                n=n,
-                header_line_no=start_i + 1,
-                header_line=block[0].rstrip("\n"),
-                block_lines=[b.rstrip("\n") for b in block],
-            )
-        )
-    return steps
-
-
-def _header_token_positions(header: str) -> Dict[str, int]:
-    pos: Dict[str, int] = {}
-    for t in HEADER_TOKEN_ORDER:
-        pos[t] = header.find(t)
-    return pos
-
-
-def _parse_category_value(header: str) -> str:
-    if "category=" not in header:
-        return ""
-    after = header.split("category=", 1)[1]
-    # Category ends at the start of " reference=" (strict contract).
-    end = after.find(" reference=")
-    if end == -1:
-        # As a fallback, try other token starts, though contract expects reference= last.
-        for token in [" ROI=", " impact=", " confidence=", " effort=", " horizon="]:
-            p = after.find(token)
-            if p != -1:
-                end = p if end == -1 else min(end, p)
-    if end == -1:
-        cat = after.strip()
-    else:
-        cat = after[:end].strip()
-    return cat
-
-
-def _has_nonempty_scalar(header: str, key: str) -> bool:
-    # scalar value ends at next whitespace
-    m = re.search(rf"\b{re.escape(key)}=([^\s]+)", header)
-    return bool(m and m.group(1).strip())
+        key, val = tok.split("=", 1)
+        if key in REQUIRED_HEADER_KEYS:
+            if key == "category" and i + 1 < len(tokens):
+                # Allow two-word categories like "background jobs" in headers.
+                nxt = tokens[i + 1]
+                if (val, nxt) in {
+                    ("background", "jobs"),
+                    ("UX", "flows"),
+                    ("failure", "modes"),
+                    ("feature", "flags"),
+                }:
+                    val = f"{val} {nxt}"
+            out[key] = val
+        i += 1
+    return out
 
 
 def _validate_header(step: Step, errors: List[str]) -> None:
-    header = step.header_line
+    m = re.match(r"^#\s*(\d{2})\)\s+", step.header_line)
+    if not m:
+        errors.append(f"Step {step.n}: invalid header format (expected '# NN) ...').")
+        return
+    if m.group(1) != step.n:
+        errors.append(f"Step {step.n}: header number mismatch (found {m.group(1)}).")
 
-    # Strict start.
-    if not re.match(rf"^#\s*{re.escape(step.n)}\)\s+", header):
-        errors.append(f"Step {step.n}: header must start with '# {step.n})'. Got: {header}")
+    kv = _parse_header_kv(step.header_line)
+    for req in REQUIRED_HEADER_KEYS:
+        if req not in kv:
+            errors.append(f"Step {step.n}: header missing required token {req}=...")
 
-    # Tokens must appear in strict order.
-    pos = _header_token_positions(header)
-    for t, p in pos.items():
-        if p == -1:
-            errors.append(f"Step {step.n}: missing required token '{t}' in header: {header}")
-
-    # Order check (only if all present).
-    if all(p != -1 for p in pos.values()):
-        last = -1
-        for t in HEADER_TOKEN_ORDER:
-            if pos[t] <= last:
-                errors.append(
-                    f"Step {step.n}: token '{t}' is out of order in header. "
-                    f"Expected order: {' '.join(HEADER_TOKEN_ORDER)}. Got: {header}"
-                )
-                break
-            last = pos[t]
-
-    # Non-empty values.
-    if not _has_nonempty_scalar(header, "ROI"):
-        errors.append(f"Step {step.n}: missing/empty ROI= value in header: {header}")
-    for k in ["impact", "confidence", "effort", "horizon", "reference"]:
-        if not _has_nonempty_scalar(header, k):
-            errors.append(f"Step {step.n}: missing/empty {k}= value in header: {header}")
-
-    cat_val = _parse_category_value(header)
-    if not cat_val:
-        errors.append(f"Step {step.n}: missing/empty category= value in header: {header}")
-    elif cat_val not in ALLOWED_CATEGORIES:
+    cat = kv.get("category")
+    if cat is not None and cat not in ALLOWED_CATEGORIES:
         errors.append(
-            f"Step {step.n}: invalid category='{cat_val}'. Must be one of: {ALLOWED_CATEGORIES}. Header: {header}"
+            f"Step {step.n}: category must be one of {ALLOWED_CATEGORIES}; got '{cat}'."
         )
 
 
 def _validate_write_output(step: Step, errors: List[str]) -> None:
     joined = "\n".join(step.block_lines)
-    # Strict: must use double quotes exactly: --write-output "<path>"
-    m = re.search(r'--write-output\s+"([^"]+)"', joined)
+
+    m = re.search(r'(?<!\S)--write-output(?!\S)\s+"([^"]+)"', joined)
     if not m:
-        errors.append(f"Step {step.n}: missing --write-output \"...\" (double-quoted) in step block.")
+        errors.append(f"Step {step.n}: missing --write-output \"...\".")
         return
 
     out_path = m.group(1)
-
-    # Disallow variable expansions in write paths.
-    if "$" in out_path or "`" in out_path:
-        errors.append(f"Step {step.n}: --write-output path must not contain shell expansions. Got: {out_path}")
-
-    # Disallow absolute writes (and home shortcuts).
     if out_path.startswith("/") or out_path.startswith("~"):
-        errors.append(f"Step {step.n}: --write-output path must be relative (no absolute/home paths). Got: {out_path}")
-
-    # Disallow traversal.
-    if re.search(r"(^|/)\.\.(/|$)", out_path):
-        errors.append(f"Step {step.n}: --write-output path must not contain '..' traversal. Got: {out_path}")
-
-    # Basic shape: <out_dir>/<nn>-<slug>.md
-    if "/" not in out_path:
-        errors.append(f"Step {step.n}: --write-output path must contain a directory component. Got: {out_path}")
+        errors.append(f"Step {step.n}: --write-output must not be absolute: {out_path}")
         return
 
-    filename = out_path.split("/")[-1]
-    if not filename.startswith(f"{step.n}-"):
-        errors.append(f"Step {step.n}: --write-output filename must start with '{step.n}-'. Got: {filename}")
-    if not filename.endswith(".md"):
-        errors.append(f"Step {step.n}: --write-output filename must end with '.md'. Got: {filename}")
+    p = PurePosixPath(out_path)
+    if any(part == ".." for part in p.parts):
+        errors.append(f"Step {step.n}: --write-output must not contain '..': {out_path}")
 
-    # Extra guard: ensure PurePosixPath doesn't include '..' (covers odd strings like 'a/../b').
-    try:
-        parts = PurePosixPath(out_path).parts
-        if ".." in parts:
-            errors.append(f"Step {step.n}: --write-output path contains '..' segment (unsafe). Got: {out_path}")
-    except Exception:
-        # Non-fatal; already handled by regex.
-        pass
+    if re.search(rf"(^|/){re.escape(step.n)}-", out_path) is None:
+        errors.append(f"Step {step.n}: --write-output must include '{step.n}-' in filename: {out_path}")
+
+    if not out_path.endswith(".md"):
+        errors.append(f"Step {step.n}: --write-output must end with .md: {out_path}")
 
 
 def _validate_ticket_bundle_reference(step: Step, errors: List[str]) -> None:
     joined = "\n".join(step.block_lines)
 
-    # Require the bundle to be mentioned/attached.
     if "_tickets_bundle" not in joined:
         errors.append(
             f"Step {step.n}: must reference the ticket bundle (expected '_tickets_bundle' in step block)."
         )
 
-    # Require a file attachment pointing to the bundle, double-quoted for stability.
     if re.search(r'(?<!\S)(-f|--file)(?!\S)\s+"[^"\n]*_tickets_bundle[^"\n]*"', joined) is None:
         errors.append(
             f"Step {step.n}: must attach the ticket bundle via -f/--file \"..._tickets_bundle...\"."
@@ -17430,7 +20906,8 @@ def _validate_answer_format(step: Step, errors: List[str]) -> None:
 def _validate_category_counts(steps: List[Step], errors: List[str]) -> None:
     counts: Dict[str, List[str]] = {c: [] for c in ALLOWED_CATEGORIES}
     for st in steps:
-        cat = _parse_category_value(st.header_line)
+        kv = _parse_header_kv(st.header_line)
+        cat = kv.get("category")
         if cat in counts:
             counts[cat].append(st.n)
 
@@ -17440,8 +20917,15 @@ def _validate_category_counts(steps: List[Step], errors: List[str]) -> None:
             bad.append(f"{cat}={len(ids)} (steps={ids})")
     if bad:
         errors.append(
-            "Category distribution must be exactly 2 steps per category (20 total). Problems: " + ", ".join(bad)
+            "Category distribution must be exactly 2 steps per category (20 total). Problems: "
+            + ", ".join(bad)
         )
+
+
+def _validate_step_numbers(steps: List[Step], errors: List[str]) -> None:
+    nums = [st.n for st in steps]
+    if nums != [f"{i:02d}" for i in range(1, 21)]:
+        errors.append(f"Step numbering must be 01..20 in order; got {nums}.")
 
 
 def _validate_coverage_check(outside_lines: List[str], errors: List[str]) -> None:
@@ -17453,53 +20937,89 @@ def _validate_coverage_check(outside_lines: List[str], errors: List[str]) -> Non
 
     after = text[m.end() :]
     for cat in ALLOWED_CATEGORIES:
-        # Require a line like: "- <cat>: OK" OR "- <cat>: Missing(01,02)"
         pat = rf"^\s*[-*]\s+{re.escape(cat)}\s*:\s*(OK|Missing\([^)]*\))\s*$"
         if re.search(pat, after, flags=re.MULTILINE) is None:
             errors.append(f'Coverage check missing/invalid line for category: "{cat}"')
 
 
-def validate_pack(path: Path) -> None:
+def _validate_bash_hazards(step: Step, errors: List[str]) -> None:
+    lines = step.block_lines[1:]
+    for i, ln in enumerate(lines):
+        s = ln.strip()
+
+        if s == "\\":
+            errors.append(f"Step {step.n}: contains a bare '\\\\' line (orphan backslash).")
+
+        if s.startswith("#"):
+            j = i - 1
+            while j >= 0 and not lines[j].strip():
+                j -= 1
+            if j >= 0 and lines[j].rstrip().endswith("\\"):
+                errors.append(
+                    f"Step {step.n}: comment line appears immediately after a '\\'-continued line (comment-in-continuation hazard)."
+                )
+
+        if s.startswith("-p "):
+            j = i - 1
+            while j >= 0 and not lines[j].strip():
+                j -= 1
+            if j < 0 or not lines[j].rstrip().endswith("\\"):
+                errors.append(
+                    f"Step {step.n}: '-p ...' line is not attached to a continued command (detached -p hazard)."
+                )
+
+
+def validate_pack(path: Path, require_bundle: bool) -> None:
     raw = _read_text(path)
     lines = raw.splitlines(True)
 
-    try:
-        _, _, fence_lines, outside_lines = _extract_single_bash_fence(lines)
-    except ValueError as e:
-        _fail([str(e)])
-
-    try:
-        steps = _parse_steps(fence_lines)
-    except ValueError as e:
-        _fail([str(e)])
-
     errors: List[str] = []
-    for st in steps:
-        _validate_header(st, errors)
-        _validate_write_output(st, errors)
-        _validate_ticket_bundle_reference(st, errors)
-        _validate_answer_format(st, errors)
+
+    try:
+        _start, _end, fence, outside = _extract_single_bash_fence(lines)
+    except Exception as e:
+        _fail([str(e)])
+
+    steps = _parse_steps(fence)
+
+    if len(steps) != 20:
+        errors.append(f"Expected exactly 20 steps; found {len(steps)}.")
+    else:
+        _validate_step_numbers(steps, errors)
+
+    for step in steps:
+        _validate_header(step, errors)
+        _validate_write_output(step, errors)
+        _validate_answer_format(step, errors)
+        _validate_bash_hazards(step, errors)
+        if require_bundle:
+            _validate_ticket_bundle_reference(step, errors)
 
     _validate_category_counts(steps, errors)
-    _validate_coverage_check(outside_lines, errors)
+    _validate_coverage_check(outside, errors)
 
     if errors:
         _fail(errors)
 
     print("[OK] Pack validates against tickets Stage-1 contract.")
 
+
 def main() -> None:
-    p = argparse.ArgumentParser(
-        description="Validate a ticket-driven oraclepack Stage-1 pack (single bash fence, 20 steps, strict headers/tokens, safe write paths, ticket bundle references, coverage check)."
-    )
+    p = argparse.ArgumentParser(description="Validate oraclepack Stage-1 ticket packs.")
     p.add_argument("pack_path", help="Path to the Markdown pack file")
+    p.add_argument(
+        "--mode",
+        choices=["bundle", "direct"],
+        default="direct",
+        help="Validation mode: bundle requires _tickets_bundle attachments",
+    )
     args = p.parse_args()
 
     path = Path(args.pack_path)
     if not path.exists():
         _fail([f"File not found: {path}"])
 
-    validate_pack(path)
+    validate_pack(path, require_bundle=args.mode == "bundle")
 
 
 if __name__ == "__main__":
@@ -18234,211 +21754,478 @@ Answer format:
 PROMPT
 )"
 
-# 16) ROI=4.2 impact=6 confidence=0.78 effort=2 horizon=NearTerm category=UX flows reference=Unknown
-{{oracle_cmd}} \
-  {{oracle_flags}} \
-  --write-output "{{out_dir}}/16-ux-flows-edge-cases-and-gotchas.md" \
-  -f "{{ticket_bundle_path}}" \
-  # optional (at most one): -f "<best_repo_file_path>" \
-  # extra_files appended literally (may be empty; may include -f/--file):
-  {{extra_files}} \
-  -p "$(cat <<'PROMPT'
-Strategist question #16  (ticket-driven)
-
-Reference: Unknown
-Category: UX flows
-Horizon: NearTerm
-ROI: 4.2 (impact=6, confidence=0.78, effort=2)
-
-Question:
-Using the ticket bundle, enumerate top UX edge cases (“gotchas”) that must be handled (missing tickets, partial bundles, validation failures, ambiguous outputs, cancel/back navigation). Identify where handling should be implemented and what tests are required.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 17) ROI=5.4 impact=7 confidence=0.76 effort=2 horizon=Immediate category=failure modes reference=Unknown
-{{oracle_cmd}} \
-  {{oracle_flags}} \
-  --write-output "{{out_dir}}/17-failure-modes-taxonomy-from-tickets.md" \
-  -f "{{ticket_bundle_path}}" \
-  # optional (at most one): -f "<best_repo_file_path>" \
-  # extra_files appended literally (may be empty; may include -f/--file):
-  {{extra_files}} \
-  -p "$(cat <<'PROMPT'
-Strategist question #17  (ticket-driven)
-
-Reference: Unknown
-Category: failure modes
-Horizon: Immediate
-ROI: 5.4 (impact=7, confidence=0.76, effort=2)
-
-Question:
-Derive a failure-mode taxonomy implied by the tickets (ticket discovery failures, bundle generation failures, schema violations, runner ingestion errors, tool execution failures). For each failure:
-- expected user-visible behavior
-- diagnostics to emit
-- where to classify/handle it.
-
 [TRUNCATED]
 ```
 
-skills/oraclepack-pipeline-improver/assets/backlog-template.md
+skills/oraclepack-tickets-pack/scripts/lint_attachments.py
 ```
-<!-- # path: oraclepack-pipeline-improver/assets/backlog-template.md -->
-# Oraclepack Actionizer Backlog
+import argparse
+import re
+import sys
+from dataclasses import dataclass
+from pathlib import Path
+from typing import List, Tuple
 
-Run:
-- pack_id: TODO
-- pack_hash: TODO
-- generated_at: TODO
 
-## Summary
+@dataclass
+class Step:
+    n: str
+    header: str
+    lines: List[str]
 
-- Total tasks: TODO
-- Actionable: TODO
-- Blocked: TODO
-- Conflicts: TODO
 
-## P0 (do first)
+def _read_text(path: Path) -> str:
+    try:
+        return path.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        return path.read_text(encoding="utf-8", errors="replace")
 
-### <task_id> — <title>
-- Status: actionable | blocked | conflict | noop
-- Category: TODO
-- Reference: TODO
-- Expected artifacts: TODO
-- Actions:
-  - TODO
-- Evidence:
-  - Paths: TODO
-  - Symbols: TODO
-  - Commands: TODO
-- Done when:
-  - TODO
 
-## P1
+def _extract_bash_fence(lines: List[str]) -> List[str]:
+    fence_idxs = [i for i, ln in enumerate(lines) if ln.startswith("```")]
+    if len(fence_idxs) != 2:
+        raise ValueError(f"Expected exactly one fenced block (2 fence lines). Found {len(fence_idxs)}.")
+    open_i, close_i = fence_idxs
+    if lines[open_i].rstrip("\n") != "```bash":
+        raise ValueError("Opening fence must be exactly ```bash.")
+    if lines[close_i].rstrip("\n") != "```":
+        raise ValueError("Closing fence must be exactly ```.")
+    return [ln.rstrip("\n") for ln in lines[open_i + 1 : close_i]]
 
-### <task_id> — <title>
-- (same fields)
 
-## Blocked / needs evidence
+def _parse_steps(fence_lines: List[str]) -> List[Step]:
+    header_re = re.compile(r"^#\s*(\d{2})\)\s+")
+    header_idxs: List[Tuple[int, str]] = []
+    for i, ln in enumerate(fence_lines):
+        m = header_re.match(ln)
+        if m:
+            header_idxs.append((i, m.group(1)))
 
-### <task_id> — <title>
-- Missing inputs:
-  - TODO
-- Next smallest experiment (one action):
-  - TODO
+    if not header_idxs:
+        raise ValueError("No step headers found inside bash fence.")
 
-## Conflicts / needs resolution
+    steps: List[Step] = []
+    for idx, (start_i, n) in enumerate(header_idxs):
+        end_i = header_idxs[idx + 1][0] if idx + 1 < len(header_idxs) else len(fence_lines)
+        block = fence_lines[start_i:end_i]
+        steps.append(Step(n=n, header=block[0], lines=block))
+    return steps
 
-### <task_id> — <title>
-- Conflicting statements:
-  - TODO
-- What evidence resolves this:
-  - TODO
-- Proposed resolution (clearly marked as Proposed):
-  - TODO
-```
 
-skills/oraclepack-pipeline-improver/assets/change-plan-template.md
-```
-<!-- # path: oraclepack-pipeline-improver/assets/change-plan-template.md -->
-# Oraclepack Change Plan
+def _count_native_attachments(step: Step) -> int:
+    """
+    Counts -f/--file occurrences excluding:
+      - comment lines
+      - the literal extra_files line (immediately following the marker comment)
+    """
+    count = 0
+    ignore_next_nonempty = False
 
-Run:
-- pack_id: TODO
-- pack_hash: TODO
-- generated_at: TODO
+    for ln in step.lines[1:]:
+        s = ln.strip()
+        if not s:
+            continue
 
-## Principles
+        # Detect extra_files marker comment; ignore next non-empty line.
+        if s.startswith("#") and "extra_files appended literally" in s.lower():
+            ignore_next_nonempty = True
+            continue
 
-- Smallest shippable increments first.
-- Every step has an acceptance check.
-- Unknowns are explicit; no guessing.
+        if ignore_next_nonempty:
+            # Skip counting attachments on the extra_files line itself.
+            ignore_next_nonempty = False
+            continue
 
-## Phase 0 — Guardrails (validate + safety)
+        if s.startswith("#"):
+            continue
 
-1) Implement/confirm strict validation (validate --strict --json)
-- Scope:
-  - TODO
-- Acceptance:
-  - TODO (e.g., rejects non-20 packs; emits JSON summary)
-- Tests:
-  - TODO (fixtures for invalid packs)
+        count += len(re.findall(r"(?<!\S)(-f|--file)(?!\S)", ln))
+    return count
 
-2) Path safety for output writing
-- Scope:
-  - TODO
-- Acceptance:
-  - TODO (rejects .. traversal / absolute escape)
-- Tests:
-  - TODO
+def lint(path: Path) -> None:
+    raw = _read_text(path)
+    lines = raw.splitlines(True)
+    fence = _extract_bash_fence(lines)
+    steps = _parse_steps(fence)
 
-## Phase 1 — Deterministic runs (run dir + manifests + resume)
+    errors: List[str] = []
+    for step in steps:
+        native = _count_native_attachments(step)
+        if native > 2:
+            errors.append(
+                f"Step {step.n}: has {native} native attachments; must be <= 2 (ticket bundle + at most one repo file)."
+            )
 
-3) Stable run dir + run.json / steps.json
-- Scope:
-  - TODO
-- Acceptance:
-  - TODO (creates .oraclepack/runs/<pack_id>/..., stable naming)
-- Tests:
-  - TODO
+    if errors:
+        for e in errors:
+            print(f"[ERROR] {e}", file=sys.stderr)
+        sys.exit(1)
 
-4) Resume default + --rerun semantics
-- Scope:
-  - TODO
-- Acceptance:
-  - TODO (interrupt + rerun skips completed via hashes)
-- Tests:
-  - TODO
+    print("[OK] Attachment lint passed (native attachments <= 2 per step; extra_files line excluded).")
 
-## Phase 2 — Reliability (concurrency + retries + optional caching)
+def main() -> None:
+    p = argparse.ArgumentParser(
+        description="Lint ticket-driven oraclepack Stage-1 packs for native attachments (<=2 per step, excluding literal extra_files line)."
+    )
+    p.add_argument("pack_path", help="Path to the Markdown pack file")
+    args = p.parse_args()
 
-5) Concurrency cap
-- Scope:
-  - TODO
-- Acceptance:
-  - TODO (never exceeds N parallel calls)
+    path = Path(args.pack_path)
+    if not path.exists():
+        print(f"[ERROR] File not found: {path}", file=sys.stderr)
+        sys.exit(1)
 
-6) Retry/backoff on transient errors
-- Scope:
-  - TODO
-- Acceptance:
-  - TODO (bounded retries; recorded in steps.json)
+    lint(path)
 
-7) Optional caching (if enabled)
-- Scope:
-  - TODO
-- Acceptance:
-  - TODO (unchanged inputs cause zero provider calls)
 
-## Phase 3 — Actionizer (Stage 3)
-
-8) Implement actionize command and artifacts
-- Scope:
-  - normalized.jsonl + backlog.md + change-plan.md
-- Acceptance:
-  - TODO (byte-identical output on rerun with unchanged inputs)
-
-## CI integration (optional)
-
-9) Add CI mode wiring (run --ci --non-interactive --json-log; actionize --ci)
-- Policy thresholds:
-  - TODO/Unknown
-- Acceptance:
-  - TODO (exit codes match policy)
+if __name__ == "__main__":
+    main()
 ```
 
-skills/oraclepack-pipeline-improver/assets/normalized.example.jsonl
+skills/oraclepack-tickets-pack/scripts/validate_pack.py
 ```
-{"pack_id":"2026-01-05__nogit__deadbeef","pack_hash":"deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef","step_id":"07","task_id":"t_deadbeef_07_a1b2c3d4","title":"Define authorization boundary for server routes","status":"blocked","category":"permissions","reference":"src/server/auth/**","expected_artifacts":["src/server/auth/**","src/routes/**"],"actions":["Locate existing auth middleware/guards and document intended boundary","Add route guard checks or middleware wiring where missing"],"evidence":{"paths":["src/server/auth/**","src/routes/**"],"symbols":[],"commands":["ck --regex auth|permission|role src/server src/routes"]},"notes":["Auth wiring not evidenced in provided inputs"],"missing_inputs":["Repo paths containing current auth middleware or route guards (e.g., src/server/auth/**)","CLI help output for oraclepack validate/run/actionize (if already exists)"]}
-{"pack_id":"2026-01-05__nogit__deadbeef","pack_hash":"deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef","step_id":"13","task_id":"t_deadbeef_13_e5f6a7b8","title":"Bound upload persistence metadata and retention policy","status":"actionable","category":"caching/state","reference":"src/server/persistence/sessionUploads.server.ts","expected_artifacts":["src/server/persistence/**","docs/plans/**"],"actions":["Add explicit retention policy + max entries/size controls","Ensure metadata captured is sufficient for downstream analysis"],"evidence":{"paths":["src/server/persistence/sessionUploads.server.ts"],"symbols":["saveSessionUpload"],"commands":["ck --regex saveSessionUpload src"]},"notes":[],"missing_inputs":[]}
+import argparse
+import re
+import sys
+from dataclasses import dataclass
+from pathlib import Path, PurePosixPath
+from typing import Dict, List, Tuple
+
+
+ALLOWED_CATEGORIES = [
+    "contracts/interfaces",
+    "invariants",
+    "caching/state",
+    "background jobs",
+    "observability",
+    "permissions",
+    "migrations",
+    "UX flows",
+    "failure modes",
+    "feature flags",
+]
+
+# Required header tokens, in strict order.
+HEADER_TOKEN_ORDER = [
+    "ROI=",
+    "impact=",
+    "confidence=",
+    "effort=",
+    "horizon=",
+    "category=",
+    "reference=",
+]
+
+
+@dataclass
+class Step:
+    n: str
+    header_line_no: int  # 1-based within fence
+    header_line: str
+    block_lines: List[str]
+
+
+def _fail(errors: List[str]) -> None:
+    for e in errors:
+        print(f"[ERROR] {e}", file=sys.stderr)
+    sys.exit(1)
+
+
+def _read_text(path: Path) -> str:
+    try:
+        return path.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        return path.read_text(encoding="utf-8", errors="replace")
+
+
+def _extract_single_bash_fence(lines: List[str]) -> Tuple[int, int, List[str], List[str]]:
+    """
+    Enforces:
+      - exactly one fenced code block labeled bash
+      - no other fences anywhere
+      - opening fence line must be exactly ```bash
+      - closing fence line must be exactly ```
+    """
+    fence_locs = [i for i, ln in enumerate(lines) if re.match(r"^```", ln)]
+    if len(fence_locs) != 2:
+        # Show all fence-like lines to help debugging.
+        details = []
+        for i, ln in enumerate(lines):
+            if re.match(r"^```", ln):
+                details.append(f"line {i+1}: {ln.rstrip()}")
+        raise ValueError(
+            f"Expected exactly one fenced code block (2 fence lines), found {len(fence_locs)} fence line(s). "
+            + ("Fences: " + "; ".join(details) if details else "")
+        )
+
+    open_i, close_i = fence_locs
+    if lines[open_i].rstrip("\n") != "```bash":
+        raise ValueError("Opening fence must be exactly ```bash on its own line (no spaces).")
+    if lines[close_i].rstrip("\n") != "```":
+        raise ValueError("Closing fence must be exactly ``` on its own line (no spaces).")
+    if close_i <= open_i:
+        raise ValueError("Closing fence appears before opening fence.")
+
+    fence_lines = lines[open_i + 1 : close_i]
+    outside_lines = lines[:open_i] + lines[close_i + 1 :]
+    return open_i, close_i, fence_lines, outside_lines
+
+
+def _parse_steps(fence_lines: List[str]) -> List[Step]:
+    header_re = re.compile(r"^#\s*(\d{2})\)\s+")
+    header_idxs: List[Tuple[int, str]] = []
+    for i, ln in enumerate(fence_lines):
+        m = header_re.match(ln)
+        if m:
+            header_idxs.append((i, m.group(1)))
+
+    if len(header_idxs) != 20:
+        raise ValueError(f"Expected exactly 20 step headers inside bash fence, found {len(header_idxs)}.")
+
+    expected = [f"{i:02d}" for i in range(1, 21)]
+    got = [n for _, n in header_idxs]
+    if got != expected:
+        raise ValueError(f"Step numbering must be sequential 01..20. Got: {got}")
+
+    steps: List[Step] = []
+    for idx, (start_i, n) in enumerate(header_idxs):
+        end_i = header_idxs[idx + 1][0] if idx + 1 < len(header_idxs) else len(fence_lines)
+        block = fence_lines[start_i:end_i]
+        steps.append(
+            Step(
+                n=n,
+                header_line_no=start_i + 1,
+                header_line=block[0].rstrip("\n"),
+                block_lines=[b.rstrip("\n") for b in block],
+            )
+        )
+    return steps
+
+
+def _header_token_positions(header: str) -> Dict[str, int]:
+    pos: Dict[str, int] = {}
+    for t in HEADER_TOKEN_ORDER:
+        pos[t] = header.find(t)
+    return pos
+
+
+def _parse_category_value(header: str) -> str:
+    if "category=" not in header:
+        return ""
+    after = header.split("category=", 1)[1]
+    # Category ends at the start of " reference=" (strict contract).
+    end = after.find(" reference=")
+    if end == -1:
+        # As a fallback, try other token starts, though contract expects reference= last.
+        for token in [" ROI=", " impact=", " confidence=", " effort=", " horizon="]:
+            p = after.find(token)
+            if p != -1:
+                end = p if end == -1 else min(end, p)
+    if end == -1:
+        cat = after.strip()
+    else:
+        cat = after[:end].strip()
+    return cat
+
+
+def _has_nonempty_scalar(header: str, key: str) -> bool:
+    # scalar value ends at next whitespace
+    m = re.search(rf"\b{re.escape(key)}=([^\s]+)", header)
+    return bool(m and m.group(1).strip())
+
+
+def _validate_header(step: Step, errors: List[str]) -> None:
+    header = step.header_line
+
+    # Strict start.
+    if not re.match(rf"^#\s*{re.escape(step.n)}\)\s+", header):
+        errors.append(f"Step {step.n}: header must start with '# {step.n})'. Got: {header}")
+
+    # Tokens must appear in strict order.
+    pos = _header_token_positions(header)
+    for t, p in pos.items():
+        if p == -1:
+            errors.append(f"Step {step.n}: missing required token '{t}' in header: {header}")
+
+    # Order check (only if all present).
+    if all(p != -1 for p in pos.values()):
+        last = -1
+        for t in HEADER_TOKEN_ORDER:
+            if pos[t] <= last:
+                errors.append(
+                    f"Step {step.n}: token '{t}' is out of order in header. "
+                    f"Expected order: {' '.join(HEADER_TOKEN_ORDER)}. Got: {header}"
+                )
+                break
+            last = pos[t]
+
+    # Non-empty values.
+    if not _has_nonempty_scalar(header, "ROI"):
+        errors.append(f"Step {step.n}: missing/empty ROI= value in header: {header}")
+    for k in ["impact", "confidence", "effort", "horizon", "reference"]:
+        if not _has_nonempty_scalar(header, k):
+            errors.append(f"Step {step.n}: missing/empty {k}= value in header: {header}")
+
+    cat_val = _parse_category_value(header)
+    if not cat_val:
+        errors.append(f"Step {step.n}: missing/empty category= value in header: {header}")
+    elif cat_val not in ALLOWED_CATEGORIES:
+        errors.append(
+            f"Step {step.n}: invalid category='{cat_val}'. Must be one of: {ALLOWED_CATEGORIES}. Header: {header}"
+        )
+
+
+def _validate_write_output(step: Step, errors: List[str]) -> None:
+    joined = "\n".join(step.block_lines)
+    # Strict: must use double quotes exactly: --write-output "<path>"
+    m = re.search(r'--write-output\s+"([^"]+)"', joined)
+    if not m:
+        errors.append(f"Step {step.n}: missing --write-output \"...\" (double-quoted) in step block.")
+        return
+
+    out_path = m.group(1)
+
+    # Disallow variable expansions in write paths.
+    if "$" in out_path or "`" in out_path:
+        errors.append(f"Step {step.n}: --write-output path must not contain shell expansions. Got: {out_path}")
+
+    # Disallow absolute writes (and home shortcuts).
+    if out_path.startswith("/") or out_path.startswith("~"):
+        errors.append(f"Step {step.n}: --write-output path must be relative (no absolute/home paths). Got: {out_path}")
+
+    # Disallow traversal.
+    if re.search(r"(^|/)\.\.(/|$)", out_path):
+        errors.append(f"Step {step.n}: --write-output path must not contain '..' traversal. Got: {out_path}")
+
+    # Basic shape: <out_dir>/<nn>-<slug>.md
+    if "/" not in out_path:
+        errors.append(f"Step {step.n}: --write-output path must contain a directory component. Got: {out_path}")
+        return
+
+    filename = out_path.split("/")[-1]
+    if not filename.startswith(f"{step.n}-"):
+        errors.append(f"Step {step.n}: --write-output filename must start with '{step.n}-'. Got: {filename}")
+    if not filename.endswith(".md"):
+        errors.append(f"Step {step.n}: --write-output filename must end with '.md'. Got: {filename}")
+
+    # Extra guard: ensure PurePosixPath doesn't include '..' (covers odd strings like 'a/../b').
+    try:
+        parts = PurePosixPath(out_path).parts
+        if ".." in parts:
+            errors.append(f"Step {step.n}: --write-output path contains '..' segment (unsafe). Got: {out_path}")
+    except Exception:
+        # Non-fatal; already handled by regex.
+        pass
+
+
+def _validate_ticket_bundle_reference(step: Step, errors: List[str]) -> None:
+    joined = "\n".join(step.block_lines)
+
+    # Require the bundle to be mentioned/attached.
+    if "_tickets_bundle" not in joined:
+        errors.append(
+            f"Step {step.n}: must reference the ticket bundle (expected '_tickets_bundle' in step block)."
+        )
+
+    # Require a file attachment pointing to the bundle, double-quoted for stability.
+    if re.search(r'(?<!\S)(-f|--file)(?!\S)\s+"[^"\n]*_tickets_bundle[^"\n]*"', joined) is None:
+        errors.append(
+            f"Step {step.n}: must attach the ticket bundle via -f/--file \"..._tickets_bundle...\"."
+        )
+
+
+def _validate_answer_format(step: Step, errors: List[str]) -> None:
+    hay = "\n".join(step.block_lines).lower()
+    required = [
+        "answer format:",
+        "direct answer",
+        "risks/unknowns",
+        "next smallest concrete experiment",
+        "if evidence is insufficient",
+        "missing file/path pattern",
+    ]
+    missing = [s for s in required if s not in hay]
+    if missing:
+        errors.append(f"Step {step.n}: prompt missing required Answer format components: {missing}")
+
+
+def _validate_category_counts(steps: List[Step], errors: List[str]) -> None:
+    counts: Dict[str, List[str]] = {c: [] for c in ALLOWED_CATEGORIES}
+    for st in steps:
+        cat = _parse_category_value(st.header_line)
+        if cat in counts:
+            counts[cat].append(st.n)
+
+    bad = []
+    for cat, ids in counts.items():
+        if len(ids) != 2:
+            bad.append(f"{cat}={len(ids)} (steps={ids})")
+    if bad:
+        errors.append(
+            "Category distribution must be exactly 2 steps per category (20 total). Problems: " + ", ".join(bad)
+        )
+
+
+def _validate_coverage_check(outside_lines: List[str], errors: List[str]) -> None:
+    text = "\n".join(outside_lines)
+    m = re.search(r"^##\s+Coverage check\s*$", text, flags=re.IGNORECASE | re.MULTILINE)
+    if m is None:
+        errors.append('Missing "## Coverage check" section (must be outside the bash fence).')
+        return
+
+    after = text[m.end() :]
+    for cat in ALLOWED_CATEGORIES:
+        # Require a line like: "- <cat>: OK" OR "- <cat>: Missing(01,02)"
+        pat = rf"^\s*[-*]\s+{re.escape(cat)}\s*:\s*(OK|Missing\([^)]*\))\s*$"
+        if re.search(pat, after, flags=re.MULTILINE) is None:
+            errors.append(f'Coverage check missing/invalid line for category: "{cat}"')
+
+
+def validate_pack(path: Path) -> None:
+    raw = _read_text(path)
+    lines = raw.splitlines(True)
+
+    try:
+        _, _, fence_lines, outside_lines = _extract_single_bash_fence(lines)
+    except ValueError as e:
+        _fail([str(e)])
+
+    try:
+        steps = _parse_steps(fence_lines)
+    except ValueError as e:
+        _fail([str(e)])
+
+    errors: List[str] = []
+    for st in steps:
+        _validate_header(st, errors)
+        _validate_write_output(st, errors)
+        _validate_ticket_bundle_reference(st, errors)
+        _validate_answer_format(st, errors)
+
+    _validate_category_counts(steps, errors)
+    _validate_coverage_check(outside_lines, errors)
+
+    if errors:
+        _fail(errors)
+
+    print("[OK] Pack validates against tickets Stage-1 contract.")
+
+def main() -> None:
+    p = argparse.ArgumentParser(
+        description="Validate a ticket-driven oraclepack Stage-1 pack (single bash fence, 20 steps, strict headers/tokens, safe write paths, ticket bundle references, coverage check)."
+    )
+    p.add_argument("pack_path", help="Path to the Markdown pack file")
+    args = p.parse_args()
+
+    path = Path(args.pack_path)
+    if not path.exists():
+        _fail([f"File not found: {path}"])
+
+    validate_pack(path)
+
+
+if __name__ == "__main__":
+    main()
 ```
 
 .config/mcp/mcp-builder/reference/evaluation.md
@@ -19062,17 +22849,7 @@ If many evaluations fail:
 - Review the agent's feedback for each task
 - Check if tool descriptions are clear and comprehensive
 - Verify input parameters are well-documented
-- Consider whether tools return too much or too little data
-- Ensure error messages are actionable
-
-### Timeout Issues
-
-If tasks are timing out:
-
-- Use a more capable model (e.g., `codex-3-7-sonnet-20250219`)
-- Check if tools are returning too much data
-- Verify pagination is working correctly
-- Consider simplifying complex questions
+[TRUNCATED]
 ```
 
 .config/mcp/mcp-builder/reference/mcp_best_practices.md
@@ -20218,58 +23995,6 @@ Your implementation MUST prioritize composability and code reuse:
    - Create reusable helper functions for operations used across multiple tools
    - Build shared API clients for HTTP requests instead of duplicating code
    - Centralize error handling logic in utility functions
-   - Extract business logic into dedicated functions that can be composed
-   - Extract shared markdown or JSON field selection & formatting functionality
-
-2. **Avoid Duplication**:
-   - NEVER copy-paste similar code between tools
-   - If you find yourself writing similar logic twice, extract it into a function
-   - Common operations like pagination, filtering, field selection, and formatting should be shared
-   - Authentication/authorization logic should be centralized
-
-## Building and Running
-
-Always build your TypeScript code before running:
-
-```bash
-# Build the project
-npm run build
-
-# Run the server
-npm start
-
-# Development with auto-reload
-npm run dev
-```
-
-Always ensure `npm run build` completes successfully before considering the implementation complete.
-
-## Quality Checklist
-
-Before finalizing your Node/TypeScript MCP server implementation, ensure:
-
-### Strategic Design
-- [ ] Tools enable complete workflows, not just API endpoint wrappers
-- [ ] Tool names reflect natural task subdivisions
-- [ ] Response formats optimize for agent context efficiency
-- [ ] Human-readable identifiers used where appropriate
-- [ ] Error messages guide agents toward correct usage
-
-### Implementation Quality
-- [ ] FOCUSED IMPLEMENTATION: Most important and valuable tools implemented
-- [ ] All tools registered using `registerTool` with complete configuration
-- [ ] All tools include `title`, `description`, `inputSchema`, and `annotations`
-- [ ] Annotations correctly set (readOnlyHint, destructiveHint, idempotentHint, openWorldHint)
-- [ ] All tools use Zod schemas for runtime input validation with `.strict()` enforcement
-- [ ] All Zod schemas have proper constraints and descriptive error messages
-- [ ] All tools have comprehensive descriptions with explicit input/output types
-- [ ] Descriptions include return value examples and complete schema documentation
-- [ ] Error messages are clear, actionable, and educational
-
-### TypeScript Quality
-- [ ] TypeScript interfaces are defined for all data structures
-- [ ] Strict TypeScript is enabled in tsconfig.json
-- [ ] No use of `any` type - use `unknown` or proper types instead
 [TRUNCATED]
 ```
 
@@ -20974,590 +24699,2544 @@ Before finalizing your Python MCP server implementation, ensure:
 - [ ] Pydantic models handle input validation (no manual validation needed)
 
 ### Advanced Features (where applicable)
-- [ ] Context injection used for logging, progress, or elicitation
-- [ ] Resources registered for appropriate data endpoints
-- [ ] Lifespan management implemented for persistent connections
-- [ ] Structured output types used (TypedDict, Pydantic models)
-- [ ] Appropriate transport configured (stdio or streamable HTTP)
-
-### Code Quality
-- [ ] File includes proper imports including Pydantic imports
-- [ ] Pagination is properly implemented where applicable
-- [ ] Filtering options are provided for potentially large result sets
-- [ ] All async functions are properly defined with `async def`
-- [ ] HTTP client usage follows async patterns with proper context managers
-- [ ] Type hints are used throughout the code
-- [ ] Constants are defined at module level in UPPER_CASE
-
-### Testing
-- [ ] Server runs successfully: `python your_server.py --help`
-- [ ] All imports resolve correctly
-- [ ] Sample tool calls work as expected
-- [ ] Error scenarios handled gracefully
+[TRUNCATED]
 ```
 
-.config/mcp/mcp-builder/scripts/connections.py
+skills/oraclepack-tickets-pack-grouped/references/attachment-minimization.md
 ```
-"""Lightweight connection handling for MCP servers."""
+# Attachment minimization rules (Grouped Tickets Stage 1 — Direct Attach)
 
-from abc import ABC, abstractmethod
-from contextlib import AsyncExitStack
-from typing import Any
+Objective: keep each group pack focused and portable.
 
-from mcp import ClientSession, StdioServerParameters
-from mcp.client.sse import sse_client
-from mcp.client.stdio import stdio_client
-from mcp.client.streamable_http import streamablehttp_client
+## Ticket attachments
 
+- Ticket files are attached directly in each step via `${ticket_args[@]}`.
+- Use `group_max_files` (default 25) to bound per-pack ticket count.
+- If a group is larger than the cap, split into multiple packs (part 1..N).
 
-class MCPConnection(ABC):
-    """Base class for MCP server connections."""
+## Non-ticket attachments (repo evidence)
 
-    def __init__(self):
-        self.session = None
-        self._stack = None
+- Keep explicit non-ticket attachments to **0–1 per step**.
+- Prefer a single high-signal file that clarifies contracts or a key code path.
 
-    @abstractmethod
-    def _create_context(self):
-        """Create the connection context based on connection type."""
+## extra_files (literal append)
 
-    async def __aenter__(self):
-        """Initialize MCP server connection."""
-        self._stack = AsyncExitStack()
-        await self._stack.__aenter__()
+- If `extra_files` is provided, append it literally to every oracle command.
+- It may include additional `-f/--file` flags.
+- Place `extra_files` on its own line with a comment:
+  - `# extra_files appended literally`
 
+```
+
+skills/oraclepack-tickets-pack-grouped/references/ticket-grouping.md
+```
+# Ticket grouping (deterministic, inferred)
+
+Objective: split tickets into focused topic/domain groups and generate one pack per group.
+
+## Inputs
+
+- `ticket_root` (default `.tickets`)
+- `ticket_glob` (default `**/*.md`, relative to `ticket_root`)
+- `ticket_paths` (optional; comma-separated explicit files; if present, ignore `ticket_glob`)
+- `group_mode` (default `subdir+infer`)
+- `group_min_score` (default `0.08`)
+- `group_max_files` (default `25`; max tickets per pack; >0)
+- `group_max_chars` (default `200000`; max total chars per pack; >0)
+- `dedupe_mode` (default `report`; one of `off`, `report`, `prune`, `merge`)
+- `dedupe_jaccard` (default `0.55`)
+- `dedupe_overlap_hi` (default `0.80`)
+- `dedupe_overlap_lo` (default `0.70`)
+- `dedupe_delta_min` (default `0.15`)
+- `dedupe_body_chars` (default `2000`)
+
+## Deterministic grouping rules
+
+1) Collect tickets:
+- If `ticket_paths` is non-empty: split on commas, trim whitespace, use exactly that list.
+- Else: glob `ticket_root/ticket_glob`.
+- Always sort lexicographically by path string.
+
+2) Detect possible duplicates (if `dedupe_mode != off`):
+- Signature: filename stem + first heading + first `dedupe_body_chars` chars.
+- Compute `jaccard` + `overlap` between tickets.
+- Duplicate edge rule:
+  - `overlap >= dedupe_overlap_hi` OR (`jaccard >= dedupe_jaccard` AND `overlap >= dedupe_overlap_lo`)
+- Connected components become duplicate clusters.
+- Canonical: largest content length; tie-break lexicographic.
+- Delta vs redundant:
+  - delta if unique token ratio >= `dedupe_delta_min` OR heading differs materially.
+  - redundant otherwise.
+
+3) Seed groups by subdir:
+- For any path under `ticket_root/<group>/...`, assign to group `<group>`.
+- Tickets directly under `ticket_root/` are "loose".
+
+4) Infer loose tickets into groups (if any groups exist):
+- Build a token set for each group from:
+  - group name tokens
+  - ticket filenames (stem tokens)
+  - first Markdown heading line (if present)
+- For each loose ticket, compute Jaccard overlap score with each group token set.
+- If `max_score >= group_min_score`, assign to the best group (stable tie-break by group name).
+- Otherwise, assign to `misc`.
+
+5) If no groups exist:
+- Put all tickets into a single group named `root`.
+
+6) Merge duplicates into primary group:
+- `report`: attach all tickets in the cluster to the canonical’s group.
+- `prune`: attach canonical + delta only; drop redundant from attachments.
+- `merge`: create `out_dir/_ticket_merges/cluster-XXXX.md` and attach only the merged file.
+- Emit `_dupes_possible.json`, `_duplicates.json`, and `_dedupe_plan.json`.
+
+7) Split oversized groups:
+- If a group exceeds `group_max_files` or `group_max_chars`, split into parts (1..N)
+  in sorted order, chunked deterministically.
+
+Hard rule: do not use mtimes, file sizes, or external ML services.
+
+## Required outputs
+
+- `_groups.json`: mapping of group -> list of ticket paths (lexicographic order)
+- Pack file per group (and part), each self-contained and direct-attach
+- `manifest.json`: groups with pack path + attached vs original ticket lists
+```
+
+skills/oraclepack-tickets-pack-grouped/references/tickets-pack-template-bundle.md
+```
+# Oracle Pack — {{codebase_name}} (Tickets Stage 1)
+
+## Parsed args
+- codebase_name: {{codebase_name}}
+- out_dir: {{out_dir}}
+- oracle_cmd: {{oracle_cmd}}
+- oracle_flags: {{oracle_flags}}
+- extra_files: {{extra_files}}
+- ticket_root: {{ticket_root}}
+- ticket_glob: {{ticket_glob}}
+- ticket_paths: {{ticket_paths}}
+- ticket_bundle_path: {{ticket_bundle_path}}
+- mode: {{mode}}
+
+Notes (contract):
+- Exactly one fenced `bash` block in this document.
+- No other ``` fences anywhere.
+- Exactly 20 steps, numbered 01..20 in order.
+- Step header: `# NN) ROI=... impact=... confidence=... effort=... horizon=... category=... reference=...`
+- Every step includes: `--write-output "{{out_dir}}/NN-<slug>.md"` (double quotes required).
+- Steps must be self-contained and must not rely on shell variables created in previous steps.
+- `## Coverage check` MUST be outside the bash fence (after the closing ```).
+
+```bash
+# Prelude (allowed inside the single bash fence)
+# - Creates out_dir deterministically
+# - Builds ticket_bundle_path deterministically from ticket_root/ticket_glob OR ticket_paths
+# - Uses lexicographic ordering only (no mtime/timestamps)
+
+set -euo pipefail
+
+mkdir -p "{{out_dir}}"
+
+python3 - <<'PY'
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+CODEBASE_NAME = "{{codebase_name}}"
+OUT_DIR = Path("{{out_dir}}")
+TICKET_ROOT = Path("{{ticket_root}}")
+TICKET_GLOB = "{{ticket_glob}}"
+TICKET_PATHS_RAW = "{{ticket_paths}}".strip()
+BUNDLE_PATH = Path("{{ticket_bundle_path}}")
+
+def _read_text(p: Path) -> str:
+    return p.read_text(encoding="utf-8", errors="replace")
+
+def _title_from_md(text: str) -> str:
+    for ln in text.splitlines():
+        s = ln.strip()
+        if s.startswith("# "):
+            return s[2:].strip() or "Untitled"
+    for ln in text.splitlines():
+        s = ln.strip()
+        if s:
+            return s[:80]
+    return "Untitled"
+
+def _select_paths() -> list[Path]:
+    if TICKET_PATHS_RAW:
+        items = [Path(x.strip()) for x in TICKET_PATHS_RAW.split(",") if x.strip()]
+        items = sorted(items, key=lambda p: str(p))
+        return items
+
+    if not TICKET_ROOT.exists():
+        return []
+
+    items = sorted(TICKET_ROOT.glob(TICKET_GLOB), key=lambda p: str(p))
+    return items
+
+paths = _select_paths()
+
+BUNDLE_PATH.parent.mkdir(parents=True, exist_ok=True)
+
+lines: list[str] = []
+lines.append(f"# Tickets Bundle — {CODEBASE_NAME if CODEBASE_NAME else 'Unknown'}")
+lines.append("")
+lines.append("## Selection")
+lines.append(f"- ticket_root: {TICKET_ROOT}")
+lines.append(f"- ticket_glob: {TICKET_GLOB}")
+lines.append(f"- ticket_paths: {TICKET_PATHS_RAW if TICKET_PATHS_RAW else '(none)'}")
+lines.append("- ordering: lexicographic by path")
+lines.append("")
+
+if not paths:
+    warn = (
+        "## WARNING: No tickets found\n\n"
+        "No ticket files were selected.\n\n"
+        "What was attempted:\n"
+        f"- ticket_root: {TICKET_ROOT}\n"
+        f"- ticket_glob: {TICKET_GLOB}\n"
+        f"- ticket_paths: {TICKET_PATHS_RAW if TICKET_PATHS_RAW else '(none)'}\n\n"
+        "Next: provide explicit ticket_paths or create tickets under ticket_root.\n"
+    )
+    lines.append(warn)
+    print(f"[WARN] No tickets selected; bundle will contain only WARNING.", file=sys.stderr)
+else:
+    lines.append("## Tickets")
+    lines.append("")
+    for p in paths:
+        lines.append("---")
+        lines.append(f"### {_title_from_md(_read_text(p))}")
+        lines.append(f"- path: {p}")
+        lines.append("")
         try:
-            ctx = self._create_context()
-            result = await self._stack.enter_async_context(ctx)
+            txt = _read_text(p)
+        except Exception as e:
+            lines.append(f"[ERROR reading file: {e}]")
+            lines.append("")
+            continue
 
-            if len(result) == 2:
-                read, write = result
-            elif len(result) == 3:
-                read, write, _ = result
-            else:
-                raise ValueError(f"Unexpected context result: {result}")
+        # Simple truncation policy: keep first 4000 chars if large.
+        if len(txt) > 4000:
+            lines.append(txt[:4000])
+            lines.append("\n[... truncated ...]\n")
+        else:
+            lines.append(txt)
 
-            session_ctx = ClientSession(read, write)
-            self.session = await self._stack.enter_async_context(session_ctx)
-            await self.session.initialize()
-            return self
-        except BaseException:
-            await self._stack.__aexit__(None, None, None)
-            raise
+        lines.append("")
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        """Clean up MCP server connection resources."""
-        if self._stack:
-            await self._stack.__aexit__(exc_type, exc_val, exc_tb)
-        self.session = None
-        self._stack = None
+BUNDLE_PATH.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
+print(f"[OK] Wrote ticket bundle: {BUNDLE_PATH}")
+PY
 
-    async def list_tools(self) -> list[dict[str, Any]]:
-        """Retrieve available tools from the MCP server."""
-        response = await self.session.list_tools()
-        return [
-            {
-                "name": tool.name,
-                "description": tool.description,
-                "input_schema": tool.inputSchema,
-            }
-            for tool in response.tools
-        ]
+# 01) ROI=8.0 impact=9 confidence=0.9 effort=1 horizon=Immediate category=contracts/interfaces reference=Unknown
+{{oracle_cmd}} {{oracle_flags}} \
+  --write-output "{{out_dir}}/01-contracts-interfaces-surface.md" \
+  -f "{{ticket_bundle_path}}" {{extra_files}} \
+  -p "$(cat <<'PROMPT'
+Strategist question #01
+Category: contracts/interfaces
 
-    async def call_tool(self, tool_name: str, arguments: dict[str, Any]) -> Any:
-        """Call a tool on the MCP server with provided arguments."""
-        result = await self.session.call_tool(tool_name, arguments=arguments)
-        return result.content
+Using the attached tickets bundle as the primary evidence, identify the primary public interface(s) implied by the tickets (CLI commands, APIs, file contracts, or user workflows).
+For each interface:
+- list key inputs/outputs
+- list the exact files/modules likely defining it (if unknown, say Unknown)
 
+Answer format:
+1) Direct answer (1–6 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
 
-class MCPConnectionStdio(MCPConnection):
-    """MCP connection using standard input/output."""
+# 02) ROI=7.8 impact=8 confidence=0.9 effort=1 horizon=Immediate category=contracts/interfaces reference=Unknown
+{{oracle_cmd}} {{oracle_flags}} \
+  --write-output "{{out_dir}}/02-contracts-interfaces-dependencies.md" \
+  -f "{{ticket_bundle_path}}" {{extra_files}} \
+  -p "$(cat <<'PROMPT'
+Strategist question #02
+Category: contracts/interfaces
 
-    def __init__(self, command: str, args: list[str] = None, env: dict[str, str] = None):
-        super().__init__()
-        self.command = command
-        self.args = args or []
-        self.env = env
+From the attached tickets bundle, infer which external dependencies/services the system must integrate with (CLIs, APIs, SaaS, databases).
+For each dependency:
+- what contract is required (auth, endpoints, file formats)
+- what configuration surface is implied
 
-    def _create_context(self):
-        return stdio_client(
-            StdioServerParameters(command=self.command, args=self.args, env=self.env)
-        )
+Answer format:
+1) Direct answer (1–6 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
 
+# 03) ROI=7.6 impact=8 confidence=0.85 effort=2 horizon=Immediate category=invariants reference=Unknown
+{{oracle_cmd}} {{oracle_flags}} \
+  --write-output "{{out_dir}}/03-invariants-must-always-hold.md" \
+  -f "{{ticket_bundle_path}}" {{extra_files}} \
+  -p "$(cat <<'PROMPT'
+Strategist question #03
+Category: invariants
 
-class MCPConnectionSSE(MCPConnection):
-    """MCP connection using Server-Sent Events."""
+Based on the attached tickets bundle, list the invariants that must always hold (data constraints, ordering constraints, security invariants, idempotency).
+For each invariant:
+- what breaks if violated
+- where it should be enforced (layer/module; if unknown, Unknown)
 
-    def __init__(self, url: str, headers: dict[str, str] = None):
-        super().__init__()
-        self.url = url
-        self.headers = headers or {}
+Answer format:
+1) Direct answer (1–6 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
 
-    def _create_context(self):
-        return sse_client(url=self.url, headers=self.headers)
+# 04) ROI=7.2 impact=8 confidence=0.8 effort=2 horizon=Immediate category=invariants reference=Unknown
+{{oracle_cmd}} {{oracle_flags}} \
+  --write-output "{{out_dir}}/04-invariants-input-validation.md" \
+  -f "{{ticket_bundle_path}}" {{extra_files}} \
+  -p "$(cat <<'PROMPT'
+Strategist question #04
+Category: invariants
 
+Using the attached tickets bundle, identify what inputs must be validated (CLI args, config fields, payloads, file paths).
+For each input:
+- validation rules implied
+- failure message/behavior implied
 
-class MCPConnectionHTTP(MCPConnection):
-    """MCP connection using Streamable HTTP."""
+Answer format:
+1) Direct answer (1–6 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
 
-    def __init__(self, url: str, headers: dict[str, str] = None):
-        super().__init__()
-        self.url = url
-        self.headers = headers or {}
+# 05) ROI=7.0 impact=7 confidence=0.85 effort=2 horizon=Near category=caching/state reference=Unknown
+{{oracle_cmd}} {{oracle_flags}} \
+  --write-output "{{out_dir}}/05-caching-state-state-model.md" \
+  -f "{{ticket_bundle_path}}" {{extra_files}} \
+  -p "$(cat <<'PROMPT'
+Strategist question #05
+Category: caching/state
 
-    def _create_context(self):
-        return streamablehttp_client(url=self.url, headers=self.headers)
+From the attached tickets bundle, infer what state must be persisted or cached (files, DB, in-memory, remote).
+For each state item:
+- read/write lifecycle
+- consistency model implied
+- failure recovery requirements
 
+Answer format:
+1) Direct answer (1–6 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
 
-def create_connection(
-    transport: str,
-    command: str = None,
-    args: list[str] = None,
-    env: dict[str, str] = None,
-    url: str = None,
-    headers: dict[str, str] = None,
-) -> MCPConnection:
-    """Factory function to create the appropriate MCP connection.
+# 06) ROI=6.8 impact=7 confidence=0.8 effort=2 horizon=Near category=caching/state reference=Unknown
+{{oracle_cmd}} {{oracle_flags}} \
+  --write-output "{{out_dir}}/06-caching-state-cache-invalidation.md" \
+  -f "{{ticket_bundle_path}}" {{extra_files}} \
+  -p "$(cat <<'PROMPT'
+Strategist question #06
+Category: caching/state
 
-    Args:
-        transport: Connection type ("stdio", "sse", or "http")
-        command: Command to run (stdio only)
-        args: Command arguments (stdio only)
-        env: Environment variables (stdio only)
-        url: Server URL (sse and http only)
-        headers: HTTP headers (sse and http only)
+Using the attached tickets bundle, identify caching risks: staleness, invalidation, keying, or race conditions implied by the tickets.
+Propose a minimal caching strategy consistent with the tickets.
 
-    Returns:
-        MCPConnection instance
-    """
-    transport = transport.lower()
+Answer format:
+1) Direct answer (1–6 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
 
-    if transport == "stdio":
-        if not command:
-            raise ValueError("Command is required for stdio transport")
-        return MCPConnectionStdio(command=command, args=args, env=env)
+# 07) ROI=6.9 impact=8 confidence=0.75 effort=3 horizon=Near category=background jobs reference=Unknown
+{{oracle_cmd}} {{oracle_flags}} \
+  --write-output "{{out_dir}}/07-background-jobs-what-runs-async.md" \
+  -f "{{ticket_bundle_path}}" {{extra_files}} \
+  -p "$(cat <<'PROMPT'
+Strategist question #07
+Category: background jobs
 
-    elif transport == "sse":
-        if not url:
-            raise ValueError("URL is required for sse transport")
-        return MCPConnectionSSE(url=url, headers=headers)
+From the attached tickets bundle, determine what work should run asynchronously/background (schedulers, queues, cron, long-running tasks).
+For each job:
+- trigger
+- inputs/outputs
+- retry/backoff requirements
 
-    elif transport in ["http", "streamable_http", "streamable-http"]:
-        if not url:
-            raise ValueError("URL is required for http transport")
-        return MCPConnectionHTTP(url=url, headers=headers)
+Answer format:
+1) Direct answer (1–6 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
 
-    else:
-        raise ValueError(f"Unsupported transport type: {transport}. Use 'stdio', 'sse', or 'http'")
+# 08) ROI=6.6 impact=7 confidence=0.75 effort=3 horizon=Near category=background jobs reference=Unknown
+{{oracle_cmd}} {{oracle_flags}} \
+  --write-output "{{out_dir}}/08-background-jobs-idempotency.md" \
+  -f "{{ticket_bundle_path}}" {{extra_files}} \
+  -p "$(cat <<'PROMPT'
+Strategist question #08
+Category: background jobs
+
+Using the attached tickets bundle, list the idempotency and concurrency constraints implied for background jobs.
+Recommend minimal safeguards (dedupe keys, locks, at-least-once handling) aligned with tickets.
+
+Answer format:
+1) Direct answer (1–6 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 09) ROI=7.4 impact=8 confidence=0.8 effort=2 horizon=Immediate category=observability reference=Unknown
+{{oracle_cmd}} {{oracle_flags}} \
+  --write-output "{{out_dir}}/09-observability-logs-metrics-traces.md" \
+  -f "{{ticket_bundle_path}}" {{extra_files}} \
+  -p "$(cat <<'PROMPT'
+Strategist question #09
+Category: observability
+
+From the attached tickets bundle, infer required observability: logs, metrics, traces, and user-visible diagnostics.
+List:
+- what to log/measure
+- cardinality risks
+- minimal dashboards/alerts implied
+
+Answer format:
+1) Direct answer (1–6 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 10) ROI=7.0 impact=7 confidence=0.8 effort=2 horizon=Near category=observability reference=Unknown
+{{oracle_cmd}} {{oracle_flags}} \
+  --write-output "{{out_dir}}/10-observability-error-taxonomy.md" \
+  -f "{{ticket_bundle_path}}" {{extra_files}} \
+  -p "$(cat <<'PROMPT'
+Strategist question #10
+Category: observability
+
+Using the attached tickets bundle, define an error taxonomy consistent with ticket failure modes:
+- user errors vs system errors
+- retryable vs non-retryable
+- how errors should surface (CLI exit codes, UI states, logs)
+
+Answer format:
+1) Direct answer (1–6 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 11) ROI=7.6 impact=9 confidence=0.75 effort=3 horizon=Immediate category=permissions reference=Unknown
+{{oracle_cmd}} {{oracle_flags}} \
+  --write-output "{{out_dir}}/11-permissions-authz-model.md" \
+  -f "{{ticket_bundle_path}}" {{extra_files}} \
+  -p "$(cat <<'PROMPT'
+Strategist question #11
+Category: permissions
+
+From the attached tickets bundle, infer the permissions model (roles, capabilities, scopes).
+List:
+- what operations require permissions
+- how permissions are granted/revoked
+- audit requirements implied
+
+Answer format:
+1) Direct answer (1–6 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 12) ROI=7.0 impact=8 confidence=0.75 effort=3 horizon=Near category=permissions reference=Unknown
+{{oracle_cmd}} {{oracle_flags}} \
+  --write-output "{{out_dir}}/12-permissions-secret-handling.md" \
+  -f "{{ticket_bundle_path}}" {{extra_files}} \
+  -p "$(cat <<'PROMPT'
+Strategist question #12
+Category: permissions
+
+Using the attached tickets bundle, identify sensitive data/secret handling needs.
+Recommend:
+- where secrets come from (env, files, vault)
+- redaction rules
+- least-privilege defaults
+
+Answer format:
+1) Direct answer (1–6 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 13) ROI=7.2 impact=8 confidence=0.8 effort=2 horizon=Near category=migrations reference=Unknown
+{{oracle_cmd}} {{oracle_flags}} \
+  --write-output "{{out_dir}}/13-migrations-data-changes.md" \
+  -f "{{ticket_bundle_path}}" {{extra_files}} \
+  -p "$(cat <<'PROMPT'
+Strategist question #13
+Category: migrations
+
+From the attached tickets bundle, infer any data/schema/config migrations needed.
+For each migration:
+- trigger/versioning
+- rollout plan
+- rollback strategy
+
+Answer format:
+1) Direct answer (1–6 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 14) ROI=6.8 impact=7 confidence=0.8 effort=2 horizon=Near category=migrations reference=Unknown
+{{oracle_cmd}} {{oracle_flags}} \
+  --write-output "{{out_dir}}/14-migrations-compatibility.md" \
+  -f "{{ticket_bundle_path}}" {{extra_files}} \
+  -p "$(cat <<'PROMPT'
+Strategist question #14
+Category: migrations
+
+Using the attached tickets bundle, identify backwards/forwards compatibility requirements during migration windows.
+Recommend minimal compatibility shims or staged rollout steps.
+
+Answer format:
+1) Direct answer (1–6 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 15) ROI=7.4 impact=8 confidence=0.8 effort=2 horizon=Immediate category=UX flows reference=Unknown
+{{oracle_cmd}} {{oracle_flags}} \
+  --write-output "{{out_dir}}/15-ux-flows-primary-journeys.md" \
+  -f "{{ticket_bundle_path}}" {{extra_files}} \
+  -p "$(cat <<'PROMPT'
+Strategist question #15
+Category: UX flows
+
+From the attached tickets bundle, map the primary user journeys implied by tickets.
+For each journey:
+- entry points
+- steps/screens/commands
+- success criteria and user feedback
+
+Answer format:
+1) Direct answer (1–6 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 16) ROI=6.9 impact=7 confidence=0.8 effort=2 horizon=Near category=UX flows reference=Unknown
+{{oracle_cmd}} {{oracle_flags}} \
+  --write-output "{{out_dir}}/16-ux-flows-edge-cases.md" \
+  -f "{{ticket_bundle_path}}" {{extra_files}} \
+  -p "$(cat <<'PROMPT'
+Strategist question #16
+Category: UX flows
+
+Using the attached tickets bundle, list UX edge cases and failure UX:
+- partial completion
+- retries
+- cancellation
+- timeouts
+- conflict resolution
+
+Answer format:
+1) Direct answer (1–6 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 17) ROI=7.8 impact=9 confidence=0.8 effort=2 horizon=Immediate category=failure modes reference=Unknown
+{{oracle_cmd}} {{oracle_flags}} \
+  --write-output "{{out_dir}}/17-failure-modes-top-risks.md" \
+  -f "{{ticket_bundle_path}}" {{extra_files}} \
+  -p "$(cat <<'PROMPT'
+Strategist question #17
+Category: failure modes
+
+From the attached tickets bundle, enumerate the most likely failure modes.
+For each failure mode:
+- detection signal
+- mitigation
+- user-visible behavior
+
+Answer format:
+1) Direct answer (1–6 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 18) ROI=7.0 impact=8 confidence=0.75 effort=3 horizon=Near category=failure modes reference=Unknown
+{{oracle_cmd}} {{oracle_flags}} \
+  --write-output "{{out_dir}}/18-failure-modes-test-plan.md" \
+  -f "{{ticket_bundle_path}}" {{extra_files}} \
+  -p "$(cat <<'PROMPT'
+Strategist question #18
+Category: failure modes
+
+Using the attached tickets bundle, propose a minimal test plan that covers the highest-risk failure modes.
+Include:
+- unit vs integration coverage split
+- fixtures/mocks needed
+- one smallest test to write first
+
+Answer format:
+1) Direct answer (1–6 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 19) ROI=7.3 impact=8 confidence=0.8 effort=2 horizon=Near category=feature flags reference=Unknown
+{{oracle_cmd}} {{oracle_flags}} \
+  --write-output "{{out_dir}}/19-feature-flags-needed.md" \
+  -f "{{ticket_bundle_path}}" {{extra_files}} \
+  -p "$(cat <<'PROMPT'
+Strategist question #19
+Category: feature flags
+
+From the attached tickets bundle, infer where feature flags or staged rollouts are needed.
+For each flag:
+- what it gates
+- default value
+- sunset plan
+
+Answer format:
+1) Direct answer (1–6 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 20) ROI=6.8 impact=7 confidence=0.8 effort=2 horizon=Near category=feature flags reference=Unknown
+{{oracle_cmd}} {{oracle_flags}} \
+  --write-output "{{out_dir}}/20-feature-flags-observability.md" \
+  -f "{{ticket_bundle_path}}" {{extra_files}} \
+  -p "$(cat <<'PROMPT'
+Strategist question #20
+Category: feature flags
+
+Using the attached tickets bundle, propose how to observe/validate a flagged rollout:
+- success metrics
+- rollback triggers
+- logging/alert changes while enabled
+
+Answer format:
+1) Direct answer (1–6 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
 ```
 
-.config/mcp/mcp-builder/scripts/evaluation.py
+## Coverage check
+
+*   contracts/interfaces: OK
+*   invariants: OK
+*   caching/state: OK
+*   background jobs: OK
+*   observability: OK
+*   permissions: OK
+*   migrations: OK
+*   UX flows: OK
+*   failure modes: OK
+*   feature flags: OK
+
 ```
-"""MCP Server Evaluation Harness
+```
 
-This script evaluates MCP servers by running test questions against them using codex-cli.
-"""
+skills/oraclepack-tickets-pack-grouped/references/tickets-pack-template.md
+```
+# Oracle Pack — {{codebase_name}} (Grouped Tickets Stage 1 — Direct Attach)
 
-import argparse
-import asyncio
+## Parsed args
+- codebase_name: {{codebase_name}}
+- out_dir: {{out_dir}}
+- oracle_cmd: {{oracle_cmd}}
+- oracle_flags: {{oracle_flags}}
+- extra_files: {{extra_files}}
+- ticket_root: {{ticket_root}}
+- ticket_glob: {{ticket_glob}}
+- ticket_paths: {{ticket_paths}}
+- ticket_max_files: {{ticket_max_files}}
+- group_name: {{group_name}}
+- group_slug: {{group_slug}}
+- mode: {{mode}}
+
+Notes (contract):
+- Exactly one fenced `bash` block in this document.
+- No other ``` fences anywhere.
+- Exactly 20 steps, numbered 01..20 in order.
+- Step header: `# NN) ROI=... impact=... confidence=... effort=... horizon=... category=... reference=...`
+- Every step includes: `--write-output "{{out_dir}}/NN-<slug>.md"` (double quotes required).
+- Steps must be self-contained and must not rely on shell variables created in previous steps.
+- Each step must attach tickets directly (no `_tickets_bundle.md` dependency).
+- Pack ends with a Coverage check section listing all 10 categories as OK or Missing(<step ids>).
+
+```bash
+set -euo pipefail
+
+mkdir -p "{{out_dir}}"
+
+# 01) ROI=4.8 impact=6 confidence=0.80 effort=1 horizon=Immediate category=contracts/interfaces reference={{group_slug}}
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = "{{ticket_root}}"
+TICKET_GLOB = "{{ticket_glob}}"
+TICKET_PATHS = "{{ticket_paths}}".strip()
+MAX = int("{{ticket_max_files}}")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group '{{group_name}}'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+{{oracle_cmd}}   {{oracle_flags}}   --write-output "{{out_dir}}/01-contracts-interfaces-ticket-surface.md"   "${ticket_args[@]}"   {{extra_files}}   -p "$(cat <<'PROMPT'
+Strategist question #01  (ticket-driven, group: {{group_name}})
+
+Reference: {{group_slug}}
+Category: contracts/interfaces
+Horizon: Immediate
+ROI: 4.8 (impact=6, confidence=0.80, effort=1)
+
+Question:
+Using the attached tickets as the primary context, list the public surface changes implied by the tickets (CLI/TUI/API/interfaces/contracts); call out backwards-compat constraints.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 02) ROI=4.6 impact=6 confidence=0.78 effort=1 horizon=Immediate category=contracts/interfaces reference={{group_slug}}
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = "{{ticket_root}}"
+TICKET_GLOB = "{{ticket_glob}}"
+TICKET_PATHS = "{{ticket_paths}}".strip()
+MAX = int("{{ticket_max_files}}")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group '{{group_name}}'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+{{oracle_cmd}}   {{oracle_flags}}   --write-output "{{out_dir}}/02-contracts-interfaces-integration-points.md"   "${ticket_args[@]}"   {{extra_files}}   -p "$(cat <<'PROMPT'
+Strategist question #02  (ticket-driven, group: {{group_name}})
+
+Reference: {{group_slug}}
+Category: contracts/interfaces
+Horizon: Immediate
+ROI: 4.6 (impact=6, confidence=0.78, effort=1)
+
+Question:
+Using the attached tickets as the primary context, identify external integrations implied by the tickets; required config/contract changes; failure/timeout behavior; minimal compat-safe rollout.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 03) ROI=5.1 impact=7 confidence=0.74 effort=1 horizon=NearTerm category=invariants reference={{group_slug}}
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = "{{ticket_root}}"
+TICKET_GLOB = "{{ticket_glob}}"
+TICKET_PATHS = "{{ticket_paths}}".strip()
+MAX = int("{{ticket_max_files}}")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group '{{group_name}}'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+{{oracle_cmd}}   {{oracle_flags}}   --write-output "{{out_dir}}/03-invariants-invariant-map.md"   "${ticket_args[@]}"   {{extra_files}}   -p "$(cat <<'PROMPT'
+Strategist question #03  (ticket-driven, group: {{group_name}})
+
+Reference: {{group_slug}}
+Category: invariants
+Horizon: NearTerm
+ROI: 5.1 (impact=7, confidence=0.74, effort=1)
+
+Question:
+Using the attached tickets as the primary context, extract system invariants implied by tickets (inputs/outputs, pack schema rules, step execution rules) and where to enforce them.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 04) ROI=5.0 impact=7 confidence=0.72 effort=2 horizon=NearTerm category=invariants reference={{group_slug}}
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = "{{ticket_root}}"
+TICKET_GLOB = "{{ticket_glob}}"
+TICKET_PATHS = "{{ticket_paths}}".strip()
+MAX = int("{{ticket_max_files}}")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group '{{group_name}}'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+{{oracle_cmd}}   {{oracle_flags}}   --write-output "{{out_dir}}/04-invariants-validation-boundaries.md"   "${ticket_args[@]}"   {{extra_files}}   -p "$(cat <<'PROMPT'
+Strategist question #04  (ticket-driven, group: {{group_name}})
+
+Reference: {{group_slug}}
+Category: invariants
+Horizon: NearTerm
+ROI: 5.0 (impact=7, confidence=0.72, effort=2)
+
+Question:
+Using the attached tickets as the primary context, identify validation boundaries that must exist (ticket parsing, pack generation, pack validation); propose minimal validation plan.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 05) ROI=4.4 impact=6 confidence=0.78 effort=2 horizon=NearTerm category=caching/state reference={{group_slug}}
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = "{{ticket_root}}"
+TICKET_GLOB = "{{ticket_glob}}"
+TICKET_PATHS = "{{ticket_paths}}".strip()
+MAX = int("{{ticket_max_files}}")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group '{{group_name}}'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+{{oracle_cmd}}   {{oracle_flags}}   --write-output "{{out_dir}}/05-caching-state-state-artifacts.md"   "${ticket_args[@]}"   {{extra_files}}   -p "$(cat <<'PROMPT'
+Strategist question #05  (ticket-driven, group: {{group_name}})
+
+Reference: {{group_slug}}
+Category: caching/state
+Horizon: NearTerm
+ROI: 4.4 (impact=6, confidence=0.78, effort=2)
+
+Question:
+Using the attached tickets as the primary context, identify state/artifacts that must be produced and preserved; schema/format expectations; stability/back-compat requirements.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 06) ROI=4.2 impact=6 confidence=0.75 effort=2 horizon=NearTerm category=caching/state reference={{group_slug}}
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = "{{ticket_root}}"
+TICKET_GLOB = "{{ticket_glob}}"
+TICKET_PATHS = "{{ticket_paths}}".strip()
+MAX = int("{{ticket_max_files}}")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group '{{group_name}}'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+{{oracle_cmd}}   {{oracle_flags}}   --write-output "{{out_dir}}/06-caching-state-cache-keys.md"   "${ticket_args[@]}"   {{extra_files}}   -p "$(cat <<'PROMPT'
+Strategist question #06  (ticket-driven, group: {{group_name}})
+
+Reference: {{group_slug}}
+Category: caching/state
+Horizon: NearTerm
+ROI: 4.2 (impact=6, confidence=0.75, effort=2)
+
+Question:
+Using the attached tickets as the primary context, identify any caching opportunities/risks (discovery caches, pack outputs, oracle outputs); define cache keys, invalidation, and correctness risks.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 07) ROI=4.3 impact=6 confidence=0.70 effort=2 horizon=MidTerm category=background jobs reference={{group_slug}}
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = "{{ticket_root}}"
+TICKET_GLOB = "{{ticket_glob}}"
+TICKET_PATHS = "{{ticket_paths}}".strip()
+MAX = int("{{ticket_max_files}}")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group '{{group_name}}'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+{{oracle_cmd}}   {{oracle_flags}}   --write-output "{{out_dir}}/07-background-jobs-job-model.md"   "${ticket_args[@]}"   {{extra_files}}   -p "$(cat <<'PROMPT'
+Strategist question #07  (ticket-driven, group: {{group_name}})
+
+Reference: {{group_slug}}
+Category: background jobs
+Horizon: MidTerm
+ROI: 4.3 (impact=6, confidence=0.70, effort=2)
+
+Question:
+Using the attached tickets as the primary context, identify any background/async work implied (jobs, queues, long-running operations); define responsibilities and interfaces.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 08) ROI=4.0 impact=6 confidence=0.68 effort=3 horizon=MidTerm category=background jobs reference={{group_slug}}
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = "{{ticket_root}}"
+TICKET_GLOB = "{{ticket_glob}}"
+TICKET_PATHS = "{{ticket_paths}}".strip()
+MAX = int("{{ticket_max_files}}")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group '{{group_name}}'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+{{oracle_cmd}}   {{oracle_flags}}   --write-output "{{out_dir}}/08-background-jobs-queue-failure.md"   "${ticket_args[@]}"   {{extra_files}}   -p "$(cat <<'PROMPT'
+Strategist question #08  (ticket-driven, group: {{group_name}})
+
+Reference: {{group_slug}}
+Category: background jobs
+Horizon: MidTerm
+ROI: 4.0 (impact=6, confidence=0.68, effort=3)
+
+Question:
+Using the attached tickets as the primary context, define how background failures are handled (retries, idempotency, poison messages); define observability hooks.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 09) ROI=4.7 impact=7 confidence=0.76 effort=1 horizon=Immediate category=observability reference={{group_slug}}
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = "{{ticket_root}}"
+TICKET_GLOB = "{{ticket_glob}}"
+TICKET_PATHS = "{{ticket_paths}}".strip()
+MAX = int("{{ticket_max_files}}")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group '{{group_name}}'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+{{oracle_cmd}}   {{oracle_flags}}   --write-output "{{out_dir}}/09-observability-logging-metrics.md"   "${ticket_args[@]}"   {{extra_files}}   -p "$(cat <<'PROMPT'
+Strategist question #09  (ticket-driven, group: {{group_name}})
+
+Reference: {{group_slug}}
+Category: observability
+Horizon: Immediate
+ROI: 4.7 (impact=7, confidence=0.76, effort=1)
+
+Question:
+Using the attached tickets as the primary context, define what logging/metrics must exist to debug pack generation + step execution; propose minimal instrumentation plan.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 10) ROI=4.5 impact=7 confidence=0.74 effort=2 horizon=Immediate category=observability reference={{group_slug}}
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+
+TICKET_ROOT = "{{ticket_root}}"
+TICKET_GLOB = "{{ticket_glob}}"
+TICKET_PATHS = "{{ticket_paths}}".strip()
+MAX = int("{{ticket_max_files}}")
+
+root = Path(TICKET_ROOT)
+
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group '{{group_name}}'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+{{oracle_cmd}}   {{oracle_flags}}   --write-output "{{out_dir}}/10-observability-tracing.md"   "${ticket_args[@]}"   {{extra_files}}   -p "$(cat <<'PROMPT'
+Strategist question #10  (ticket-driven, group: {{group_name}})
+
+Reference: {{group_slug}}
+Category: observability
+Horizon: Immediate
+ROI: 4.5 (impact=7, confidence=0.74, effort=2)
+
+Question:
+Using the attached tickets as the primary context, define tracing/correlation strategy across pack steps and downstream tools; identify required IDs and propagation.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+[TRUNCATED]
+```
+
+skills/oraclepack-tickets-pack-grouped/scripts/generate_grouped_packs.py
+```
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import datetime as _dt
+import math
 import json
 import re
 import sys
-import time
-import traceback
-import xml.etree.ElementTree as ET
 from pathlib import Path
-from typing import Any
+from typing import Dict, Iterable, List, Tuple
 
-from anthropic import Anthropic
-
-from connections import create_connection
-
-EVALUATION_PROMPT = """You are an AI assistant with access to tools.
-
-When given a task, you MUST:
-1. Use the available tools to complete the task
-2. Provide summary of each step in your approach, wrapped in <summary> tags
-3. Provide feedback on the tools provided, wrapped in <feedback> tags
-4. Provide your final response, wrapped in <response> tags
-
-Summary Requirements:
-- In your <summary> tags, you must explain:
-  - The steps you took to complete the task
-  - Which tools you used, in what order, and why
-  - The inputs you provided to each tool
-  - The outputs you received from each tool
-  - A summary for how you arrived at the response
-
-Feedback Requirements:
-- In your <feedback> tags, provide constructive feedback on the tools:
-  - Comment on tool names: Are they clear and descriptive?
-  - Comment on input parameters: Are they well-documented? Are required vs optional parameters clear?
-  - Comment on descriptions: Do they accurately describe what the tool does?
-  - Comment on any errors encountered during tool usage: Did the tool fail to execute? Did the tool return too many tokens?
-  - Identify specific areas for improvement and explain WHY they would help
-  - Be specific and actionable in your suggestions
-
-Response Requirements:
-- Your response should be concise and directly address what was asked
-- Always wrap your final response in <response> tags
-- If you cannot solve the task return <response>NOT_FOUND</response>
-- For numeric responses, provide just the number
-- For IDs, provide just the ID
-- For names or text, provide the exact text requested
-- Your response should go last"""
+STOPWORDS = {
+    "the", "and", "for", "with", "from", "this", "that", "into", "over", "under", "when",
+    "then", "than", "else", "only", "must", "should", "could", "would", "will", "shall",
+    "ticket", "tickets", "oraclepack", "oracle", "pack", "packs",
+}
 
 
-def parse_evaluation_file(file_path: Path) -> list[dict[str, Any]]:
-    """Parse XML evaluation file with qa_pair elements."""
+def _parse_kv_args(argv: List[str]) -> Dict[str, str]:
+    args: Dict[str, str] = {}
+    for raw in argv:
+        if "=" not in raw:
+            continue
+        k, v = raw.split("=", 1)
+        args[k.strip()] = v.strip()
+    return args
+
+
+def _today() -> str:
+    return _dt.date.today().isoformat()
+
+
+def _slugify(s: str) -> str:
+    s = s.strip().lower()
+    s = re.sub(r"[^a-z0-9]+", "-", s)
+    s = re.sub(r"-+", "-", s).strip("-")
+    return s or "group"
+
+
+def _tokenize(text: str) -> List[str]:
+    text = text.lower()
+    text = re.sub(r"[^a-z0-9]+", " ", text)
+    toks = [t for t in text.split() if len(t) >= 3 and t not in STOPWORDS]
+    return toks
+
+
+def _normalize_title(text: str) -> str:
+    text = text.strip().lower()
+    text = re.sub(r"[^a-z0-9]+", " ", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    return text
+
+
+def _read_heading(path: Path) -> str:
     try:
-        tree = ET.parse(file_path)
-        root = tree.getroot()
-        evaluations = []
+        for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+            if line.startswith("#"):
+                return line.lstrip("#").strip()
+    except FileNotFoundError:
+        return ""
+    return ""
 
-        for qa_pair in root.findall(".//qa_pair"):
-            question_elem = qa_pair.find("question")
-            answer_elem = qa_pair.find("answer")
 
-            if question_elem is not None and answer_elem is not None:
-                evaluations.append({
-                    "question": (question_elem.text or "").strip(),
-                    "answer": (answer_elem.text or "").strip(),
-                })
-
-        return evaluations
-    except Exception as e:
-        print(f"Error parsing evaluation file {file_path}: {e}")
+def _collect_ticket_paths(ticket_root: str, ticket_glob: str, ticket_paths: str) -> List[Path]:
+    if ticket_paths:
+        parts = [p.strip() for p in ticket_paths.split(",") if p.strip()]
+        return [Path(p) for p in parts]
+    root = Path(ticket_root)
+    if not root.exists():
         return []
+    return [Path(p) for p in root.glob(ticket_glob)]
 
 
-def extract_xml_content(text: str, tag: str) -> str | None:
-    """Extract content from XML tags."""
-    pattern = rf"<{tag}>(.*?)</{tag}>"
-    matches = re.findall(pattern, text, re.DOTALL)
-    return matches[-1].strip() if matches else None
-
-
-async def agent_loop(
-    client: Anthropic,
-    model: str,
-    question: str,
-    tools: list[dict[str, Any]],
-    connection: Any,
-) -> tuple[str, dict[str, Any]]:
-    """Run the agent loop with MCP tools."""
-    messages = [{"role": "user", "content": question}]
-
-    response = await asyncio.to_thread(
-        client.messages.create,
-        model=model,
-        max_tokens=4096,
-        system=EVALUATION_PROMPT,
-        messages=messages,
-        tools=tools,
-    )
-
-    messages.append({"role": "assistant", "content": response.content})
-
-    tool_metrics = {}
-
-    while response.stop_reason == "tool_use":
-        tool_use = next(block for block in response.content if block.type == "tool_use")
-        tool_name = tool_use.name
-        tool_input = tool_use.input
-
-        tool_start_ts = time.time()
-        try:
-            tool_result = await connection.call_tool(tool_name, tool_input)
-            tool_response = json.dumps(tool_result) if isinstance(tool_result, (dict, list)) else str(tool_result)
-        except Exception as e:
-            tool_response = f"Error executing tool {tool_name}: {str(e)}\n"
-            tool_response += traceback.format_exc()
-        tool_duration = time.time() - tool_start_ts
-
-        if tool_name not in tool_metrics:
-            tool_metrics[tool_name] = {"count": 0, "durations": []}
-        tool_metrics[tool_name]["count"] += 1
-        tool_metrics[tool_name]["durations"].append(tool_duration)
-
-        messages.append({
-            "role": "user",
-            "content": [{
-                "type": "tool_result",
-                "tool_use_id": tool_use.id,
-                "content": tool_response,
-            }]
-        })
-
-        response = await asyncio.to_thread(
-            client.messages.create,
-            model=model,
-            max_tokens=4096,
-            system=EVALUATION_PROMPT,
-            messages=messages,
-            tools=tools,
-        )
-        messages.append({"role": "assistant", "content": response.content})
-
-    response_text = next(
-        (block.text for block in response.content if hasattr(block, "text")),
-        None,
-    )
-    return response_text, tool_metrics
-
-
-async def evaluate_single_task(
-    client: Anthropic,
-    model: str,
-    qa_pair: dict[str, Any],
-    tools: list[dict[str, Any]],
-    connection: Any,
-    task_index: int,
-) -> dict[str, Any]:
-    """Evaluate a single QA pair with the given tools."""
-    start_time = time.time()
-
-    print(f"Task {task_index + 1}: Running task with question: {qa_pair['question']}")
-    response, tool_metrics = await agent_loop(client, model, qa_pair["question"], tools, connection)
-
-    response_value = extract_xml_content(response, "response")
-    summary = extract_xml_content(response, "summary")
-    feedback = extract_xml_content(response, "feedback")
-
-    duration_seconds = time.time() - start_time
-
-    return {
-        "question": qa_pair["question"],
-        "expected": qa_pair["answer"],
-        "actual": response_value,
-        "score": int(response_value == qa_pair["answer"]) if response_value else 0,
-        "total_duration": duration_seconds,
-        "tool_calls": tool_metrics,
-        "num_tool_calls": sum(len(metrics["durations"]) for metrics in tool_metrics.values()),
-        "summary": summary,
-        "feedback": feedback,
-    }
-
-
-REPORT_HEADER = """
-# Evaluation Report
-
-## Summary
-
-- **Accuracy**: {correct}/{total} ({accuracy:.1f}%)
-- **Average Task Duration**: {average_duration_s:.2f}s
-- **Average Tool Calls per Task**: {average_tool_calls:.2f}
-- **Total Tool Calls**: {total_tool_calls}
-
----
-"""
-
-TASK_TEMPLATE = """
-### Task {task_num}
-
-**Question**: {question}
-**Ground Truth Answer**: `{expected_answer}`
-**Actual Answer**: `{actual_answer}`
-**Correct**: {correct_indicator}
-**Duration**: {total_duration:.2f}s
-**Tool Calls**: {tool_calls}
-
-**Summary**
-{summary}
-
-**Feedback**
-{feedback}
-
----
-"""
-
-
-async def run_evaluation(
-    eval_path: Path,
-    connection: Any,
-    model: str = "codex-cli-3-7-sonnet-20250219",
-) -> str:
-    """Run evaluation with MCP server tools."""
-    print("🚀 Starting Evaluation")
-
-    client = Anthropic()
-
-    tools = await connection.list_tools()
-    print(f"📋 Loaded {len(tools)} tools from MCP server")
-
-    qa_pairs = parse_evaluation_file(eval_path)
-    print(f"📋 Loaded {len(qa_pairs)} evaluation tasks")
-
-    results = []
-    for i, qa_pair in enumerate(qa_pairs):
-        print(f"Processing task {i + 1}/{len(qa_pairs)}")
-        result = await evaluate_single_task(client, model, qa_pair, tools, connection, i)
-        results.append(result)
-
-    correct = sum(r["score"] for r in results)
-    accuracy = (correct / len(results)) * 100 if results else 0
-    average_duration_s = sum(r["total_duration"] for r in results) / len(results) if results else 0
-    average_tool_calls = sum(r["num_tool_calls"] for r in results) / len(results) if results else 0
-    total_tool_calls = sum(r["num_tool_calls"] for r in results)
-
-    report = REPORT_HEADER.format(
-        correct=correct,
-        total=len(results),
-        accuracy=accuracy,
-        average_duration_s=average_duration_s,
-        average_tool_calls=average_tool_calls,
-        total_tool_calls=total_tool_calls,
-    )
-
-    report += "".join([
-        TASK_TEMPLATE.format(
-            task_num=i + 1,
-            question=qa_pair["question"],
-            expected_answer=qa_pair["answer"],
-            actual_answer=result["actual"] or "N/A",
-            correct_indicator="✅" if result["score"] else "❌",
-            total_duration=result["total_duration"],
-            tool_calls=json.dumps(result["tool_calls"], indent=2),
-            summary=result["summary"] or "N/A",
-            feedback=result["feedback"] or "N/A",
-        )
-        for i, (qa_pair, result) in enumerate(zip(qa_pairs, results))
-    ])
-
-    return report
-
-
-def parse_headers(header_list: list[str]) -> dict[str, str]:
-    """Parse header strings in format 'Key: Value' into a dictionary."""
-    headers = {}
-    if not header_list:
-        return headers
-
-    for header in header_list:
-        if ":" in header:
-            key, value = header.split(":", 1)
-            headers[key.strip()] = value.strip()
-        else:
-            print(f"Warning: Ignoring malformed header: {header}")
-    return headers
-
-
-def parse_env_vars(env_list: list[str]) -> dict[str, str]:
-    """Parse environment variable strings in format 'KEY=VALUE' into a dictionary."""
-    env = {}
-    if not env_list:
-        return env
-
-    for env_var in env_list:
-        if "=" in env_var:
-            key, value = env_var.split("=", 1)
-            env[key.strip()] = value.strip()
-        else:
-            print(f"Warning: Ignoring malformed environment variable: {env_var}")
-    return env
-
-
-async def main():
-    parser = argparse.ArgumentParser(
-        description="Evaluate MCP servers using test questions",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  # Evaluate a local stdio MCP server
-  python evaluation.py -t stdio -c python -a my_server.py eval.xml
-
-  # Evaluate an SSE MCP server
-  python evaluation.py -t sse -u https://example.com/mcp -H "Authorization: Bearer token" eval.xml
-
-  # Evaluate an HTTP MCP server with custom model
-  python evaluation.py -t http -u https://example.com/mcp -m codex-cli-3-5-sonnet-20241022 eval.xml
-        """,
-    )
-
-    parser.add_argument("eval_file", type=Path, help="Path to evaluation XML file")
-    parser.add_argument("-t", "--transport", choices=["stdio", "sse", "http"], default="stdio", help="Transport type (default: stdio)")
-    parser.add_argument("-m", "--model", default="codex-cli-3-7-sonnet-20250219", help="codex-cli model to use (default: codex-cli-3-7-sonnet-20250219)")
-
-    stdio_group = parser.add_argument_group("stdio options")
-    stdio_group.add_argument("-c", "--command", help="Command to run MCP server (stdio only)")
-    stdio_group.add_argument("-a", "--args", nargs="+", help="Arguments for the command (stdio only)")
-    stdio_group.add_argument("-e", "--env", nargs="+", help="Environment variables in KEY=VALUE format (stdio only)")
-
-    remote_group = parser.add_argument_group("sse/http options")
-    remote_group.add_argument("-u", "--url", help="MCP server URL (sse/http only)")
-    remote_group.add_argument("-H", "--header", nargs="+", dest="headers", help="HTTP headers in 'Key: Value' format (sse/http only)")
-
-    parser.add_argument("-o", "--output", type=Path, help="Output file for evaluation report (default: stdout)")
-
-    args = parser.parse_args()
-
-    if not args.eval_file.exists():
-        print(f"Error: Evaluation file not found: {args.eval_file}")
-        sys.exit(1)
-
-    headers = parse_headers(args.headers) if args.headers else None
-    env_vars = parse_env_vars(args.env) if args.env else None
-
+def _read_signature(path: Path, max_lines: int = 40) -> Tuple[str, str]:
+    heading = ""
+    lines: List[str] = []
     try:
-        connection = create_connection(
-            transport=args.transport,
-            command=args.command,
-            args=args.args,
-            env=env_vars,
-            url=args.url,
-            headers=headers,
-        )
-    except ValueError as e:
-        print(f"Error: {e}")
-        sys.exit(1)
+        for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+            if not heading and line.startswith("#"):
+                heading = line.lstrip("#").strip()
+            if line.strip():
+                lines.append(line.strip())
+            if len(lines) >= max_lines:
+                break
+    except FileNotFoundError:
+        pass
+    return heading, " ".join(lines)
 
-    print(f"🔗 Connecting to MCP server via {args.transport}...")
 
-    async with connection:
-        print("✅ Connected successfully")
-        report = await run_evaluation(args.eval_file, connection, args.model)
+def _read_text(path: Path) -> str:
+    try:
+        return path.read_text(encoding="utf-8", errors="replace")
+    except FileNotFoundError:
+        return ""
 
-        if args.output:
-            args.output.write_text(report)
-            print(f"\n✅ Report saved to {args.output}")
+
+def _group_by_subdir(paths: Iterable[Path], ticket_root: str) -> Tuple[Dict[str, List[Path]], List[Path]]:
+    root = Path(ticket_root)
+    groups: Dict[str, List[Path]] = {}
+    loose: List[Path] = []
+    for p in paths:
+        try:
+            rel = p.relative_to(root)
+        except ValueError:
+            loose.append(p)
+            continue
+        if len(rel.parts) >= 2:
+            key = rel.parts[0]
+            groups.setdefault(key, []).append(p)
         else:
-            print("\n" + report)
+            loose.append(p)
+    return groups, loose
+
+
+def _group_tokens(group_name: str, paths: Iterable[Path]) -> set:
+    tokens = set(_tokenize(group_name))
+    for p in paths:
+        tokens.update(_tokenize(p.stem))
+        tokens.update(_tokenize(_read_heading(p)))
+    return tokens
+
+
+def _ticket_tokens(p: Path) -> set:
+    toks = set(_tokenize(p.stem))
+    heading, snippet = _read_signature(p)
+    toks.update(_tokenize(heading))
+    toks.update(_tokenize(snippet))
+    return toks
+
+
+def _signature_tokens(p: Path, body_chars: int) -> set:
+    heading = _read_heading(p)
+    body = _read_text(p)
+    body = body[:body_chars]
+    toks = set(_tokenize(p.stem))
+    toks.update(_tokenize(heading))
+    toks.update(_tokenize(body))
+    return toks
+
+
+def _jaccard(a: set, b: set) -> float:
+    if not a or not b:
+        return 0.0
+    inter = a.intersection(b)
+    union = a.union(b)
+    return float(len(inter)) / float(len(union))
+
+
+def _overlap(a: set, b: set) -> float:
+    if not a or not b:
+        return 0.0
+    inter = a.intersection(b)
+    denom = min(len(a), len(b))
+    if denom == 0:
+        return 0.0
+    return float(len(inter)) / float(denom)
+
+
+def _clusters_from_edges(nodes: List[str], edges: Dict[str, List[str]]) -> List[List[str]]:
+    seen = set()
+    clusters: List[List[str]] = []
+    for n in nodes:
+        if n in seen:
+            continue
+        stack = [n]
+        comp = []
+        seen.add(n)
+        while stack:
+            cur = stack.pop()
+            comp.append(cur)
+            for nxt in edges.get(cur, []):
+                if nxt not in seen:
+                    seen.add(nxt)
+                    stack.append(nxt)
+        clusters.append(sorted(comp))
+    return clusters
+
+
+def _dedupe_clusters(
+    paths: List[Path],
+    body_chars: int,
+    jaccard_hi: float,
+    overlap_hi: float,
+    overlap_lo: float,
+    delta_min: float,
+) -> Tuple[List[List[str]], Dict[str, str], Dict[str, Dict[str, object]], Dict[Tuple[str, str], Dict[str, float]]]:
+    tokens: Dict[str, set] = {}
+    sizes: Dict[str, int] = {}
+    titles: Dict[str, str] = {}
+    for p in paths:
+        key = str(p)
+        tokens[key] = _signature_tokens(p, body_chars)
+        sizes[key] = len(_read_text(p))
+        titles[key] = _normalize_title(_read_heading(p))
+
+    nodes = sorted(tokens.keys())
+    edges: Dict[str, List[str]] = {n: [] for n in nodes}
+    pair_scores: Dict[Tuple[str, str], Dict[str, float]] = {}
+
+    for i, a in enumerate(nodes):
+        for b in nodes[i + 1 :]:
+            jac = _jaccard(tokens[a], tokens[b])
+            ov = _overlap(tokens[a], tokens[b])
+            pair_scores[(a, b)] = {"jaccard": jac, "overlap": ov}
+            if ov >= overlap_hi or (jac >= jaccard_hi and ov >= overlap_lo):
+                edges[a].append(b)
+                edges[b].append(a)
+
+    clusters = _clusters_from_edges(nodes, edges)
+    cluster_meta: Dict[str, Dict[str, object]] = {}
+    dup_map: Dict[str, str] = {}
+
+    for idx, members in enumerate(clusters, start=1):
+        if len(members) == 1:
+            continue
+        # canonical: largest content length, then lexicographic
+        canon = sorted(
+            members,
+            key=lambda m: (-sizes.get(m, 0), m),
+        )[0]
+        deltas: List[str] = []
+        redundant: List[str] = []
+        for m in members:
+            if m == canon:
+                continue
+            unique = tokens[m] - tokens[canon]
+            unique_ratio = float(len(unique)) / float(max(1, len(tokens[m])))
+            heading_diff = titles.get(m, "") != titles.get(canon, "")
+            if unique_ratio >= delta_min or heading_diff:
+                deltas.append(m)
+            else:
+                redundant.append(m)
+            dup_map[m] = canon
+
+        cluster_meta[str(idx)] = {
+            "canonical": canon,
+            "members": members,
+            "deltas": sorted(deltas),
+            "redundant": sorted(redundant),
+        }
+
+    return clusters, dup_map, cluster_meta, pair_scores
+
+
+def _infer_groups(
+    groups: Dict[str, List[Path]],
+    loose: List[Path],
+    min_score: float,
+) -> Dict[str, List[Path]]:
+    if not groups:
+        return {"root": list(loose)}
+
+    group_tokens = {k: _group_tokens(k, v) for k, v in groups.items()}
+    for p in loose:
+        tokens = _ticket_tokens(p)
+        best = None
+        best_score = -1.0
+        for name in sorted(group_tokens.keys()):
+            score = _jaccard(tokens, group_tokens[name])
+            if score > best_score:
+                best_score = score
+                best = name
+        if best is not None and best_score >= min_score:
+            groups.setdefault(best, []).append(p)
+        else:
+            groups.setdefault("misc", []).append(p)
+    return groups
+
+
+def _chunk(paths: List[Path], size: int) -> List[List[Path]]:
+    if size <= 0:
+        return [paths]
+    return [paths[i : i + size] for i in range(0, len(paths), size)]
+
+
+def _chunk_by_limits(
+    paths: List[Path],
+    max_files: int,
+    max_chars: int,
+) -> List[List[Path]]:
+    if max_files <= 0 and max_chars <= 0:
+        return [paths]
+    chunks: List[List[Path]] = []
+    cur: List[Path] = []
+    cur_chars = 0
+    for p in paths:
+        size = len(_read_text(p))
+        if cur:
+            if (max_files > 0 and len(cur) >= max_files) or (
+                max_chars > 0 and cur_chars + size > max_chars
+            ):
+                chunks.append(cur)
+                cur = []
+                cur_chars = 0
+        cur.append(p)
+        cur_chars += size
+    if cur:
+        chunks.append(cur)
+    return chunks
+
+
+def _render_template(template: str, mapping: Dict[str, str]) -> str:
+    out = template
+    for key, val in mapping.items():
+        out = out.replace("{{" + key + "}}", val)
+    unresolved = sorted(set(re.findall(r"\{\{([^}]+)\}\}", out)))
+    if unresolved:
+        raise ValueError(f"Unresolved template placeholders: {unresolved}")
+    return out
+
+
+def _write_merge_file(
+    out_dir: Path,
+    cluster_id: str,
+    canonical: str,
+    deltas: List[str],
+    redundant: List[str],
+    body_chars: int,
+) -> Path:
+    merge_dir = out_dir / "_ticket_merges"
+    merge_dir.mkdir(parents=True, exist_ok=True)
+    path = merge_dir / f"cluster-{int(cluster_id):04d}.md"
+
+    def _cap(text: str) -> str:
+        if len(text) <= body_chars:
+            return text
+        return text[:body_chars] + "\n[... truncated ...]\n"
+
+    lines: List[str] = []
+    lines.append(f"# Ticket Merge Cluster {cluster_id}")
+    lines.append("")
+    lines.append("## Canonical")
+    lines.append(f"- path: {canonical}")
+    lines.append("")
+    lines.append(_cap(_read_text(Path(canonical))))
+    lines.append("")
+
+    members = deltas + redundant
+    if members:
+        lines.append("## Also reported in")
+        for m in members:
+            lines.append(f"- {m}")
+        lines.append("")
+
+    if deltas:
+        lines.append("## Unique details from related tickets")
+        for m in deltas:
+            text = _read_text(Path(m))
+            toks = _signature_tokens(Path(m), body_chars)
+            canon_toks = _signature_tokens(Path(canonical), body_chars)
+            unique = toks - canon_toks
+            sel: List[str] = []
+            for ln in text.splitlines():
+                lnt = _tokenize(ln)
+                if any(t in unique for t in lnt):
+                    sel.append(ln)
+                if len(sel) >= 60:
+                    break
+            lines.append(f"### {m}")
+            if sel:
+                lines.extend(sel)
+            else:
+                lines.append("(no unique lines detected within cap)")
+            lines.append("")
+
+    path.write_text("\n".join(lines), encoding="utf-8")
+    return path
+
+
+def main() -> int:
+    if len(sys.argv) == 1:
+        print("Select how to run:")
+        print("1) Use defaults (no args)")
+        print("2) Provide custom args (show usage)")
+        choice = input("Enter choice [1-2]: ").strip() or "1"
+        if choice == "2":
+            print("Usage: generate_grouped_packs.py key=value [key=value ...]")
+            return 0
+
+    args = _parse_kv_args(sys.argv[1:])
+    codebase_name = args.get("codebase_name", "Unknown")
+    out_dir = args.get("out_dir", f"docs/oracle-questions-{_today()}")
+    oracle_cmd = args.get("oracle_cmd", "oracle")
+    oracle_flags = args.get("oracle_flags", "--files-report")
+    extra_files = args.get("extra_files", "")
+    ticket_root = args.get("ticket_root", ".tickets")
+    ticket_glob = args.get("ticket_glob", "**/*.md")
+    ticket_paths = args.get("ticket_paths", "")
+    ticket_max_files = args.get("ticket_max_files", "25")
+    group_mode = args.get("group_mode", "subdir+infer")
+    group_min_score = float(args.get("group_min_score", "0.08"))
+    group_max_files = int(args.get("group_max_files", "25"))
+    group_max_chars = int(args.get("group_max_chars", "200000"))
+    dedupe_mode = args.get("dedupe_mode", "report")
+    dedupe_jaccard = float(args.get("dedupe_jaccard", "0.55"))
+    dedupe_overlap_hi = float(args.get("dedupe_overlap_hi", "0.80"))
+    dedupe_overlap_lo = float(args.get("dedupe_overlap_lo", "0.70"))
+    dedupe_delta_min = float(args.get("dedupe_delta_min", "0.15"))
+    dedupe_body_chars = int(args.get("dedupe_body_chars", "2000"))
+    mode = args.get("mode", "tickets-grouped-direct")
+
+    template_path = Path(__file__).resolve().parent.parent / "references" / "tickets-pack-template.md"
+    template = template_path.read_text(encoding="utf-8")
+
+    paths = _collect_ticket_paths(ticket_root, ticket_glob, ticket_paths)
+    paths = sorted((str(p) for p in paths))
+    paths = [Path(p) for p in paths]
+
+    original_paths = list(paths)
+    dup_map: Dict[str, str] = {}
+    cluster_meta: Dict[str, Dict[str, object]] = {}
+    dup_pairs: Dict[Tuple[str, str], Dict[str, float]] = {}
+    if dedupe_mode != "off":
+        _clusters, dup_map, cluster_meta, dup_pairs = _dedupe_clusters(
+            paths,
+            body_chars=dedupe_body_chars,
+            jaccard_hi=dedupe_jaccard,
+            overlap_hi=dedupe_overlap_hi,
+            overlap_lo=dedupe_overlap_lo,
+            delta_min=dedupe_delta_min,
+        )
+
+    # Build grouping base: canonical tickets + singletons
+    canonical_set = {meta["canonical"] for meta in cluster_meta.values()}
+    dup_set = set(dup_map.keys())
+    base_paths: List[Path] = []
+    for p in paths:
+        sp = str(p)
+        if sp in dup_set:
+            continue
+        base_paths.append(p)
+
+    groups: Dict[str, List[Path]] = {}
+    loose: List[Path] = []
+    if "subdir" in group_mode:
+        groups, loose = _group_by_subdir(base_paths, ticket_root)
+    else:
+        loose = list(base_paths)
+
+    if "infer" in group_mode:
+        groups = _infer_groups(groups, loose, group_min_score)
+    else:
+        groups.setdefault("misc", []).extend(loose)
+
+    dedupe_plan: Dict[str, Dict[str, object]] = {}
+    merge_files: Dict[str, str] = {}
+    if cluster_meta:
+        primary_to_group: Dict[str, str] = {}
+        for gname in groups:
+            for p in groups[gname]:
+                primary_to_group[str(p)] = gname
+
+        for cluster_id, meta in sorted(cluster_meta.items(), key=lambda x: int(x[0])):
+            canonical = meta["canonical"]
+            deltas = list(meta["deltas"])
+            redundant = list(meta["redundant"])
+            gname = primary_to_group.get(canonical, "misc")
+
+            if dedupe_mode == "merge":
+                merge_path = _write_merge_file(
+                    Path(out_dir),
+                    cluster_id=cluster_id,
+                    canonical=canonical,
+                    deltas=deltas,
+                    redundant=redundant,
+                    body_chars=dedupe_body_chars,
+                )
+                merge_files[canonical] = str(merge_path)
+                # Replace canonical in group with merge file
+                groups[gname] = [p for p in groups[gname] if str(p) != canonical]
+                groups[gname].append(merge_path)
+            else:
+                # report/prune: append related tickets to canonical group
+                keep = deltas if dedupe_mode == "prune" else deltas + redundant
+                for p in keep:
+                    groups.setdefault(gname, []).append(Path(p))
+
+            dedupe_plan[cluster_id] = {
+                "canonical": canonical,
+                "group": gname,
+                "deltas": sorted(deltas),
+                "redundant": sorted(redundant),
+                "mode": dedupe_mode,
+            }
+
+    # Ensure stable order
+    for k in sorted(groups.keys()):
+        groups[k] = sorted((str(p) for p in groups[k]))
+        groups[k] = [Path(p) for p in groups[k]]
+
+    original_set = {str(p) for p in original_paths}
+    assignment: Dict[str, str] = {}
+    for gname, gpaths in groups.items():
+        for p in gpaths:
+            sp = str(p)
+            if sp in original_set:
+                if sp in assignment:
+                    raise SystemExit(f"[ERROR] Ticket assigned to multiple groups: {sp}")
+                assignment[sp] = gname
+
+    for meta in dedupe_plan.values():
+        gname = meta["group"]
+        for sp in [meta["canonical"]] + meta["deltas"] + meta["redundant"]:
+            if sp not in assignment:
+                assignment[sp] = gname
+
+    missing = sorted(original_set - set(assignment.keys()))
+    if missing:
+        raise SystemExit(f"[ERROR] Tickets missing group assignment: {missing}")
+
+    base_out = Path(out_dir)
+    packs_dir = base_out / "packs"
+    packs_dir.mkdir(parents=True, exist_ok=True)
+
+    grouping_report: Dict[str, List[str]] = {}
+    manifest_groups: List[Dict[str, object]] = []
+    group_originals: Dict[str, List[str]] = {g: [] for g in groups.keys()}
+    for ticket, gname in assignment.items():
+        group_originals.setdefault(gname, []).append(ticket)
+    for group_name in sorted(groups.keys()):
+        group_paths = groups[group_name]
+        grouping_report[group_name] = [str(p) for p in group_paths]
+
+        parts = _chunk_by_limits(group_paths, group_max_files, group_max_chars)
+        for idx, part in enumerate(parts, start=1):
+            part_suffix = f"-part-{idx:02d}" if len(parts) > 1 else ""
+            group_slug = _slugify(group_name + part_suffix)
+
+            pack_out_dir = str(base_out / group_slug)
+            pack_file = packs_dir / f"{group_slug}.md"
+
+            mapping = {
+                "codebase_name": codebase_name,
+                "out_dir": pack_out_dir,
+                "oracle_cmd": oracle_cmd,
+                "oracle_flags": oracle_flags,
+                "extra_files": extra_files,
+                "ticket_root": ticket_root,
+                "ticket_glob": ticket_glob,
+                "ticket_paths": ",".join(str(p) for p in part),
+                "ticket_max_files": str(min(len(part), max(1, group_max_files))),
+                "group_name": group_name,
+                "group_slug": group_slug,
+                "mode": mode,
+            }
+
+            content = _render_template(template, mapping)
+            pack_file.write_text(content, encoding="utf-8")
+
+            manifest_groups.append(
+                {
+                    "group": group_name,
+                    "slug": group_slug,
+                    "part": idx,
+                    "pack_path": str(pack_file),
+                    "out_dir": pack_out_dir,
+                    "attached_paths": [str(p) for p in part],
+                    "original_tickets": sorted(group_originals.get(group_name, [])),
+                }
+            )
+
+    (base_out / "_groups.json").write_text(
+        json.dumps(grouping_report, indent=2, sort_keys=True),
+        encoding="utf-8",
+    )
+
+    if dup_map:
+        (base_out / "_duplicates.json").write_text(
+            json.dumps(dup_map, indent=2, sort_keys=True),
+            encoding="utf-8",
+        )
+
+    if dedupe_plan:
+        (base_out / "_dedupe_plan.json").write_text(
+            json.dumps(dedupe_plan, indent=2, sort_keys=True),
+            encoding="utf-8",
+        )
+
+    if cluster_meta:
+        pairs_out = [
+            {"a": a, "b": b, **scores} for (a, b), scores in sorted(dup_pairs.items())
+        ]
+        (base_out / "_dupes_possible.json").write_text(
+            json.dumps({"clusters": cluster_meta, "pairs": pairs_out}, indent=2, sort_keys=True),
+            encoding="utf-8",
+        )
+
+    (base_out / "manifest.json").write_text(
+        json.dumps({"groups": manifest_groups}, indent=2, sort_keys=True),
+        encoding="utf-8",
+    )
+
+    print(f"[OK] wrote packs to: {packs_dir}")
+    print(f"[OK] wrote grouping map: {base_out / '_groups.json'}")
+    return 0
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    raise SystemExit(main())
 ```
 
-.config/mcp/mcp-builder/scripts/example_evaluation.xml
+skills/oraclepack-tickets-pack-grouped/scripts/lint_attachments.py
 ```
-<evaluation>
-   <qa_pair>
-      <question>Calculate the compound interest on $10,000 invested at 5% annual interest rate, compounded monthly for 3 years. What is the final amount in dollars (rounded to 2 decimal places)?</question>
-      <answer>11614.72</answer>
-   </qa_pair>
-   <qa_pair>
-      <question>A projectile is launched at a 45-degree angle with an initial velocity of 50 m/s. Calculate the total distance (in meters) it has traveled from the launch point after 2 seconds, assuming g=9.8 m/s². Round to 2 decimal places.</question>
-      <answer>87.25</answer>
-   </qa_pair>
-   <qa_pair>
-      <question>A sphere has a volume of 500 cubic meters. Calculate its surface area in square meters. Round to 2 decimal places.</question>
-      <answer>304.65</answer>
-   </qa_pair>
-   <qa_pair>
-      <question>Calculate the population standard deviation of this dataset: [12, 15, 18, 22, 25, 30, 35]. Round to 2 decimal places.</question>
-      <answer>7.61</answer>
-   </qa_pair>
-   <qa_pair>
-      <question>Calculate the pH of a solution with a hydrogen ion concentration of 3.5 × 10^-5 M. Round to 2 decimal places.</question>
-      <answer>4.46</answer>
-   </qa_pair>
-</evaluation>
+import argparse
+import re
+import sys
+from dataclasses import dataclass
+from pathlib import Path
+from typing import List, Tuple
+
+
+@dataclass
+class Step:
+    n: str
+    lines: List[str]
+
+
+def _read_text(path: Path) -> str:
+    try:
+        return path.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        return path.read_text(encoding="utf-8", errors="replace")
+
+
+def _extract_bash_fence(lines: List[str]) -> List[str]:
+    fence_idxs = [i for i, ln in enumerate(lines) if ln.startswith("```")]
+    if len(fence_idxs) != 2:
+        raise ValueError(f"Expected exactly one fenced block (2 fence lines). Found {len(fence_idxs)}.")
+    open_i, close_i = fence_idxs
+    if lines[open_i].rstrip("\n") != "```bash":
+        raise ValueError("Opening fence must be exactly ```bash.")
+    if lines[close_i].rstrip("\n") != "```":
+        raise ValueError("Closing fence must be exactly ```.")
+    return [ln.rstrip("\n") for ln in lines[open_i + 1 : close_i]]
+
+
+def _parse_steps(fence_lines: List[str]) -> List[Step]:
+    header_re = re.compile(r"^#\s*(\d{2})\)\s+")
+    header_idxs: List[Tuple[int, str]] = []
+    for i, ln in enumerate(fence_lines):
+        m = header_re.match(ln)
+        if m:
+            header_idxs.append((i, m.group(1)))
+
+    if not header_idxs:
+        raise ValueError("No step headers found inside bash fence.")
+
+    steps: List[Step] = []
+    for idx, (start_i, n) in enumerate(header_idxs):
+        end_i = header_idxs[idx + 1][0] if idx + 1 < len(header_idxs) else len(fence_lines)
+        steps.append(Step(n=n, lines=fence_lines[start_i:end_i]))
+    return steps
+
+
+def lint(path: Path) -> None:
+    raw = _read_text(path)
+    lines = raw.splitlines(True)
+    fence = _extract_bash_fence(lines)
+    steps = _parse_steps(fence)
+
+    errors: List[str] = []
+    for step in steps:
+        joined = "\n".join(step.lines)
+
+        if "_tickets_bundle" in joined:
+            errors.append(f"Step {step.n}: found '_tickets_bundle' reference (direct-ticket packs must not use bundle).")
+
+        if re.search(r"mapfile\s+-t\s+__tickets\s+<\s+<\(", joined) is None:
+            errors.append(f"Step {step.n}: missing mapfile ticket discovery stanza.")
+
+        if re.search(r"ticket_args=\(\)", joined) is None or re.search(r"ticket_args\+\=\(\s*(-f|--file)\b", joined) is None:
+            errors.append(f"Step {step.n}: missing ticket_args builder (ticket_args+=(-f \"$p\")).")
+
+        if re.search(r"\$\{ticket_args\[@\]\}", joined) is None:
+            errors.append(f"Step {step.n}: missing ${'{'}ticket_args[@]{'}'} usage in oracle invocation.")
+
+        # Heuristic: ensure we did not hardcode a non-existent bundle path.
+        if re.search(r'(?<!\S)(-f|--file)(?!\S)\s+"[^"\n]*_tickets_bundle', joined):
+            errors.append(f"Step {step.n}: contains a hardcoded _tickets_bundle attachment.")
+
+    if errors:
+        for e in errors:
+            print(f"[ERROR] {e}", file=sys.stderr)
+        sys.exit(1)
+
+    print("[OK] Direct-ticket lint passed.")
+
+
+def main() -> None:
+    p = argparse.ArgumentParser(description="Lint ticket-driven Stage-1 packs (direct-ticket mode).")
+    p.add_argument("pack_path", help="Path to the Markdown pack file")
+    args = p.parse_args()
+
+    path = Path(args.pack_path)
+    if not path.exists():
+        print(f"[ERROR] File not found: {path}", file=sys.stderr)
+        sys.exit(1)
+
+    lint(path)
+
+
+if __name__ == "__main__":
+    main()
 ```
 
-.config/mcp/mcp-builder/scripts/requirements.txt
+skills/oraclepack-tickets-pack-grouped/scripts/render_group_packs.py
 ```
-anthropic>=0.39.0
-mcp>=1.1.0
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+import json
+import re
+from pathlib import Path
+from typing import Dict
+
+
+def _render_template(template: str, mapping: Dict[str, str]) -> str:
+    out = template
+    for key, val in mapping.items():
+        out = out.replace("{{" + key + "}}", val)
+    unresolved = sorted(set(re.findall(r"\{\{([^}]+)\}\}", out)))
+    if unresolved:
+        raise ValueError(f"Unresolved template placeholders: {unresolved}")
+    return out
+
+
+def main() -> int:
+    if len(sys.argv) == 1:
+        print("Select how to run:")
+        print("1) Use defaults (no args)")
+        print("2) Provide custom args (show usage)")
+        choice = input("Enter choice [1-2]: ").strip() or "1"
+        if choice == "2":
+            print("Usage: render_group_packs.py --manifest manifest.json --out-dir out")
+            return 0
+
+    p = argparse.ArgumentParser(description="Render group-specific bundle packs from manifest.")
+    p.add_argument("--manifest", default="manifest.json")
+    p.add_argument("--out-dir", default="docs/oracle-questions-sharded")
+    p.add_argument("--template", default="/home/user/.codex/skills/oraclepack-tickets-pack-grouped/references/tickets-pack-template-bundle.md")
+    p.add_argument("--codebase-name", default="Unknown")
+    p.add_argument("--oracle-cmd", default="oracle")
+    p.add_argument("--oracle-flags", default="--files-report")
+    p.add_argument("--extra-files", default="")
+    p.add_argument("--ticket-root", default=".tickets")
+    p.add_argument("--ticket-glob", default="**/*.md")
+    p.add_argument("--mode", default="tickets-bundle")
+    args = p.parse_args()
+
+    manifest_path = Path(args.manifest)
+    if not manifest_path.exists():
+        raise SystemExit(f"[ERROR] manifest not found: {manifest_path}")
+
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    template = Path(args.template).read_text(encoding="utf-8")
+
+    out_dir = Path(args.out_dir)
+    packs_dir = out_dir / "packs"
+    packs_dir.mkdir(parents=True, exist_ok=True)
+
+    for group in manifest.get("groups", []):
+        slug = group["slug"]
+        tickets = group["tickets"]
+        pack_dir = packs_dir / slug
+        pack_dir.mkdir(parents=True, exist_ok=True)
+
+        pack_path = pack_dir / f"oracle-pack_{slug}.md"
+        bundle_path = pack_dir / f"tickets_bundle_{slug}.md"
+        out_run_dir = pack_dir / "out"
+
+        mapping = {
+            "codebase_name": args.codebase_name,
+            "out_dir": str(out_run_dir),
+            "oracle_cmd": args.oracle_cmd,
+            "oracle_flags": args.oracle_flags,
+            "extra_files": args.extra_files,
+            "ticket_root": args.ticket_root,
+            "ticket_glob": args.ticket_glob,
+            "ticket_paths": ",".join(tickets),
+            "ticket_bundle_path": str(bundle_path),
+            "mode": args.mode,
+        }
+
+        content = _render_template(template, mapping)
+        pack_path.write_text(content, encoding="utf-8")
+        group["pack_path"] = str(pack_path)
+
+    manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True), encoding="utf-8")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+```
+
+skills/oraclepack-tickets-pack-grouped/scripts/shard_tickets.py
+```
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+import json
+import math
+import re
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Dict, List, Tuple
+
+STOPWORDS = {
+    "the", "and", "for", "with", "from", "this", "that", "into", "over", "under", "when",
+    "then", "than", "else", "only", "must", "should", "could", "would", "will", "shall",
+    "ticket", "tickets", "oraclepack", "oracle", "pack", "packs",
+}
+
+SECTION_KEYS = {"summary", "acceptance", "criteria", "background", "context"}
+
+
+@dataclass
+class Ticket:
+    path: Path
+    text: str
+    tokens: List[str]
+    vector: List[float]
+
+
+def _tokenize(text: str) -> List[str]:
+    text = text.lower()
+    text = re.sub(r"[^a-z0-9]+", " ", text)
+    return [t for t in text.split() if len(t) >= 3 and t not in STOPWORDS]
+
+
+def _read_text(path: Path) -> str:
+    try:
+        return path.read_text(encoding="utf-8", errors="replace")
+    except FileNotFoundError:
+        return ""
+
+
+def _extract_repr(text: str, stem: str, max_chars: int) -> str:
+    lines = text.splitlines()
+    heading = ""
+    sections: List[str] = []
+    capture = False
+    for line in lines:
+        s = line.strip()
+        if not heading and s.startswith("#"):
+            heading = s.lstrip("#").strip()
+        if s.startswith("#"):
+            key = s.lstrip("#").strip().lower()
+            capture = any(k in key for k in SECTION_KEYS)
+            continue
+        if capture and s:
+            sections.append(s)
+        if len(" ".join(sections)) >= max_chars:
+            break
+    body = " ".join(sections)
+    base = " ".join([stem, heading, body])
+    return base[:max_chars]
+
+
+def _tfidf_vectors(texts: List[str]) -> Tuple[List[List[float]], List[str]]:
+    docs = [
+        [tok for tok in _tokenize(t)]
+        for t in texts
+    ]
+    vocab: Dict[str, int] = {}
+    df: Dict[str, int] = {}
+    for toks in docs:
+        seen = set()
+        for tok in toks:
+            if tok not in vocab:
+                vocab[tok] = len(vocab)
+            if tok not in seen:
+                df[tok] = df.get(tok, 0) + 1
+                seen.add(tok)
+
+    n_docs = len(docs)
+    idf = [0.0] * len(vocab)
+    for tok, idx in vocab.items():
+        idf[idx] = math.log((1 + n_docs) / (1 + df.get(tok, 1))) + 1.0
+
+    vectors: List[List[float]] = []
+    for toks in docs:
+        tf: Dict[int, float] = {}
+        for tok in toks:
+            tf[vocab[tok]] = tf.get(vocab[tok], 0.0) + 1.0
+        vec = [0.0] * len(vocab)
+        for idx, count in tf.items():
+            vec[idx] = count * idf[idx]
+        # L2 normalize
+        norm = math.sqrt(sum(v * v for v in vec)) or 1.0
+        vec = [v / norm for v in vec]
+        vectors.append(vec)
+
+    inv_vocab = [None] * len(vocab)
+    for tok, idx in vocab.items():
+        inv_vocab[idx] = tok
+    return vectors, inv_vocab
+
+
+def _cosine(a: List[float], b: List[float]) -> float:
+    return sum(x * y for x, y in zip(a, b))
+
+
+def _centroid(vectors: List[List[float]]) -> List[float]:
+    if not vectors:
+        return []
+    dim = len(vectors[0])
+    out = [0.0] * dim
+    for v in vectors:
+        for i, val in enumerate(v):
+            out[i] += val
+    n = float(len(vectors)) or 1.0
+    out = [v / n for v in out]
+    norm = math.sqrt(sum(v * v for v in out)) or 1.0
+    return [v / norm for v in out]
+
+
+def _kmeans_split(vectors: List[List[float]], k: int, iters: int = 10) -> List[List[int]]:
+    if k <= 1:
+        return [list(range(len(vectors)))]
+    # deterministic init: first k vectors
+    centroids = [vectors[i][:] for i in range(k)]
+    for _ in range(iters):
+        clusters = [[] for _ in range(k)]
+        for idx, v in enumerate(vectors):
+            best = 0
+            best_score = -1.0
+            for c_idx, c in enumerate(centroids):
+                score = _cosine(v, c)
+                if score > best_score:
+                    best_score = score
+                    best = c_idx
+            clusters[best].append(idx)
+        new_centroids = []
+        for cluster in clusters:
+            if cluster:
+                new_centroids.append(_centroid([vectors[i] for i in cluster]))
+            else:
+                new_centroids.append(centroids[len(new_centroids)])
+        centroids = new_centroids
+    return clusters
+
+
+def main() -> int:
+    if len(sys.argv) == 1:
+        print("Select how to run:")
+        print("1) Use defaults (no args)")
+        print("2) Provide custom args (show usage)")
+        choice = input("Enter choice [1-2]: ").strip() or "1"
+        if choice == "2":
+            print("Usage: shard_tickets.py --ticket-root .tickets --out-dir out")
+            return 0
+
+    p = argparse.ArgumentParser(description="Shard tickets into topic/domain groups.")
+    p.add_argument("--ticket-root", default=".tickets")
+    p.add_argument("--ticket-glob", default="**/*.md")
+    p.add_argument("--ticket-paths", default="")
+    p.add_argument("--out-dir", default="docs/oracle-questions-sharded")
+    p.add_argument("--min-sim", type=float, default=0.15)
+    p.add_argument("--max-group-size", type=int, default=25)
+    p.add_argument("--min-group-size", type=int, default=1)
+    p.add_argument("--max-bundle-chars", type=int, default=200000)
+    p.add_argument("--repr-chars", type=int, default=2000)
+    p.add_argument("--use-llm-for-ambiguous", action="store_true")
+    args = p.parse_args()
+
+    ticket_root = Path(args.ticket_root)
+    if args.ticket_paths:
+        paths = [Path(p.strip()) for p in args.ticket_paths.split(",") if p.strip()]
+    else:
+        paths = sorted(ticket_root.glob(args.ticket_glob), key=lambda p: str(p)) if ticket_root.exists() else []
+
+    texts: List[str] = []
+    tickets: List[Ticket] = []
+    for pth in paths:
+        txt = _read_text(pth)
+        rep = _extract_repr(txt, pth.stem, args.repr_chars)
+        texts.append(rep)
+
+    vectors, vocab = _tfidf_vectors(texts)
+    for pth, txt, vec in zip(paths, texts, vectors):
+        tickets.append(Ticket(path=pth, text=txt, tokens=_tokenize(txt), vector=vec))
+
+    groups: Dict[str, List[int]] = {}
+    loose: List[int] = []
+    for idx, t in enumerate(tickets):
+        try:
+            rel = t.path.relative_to(ticket_root)
+        except ValueError:
+            loose.append(idx)
+            continue
+        if len(rel.parts) >= 2:
+            g = rel.parts[0]
+            groups.setdefault(g, []).append(idx)
+        else:
+            loose.append(idx)
+
+    # Compute centroids for subdir groups
+    centroids: Dict[str, List[float]] = {}
+    for g, idxs in groups.items():
+        centroids[g] = _centroid([tickets[i].vector for i in idxs])
+
+    # Assign loose tickets by similarity
+    reasons: Dict[int, Dict[str, object]] = {}
+    for idx in loose:
+        best_g = None
+        best_sim = -1.0
+        for g, c in centroids.items():
+            sim = _cosine(tickets[idx].vector, c)
+            if sim > best_sim:
+                best_sim = sim
+                best_g = g
+        if best_g is not None and best_sim >= args.min_sim:
+            groups.setdefault(best_g, []).append(idx)
+            reasons[idx] = {"assigned_to": best_g, "sim": best_sim, "reason": "tfidf"}
+        else:
+            groups.setdefault("misc", []).append(idx)
+            reasons[idx] = {
+                "assigned_to": "misc",
+                "sim": best_sim,
+                "reason": "ambiguous" if not args.use_llm_for_ambiguous else "ambiguous_llm_needed",
+            }
+
+    # Merge small groups
+    if args.min_group_size > 1 and len(groups) > 1:
+        for g in sorted(list(groups.keys())):
+            if g == "misc":
+                continue
+            if len(groups[g]) < args.min_group_size:
+                # merge into nearest group
+                g_centroid = _centroid([tickets[i].vector for i in groups[g]])
+                best_g = None
+                best_sim = -1.0
+                for og, c in centroids.items():
+                    if og == g:
+                        continue
+                    sim = _cosine(g_centroid, c)
+                    if sim > best_sim:
+                        best_sim = sim
+                        best_g = og
+                if best_g:
+                    groups.setdefault(best_g, []).extend(groups[g])
+                    del groups[g]
+
+    # Split large groups using deterministic kmeans
+    final_groups: Dict[str, List[int]] = {}
+    for g in sorted(groups.keys()):
+        idxs = groups[g]
+        idxs_sorted = sorted(idxs, key=lambda i: str(tickets[i].path))
+        total_chars = sum(len(_read_text(tickets[i].path)) for i in idxs_sorted)
+        k = max(
+            1,
+            math.ceil(len(idxs_sorted) / max(1, args.max_group_size)),
+            math.ceil(total_chars / max(1, args.max_bundle_chars)),
+        )
+        if k <= 1:
+            final_groups[g] = idxs_sorted
+            continue
+        clusters = _kmeans_split([tickets[i].vector for i in idxs_sorted], k)
+        part = 1
+        for cluster in clusters:
+            if not cluster:
+                continue
+            slug = f"{g}-part-{part:02d}"
+            final_groups[slug] = [idxs_sorted[i] for i in cluster]
+            part += 1
+
+    # Build manifest
+    out_dir = Path(args.out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    manifest_groups = []
+    for g in sorted(final_groups.keys()):
+        idxs = final_groups[g]
+        vecs = [tickets[i].vector for i in idxs]
+        centroid = _centroid(vecs)
+        top_terms = []
+        for i, score in sorted(enumerate(centroid), key=lambda x: -x[1])[:8]:
+            if score <= 0:
+                continue
+            top_terms.append(vocab[i])
+        sims = []
+        for i in idxs:
+            sims.append(_cosine(tickets[i].vector, centroid))
+        conf = sum(sims) / float(len(sims)) if sims else 0.0
+
+        manifest_groups.append(
+            {
+                "slug": g,
+                "tickets": [str(tickets[i].path) for i in idxs],
+                "keywords": top_terms,
+                "confidence": conf,
+            }
+        )
+
+    manifest = {"groups": manifest_groups}
+    (out_dir / "manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True), encoding="utf-8")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+```
+
+skills/oraclepack-tickets-pack-grouped/scripts/validate_pack.py
+```
+from pathlib import Path
+import runpy
+
+COMMON = Path(__file__).resolve().parents[2] / "oraclepack-tickets-pack-common" / "scripts" / "validate_pack.py"
+if not COMMON.exists():
+    raise SystemExit(f"[ERROR] Shared validator not found: {COMMON}")
+
+runpy.run_path(str(COMMON), run_name="__main__")
+```
+
+skills/oraclepack-tickets-pack-grouped/scripts/validate_shards.py
+```
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+import json
+import subprocess
+from pathlib import Path
+from typing import Dict
+
+
+def _read_text(path: Path) -> str:
+    try:
+        return path.read_text(encoding="utf-8", errors="replace")
+    except FileNotFoundError:
+        return ""
+
+
+def main() -> int:
+    if len(sys.argv) == 1:
+        print("Select how to run:")
+        print("1) Use defaults (no args)")
+        print("2) Provide custom args (show usage)")
+        choice = input("Enter choice [1-2]: ").strip() or "1"
+        if choice == "2":
+            print("Usage: validate_shards.py --manifest manifest.json")
+            return 0
+
+    p = argparse.ArgumentParser(description="Validate sharded packs manifest.")
+    p.add_argument("--manifest", default="manifest.json")
+    p.add_argument("--max-bundle-chars", type=int, default=200000)
+    p.add_argument(
+        "--validator",
+        default="/home/user/.codex/skills/oraclepack-tickets-pack-common/scripts/validate_pack.py",
+    )
+    args = p.parse_args()
+
+    manifest_path = Path(args.manifest)
+    if not manifest_path.exists():
+        raise SystemExit(f"[ERROR] manifest not found: {manifest_path}")
+
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    counts: Dict[str, int] = {}
+
+    for group in manifest.get("groups", []):
+        for t in group.get("tickets", []):
+            counts[t] = counts.get(t, 0) + 1
+
+    bad = [t for t, c in counts.items() if c != 1]
+    if bad:
+        raise SystemExit(f"[ERROR] Tickets assigned !=1 times: {bad}")
+
+    for group in manifest.get("groups", []):
+        pack_path = Path(group.get("pack_path", ""))
+        if not pack_path.exists():
+            raise SystemExit(f"[ERROR] pack missing: {pack_path}")
+
+        # validate pack
+        subprocess.run(
+            [
+                "python3",
+                args.validator,
+                "--mode",
+                "bundle",
+                str(pack_path),
+            ],
+            check=True,
+        )
+
+        # size check
+        total = 0
+        for t in group.get("tickets", []):
+            total += len(_read_text(Path(t)))
+        if total > args.max_bundle_chars:
+            raise SystemExit(
+                f"[ERROR] group '{group.get('slug')}' exceeds max bundle chars: {total} > {args.max_bundle_chars}"
+            )
+
+    print("[OK] Sharded packs manifest validated.")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
 ```
 
 .config/mcp/oraclepack-gold-pack/references/attachment-minimization.md
@@ -22402,6 +28081,570 @@ When a scratch run looks good:
 ```
 ```
 
+.config/mcp/mcp-builder/scripts/connections.py
+```
+"""Lightweight connection handling for MCP servers."""
+
+from abc import ABC, abstractmethod
+from contextlib import AsyncExitStack
+from typing import Any
+
+from mcp import ClientSession, StdioServerParameters
+from mcp.client.sse import sse_client
+from mcp.client.stdio import stdio_client
+from mcp.client.streamable_http import streamablehttp_client
+
+
+class MCPConnection(ABC):
+    """Base class for MCP server connections."""
+
+    def __init__(self):
+        self.session = None
+        self._stack = None
+
+    @abstractmethod
+    def _create_context(self):
+        """Create the connection context based on connection type."""
+
+    async def __aenter__(self):
+        """Initialize MCP server connection."""
+        self._stack = AsyncExitStack()
+        await self._stack.__aenter__()
+
+        try:
+            ctx = self._create_context()
+            result = await self._stack.enter_async_context(ctx)
+
+            if len(result) == 2:
+                read, write = result
+            elif len(result) == 3:
+                read, write, _ = result
+            else:
+                raise ValueError(f"Unexpected context result: {result}")
+
+            session_ctx = ClientSession(read, write)
+            self.session = await self._stack.enter_async_context(session_ctx)
+            await self.session.initialize()
+            return self
+        except BaseException:
+            await self._stack.__aexit__(None, None, None)
+            raise
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """Clean up MCP server connection resources."""
+        if self._stack:
+            await self._stack.__aexit__(exc_type, exc_val, exc_tb)
+        self.session = None
+        self._stack = None
+
+    async def list_tools(self) -> list[dict[str, Any]]:
+        """Retrieve available tools from the MCP server."""
+        response = await self.session.list_tools()
+        return [
+            {
+                "name": tool.name,
+                "description": tool.description,
+                "input_schema": tool.inputSchema,
+            }
+            for tool in response.tools
+        ]
+
+    async def call_tool(self, tool_name: str, arguments: dict[str, Any]) -> Any:
+        """Call a tool on the MCP server with provided arguments."""
+        result = await self.session.call_tool(tool_name, arguments=arguments)
+        return result.content
+
+
+class MCPConnectionStdio(MCPConnection):
+    """MCP connection using standard input/output."""
+
+    def __init__(self, command: str, args: list[str] = None, env: dict[str, str] = None):
+        super().__init__()
+        self.command = command
+        self.args = args or []
+        self.env = env
+
+    def _create_context(self):
+        return stdio_client(
+            StdioServerParameters(command=self.command, args=self.args, env=self.env)
+        )
+
+
+class MCPConnectionSSE(MCPConnection):
+    """MCP connection using Server-Sent Events."""
+
+    def __init__(self, url: str, headers: dict[str, str] = None):
+        super().__init__()
+        self.url = url
+        self.headers = headers or {}
+
+    def _create_context(self):
+        return sse_client(url=self.url, headers=self.headers)
+
+
+class MCPConnectionHTTP(MCPConnection):
+    """MCP connection using Streamable HTTP."""
+
+    def __init__(self, url: str, headers: dict[str, str] = None):
+        super().__init__()
+        self.url = url
+        self.headers = headers or {}
+
+    def _create_context(self):
+        return streamablehttp_client(url=self.url, headers=self.headers)
+
+
+def create_connection(
+    transport: str,
+    command: str = None,
+    args: list[str] = None,
+    env: dict[str, str] = None,
+    url: str = None,
+    headers: dict[str, str] = None,
+) -> MCPConnection:
+    """Factory function to create the appropriate MCP connection.
+
+    Args:
+        transport: Connection type ("stdio", "sse", or "http")
+        command: Command to run (stdio only)
+        args: Command arguments (stdio only)
+        env: Environment variables (stdio only)
+        url: Server URL (sse and http only)
+        headers: HTTP headers (sse and http only)
+
+    Returns:
+        MCPConnection instance
+    """
+    transport = transport.lower()
+
+    if transport == "stdio":
+        if not command:
+            raise ValueError("Command is required for stdio transport")
+        return MCPConnectionStdio(command=command, args=args, env=env)
+
+    elif transport == "sse":
+        if not url:
+            raise ValueError("URL is required for sse transport")
+        return MCPConnectionSSE(url=url, headers=headers)
+
+    elif transport in ["http", "streamable_http", "streamable-http"]:
+        if not url:
+            raise ValueError("URL is required for http transport")
+        return MCPConnectionHTTP(url=url, headers=headers)
+
+    else:
+        raise ValueError(f"Unsupported transport type: {transport}. Use 'stdio', 'sse', or 'http'")
+```
+
+.config/mcp/mcp-builder/scripts/evaluation.py
+```
+"""MCP Server Evaluation Harness
+
+This script evaluates MCP servers by running test questions against them using codex-cli.
+"""
+
+import argparse
+import asyncio
+import json
+import re
+import sys
+import time
+import traceback
+import xml.etree.ElementTree as ET
+from pathlib import Path
+from typing import Any
+
+from anthropic import Anthropic
+
+from connections import create_connection
+
+EVALUATION_PROMPT = """You are an AI assistant with access to tools.
+
+When given a task, you MUST:
+1. Use the available tools to complete the task
+2. Provide summary of each step in your approach, wrapped in <summary> tags
+3. Provide feedback on the tools provided, wrapped in <feedback> tags
+4. Provide your final response, wrapped in <response> tags
+
+Summary Requirements:
+- In your <summary> tags, you must explain:
+  - The steps you took to complete the task
+  - Which tools you used, in what order, and why
+  - The inputs you provided to each tool
+  - The outputs you received from each tool
+  - A summary for how you arrived at the response
+
+Feedback Requirements:
+- In your <feedback> tags, provide constructive feedback on the tools:
+  - Comment on tool names: Are they clear and descriptive?
+  - Comment on input parameters: Are they well-documented? Are required vs optional parameters clear?
+  - Comment on descriptions: Do they accurately describe what the tool does?
+  - Comment on any errors encountered during tool usage: Did the tool fail to execute? Did the tool return too many tokens?
+  - Identify specific areas for improvement and explain WHY they would help
+  - Be specific and actionable in your suggestions
+
+Response Requirements:
+- Your response should be concise and directly address what was asked
+- Always wrap your final response in <response> tags
+- If you cannot solve the task return <response>NOT_FOUND</response>
+- For numeric responses, provide just the number
+- For IDs, provide just the ID
+- For names or text, provide the exact text requested
+- Your response should go last"""
+
+
+def parse_evaluation_file(file_path: Path) -> list[dict[str, Any]]:
+    """Parse XML evaluation file with qa_pair elements."""
+    try:
+        tree = ET.parse(file_path)
+        root = tree.getroot()
+        evaluations = []
+
+        for qa_pair in root.findall(".//qa_pair"):
+            question_elem = qa_pair.find("question")
+            answer_elem = qa_pair.find("answer")
+
+            if question_elem is not None and answer_elem is not None:
+                evaluations.append({
+                    "question": (question_elem.text or "").strip(),
+                    "answer": (answer_elem.text or "").strip(),
+                })
+
+        return evaluations
+    except Exception as e:
+        print(f"Error parsing evaluation file {file_path}: {e}")
+        return []
+
+
+def extract_xml_content(text: str, tag: str) -> str | None:
+    """Extract content from XML tags."""
+    pattern = rf"<{tag}>(.*?)</{tag}>"
+    matches = re.findall(pattern, text, re.DOTALL)
+    return matches[-1].strip() if matches else None
+
+
+async def agent_loop(
+    client: Anthropic,
+    model: str,
+    question: str,
+    tools: list[dict[str, Any]],
+    connection: Any,
+) -> tuple[str, dict[str, Any]]:
+    """Run the agent loop with MCP tools."""
+    messages = [{"role": "user", "content": question}]
+
+    response = await asyncio.to_thread(
+        client.messages.create,
+        model=model,
+        max_tokens=4096,
+        system=EVALUATION_PROMPT,
+        messages=messages,
+        tools=tools,
+    )
+
+    messages.append({"role": "assistant", "content": response.content})
+
+    tool_metrics = {}
+
+    while response.stop_reason == "tool_use":
+        tool_use = next(block for block in response.content if block.type == "tool_use")
+        tool_name = tool_use.name
+        tool_input = tool_use.input
+
+        tool_start_ts = time.time()
+        try:
+            tool_result = await connection.call_tool(tool_name, tool_input)
+            tool_response = json.dumps(tool_result) if isinstance(tool_result, (dict, list)) else str(tool_result)
+        except Exception as e:
+            tool_response = f"Error executing tool {tool_name}: {str(e)}\n"
+            tool_response += traceback.format_exc()
+        tool_duration = time.time() - tool_start_ts
+
+        if tool_name not in tool_metrics:
+            tool_metrics[tool_name] = {"count": 0, "durations": []}
+        tool_metrics[tool_name]["count"] += 1
+        tool_metrics[tool_name]["durations"].append(tool_duration)
+
+        messages.append({
+            "role": "user",
+            "content": [{
+                "type": "tool_result",
+                "tool_use_id": tool_use.id,
+                "content": tool_response,
+            }]
+        })
+
+        response = await asyncio.to_thread(
+            client.messages.create,
+            model=model,
+            max_tokens=4096,
+            system=EVALUATION_PROMPT,
+            messages=messages,
+            tools=tools,
+        )
+        messages.append({"role": "assistant", "content": response.content})
+
+    response_text = next(
+        (block.text for block in response.content if hasattr(block, "text")),
+        None,
+    )
+    return response_text, tool_metrics
+
+
+async def evaluate_single_task(
+    client: Anthropic,
+    model: str,
+    qa_pair: dict[str, Any],
+    tools: list[dict[str, Any]],
+    connection: Any,
+    task_index: int,
+) -> dict[str, Any]:
+    """Evaluate a single QA pair with the given tools."""
+    start_time = time.time()
+
+    print(f"Task {task_index + 1}: Running task with question: {qa_pair['question']}")
+    response, tool_metrics = await agent_loop(client, model, qa_pair["question"], tools, connection)
+
+    response_value = extract_xml_content(response, "response")
+    summary = extract_xml_content(response, "summary")
+    feedback = extract_xml_content(response, "feedback")
+
+    duration_seconds = time.time() - start_time
+
+    return {
+        "question": qa_pair["question"],
+        "expected": qa_pair["answer"],
+        "actual": response_value,
+        "score": int(response_value == qa_pair["answer"]) if response_value else 0,
+        "total_duration": duration_seconds,
+        "tool_calls": tool_metrics,
+        "num_tool_calls": sum(len(metrics["durations"]) for metrics in tool_metrics.values()),
+        "summary": summary,
+        "feedback": feedback,
+    }
+
+
+REPORT_HEADER = """
+# Evaluation Report
+
+## Summary
+
+- **Accuracy**: {correct}/{total} ({accuracy:.1f}%)
+- **Average Task Duration**: {average_duration_s:.2f}s
+- **Average Tool Calls per Task**: {average_tool_calls:.2f}
+- **Total Tool Calls**: {total_tool_calls}
+
+---
+"""
+
+TASK_TEMPLATE = """
+### Task {task_num}
+
+**Question**: {question}
+**Ground Truth Answer**: `{expected_answer}`
+**Actual Answer**: `{actual_answer}`
+**Correct**: {correct_indicator}
+**Duration**: {total_duration:.2f}s
+**Tool Calls**: {tool_calls}
+
+**Summary**
+{summary}
+
+**Feedback**
+{feedback}
+
+---
+"""
+
+
+async def run_evaluation(
+    eval_path: Path,
+    connection: Any,
+    model: str = "codex-cli-3-7-sonnet-20250219",
+) -> str:
+    """Run evaluation with MCP server tools."""
+    print("🚀 Starting Evaluation")
+
+    client = Anthropic()
+
+    tools = await connection.list_tools()
+    print(f"📋 Loaded {len(tools)} tools from MCP server")
+
+    qa_pairs = parse_evaluation_file(eval_path)
+    print(f"📋 Loaded {len(qa_pairs)} evaluation tasks")
+
+    results = []
+    for i, qa_pair in enumerate(qa_pairs):
+        print(f"Processing task {i + 1}/{len(qa_pairs)}")
+        result = await evaluate_single_task(client, model, qa_pair, tools, connection, i)
+        results.append(result)
+
+    correct = sum(r["score"] for r in results)
+    accuracy = (correct / len(results)) * 100 if results else 0
+    average_duration_s = sum(r["total_duration"] for r in results) / len(results) if results else 0
+    average_tool_calls = sum(r["num_tool_calls"] for r in results) / len(results) if results else 0
+    total_tool_calls = sum(r["num_tool_calls"] for r in results)
+
+    report = REPORT_HEADER.format(
+        correct=correct,
+        total=len(results),
+        accuracy=accuracy,
+        average_duration_s=average_duration_s,
+        average_tool_calls=average_tool_calls,
+        total_tool_calls=total_tool_calls,
+    )
+
+    report += "".join([
+        TASK_TEMPLATE.format(
+            task_num=i + 1,
+            question=qa_pair["question"],
+            expected_answer=qa_pair["answer"],
+            actual_answer=result["actual"] or "N/A",
+            correct_indicator="✅" if result["score"] else "❌",
+            total_duration=result["total_duration"],
+            tool_calls=json.dumps(result["tool_calls"], indent=2),
+            summary=result["summary"] or "N/A",
+            feedback=result["feedback"] or "N/A",
+        )
+        for i, (qa_pair, result) in enumerate(zip(qa_pairs, results))
+    ])
+
+    return report
+
+
+def parse_headers(header_list: list[str]) -> dict[str, str]:
+    """Parse header strings in format 'Key: Value' into a dictionary."""
+    headers = {}
+    if not header_list:
+        return headers
+
+    for header in header_list:
+        if ":" in header:
+            key, value = header.split(":", 1)
+            headers[key.strip()] = value.strip()
+        else:
+            print(f"Warning: Ignoring malformed header: {header}")
+    return headers
+
+
+def parse_env_vars(env_list: list[str]) -> dict[str, str]:
+    """Parse environment variable strings in format 'KEY=VALUE' into a dictionary."""
+    env = {}
+    if not env_list:
+        return env
+
+    for env_var in env_list:
+        if "=" in env_var:
+            key, value = env_var.split("=", 1)
+            env[key.strip()] = value.strip()
+        else:
+            print(f"Warning: Ignoring malformed environment variable: {env_var}")
+    return env
+
+
+async def main():
+    parser = argparse.ArgumentParser(
+        description="Evaluate MCP servers using test questions",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Evaluate a local stdio MCP server
+  python evaluation.py -t stdio -c python -a my_server.py eval.xml
+
+  # Evaluate an SSE MCP server
+  python evaluation.py -t sse -u https://example.com/mcp -H "Authorization: Bearer token" eval.xml
+
+  # Evaluate an HTTP MCP server with custom model
+  python evaluation.py -t http -u https://example.com/mcp -m codex-cli-3-5-sonnet-20241022 eval.xml
+        """,
+    )
+
+    parser.add_argument("eval_file", type=Path, help="Path to evaluation XML file")
+    parser.add_argument("-t", "--transport", choices=["stdio", "sse", "http"], default="stdio", help="Transport type (default: stdio)")
+    parser.add_argument("-m", "--model", default="codex-cli-3-7-sonnet-20250219", help="codex-cli model to use (default: codex-cli-3-7-sonnet-20250219)")
+
+    stdio_group = parser.add_argument_group("stdio options")
+    stdio_group.add_argument("-c", "--command", help="Command to run MCP server (stdio only)")
+    stdio_group.add_argument("-a", "--args", nargs="+", help="Arguments for the command (stdio only)")
+    stdio_group.add_argument("-e", "--env", nargs="+", help="Environment variables in KEY=VALUE format (stdio only)")
+
+    remote_group = parser.add_argument_group("sse/http options")
+    remote_group.add_argument("-u", "--url", help="MCP server URL (sse/http only)")
+    remote_group.add_argument("-H", "--header", nargs="+", dest="headers", help="HTTP headers in 'Key: Value' format (sse/http only)")
+
+    parser.add_argument("-o", "--output", type=Path, help="Output file for evaluation report (default: stdout)")
+
+    args = parser.parse_args()
+
+    if not args.eval_file.exists():
+        print(f"Error: Evaluation file not found: {args.eval_file}")
+        sys.exit(1)
+
+    headers = parse_headers(args.headers) if args.headers else None
+    env_vars = parse_env_vars(args.env) if args.env else None
+
+    try:
+        connection = create_connection(
+            transport=args.transport,
+            command=args.command,
+            args=args.args,
+            env=env_vars,
+            url=args.url,
+            headers=headers,
+        )
+    except ValueError as e:
+        print(f"Error: {e}")
+        sys.exit(1)
+
+    print(f"🔗 Connecting to MCP server via {args.transport}...")
+
+    async with connection:
+        print("✅ Connected successfully")
+        report = await run_evaluation(args.eval_file, connection, args.model)
+
+        if args.output:
+            args.output.write_text(report)
+            print(f"\n✅ Report saved to {args.output}")
+        else:
+            print("\n" + report)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+.config/mcp/mcp-builder/scripts/example_evaluation.xml
+```
+<evaluation>
+   <qa_pair>
+      <question>Calculate the compound interest on $10,000 invested at 5% annual interest rate, compounded monthly for 3 years. What is the final amount in dollars (rounded to 2 decimal places)?</question>
+      <answer>11614.72</answer>
+   </qa_pair>
+   <qa_pair>
+      <question>A projectile is launched at a 45-degree angle with an initial velocity of 50 m/s. Calculate the total distance (in meters) it has traveled from the launch point after 2 seconds, assuming g=9.8 m/s². Round to 2 decimal places.</question>
+      <answer>87.25</answer>
+   </qa_pair>
+   <qa_pair>
+      <question>A sphere has a volume of 500 cubic meters. Calculate its surface area in square meters. Round to 2 decimal places.</question>
+      <answer>304.65</answer>
+   </qa_pair>
+   <qa_pair>
+      <question>Calculate the population standard deviation of this dataset: [12, 15, 18, 22, 25, 30, 35]. Round to 2 decimal places.</question>
+      <answer>7.61</answer>
+   </qa_pair>
+   <qa_pair>
+      <question>Calculate the pH of a solution with a hydrogen ion concentration of 3.5 × 10^-5 M. Round to 2 decimal places.</question>
+      <answer>4.46</answer>
+   </qa_pair>
+</evaluation>
+```
+
+.config/mcp/mcp-builder/scripts/requirements.txt
+```
+anthropic>=0.39.0
+mcp>=1.1.0
+```
+
 .config/mcp/oraclepack-gold-pack/scripts/lint_attachments.py
 ```
 # path: oraclepack-gold-pack/scripts/lint_attachments.py
@@ -22769,6 +29012,273 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+```
+
+.config/skills/oraclepack-pipeline-improver/assets/backlog-template.md
+```
+<!-- # path: oraclepack-pipeline-improver/assets/backlog-template.md -->
+# Oraclepack Actionizer Backlog
+
+Run:
+- pack_id: TODO
+- pack_hash: TODO
+- generated_at: TODO
+
+## Summary
+
+- Total tasks: TODO
+- Actionable: TODO
+- Blocked: TODO
+- Conflicts: TODO
+
+## P0 (do first)
+
+### <task_id> — <title>
+- Status: actionable | blocked | conflict | noop
+- Category: TODO
+- Reference: TODO
+- Expected artifacts: TODO
+- Actions:
+  - TODO
+- Evidence:
+  - Paths: TODO
+  - Symbols: TODO
+  - Commands: TODO
+- Done when:
+  - TODO
+
+## P1
+
+### <task_id> — <title>
+- (same fields)
+
+## Blocked / needs evidence
+
+### <task_id> — <title>
+- Missing inputs:
+  - TODO
+- Next smallest experiment (one action):
+  - TODO
+
+## Conflicts / needs resolution
+
+### <task_id> — <title>
+- Conflicting statements:
+  - TODO
+- What evidence resolves this:
+  - TODO
+- Proposed resolution (clearly marked as Proposed):
+  - TODO
+```
+
+.config/skills/oraclepack-pipeline-improver/assets/change-plan-template.md
+```
+<!-- # path: oraclepack-pipeline-improver/assets/change-plan-template.md -->
+# Oraclepack Change Plan
+
+Run:
+- pack_id: TODO
+- pack_hash: TODO
+- generated_at: TODO
+
+## Principles
+
+- Smallest shippable increments first.
+- Every step has an acceptance check.
+- Unknowns are explicit; no guessing.
+
+## Phase 0 — Guardrails (validate + safety)
+
+1) Implement/confirm strict validation (validate --strict --json)
+- Scope:
+  - TODO
+- Acceptance:
+  - TODO (e.g., rejects non-20 packs; emits JSON summary)
+- Tests:
+  - TODO (fixtures for invalid packs)
+
+2) Path safety for output writing
+- Scope:
+  - TODO
+- Acceptance:
+  - TODO (rejects .. traversal / absolute escape)
+- Tests:
+  - TODO
+
+## Phase 1 — Deterministic runs (run dir + manifests + resume)
+
+3) Stable run dir + run.json / steps.json
+- Scope:
+  - TODO
+- Acceptance:
+  - TODO (creates .oraclepack/runs/<pack_id>/..., stable naming)
+- Tests:
+  - TODO
+
+4) Resume default + --rerun semantics
+- Scope:
+  - TODO
+- Acceptance:
+  - TODO (interrupt + rerun skips completed via hashes)
+- Tests:
+  - TODO
+
+## Phase 2 — Reliability (concurrency + retries + optional caching)
+
+5) Concurrency cap
+- Scope:
+  - TODO
+- Acceptance:
+  - TODO (never exceeds N parallel calls)
+
+6) Retry/backoff on transient errors
+- Scope:
+  - TODO
+- Acceptance:
+  - TODO (bounded retries; recorded in steps.json)
+
+7) Optional caching (if enabled)
+- Scope:
+  - TODO
+- Acceptance:
+  - TODO (unchanged inputs cause zero provider calls)
+
+## Phase 3 — Actionizer (Stage 3)
+
+8) Implement actionize command and artifacts
+- Scope:
+  - normalized.jsonl + backlog.md + change-plan.md
+- Acceptance:
+  - TODO (byte-identical output on rerun with unchanged inputs)
+
+## CI integration (optional)
+
+9) Add CI mode wiring (run --ci --non-interactive --json-log; actionize --ci)
+- Policy thresholds:
+  - TODO/Unknown
+- Acceptance:
+  - TODO (exit codes match policy)
+```
+
+.config/skills/oraclepack-pipeline-improver/assets/normalized.example.jsonl
+```
+{"pack_id":"2026-01-05__nogit__deadbeef","pack_hash":"deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef","step_id":"07","task_id":"t_deadbeef_07_a1b2c3d4","title":"Define authorization boundary for server routes","status":"blocked","category":"permissions","reference":"src/server/auth/**","expected_artifacts":["src/server/auth/**","src/routes/**"],"actions":["Locate existing auth middleware/guards and document intended boundary","Add route guard checks or middleware wiring where missing"],"evidence":{"paths":["src/server/auth/**","src/routes/**"],"symbols":[],"commands":["ck --regex auth|permission|role src/server src/routes"]},"notes":["Auth wiring not evidenced in provided inputs"],"missing_inputs":["Repo paths containing current auth middleware or route guards (e.g., src/server/auth/**)","CLI help output for oraclepack validate/run/actionize (if already exists)"]}
+{"pack_id":"2026-01-05__nogit__deadbeef","pack_hash":"deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef","step_id":"13","task_id":"t_deadbeef_13_e5f6a7b8","title":"Bound upload persistence metadata and retention policy","status":"actionable","category":"caching/state","reference":"src/server/persistence/sessionUploads.server.ts","expected_artifacts":["src/server/persistence/**","docs/plans/**"],"actions":["Add explicit retention policy + max entries/size controls","Ensure metadata captured is sufficient for downstream analysis"],"evidence":{"paths":["src/server/persistence/sessionUploads.server.ts"],"symbols":["saveSessionUpload"],"commands":["ck --regex saveSessionUpload src"]},"notes":[],"missing_inputs":[]}
+```
+
+.config/mcp/oraclepack-taskify/references/determinism-and-safety.md
+```
+# Determinism and safety guardrails
+
+## Determinism rules
+
+- Always select inputs by prefix ordering:
+  - exactly one match for each: `01-*.md` … `20-*.md`
+- If any prefix is missing or has multiple matches, exit non-zero with a precise error.
+- Keep generated JSON normalized:
+  - items sorted by id ascending (01..20)
+  - stable ordering for arrays
+- Keep output paths explicit and stable:
+  - do not rely on shared environment variables across steps
+  - each step re-declares its constants
+
+## Safety rules
+
+- No interactive prompts in the Action Pack.
+- Fail fast when prerequisites are missing:
+  - `task-master` (or override)
+  - `oracle` (or override)
+  - `tm` only in autopilot mode (default)
+- Always `mkdir -p` parent directories before writing files.
+- Avoid destructive operations:
+  - do not delete
+  - do not force push
+  - do not commit to main/master in autopilot mode
+- Autopilot mode:
+  - require a clean working tree
+  - if on main/master, create a new work branch before starting autopilot
+  - write a state file to support resumption
+
+## Failure behavior
+
+- Prefer explicit, early errors over partial or ambiguous outputs.
+- If Task Master output paths differ from defaults, print warnings but keep the pack deterministic.
+```
+
+.config/mcp/oraclepack-taskify/references/task-master-cli-cheatsheet.md
+```
+# Task Master CLI cheatsheet (minimal)
+
+This skill assumes only these Task Master commands:
+
+## Parse PRD into tasks
+
+- `task-master parse-prd <prd_path>`
+- If tag scoping is supported in your setup, the Action Pack attempts:
+  - `task-master parse-prd <prd_path> --tag <tag>`
+  - and falls back to the untagged command if the flag is not accepted.
+
+## Analyze complexity
+
+- `task-master analyze-complexity --output <out_dir>/tm-complexity.json`
+
+## Expand tasks
+
+- `task-master expand --all`
+
+## Autopilot (default mode behavior)
+
+- The Action Pack attempts: `tm autopilot` (via `tm_cmd`, default `tm`)
+- If your `tm` tool does not support autopilot, run Stage 3 with `mode=backlog` or `mode=pipelines`.
+
+Notes:
+- The Action Pack checks for `.taskmaster/tasks.json` or `tasks.json` after parsing, but Task Master may be configured differently. If neither file exists, the pack prints a warning.
+```
+
+.config/mcp/oraclepack-taskify/references/workflow-overview.md
+```
+# Stage 3 (oraclepack-taskify) — Workflow overview
+
+## What this stage solves
+
+Stage 1 produces a 20-question oracle pack.
+Stage 2 runs oraclepack and produces 20 answer files.
+
+Stage 2 outputs are answers, not work. Stage 3 creates the deterministic bridge from answers to executable planning artifacts and (by default) starts a guarded autopilot to begin implementation.
+
+## Inputs
+
+- A completed oraclepack output directory containing exactly:
+  - `01-*.md` … `20-*.md` (one file per prefix)
+- Optional additional files to improve synthesis fidelity (extra attachments)
+
+## Primary output (this skill generates)
+
+- An “Action Pack” markdown file at:
+  - default: `docs/oracle-actions-pack-YYYY-MM-DD.md`
+  - override: `pack_path=...`
+
+The Action Pack is designed to be executed as a deterministic pipeline.
+
+## Artifacts the Action Pack produces when executed
+
+- Canonical actions:
+  - `<out_dir>/_actions.json` (machine-consumable)
+  - `<out_dir>/_actions.md` (human summary)
+- PRD/spec suitable for Task Master:
+  - `.taskmaster/docs/oracle-actions-prd.md`
+- Task Master outputs:
+  - tasks created/expanded by `task-master`
+  - complexity report: `<out_dir>/tm-complexity.json`
+- Optional:
+  - pipelines doc: `docs/oracle-actions-pipelines.md` (pipelines mode)
+  - autopilot entrypoint + state file (autopilot mode, default)
+
+## Execution modes
+
+- backlog: actions → PRD → tasks
+- pipelines: backlog + pipelines generation
+- autopilot (default): backlog + guarded autopilot entrypoint
 ```
 
 .config/mcp/oraclepack-taskify/assets/action-pack-template.md
@@ -23287,121 +29797,6 @@ Hygiene:
 - Keep acceptance criteria objective and testable.
 ```
 
-.config/mcp/oraclepack-taskify/references/determinism-and-safety.md
-```
-# Determinism and safety guardrails
-
-## Determinism rules
-
-- Always select inputs by prefix ordering:
-  - exactly one match for each: `01-*.md` … `20-*.md`
-- If any prefix is missing or has multiple matches, exit non-zero with a precise error.
-- Keep generated JSON normalized:
-  - items sorted by id ascending (01..20)
-  - stable ordering for arrays
-- Keep output paths explicit and stable:
-  - do not rely on shared environment variables across steps
-  - each step re-declares its constants
-
-## Safety rules
-
-- No interactive prompts in the Action Pack.
-- Fail fast when prerequisites are missing:
-  - `task-master` (or override)
-  - `oracle` (or override)
-  - `tm` only in autopilot mode (default)
-- Always `mkdir -p` parent directories before writing files.
-- Avoid destructive operations:
-  - do not delete
-  - do not force push
-  - do not commit to main/master in autopilot mode
-- Autopilot mode:
-  - require a clean working tree
-  - if on main/master, create a new work branch before starting autopilot
-  - write a state file to support resumption
-
-## Failure behavior
-
-- Prefer explicit, early errors over partial or ambiguous outputs.
-- If Task Master output paths differ from defaults, print warnings but keep the pack deterministic.
-```
-
-.config/mcp/oraclepack-taskify/references/task-master-cli-cheatsheet.md
-```
-# Task Master CLI cheatsheet (minimal)
-
-This skill assumes only these Task Master commands:
-
-## Parse PRD into tasks
-
-- `task-master parse-prd <prd_path>`
-- If tag scoping is supported in your setup, the Action Pack attempts:
-  - `task-master parse-prd <prd_path> --tag <tag>`
-  - and falls back to the untagged command if the flag is not accepted.
-
-## Analyze complexity
-
-- `task-master analyze-complexity --output <out_dir>/tm-complexity.json`
-
-## Expand tasks
-
-- `task-master expand --all`
-
-## Autopilot (default mode behavior)
-
-- The Action Pack attempts: `tm autopilot` (via `tm_cmd`, default `tm`)
-- If your `tm` tool does not support autopilot, run Stage 3 with `mode=backlog` or `mode=pipelines`.
-
-Notes:
-- The Action Pack checks for `.taskmaster/tasks.json` or `tasks.json` after parsing, but Task Master may be configured differently. If neither file exists, the pack prints a warning.
-```
-
-.config/mcp/oraclepack-taskify/references/workflow-overview.md
-```
-# Stage 3 (oraclepack-taskify) — Workflow overview
-
-## What this stage solves
-
-Stage 1 produces a 20-question oracle pack.
-Stage 2 runs oraclepack and produces 20 answer files.
-
-Stage 2 outputs are answers, not work. Stage 3 creates the deterministic bridge from answers to executable planning artifacts and (by default) starts a guarded autopilot to begin implementation.
-
-## Inputs
-
-- A completed oraclepack output directory containing exactly:
-  - `01-*.md` … `20-*.md` (one file per prefix)
-- Optional additional files to improve synthesis fidelity (extra attachments)
-
-## Primary output (this skill generates)
-
-- An “Action Pack” markdown file at:
-  - default: `docs/oracle-actions-pack-YYYY-MM-DD.md`
-  - override: `pack_path=...`
-
-The Action Pack is designed to be executed as a deterministic pipeline.
-
-## Artifacts the Action Pack produces when executed
-
-- Canonical actions:
-  - `<out_dir>/_actions.json` (machine-consumable)
-  - `<out_dir>/_actions.md` (human summary)
-- PRD/spec suitable for Task Master:
-  - `.taskmaster/docs/oracle-actions-prd.md`
-- Task Master outputs:
-  - tasks created/expanded by `task-master`
-  - complexity report: `<out_dir>/tm-complexity.json`
-- Optional:
-  - pipelines doc: `docs/oracle-actions-pipelines.md` (pipelines mode)
-  - autopilot entrypoint + state file (autopilot mode, default)
-
-## Execution modes
-
-- backlog: actions → PRD → tasks
-- pipelines: backlog + pipelines generation
-- autopilot (default): backlog + guarded autopilot entrypoint
-```
-
 .config/mcp/oraclepack-taskify/scripts/detect-oracle-outputs.sh
 ```
 #!/usr/bin/env bash
@@ -23508,158 +29903,6 @@ for h in "${headers[@]}"; do
 done
 
 echo "OK: Action Pack validation passed."
-```
-
-.config/skills/oraclepack-pipeline-improver/assets/backlog-template.md
-```
-<!-- # path: oraclepack-pipeline-improver/assets/backlog-template.md -->
-# Oraclepack Actionizer Backlog
-
-Run:
-- pack_id: TODO
-- pack_hash: TODO
-- generated_at: TODO
-
-## Summary
-
-- Total tasks: TODO
-- Actionable: TODO
-- Blocked: TODO
-- Conflicts: TODO
-
-## P0 (do first)
-
-### <task_id> — <title>
-- Status: actionable | blocked | conflict | noop
-- Category: TODO
-- Reference: TODO
-- Expected artifacts: TODO
-- Actions:
-  - TODO
-- Evidence:
-  - Paths: TODO
-  - Symbols: TODO
-  - Commands: TODO
-- Done when:
-  - TODO
-
-## P1
-
-### <task_id> — <title>
-- (same fields)
-
-## Blocked / needs evidence
-
-### <task_id> — <title>
-- Missing inputs:
-  - TODO
-- Next smallest experiment (one action):
-  - TODO
-
-## Conflicts / needs resolution
-
-### <task_id> — <title>
-- Conflicting statements:
-  - TODO
-- What evidence resolves this:
-  - TODO
-- Proposed resolution (clearly marked as Proposed):
-  - TODO
-```
-
-.config/skills/oraclepack-pipeline-improver/assets/change-plan-template.md
-```
-<!-- # path: oraclepack-pipeline-improver/assets/change-plan-template.md -->
-# Oraclepack Change Plan
-
-Run:
-- pack_id: TODO
-- pack_hash: TODO
-- generated_at: TODO
-
-## Principles
-
-- Smallest shippable increments first.
-- Every step has an acceptance check.
-- Unknowns are explicit; no guessing.
-
-## Phase 0 — Guardrails (validate + safety)
-
-1) Implement/confirm strict validation (validate --strict --json)
-- Scope:
-  - TODO
-- Acceptance:
-  - TODO (e.g., rejects non-20 packs; emits JSON summary)
-- Tests:
-  - TODO (fixtures for invalid packs)
-
-2) Path safety for output writing
-- Scope:
-  - TODO
-- Acceptance:
-  - TODO (rejects .. traversal / absolute escape)
-- Tests:
-  - TODO
-
-## Phase 1 — Deterministic runs (run dir + manifests + resume)
-
-3) Stable run dir + run.json / steps.json
-- Scope:
-  - TODO
-- Acceptance:
-  - TODO (creates .oraclepack/runs/<pack_id>/..., stable naming)
-- Tests:
-  - TODO
-
-4) Resume default + --rerun semantics
-- Scope:
-  - TODO
-- Acceptance:
-  - TODO (interrupt + rerun skips completed via hashes)
-- Tests:
-  - TODO
-
-## Phase 2 — Reliability (concurrency + retries + optional caching)
-
-5) Concurrency cap
-- Scope:
-  - TODO
-- Acceptance:
-  - TODO (never exceeds N parallel calls)
-
-6) Retry/backoff on transient errors
-- Scope:
-  - TODO
-- Acceptance:
-  - TODO (bounded retries; recorded in steps.json)
-
-7) Optional caching (if enabled)
-- Scope:
-  - TODO
-- Acceptance:
-  - TODO (unchanged inputs cause zero provider calls)
-
-## Phase 3 — Actionizer (Stage 3)
-
-8) Implement actionize command and artifacts
-- Scope:
-  - normalized.jsonl + backlog.md + change-plan.md
-- Acceptance:
-  - TODO (byte-identical output on rerun with unchanged inputs)
-
-## CI integration (optional)
-
-9) Add CI mode wiring (run --ci --non-interactive --json-log; actionize --ci)
-- Policy thresholds:
-  - TODO/Unknown
-- Acceptance:
-  - TODO (exit codes match policy)
-```
-
-.config/skills/oraclepack-pipeline-improver/assets/normalized.example.jsonl
-```
-{"pack_id":"2026-01-05__nogit__deadbeef","pack_hash":"deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef","step_id":"07","task_id":"t_deadbeef_07_a1b2c3d4","title":"Define authorization boundary for server routes","status":"blocked","category":"permissions","reference":"src/server/auth/**","expected_artifacts":["src/server/auth/**","src/routes/**"],"actions":["Locate existing auth middleware/guards and document intended boundary","Add route guard checks or middleware wiring where missing"],"evidence":{"paths":["src/server/auth/**","src/routes/**"],"symbols":[],"commands":["ck --regex auth|permission|role src/server src/routes"]},"notes":["Auth wiring not evidenced in provided inputs"],"missing_inputs":["Repo paths containing current auth middleware or route guards (e.g., src/server/auth/**)","CLI help output for oraclepack validate/run/actionize (if already exists)"]}
-{"pack_id":"2026-01-05__nogit__deadbeef","pack_hash":"deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef","step_id":"13","task_id":"t_deadbeef_13_e5f6a7b8","title":"Bound upload persistence metadata and retention policy","status":"actionable","category":"caching/state","reference":"src/server/persistence/sessionUploads.server.ts","expected_artifacts":["src/server/persistence/**","docs/plans/**"],"actions":["Add explicit retention policy + max entries/size controls","Ensure metadata captured is sufficient for downstream analysis"],"evidence":{"paths":["src/server/persistence/sessionUploads.server.ts"],"symbols":["saveSessionUpload"],"commands":["ck --regex saveSessionUpload src"]},"notes":[],"missing_inputs":[]}
 ```
 
 .config/skills/oraclepack-pipeline-improver/references/actionizer-spec.md
@@ -23971,6 +30214,477 @@ ExpectedArtifacts:
 - ExpectedArtifacts (optional but recommended)
 
 If the Stage 1 generator cannot produce these, it should write `Unknown` values explicitly rather than omitting keys.
+```
+
+.config/skills/oraclepack-tickets-pack/scripts/lint_attachments.py
+```
+import argparse
+import re
+import sys
+from dataclasses import dataclass
+from pathlib import Path
+from typing import List, Tuple
+
+
+@dataclass
+class Step:
+    n: str
+    header: str
+    lines: List[str]
+
+
+def _read_text(path: Path) -> str:
+    try:
+        return path.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        return path.read_text(encoding="utf-8", errors="replace")
+
+
+def _extract_bash_fence(lines: List[str]) -> List[str]:
+    fence_idxs = [i for i, ln in enumerate(lines) if ln.startswith("```")]
+    if len(fence_idxs) != 2:
+        raise ValueError(f"Expected exactly one fenced block (2 fence lines). Found {len(fence_idxs)}.")
+    open_i, close_i = fence_idxs
+    if lines[open_i].rstrip("\n") != "```bash":
+        raise ValueError("Opening fence must be exactly ```bash.")
+    if lines[close_i].rstrip("\n") != "```":
+        raise ValueError("Closing fence must be exactly ```.")
+    return [ln.rstrip("\n") for ln in lines[open_i + 1 : close_i]]
+
+
+def _parse_steps(fence_lines: List[str]) -> List[Step]:
+    header_re = re.compile(r"^#\s*(\d{2})\)\s+")
+    header_idxs: List[Tuple[int, str]] = []
+    for i, ln in enumerate(fence_lines):
+        m = header_re.match(ln)
+        if m:
+            header_idxs.append((i, m.group(1)))
+
+    if not header_idxs:
+        raise ValueError("No step headers found inside bash fence.")
+
+    steps: List[Step] = []
+    for idx, (start_i, n) in enumerate(header_idxs):
+        end_i = header_idxs[idx + 1][0] if idx + 1 < len(header_idxs) else len(fence_lines)
+        block = fence_lines[start_i:end_i]
+        steps.append(Step(n=n, header=block[0], lines=block))
+    return steps
+
+
+def _count_native_attachments(step: Step) -> int:
+    """
+    Counts -f/--file occurrences excluding:
+      - comment lines
+      - the literal extra_files line (immediately following the marker comment)
+    """
+    count = 0
+    ignore_next_nonempty = False
+
+    for ln in step.lines[1:]:
+        s = ln.strip()
+        if not s:
+            continue
+
+        # Detect extra_files marker comment; ignore next non-empty line.
+        if s.startswith("#") and "extra_files appended literally" in s.lower():
+            ignore_next_nonempty = True
+            continue
+
+        if ignore_next_nonempty:
+            # Skip counting attachments on the extra_files line itself.
+            ignore_next_nonempty = False
+            continue
+
+        if s.startswith("#"):
+            continue
+
+        count += len(re.findall(r"(?<!\S)(-f|--file)(?!\S)", ln))
+    return count
+
+def lint(path: Path) -> None:
+    raw = _read_text(path)
+    lines = raw.splitlines(True)
+    fence = _extract_bash_fence(lines)
+    steps = _parse_steps(fence)
+
+    errors: List[str] = []
+    for step in steps:
+        native = _count_native_attachments(step)
+        if native > 2:
+            errors.append(
+                f"Step {step.n}: has {native} native attachments; must be <= 2 (ticket bundle + at most one repo file)."
+            )
+
+    if errors:
+        for e in errors:
+            print(f"[ERROR] {e}", file=sys.stderr)
+        sys.exit(1)
+
+    print("[OK] Attachment lint passed (native attachments <= 2 per step; extra_files line excluded).")
+
+def main() -> None:
+    p = argparse.ArgumentParser(
+        description="Lint ticket-driven oraclepack Stage-1 packs for native attachments (<=2 per step, excluding literal extra_files line)."
+    )
+    p.add_argument("pack_path", help="Path to the Markdown pack file")
+    args = p.parse_args()
+
+    path = Path(args.pack_path)
+    if not path.exists():
+        print(f"[ERROR] File not found: {path}", file=sys.stderr)
+        sys.exit(1)
+
+    lint(path)
+
+
+if __name__ == "__main__":
+    main()
+```
+
+.config/skills/oraclepack-tickets-pack/scripts/validate_pack.py
+```
+import argparse
+import re
+import sys
+from dataclasses import dataclass
+from pathlib import Path, PurePosixPath
+from typing import Dict, List, Tuple
+
+
+ALLOWED_CATEGORIES = [
+    "contracts/interfaces",
+    "invariants",
+    "caching/state",
+    "background jobs",
+    "observability",
+    "permissions",
+    "migrations",
+    "UX flows",
+    "failure modes",
+    "feature flags",
+]
+
+# Required header tokens, in strict order.
+HEADER_TOKEN_ORDER = [
+    "ROI=",
+    "impact=",
+    "confidence=",
+    "effort=",
+    "horizon=",
+    "category=",
+    "reference=",
+]
+
+
+@dataclass
+class Step:
+    n: str
+    header_line_no: int  # 1-based within fence
+    header_line: str
+    block_lines: List[str]
+
+
+def _fail(errors: List[str]) -> None:
+    for e in errors:
+        print(f"[ERROR] {e}", file=sys.stderr)
+    sys.exit(1)
+
+
+def _read_text(path: Path) -> str:
+    try:
+        return path.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        return path.read_text(encoding="utf-8", errors="replace")
+
+
+def _extract_single_bash_fence(lines: List[str]) -> Tuple[int, int, List[str], List[str]]:
+    """
+    Enforces:
+      - exactly one fenced code block labeled bash
+      - no other fences anywhere
+      - opening fence line must be exactly ```bash
+      - closing fence line must be exactly ```
+    """
+    fence_locs = [i for i, ln in enumerate(lines) if re.match(r"^```", ln)]
+    if len(fence_locs) != 2:
+        # Show all fence-like lines to help debugging.
+        details = []
+        for i, ln in enumerate(lines):
+            if re.match(r"^```", ln):
+                details.append(f"line {i+1}: {ln.rstrip()}")
+        raise ValueError(
+            f"Expected exactly one fenced code block (2 fence lines), found {len(fence_locs)} fence line(s). "
+            + ("Fences: " + "; ".join(details) if details else "")
+        )
+
+    open_i, close_i = fence_locs
+    if lines[open_i].rstrip("\n") != "```bash":
+        raise ValueError("Opening fence must be exactly ```bash on its own line (no spaces).")
+    if lines[close_i].rstrip("\n") != "```":
+        raise ValueError("Closing fence must be exactly ``` on its own line (no spaces).")
+    if close_i <= open_i:
+        raise ValueError("Closing fence appears before opening fence.")
+
+    fence_lines = lines[open_i + 1 : close_i]
+    outside_lines = lines[:open_i] + lines[close_i + 1 :]
+    return open_i, close_i, fence_lines, outside_lines
+
+
+def _parse_steps(fence_lines: List[str]) -> List[Step]:
+    header_re = re.compile(r"^#\s*(\d{2})\)\s+")
+    header_idxs: List[Tuple[int, str]] = []
+    for i, ln in enumerate(fence_lines):
+        m = header_re.match(ln)
+        if m:
+            header_idxs.append((i, m.group(1)))
+
+    if len(header_idxs) != 20:
+        raise ValueError(f"Expected exactly 20 step headers inside bash fence, found {len(header_idxs)}.")
+
+    expected = [f"{i:02d}" for i in range(1, 21)]
+    got = [n for _, n in header_idxs]
+    if got != expected:
+        raise ValueError(f"Step numbering must be sequential 01..20. Got: {got}")
+
+    steps: List[Step] = []
+    for idx, (start_i, n) in enumerate(header_idxs):
+        end_i = header_idxs[idx + 1][0] if idx + 1 < len(header_idxs) else len(fence_lines)
+        block = fence_lines[start_i:end_i]
+        steps.append(
+            Step(
+                n=n,
+                header_line_no=start_i + 1,
+                header_line=block[0].rstrip("\n"),
+                block_lines=[b.rstrip("\n") for b in block],
+            )
+        )
+    return steps
+
+
+def _header_token_positions(header: str) -> Dict[str, int]:
+    pos: Dict[str, int] = {}
+    for t in HEADER_TOKEN_ORDER:
+        pos[t] = header.find(t)
+    return pos
+
+
+def _parse_category_value(header: str) -> str:
+    if "category=" not in header:
+        return ""
+    after = header.split("category=", 1)[1]
+    # Category ends at the start of " reference=" (strict contract).
+    end = after.find(" reference=")
+    if end == -1:
+        # As a fallback, try other token starts, though contract expects reference= last.
+        for token in [" ROI=", " impact=", " confidence=", " effort=", " horizon="]:
+            p = after.find(token)
+            if p != -1:
+                end = p if end == -1 else min(end, p)
+    if end == -1:
+        cat = after.strip()
+    else:
+        cat = after[:end].strip()
+    return cat
+
+
+def _has_nonempty_scalar(header: str, key: str) -> bool:
+    # scalar value ends at next whitespace
+    m = re.search(rf"\b{re.escape(key)}=([^\s]+)", header)
+    return bool(m and m.group(1).strip())
+
+
+def _validate_header(step: Step, errors: List[str]) -> None:
+    header = step.header_line
+
+    # Strict start.
+    if not re.match(rf"^#\s*{re.escape(step.n)}\)\s+", header):
+        errors.append(f"Step {step.n}: header must start with '# {step.n})'. Got: {header}")
+
+    # Tokens must appear in strict order.
+    pos = _header_token_positions(header)
+    for t, p in pos.items():
+        if p == -1:
+            errors.append(f"Step {step.n}: missing required token '{t}' in header: {header}")
+
+    # Order check (only if all present).
+    if all(p != -1 for p in pos.values()):
+        last = -1
+        for t in HEADER_TOKEN_ORDER:
+            if pos[t] <= last:
+                errors.append(
+                    f"Step {step.n}: token '{t}' is out of order in header. "
+                    f"Expected order: {' '.join(HEADER_TOKEN_ORDER)}. Got: {header}"
+                )
+                break
+            last = pos[t]
+
+    # Non-empty values.
+    if not _has_nonempty_scalar(header, "ROI"):
+        errors.append(f"Step {step.n}: missing/empty ROI= value in header: {header}")
+    for k in ["impact", "confidence", "effort", "horizon", "reference"]:
+        if not _has_nonempty_scalar(header, k):
+            errors.append(f"Step {step.n}: missing/empty {k}= value in header: {header}")
+
+    cat_val = _parse_category_value(header)
+    if not cat_val:
+        errors.append(f"Step {step.n}: missing/empty category= value in header: {header}")
+    elif cat_val not in ALLOWED_CATEGORIES:
+        errors.append(
+            f"Step {step.n}: invalid category='{cat_val}'. Must be one of: {ALLOWED_CATEGORIES}. Header: {header}"
+        )
+
+
+def _validate_write_output(step: Step, errors: List[str]) -> None:
+    joined = "\n".join(step.block_lines)
+    # Strict: must use double quotes exactly: --write-output "<path>"
+    m = re.search(r'--write-output\s+"([^"]+)"', joined)
+    if not m:
+        errors.append(f"Step {step.n}: missing --write-output \"...\" (double-quoted) in step block.")
+        return
+
+    out_path = m.group(1)
+
+    # Disallow variable expansions in write paths.
+    if "$" in out_path or "`" in out_path:
+        errors.append(f"Step {step.n}: --write-output path must not contain shell expansions. Got: {out_path}")
+
+    # Disallow absolute writes (and home shortcuts).
+    if out_path.startswith("/") or out_path.startswith("~"):
+        errors.append(f"Step {step.n}: --write-output path must be relative (no absolute/home paths). Got: {out_path}")
+
+    # Disallow traversal.
+    if re.search(r"(^|/)\.\.(/|$)", out_path):
+        errors.append(f"Step {step.n}: --write-output path must not contain '..' traversal. Got: {out_path}")
+
+    # Basic shape: <out_dir>/<nn>-<slug>.md
+    if "/" not in out_path:
+        errors.append(f"Step {step.n}: --write-output path must contain a directory component. Got: {out_path}")
+        return
+
+    filename = out_path.split("/")[-1]
+    if not filename.startswith(f"{step.n}-"):
+        errors.append(f"Step {step.n}: --write-output filename must start with '{step.n}-'. Got: {filename}")
+    if not filename.endswith(".md"):
+        errors.append(f"Step {step.n}: --write-output filename must end with '.md'. Got: {filename}")
+
+    # Extra guard: ensure PurePosixPath doesn't include '..' (covers odd strings like 'a/../b').
+    try:
+        parts = PurePosixPath(out_path).parts
+        if ".." in parts:
+            errors.append(f"Step {step.n}: --write-output path contains '..' segment (unsafe). Got: {out_path}")
+    except Exception:
+        # Non-fatal; already handled by regex.
+        pass
+
+
+def _validate_ticket_bundle_reference(step: Step, errors: List[str]) -> None:
+    joined = "\n".join(step.block_lines)
+
+    # Require the bundle to be mentioned/attached.
+    if "_tickets_bundle" not in joined:
+        errors.append(
+            f"Step {step.n}: must reference the ticket bundle (expected '_tickets_bundle' in step block)."
+        )
+
+    # Require a file attachment pointing to the bundle, double-quoted for stability.
+    if re.search(r'(?<!\S)(-f|--file)(?!\S)\s+"[^"\n]*_tickets_bundle[^"\n]*"', joined) is None:
+        errors.append(
+            f"Step {step.n}: must attach the ticket bundle via -f/--file \"..._tickets_bundle...\"."
+        )
+
+
+def _validate_answer_format(step: Step, errors: List[str]) -> None:
+    hay = "\n".join(step.block_lines).lower()
+    required = [
+        "answer format:",
+        "direct answer",
+        "risks/unknowns",
+        "next smallest concrete experiment",
+        "if evidence is insufficient",
+        "missing file/path pattern",
+    ]
+    missing = [s for s in required if s not in hay]
+    if missing:
+        errors.append(f"Step {step.n}: prompt missing required Answer format components: {missing}")
+
+
+def _validate_category_counts(steps: List[Step], errors: List[str]) -> None:
+    counts: Dict[str, List[str]] = {c: [] for c in ALLOWED_CATEGORIES}
+    for st in steps:
+        cat = _parse_category_value(st.header_line)
+        if cat in counts:
+            counts[cat].append(st.n)
+
+    bad = []
+    for cat, ids in counts.items():
+        if len(ids) != 2:
+            bad.append(f"{cat}={len(ids)} (steps={ids})")
+    if bad:
+        errors.append(
+            "Category distribution must be exactly 2 steps per category (20 total). Problems: " + ", ".join(bad)
+        )
+
+
+def _validate_coverage_check(outside_lines: List[str], errors: List[str]) -> None:
+    text = "\n".join(outside_lines)
+    m = re.search(r"^##\s+Coverage check\s*$", text, flags=re.IGNORECASE | re.MULTILINE)
+    if m is None:
+        errors.append('Missing "## Coverage check" section (must be outside the bash fence).')
+        return
+
+    after = text[m.end() :]
+    for cat in ALLOWED_CATEGORIES:
+        # Require a line like: "- <cat>: OK" OR "- <cat>: Missing(01,02)"
+        pat = rf"^\s*[-*]\s+{re.escape(cat)}\s*:\s*(OK|Missing\([^)]*\))\s*$"
+        if re.search(pat, after, flags=re.MULTILINE) is None:
+            errors.append(f'Coverage check missing/invalid line for category: "{cat}"')
+
+
+def validate_pack(path: Path) -> None:
+    raw = _read_text(path)
+    lines = raw.splitlines(True)
+
+    try:
+        _, _, fence_lines, outside_lines = _extract_single_bash_fence(lines)
+    except ValueError as e:
+        _fail([str(e)])
+
+    try:
+        steps = _parse_steps(fence_lines)
+    except ValueError as e:
+        _fail([str(e)])
+
+    errors: List[str] = []
+    for st in steps:
+        _validate_header(st, errors)
+        _validate_write_output(st, errors)
+        _validate_ticket_bundle_reference(st, errors)
+        _validate_answer_format(st, errors)
+
+    _validate_category_counts(steps, errors)
+    _validate_coverage_check(outside_lines, errors)
+
+    if errors:
+        _fail(errors)
+
+    print("[OK] Pack validates against tickets Stage-1 contract.")
+
+def main() -> None:
+    p = argparse.ArgumentParser(
+        description="Validate a ticket-driven oraclepack Stage-1 pack (single bash fence, 20 steps, strict headers/tokens, safe write paths, ticket bundle references, coverage check)."
+    )
+    p.add_argument("pack_path", help="Path to the Markdown pack file")
+    args = p.parse_args()
+
+    path = Path(args.pack_path)
+    if not path.exists():
+        _fail([f"File not found: {path}"])
+
+    validate_pack(path)
+
+
+if __name__ == "__main__":
+    main()
 ```
 
 .config/skills/oraclepack-tickets-pack/references/attachment-minimization.md
@@ -24701,550 +31415,7 @@ Answer format:
 PROMPT
 )"
 
-# 16) ROI=4.2 impact=6 confidence=0.78 effort=2 horizon=NearTerm category=UX flows reference=Unknown
-{{oracle_cmd}} \
-  {{oracle_flags}} \
-  --write-output "{{out_dir}}/16-ux-flows-edge-cases-and-gotchas.md" \
-  -f "{{ticket_bundle_path}}" \
-  # optional (at most one): -f "<best_repo_file_path>" \
-  # extra_files appended literally (may be empty; may include -f/--file):
-  {{extra_files}} \
-  -p "$(cat <<'PROMPT'
-Strategist question #16  (ticket-driven)
-
-Reference: Unknown
-Category: UX flows
-Horizon: NearTerm
-ROI: 4.2 (impact=6, confidence=0.78, effort=2)
-
-Question:
-Using the ticket bundle, enumerate top UX edge cases (“gotchas”) that must be handled (missing tickets, partial bundles, validation failures, ambiguous outputs, cancel/back navigation). Identify where handling should be implemented and what tests are required.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 17) ROI=5.4 impact=7 confidence=0.76 effort=2 horizon=Immediate category=failure modes reference=Unknown
-{{oracle_cmd}} \
-  {{oracle_flags}} \
-  --write-output "{{out_dir}}/17-failure-modes-taxonomy-from-tickets.md" \
-  -f "{{ticket_bundle_path}}" \
-  # optional (at most one): -f "<best_repo_file_path>" \
-  # extra_files appended literally (may be empty; may include -f/--file):
-  {{extra_files}} \
-  -p "$(cat <<'PROMPT'
-Strategist question #17  (ticket-driven)
-
-Reference: Unknown
-Category: failure modes
-Horizon: Immediate
-ROI: 5.4 (impact=7, confidence=0.76, effort=2)
-
-Question:
-Derive a failure-mode taxonomy implied by the tickets (ticket discovery failures, bundle generation failures, schema violations, runner ingestion errors, tool execution failures). For each failure:
-- expected user-visible behavior
-- diagnostics to emit
-- where to classify/handle it.
-
 [TRUNCATED]
-```
-
-.config/skills/oraclepack-tickets-pack/scripts/lint_attachments.py
-```
-import argparse
-import re
-import sys
-from dataclasses import dataclass
-from pathlib import Path
-from typing import List, Tuple
-
-
-@dataclass
-class Step:
-    n: str
-    header: str
-    lines: List[str]
-
-
-def _read_text(path: Path) -> str:
-    try:
-        return path.read_text(encoding="utf-8")
-    except UnicodeDecodeError:
-        return path.read_text(encoding="utf-8", errors="replace")
-
-
-def _extract_bash_fence(lines: List[str]) -> List[str]:
-    fence_idxs = [i for i, ln in enumerate(lines) if ln.startswith("```")]
-    if len(fence_idxs) != 2:
-        raise ValueError(f"Expected exactly one fenced block (2 fence lines). Found {len(fence_idxs)}.")
-    open_i, close_i = fence_idxs
-    if lines[open_i].rstrip("\n") != "```bash":
-        raise ValueError("Opening fence must be exactly ```bash.")
-    if lines[close_i].rstrip("\n") != "```":
-        raise ValueError("Closing fence must be exactly ```.")
-    return [ln.rstrip("\n") for ln in lines[open_i + 1 : close_i]]
-
-
-def _parse_steps(fence_lines: List[str]) -> List[Step]:
-    header_re = re.compile(r"^#\s*(\d{2})\)\s+")
-    header_idxs: List[Tuple[int, str]] = []
-    for i, ln in enumerate(fence_lines):
-        m = header_re.match(ln)
-        if m:
-            header_idxs.append((i, m.group(1)))
-
-    if not header_idxs:
-        raise ValueError("No step headers found inside bash fence.")
-
-    steps: List[Step] = []
-    for idx, (start_i, n) in enumerate(header_idxs):
-        end_i = header_idxs[idx + 1][0] if idx + 1 < len(header_idxs) else len(fence_lines)
-        block = fence_lines[start_i:end_i]
-        steps.append(Step(n=n, header=block[0], lines=block))
-    return steps
-
-
-def _count_native_attachments(step: Step) -> int:
-    """
-    Counts -f/--file occurrences excluding:
-      - comment lines
-      - the literal extra_files line (immediately following the marker comment)
-    """
-    count = 0
-    ignore_next_nonempty = False
-
-    for ln in step.lines[1:]:
-        s = ln.strip()
-        if not s:
-            continue
-
-        # Detect extra_files marker comment; ignore next non-empty line.
-        if s.startswith("#") and "extra_files appended literally" in s.lower():
-            ignore_next_nonempty = True
-            continue
-
-        if ignore_next_nonempty:
-            # Skip counting attachments on the extra_files line itself.
-            ignore_next_nonempty = False
-            continue
-
-        if s.startswith("#"):
-            continue
-
-        count += len(re.findall(r"(?<!\S)(-f|--file)(?!\S)", ln))
-    return count
-
-def lint(path: Path) -> None:
-    raw = _read_text(path)
-    lines = raw.splitlines(True)
-    fence = _extract_bash_fence(lines)
-    steps = _parse_steps(fence)
-
-    errors: List[str] = []
-    for step in steps:
-        native = _count_native_attachments(step)
-        if native > 2:
-            errors.append(
-                f"Step {step.n}: has {native} native attachments; must be <= 2 (ticket bundle + at most one repo file)."
-            )
-
-    if errors:
-        for e in errors:
-            print(f"[ERROR] {e}", file=sys.stderr)
-        sys.exit(1)
-
-    print("[OK] Attachment lint passed (native attachments <= 2 per step; extra_files line excluded).")
-
-def main() -> None:
-    p = argparse.ArgumentParser(
-        description="Lint ticket-driven oraclepack Stage-1 packs for native attachments (<=2 per step, excluding literal extra_files line)."
-    )
-    p.add_argument("pack_path", help="Path to the Markdown pack file")
-    args = p.parse_args()
-
-    path = Path(args.pack_path)
-    if not path.exists():
-        print(f"[ERROR] File not found: {path}", file=sys.stderr)
-        sys.exit(1)
-
-    lint(path)
-
-
-if __name__ == "__main__":
-    main()
-```
-
-.config/skills/oraclepack-tickets-pack/scripts/validate_pack.py
-```
-import argparse
-import re
-import sys
-from dataclasses import dataclass
-from pathlib import Path, PurePosixPath
-from typing import Dict, List, Tuple
-
-
-ALLOWED_CATEGORIES = [
-    "contracts/interfaces",
-    "invariants",
-    "caching/state",
-    "background jobs",
-    "observability",
-    "permissions",
-    "migrations",
-    "UX flows",
-    "failure modes",
-    "feature flags",
-]
-
-# Required header tokens, in strict order.
-HEADER_TOKEN_ORDER = [
-    "ROI=",
-    "impact=",
-    "confidence=",
-    "effort=",
-    "horizon=",
-    "category=",
-    "reference=",
-]
-
-
-@dataclass
-class Step:
-    n: str
-    header_line_no: int  # 1-based within fence
-    header_line: str
-    block_lines: List[str]
-
-
-def _fail(errors: List[str]) -> None:
-    for e in errors:
-        print(f"[ERROR] {e}", file=sys.stderr)
-    sys.exit(1)
-
-
-def _read_text(path: Path) -> str:
-    try:
-        return path.read_text(encoding="utf-8")
-    except UnicodeDecodeError:
-        return path.read_text(encoding="utf-8", errors="replace")
-
-
-def _extract_single_bash_fence(lines: List[str]) -> Tuple[int, int, List[str], List[str]]:
-    """
-    Enforces:
-      - exactly one fenced code block labeled bash
-      - no other fences anywhere
-      - opening fence line must be exactly ```bash
-      - closing fence line must be exactly ```
-    """
-    fence_locs = [i for i, ln in enumerate(lines) if re.match(r"^```", ln)]
-    if len(fence_locs) != 2:
-        # Show all fence-like lines to help debugging.
-        details = []
-        for i, ln in enumerate(lines):
-            if re.match(r"^```", ln):
-                details.append(f"line {i+1}: {ln.rstrip()}")
-        raise ValueError(
-            f"Expected exactly one fenced code block (2 fence lines), found {len(fence_locs)} fence line(s). "
-            + ("Fences: " + "; ".join(details) if details else "")
-        )
-
-    open_i, close_i = fence_locs
-    if lines[open_i].rstrip("\n") != "```bash":
-        raise ValueError("Opening fence must be exactly ```bash on its own line (no spaces).")
-    if lines[close_i].rstrip("\n") != "```":
-        raise ValueError("Closing fence must be exactly ``` on its own line (no spaces).")
-    if close_i <= open_i:
-        raise ValueError("Closing fence appears before opening fence.")
-
-    fence_lines = lines[open_i + 1 : close_i]
-    outside_lines = lines[:open_i] + lines[close_i + 1 :]
-    return open_i, close_i, fence_lines, outside_lines
-
-
-def _parse_steps(fence_lines: List[str]) -> List[Step]:
-    header_re = re.compile(r"^#\s*(\d{2})\)\s+")
-    header_idxs: List[Tuple[int, str]] = []
-    for i, ln in enumerate(fence_lines):
-        m = header_re.match(ln)
-        if m:
-            header_idxs.append((i, m.group(1)))
-
-    if len(header_idxs) != 20:
-        raise ValueError(f"Expected exactly 20 step headers inside bash fence, found {len(header_idxs)}.")
-
-    expected = [f"{i:02d}" for i in range(1, 21)]
-    got = [n for _, n in header_idxs]
-    if got != expected:
-        raise ValueError(f"Step numbering must be sequential 01..20. Got: {got}")
-
-    steps: List[Step] = []
-    for idx, (start_i, n) in enumerate(header_idxs):
-        end_i = header_idxs[idx + 1][0] if idx + 1 < len(header_idxs) else len(fence_lines)
-        block = fence_lines[start_i:end_i]
-        steps.append(
-            Step(
-                n=n,
-                header_line_no=start_i + 1,
-                header_line=block[0].rstrip("\n"),
-                block_lines=[b.rstrip("\n") for b in block],
-            )
-        )
-    return steps
-
-
-def _header_token_positions(header: str) -> Dict[str, int]:
-    pos: Dict[str, int] = {}
-    for t in HEADER_TOKEN_ORDER:
-        pos[t] = header.find(t)
-    return pos
-
-
-def _parse_category_value(header: str) -> str:
-    if "category=" not in header:
-        return ""
-    after = header.split("category=", 1)[1]
-    # Category ends at the start of " reference=" (strict contract).
-    end = after.find(" reference=")
-    if end == -1:
-        # As a fallback, try other token starts, though contract expects reference= last.
-        for token in [" ROI=", " impact=", " confidence=", " effort=", " horizon="]:
-            p = after.find(token)
-            if p != -1:
-                end = p if end == -1 else min(end, p)
-    if end == -1:
-        cat = after.strip()
-    else:
-        cat = after[:end].strip()
-    return cat
-
-
-def _has_nonempty_scalar(header: str, key: str) -> bool:
-    # scalar value ends at next whitespace
-    m = re.search(rf"\b{re.escape(key)}=([^\s]+)", header)
-    return bool(m and m.group(1).strip())
-
-
-def _validate_header(step: Step, errors: List[str]) -> None:
-    header = step.header_line
-
-    # Strict start.
-    if not re.match(rf"^#\s*{re.escape(step.n)}\)\s+", header):
-        errors.append(f"Step {step.n}: header must start with '# {step.n})'. Got: {header}")
-
-    # Tokens must appear in strict order.
-    pos = _header_token_positions(header)
-    for t, p in pos.items():
-        if p == -1:
-            errors.append(f"Step {step.n}: missing required token '{t}' in header: {header}")
-
-    # Order check (only if all present).
-    if all(p != -1 for p in pos.values()):
-        last = -1
-        for t in HEADER_TOKEN_ORDER:
-            if pos[t] <= last:
-                errors.append(
-                    f"Step {step.n}: token '{t}' is out of order in header. "
-                    f"Expected order: {' '.join(HEADER_TOKEN_ORDER)}. Got: {header}"
-                )
-                break
-            last = pos[t]
-
-    # Non-empty values.
-    if not _has_nonempty_scalar(header, "ROI"):
-        errors.append(f"Step {step.n}: missing/empty ROI= value in header: {header}")
-    for k in ["impact", "confidence", "effort", "horizon", "reference"]:
-        if not _has_nonempty_scalar(header, k):
-            errors.append(f"Step {step.n}: missing/empty {k}= value in header: {header}")
-
-    cat_val = _parse_category_value(header)
-    if not cat_val:
-        errors.append(f"Step {step.n}: missing/empty category= value in header: {header}")
-    elif cat_val not in ALLOWED_CATEGORIES:
-        errors.append(
-            f"Step {step.n}: invalid category='{cat_val}'. Must be one of: {ALLOWED_CATEGORIES}. Header: {header}"
-        )
-
-
-def _validate_write_output(step: Step, errors: List[str]) -> None:
-    joined = "\n".join(step.block_lines)
-    # Strict: must use double quotes exactly: --write-output "<path>"
-    m = re.search(r'--write-output\s+"([^"]+)"', joined)
-    if not m:
-        errors.append(f"Step {step.n}: missing --write-output \"...\" (double-quoted) in step block.")
-        return
-
-    out_path = m.group(1)
-
-    # Disallow variable expansions in write paths.
-    if "$" in out_path or "`" in out_path:
-        errors.append(f"Step {step.n}: --write-output path must not contain shell expansions. Got: {out_path}")
-
-    # Disallow absolute writes (and home shortcuts).
-    if out_path.startswith("/") or out_path.startswith("~"):
-        errors.append(f"Step {step.n}: --write-output path must be relative (no absolute/home paths). Got: {out_path}")
-
-    # Disallow traversal.
-    if re.search(r"(^|/)\.\.(/|$)", out_path):
-        errors.append(f"Step {step.n}: --write-output path must not contain '..' traversal. Got: {out_path}")
-
-    # Basic shape: <out_dir>/<nn>-<slug>.md
-    if "/" not in out_path:
-        errors.append(f"Step {step.n}: --write-output path must contain a directory component. Got: {out_path}")
-        return
-
-    filename = out_path.split("/")[-1]
-    if not filename.startswith(f"{step.n}-"):
-        errors.append(f"Step {step.n}: --write-output filename must start with '{step.n}-'. Got: {filename}")
-    if not filename.endswith(".md"):
-        errors.append(f"Step {step.n}: --write-output filename must end with '.md'. Got: {filename}")
-
-    # Extra guard: ensure PurePosixPath doesn't include '..' (covers odd strings like 'a/../b').
-    try:
-        parts = PurePosixPath(out_path).parts
-        if ".." in parts:
-            errors.append(f"Step {step.n}: --write-output path contains '..' segment (unsafe). Got: {out_path}")
-    except Exception:
-        # Non-fatal; already handled by regex.
-        pass
-
-
-def _validate_ticket_bundle_reference(step: Step, errors: List[str]) -> None:
-    joined = "\n".join(step.block_lines)
-
-    # Require the bundle to be mentioned/attached.
-    if "_tickets_bundle" not in joined:
-        errors.append(
-            f"Step {step.n}: must reference the ticket bundle (expected '_tickets_bundle' in step block)."
-        )
-
-    # Require a file attachment pointing to the bundle, double-quoted for stability.
-    if re.search(r'(?<!\S)(-f|--file)(?!\S)\s+"[^"\n]*_tickets_bundle[^"\n]*"', joined) is None:
-        errors.append(
-            f"Step {step.n}: must attach the ticket bundle via -f/--file \"..._tickets_bundle...\"."
-        )
-
-
-def _validate_answer_format(step: Step, errors: List[str]) -> None:
-    hay = "\n".join(step.block_lines).lower()
-    required = [
-        "answer format:",
-        "direct answer",
-        "risks/unknowns",
-        "next smallest concrete experiment",
-        "if evidence is insufficient",
-        "missing file/path pattern",
-    ]
-    missing = [s for s in required if s not in hay]
-    if missing:
-        errors.append(f"Step {step.n}: prompt missing required Answer format components: {missing}")
-
-
-def _validate_category_counts(steps: List[Step], errors: List[str]) -> None:
-    counts: Dict[str, List[str]] = {c: [] for c in ALLOWED_CATEGORIES}
-    for st in steps:
-        cat = _parse_category_value(st.header_line)
-        if cat in counts:
-            counts[cat].append(st.n)
-
-    bad = []
-    for cat, ids in counts.items():
-        if len(ids) != 2:
-            bad.append(f"{cat}={len(ids)} (steps={ids})")
-    if bad:
-        errors.append(
-            "Category distribution must be exactly 2 steps per category (20 total). Problems: " + ", ".join(bad)
-        )
-
-
-def _validate_coverage_check(outside_lines: List[str], errors: List[str]) -> None:
-    text = "\n".join(outside_lines)
-    m = re.search(r"^##\s+Coverage check\s*$", text, flags=re.IGNORECASE | re.MULTILINE)
-    if m is None:
-        errors.append('Missing "## Coverage check" section (must be outside the bash fence).')
-        return
-
-    after = text[m.end() :]
-    for cat in ALLOWED_CATEGORIES:
-        # Require a line like: "- <cat>: OK" OR "- <cat>: Missing(01,02)"
-        pat = rf"^\s*[-*]\s+{re.escape(cat)}\s*:\s*(OK|Missing\([^)]*\))\s*$"
-        if re.search(pat, after, flags=re.MULTILINE) is None:
-            errors.append(f'Coverage check missing/invalid line for category: "{cat}"')
-
-
-def validate_pack(path: Path) -> None:
-    raw = _read_text(path)
-    lines = raw.splitlines(True)
-
-    try:
-        _, _, fence_lines, outside_lines = _extract_single_bash_fence(lines)
-    except ValueError as e:
-        _fail([str(e)])
-
-    try:
-        steps = _parse_steps(fence_lines)
-    except ValueError as e:
-        _fail([str(e)])
-
-    errors: List[str] = []
-    for st in steps:
-        _validate_header(st, errors)
-        _validate_write_output(st, errors)
-        _validate_ticket_bundle_reference(st, errors)
-        _validate_answer_format(st, errors)
-
-    _validate_category_counts(steps, errors)
-    _validate_coverage_check(outside_lines, errors)
-
-    if errors:
-        _fail(errors)
-
-    print("[OK] Pack validates against tickets Stage-1 contract.")
-
-def main() -> None:
-    p = argparse.ArgumentParser(
-        description="Validate a ticket-driven oraclepack Stage-1 pack (single bash fence, 20 steps, strict headers/tokens, safe write paths, ticket bundle references, coverage check)."
-    )
-    p.add_argument("pack_path", help="Path to the Markdown pack file")
-    args = p.parse_args()
-
-    path = Path(args.pack_path)
-    if not path.exists():
-        _fail([f"File not found: {path}"])
-
-    validate_pack(path)
-
-
-if __name__ == "__main__":
-    main()
-```
-
-.mypy_cache/3.12/importlib/metadata/__init__.data.json
-```
-[TRUNCATED]
-```
-
-.mypy_cache/3.12/importlib/metadata/__init__.meta.json
-```
-{"data_mtime":1767891128,"dep_lines":[37,7,8,9,1,2,3,4,5,6,10,12,13,14,1,1],"dep_prios":[5,5,5,5,10,5,10,10,5,5,5,5,5,5,5,30],"dependencies":["importlib.metadata._meta","collections.abc","email.message","importlib.abc","abc","pathlib","sys","types","_collections_abc","_typeshed","os","re","typing","typing_extensions","builtins","_frozen_importlib"],"hash":"5416a38893c2182fc301e16118320b69d5d4a8c6","id":"importlib.metadata","ignore_all":true,"interface_hash":"bb51644d32e8ffeae6160e073056c2f5d31cf78e","mtime":1762029371,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/importlib/metadata/__init__.pyi","plugin_data":null,"size":9382,"suppressed":[],"version_id":"1.15.0"}
-```
-
-.mypy_cache/3.12/importlib/metadata/_meta.data.json
-```
-[TRUNCATED]
-```
-
-.mypy_cache/3.12/importlib/metadata/_meta.meta.json
-```
-{"data_mtime":1767891128,"dep_lines":[3,1,2,4,5,6,1,1,1,1],"dep_prios":[5,10,5,5,5,5,5,30,30,30],"dependencies":["collections.abc","sys","_typeshed","os","typing","typing_extensions","builtins","_frozen_importlib","abc","types"],"hash":"776d16d8b3327bdf2554440e5860ecc3d293b163","id":"importlib.metadata._meta","ignore_all":true,"interface_hash":"5399b26f16fa43cd060562beb5de30f6b64d2062","mtime":1762029371,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/importlib/metadata/_meta.pyi","plugin_data":null,"size":2552,"suppressed":[],"version_id":"1.15.0"}
 ```
 
 .mypy_cache/3.12/importlib/resources/__init__.data.json
@@ -25277,14 +31448,24 @@ if __name__ == "__main__":
 {"data_mtime":1767891128,"dep_lines":[8,1,1,1,1,1,1],"dep_prios":[5,10,5,30,30,30,30],"dependencies":["importlib.abc","sys","builtins","_frozen_importlib","_typeshed","abc","typing"],"hash":"a45509748ab7029a1aa56d5883c154bd20a3a2ae","id":"importlib.resources.abc","ignore_all":true,"interface_hash":"b48fdd6f9bc8523f2011bc294ab10d888e682139","mtime":1762029371,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/importlib/resources/abc.pyi","plugin_data":null,"size":549,"suppressed":[],"version_id":"1.15.0"}
 ```
 
-.mypy_cache/3.12/zipfile/_path/__init__.data.json
+.mypy_cache/3.12/importlib/metadata/__init__.data.json
 ```
 [TRUNCATED]
 ```
 
-.mypy_cache/3.12/zipfile/_path/__init__.meta.json
+.mypy_cache/3.12/importlib/metadata/__init__.meta.json
 ```
-{"data_mtime":1767891128,"dep_lines":[3,1,2,4,5,6,7,8,1,1,1,1,1],"dep_prios":[5,10,5,5,5,5,5,5,5,30,30,30,30],"dependencies":["collections.abc","sys","_typeshed","io","os","typing","typing_extensions","zipfile","builtins","_frozen_importlib","_io","abc","types"],"hash":"3270f9c480b6422db9446d3607ad07e8e1867afb","id":"zipfile._path","ignore_all":true,"interface_hash":"44fe79deed98f9fb67436ce6e17344f1b9726db9","mtime":1762029371,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/zipfile/_path/__init__.pyi","plugin_data":null,"size":3840,"suppressed":[],"version_id":"1.15.0"}
+{"data_mtime":1767891128,"dep_lines":[37,7,8,9,1,2,3,4,5,6,10,12,13,14,1,1],"dep_prios":[5,5,5,5,10,5,10,10,5,5,5,5,5,5,5,30],"dependencies":["importlib.metadata._meta","collections.abc","email.message","importlib.abc","abc","pathlib","sys","types","_collections_abc","_typeshed","os","re","typing","typing_extensions","builtins","_frozen_importlib"],"hash":"5416a38893c2182fc301e16118320b69d5d4a8c6","id":"importlib.metadata","ignore_all":true,"interface_hash":"bb51644d32e8ffeae6160e073056c2f5d31cf78e","mtime":1762029371,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/importlib/metadata/__init__.pyi","plugin_data":null,"size":9382,"suppressed":[],"version_id":"1.15.0"}
+```
+
+.mypy_cache/3.12/importlib/metadata/_meta.data.json
+```
+[TRUNCATED]
+```
+
+.mypy_cache/3.12/importlib/metadata/_meta.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[3,1,2,4,5,6,1,1,1,1],"dep_prios":[5,10,5,5,5,5,5,30,30,30],"dependencies":["collections.abc","sys","_typeshed","os","typing","typing_extensions","builtins","_frozen_importlib","abc","types"],"hash":"776d16d8b3327bdf2554440e5860ecc3d293b163","id":"importlib.metadata._meta","ignore_all":true,"interface_hash":"5399b26f16fa43cd060562beb5de30f6b64d2062","mtime":1762029371,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/importlib/metadata/_meta.pyi","plugin_data":null,"size":2552,"suppressed":[],"version_id":"1.15.0"}
 ```
 
 oraclepack-mcp-server/.pytest_cache/v/cache/lastfailed
@@ -25314,6 +31495,16 @@ oraclepack-mcp-server/.pytest_cache/v/cache/nodeids
   "tests/test_taskify.py::test_validate_stage2_dir_missing",
   "tests/test_taskify.py::test_validate_stage2_dir_ok"
 ]
+```
+
+.mypy_cache/3.12/zipfile/_path/__init__.data.json
+```
+[TRUNCATED]
+```
+
+.mypy_cache/3.12/zipfile/_path/__init__.meta.json
+```
+{"data_mtime":1767891128,"dep_lines":[3,1,2,4,5,6,7,8,1,1,1,1,1],"dep_prios":[5,10,5,5,5,5,5,5,5,30,30,30,30],"dependencies":["collections.abc","sys","_typeshed","io","os","typing","typing_extensions","zipfile","builtins","_frozen_importlib","_io","abc","types"],"hash":"3270f9c480b6422db9446d3607ad07e8e1867afb","id":"zipfile._path","ignore_all":true,"interface_hash":"44fe79deed98f9fb67436ce6e17344f1b9726db9","mtime":1762029371,"options":{"allow_redefinition":false,"allow_untyped_globals":false,"always_false":[],"always_true":[],"bazel":false,"check_untyped_defs":false,"disable_bytearray_promotion":false,"disable_error_code":[],"disable_memoryview_promotion":false,"disabled_error_codes":[],"disallow_any_decorated":false,"disallow_any_explicit":false,"disallow_any_expr":false,"disallow_any_generics":false,"disallow_any_unimported":false,"disallow_incomplete_defs":false,"disallow_subclassing_any":false,"disallow_untyped_calls":false,"disallow_untyped_decorators":false,"disallow_untyped_defs":false,"enable_error_code":[],"enabled_error_codes":[],"extra_checks":false,"follow_imports":"normal","follow_imports_for_stubs":false,"follow_untyped_imports":false,"ignore_errors":false,"ignore_missing_imports":false,"implicit_optional":false,"implicit_reexport":true,"local_partial_types":false,"mypyc":false,"old_type_inference":false,"platform":"linux","plugins":[],"strict_bytes":false,"strict_concatenate":false,"strict_equality":false,"strict_optional":true,"warn_no_return":true,"warn_return_any":false,"warn_unreachable":false,"warn_unused_ignores":false},"path":"/home/user/.cursor-server/extensions/ms-python.mypy-type-checker-2025.2.0-universal/bundled/libs/mypy/typeshed/stdlib/zipfile/_path/__init__.pyi","plugin_data":null,"size":3840,"suppressed":[],"version_id":"1.15.0"}
 ```
 
 </source_code>

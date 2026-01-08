@@ -298,6 +298,158 @@ This skill produces:
 - Optional linter: `scripts/lint_attachments.py`
 ```
 
+.config/skills/oraclepack-pipeline-improver/assets/backlog-template.md
+```
+<!-- # path: oraclepack-pipeline-improver/assets/backlog-template.md -->
+# Oraclepack Actionizer Backlog
+
+Run:
+- pack_id: TODO
+- pack_hash: TODO
+- generated_at: TODO
+
+## Summary
+
+- Total tasks: TODO
+- Actionable: TODO
+- Blocked: TODO
+- Conflicts: TODO
+
+## P0 (do first)
+
+### <task_id> — <title>
+- Status: actionable | blocked | conflict | noop
+- Category: TODO
+- Reference: TODO
+- Expected artifacts: TODO
+- Actions:
+  - TODO
+- Evidence:
+  - Paths: TODO
+  - Symbols: TODO
+  - Commands: TODO
+- Done when:
+  - TODO
+
+## P1
+
+### <task_id> — <title>
+- (same fields)
+
+## Blocked / needs evidence
+
+### <task_id> — <title>
+- Missing inputs:
+  - TODO
+- Next smallest experiment (one action):
+  - TODO
+
+## Conflicts / needs resolution
+
+### <task_id> — <title>
+- Conflicting statements:
+  - TODO
+- What evidence resolves this:
+  - TODO
+- Proposed resolution (clearly marked as Proposed):
+  - TODO
+```
+
+.config/skills/oraclepack-pipeline-improver/assets/change-plan-template.md
+```
+<!-- # path: oraclepack-pipeline-improver/assets/change-plan-template.md -->
+# Oraclepack Change Plan
+
+Run:
+- pack_id: TODO
+- pack_hash: TODO
+- generated_at: TODO
+
+## Principles
+
+- Smallest shippable increments first.
+- Every step has an acceptance check.
+- Unknowns are explicit; no guessing.
+
+## Phase 0 — Guardrails (validate + safety)
+
+1) Implement/confirm strict validation (validate --strict --json)
+- Scope:
+  - TODO
+- Acceptance:
+  - TODO (e.g., rejects non-20 packs; emits JSON summary)
+- Tests:
+  - TODO (fixtures for invalid packs)
+
+2) Path safety for output writing
+- Scope:
+  - TODO
+- Acceptance:
+  - TODO (rejects .. traversal / absolute escape)
+- Tests:
+  - TODO
+
+## Phase 1 — Deterministic runs (run dir + manifests + resume)
+
+3) Stable run dir + run.json / steps.json
+- Scope:
+  - TODO
+- Acceptance:
+  - TODO (creates .oraclepack/runs/<pack_id>/..., stable naming)
+- Tests:
+  - TODO
+
+4) Resume default + --rerun semantics
+- Scope:
+  - TODO
+- Acceptance:
+  - TODO (interrupt + rerun skips completed via hashes)
+- Tests:
+  - TODO
+
+## Phase 2 — Reliability (concurrency + retries + optional caching)
+
+5) Concurrency cap
+- Scope:
+  - TODO
+- Acceptance:
+  - TODO (never exceeds N parallel calls)
+
+6) Retry/backoff on transient errors
+- Scope:
+  - TODO
+- Acceptance:
+  - TODO (bounded retries; recorded in steps.json)
+
+7) Optional caching (if enabled)
+- Scope:
+  - TODO
+- Acceptance:
+  - TODO (unchanged inputs cause zero provider calls)
+
+## Phase 3 — Actionizer (Stage 3)
+
+8) Implement actionize command and artifacts
+- Scope:
+  - normalized.jsonl + backlog.md + change-plan.md
+- Acceptance:
+  - TODO (byte-identical output on rerun with unchanged inputs)
+
+## CI integration (optional)
+
+9) Add CI mode wiring (run --ci --non-interactive --json-log; actionize --ci)
+- Policy thresholds:
+  - TODO/Unknown
+- Acceptance:
+  - TODO (exit codes match policy)
+```
+
+.config/skills/oraclepack-pipeline-improver/assets/normalized.example.jsonl
+```
+{"pack_id":"2026-01-05__nogit__deadbeef","pack_hash":"deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef","step_id":"07","task_id":"t_deadbeef_07_a1b2c3d4","title":"Define authorization boundary for server routes","status":"blocked","category":"permissions","reference":"src/server/auth/**","expected_artifacts":["src/server/auth/**","src/routes/**"],"actions":["Locate existing auth middleware/guards and document intended boundary","Add route guard checks or middleware wiring where missing"],"evidence":{"paths":["src/server/auth/**","src/routes/**"],"symbols":[],"commands":["ck --regex auth|permission|role src/server src/routes"]},"notes":["Auth wiring not evidenced in provided inputs"],"missing_inputs":["Repo paths containing current auth middleware or route guards (e.g., src/server/auth/**)","CLI help output for oraclepack validate/run/actionize (if already exists)"]}
+{"pack_id":"2026-01-05__nogit__deadbeef","pack_hash":"deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef","step_id":"13","task_id":"t_deadbeef_13_e5f6a7b8","title":"Bound upload persistence metadata and retention policy","status":"actionable","category":"caching/state","reference":"src/server/persistence/sessionUploads.server.ts","expected_artifacts":["src/server/persistence/**","docs/plans/**"],"actions":["Add explicit retention policy + max entries/size controls","Ensure metadata captured is sufficient for downstream analysis"],"evidence":{"paths":["src/server/persistence/sessionUploads.server.ts"],"symbols":["saveSessionUpload"],"commands":["ck --regex saveSessionUpload src"]},"notes":[],"missing_inputs":[]}
+```
+
 .config/skills/oraclepack-pipeline-improver/references/actionizer-spec.md
 ```
 <!-- # path: oraclepack-pipeline-improver/references/actionizer-spec.md -->
@@ -607,158 +759,6 @@ ExpectedArtifacts:
 - ExpectedArtifacts (optional but recommended)
 
 If the Stage 1 generator cannot produce these, it should write `Unknown` values explicitly rather than omitting keys.
-```
-
-.config/skills/oraclepack-pipeline-improver/assets/backlog-template.md
-```
-<!-- # path: oraclepack-pipeline-improver/assets/backlog-template.md -->
-# Oraclepack Actionizer Backlog
-
-Run:
-- pack_id: TODO
-- pack_hash: TODO
-- generated_at: TODO
-
-## Summary
-
-- Total tasks: TODO
-- Actionable: TODO
-- Blocked: TODO
-- Conflicts: TODO
-
-## P0 (do first)
-
-### <task_id> — <title>
-- Status: actionable | blocked | conflict | noop
-- Category: TODO
-- Reference: TODO
-- Expected artifacts: TODO
-- Actions:
-  - TODO
-- Evidence:
-  - Paths: TODO
-  - Symbols: TODO
-  - Commands: TODO
-- Done when:
-  - TODO
-
-## P1
-
-### <task_id> — <title>
-- (same fields)
-
-## Blocked / needs evidence
-
-### <task_id> — <title>
-- Missing inputs:
-  - TODO
-- Next smallest experiment (one action):
-  - TODO
-
-## Conflicts / needs resolution
-
-### <task_id> — <title>
-- Conflicting statements:
-  - TODO
-- What evidence resolves this:
-  - TODO
-- Proposed resolution (clearly marked as Proposed):
-  - TODO
-```
-
-.config/skills/oraclepack-pipeline-improver/assets/change-plan-template.md
-```
-<!-- # path: oraclepack-pipeline-improver/assets/change-plan-template.md -->
-# Oraclepack Change Plan
-
-Run:
-- pack_id: TODO
-- pack_hash: TODO
-- generated_at: TODO
-
-## Principles
-
-- Smallest shippable increments first.
-- Every step has an acceptance check.
-- Unknowns are explicit; no guessing.
-
-## Phase 0 — Guardrails (validate + safety)
-
-1) Implement/confirm strict validation (validate --strict --json)
-- Scope:
-  - TODO
-- Acceptance:
-  - TODO (e.g., rejects non-20 packs; emits JSON summary)
-- Tests:
-  - TODO (fixtures for invalid packs)
-
-2) Path safety for output writing
-- Scope:
-  - TODO
-- Acceptance:
-  - TODO (rejects .. traversal / absolute escape)
-- Tests:
-  - TODO
-
-## Phase 1 — Deterministic runs (run dir + manifests + resume)
-
-3) Stable run dir + run.json / steps.json
-- Scope:
-  - TODO
-- Acceptance:
-  - TODO (creates .oraclepack/runs/<pack_id>/..., stable naming)
-- Tests:
-  - TODO
-
-4) Resume default + --rerun semantics
-- Scope:
-  - TODO
-- Acceptance:
-  - TODO (interrupt + rerun skips completed via hashes)
-- Tests:
-  - TODO
-
-## Phase 2 — Reliability (concurrency + retries + optional caching)
-
-5) Concurrency cap
-- Scope:
-  - TODO
-- Acceptance:
-  - TODO (never exceeds N parallel calls)
-
-6) Retry/backoff on transient errors
-- Scope:
-  - TODO
-- Acceptance:
-  - TODO (bounded retries; recorded in steps.json)
-
-7) Optional caching (if enabled)
-- Scope:
-  - TODO
-- Acceptance:
-  - TODO (unchanged inputs cause zero provider calls)
-
-## Phase 3 — Actionizer (Stage 3)
-
-8) Implement actionize command and artifacts
-- Scope:
-  - normalized.jsonl + backlog.md + change-plan.md
-- Acceptance:
-  - TODO (byte-identical output on rerun with unchanged inputs)
-
-## CI integration (optional)
-
-9) Add CI mode wiring (run --ci --non-interactive --json-log; actionize --ci)
-- Policy thresholds:
-  - TODO/Unknown
-- Acceptance:
-  - TODO (exit codes match policy)
-```
-
-.config/skills/oraclepack-pipeline-improver/assets/normalized.example.jsonl
-```
-{"pack_id":"2026-01-05__nogit__deadbeef","pack_hash":"deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef","step_id":"07","task_id":"t_deadbeef_07_a1b2c3d4","title":"Define authorization boundary for server routes","status":"blocked","category":"permissions","reference":"src/server/auth/**","expected_artifacts":["src/server/auth/**","src/routes/**"],"actions":["Locate existing auth middleware/guards and document intended boundary","Add route guard checks or middleware wiring where missing"],"evidence":{"paths":["src/server/auth/**","src/routes/**"],"symbols":[],"commands":["ck --regex auth|permission|role src/server src/routes"]},"notes":["Auth wiring not evidenced in provided inputs"],"missing_inputs":["Repo paths containing current auth middleware or route guards (e.g., src/server/auth/**)","CLI help output for oraclepack validate/run/actionize (if already exists)"]}
-{"pack_id":"2026-01-05__nogit__deadbeef","pack_hash":"deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef","step_id":"13","task_id":"t_deadbeef_13_e5f6a7b8","title":"Bound upload persistence metadata and retention policy","status":"actionable","category":"caching/state","reference":"src/server/persistence/sessionUploads.server.ts","expected_artifacts":["src/server/persistence/**","docs/plans/**"],"actions":["Add explicit retention policy + max entries/size controls","Ensure metadata captured is sufficient for downstream analysis"],"evidence":{"paths":["src/server/persistence/sessionUploads.server.ts"],"symbols":["saveSessionUpload"],"commands":["ck --regex saveSessionUpload src"]},"notes":[],"missing_inputs":[]}
 ```
 
 .config/skills/oraclepack-tickets-pack/references/attachment-minimization.md
