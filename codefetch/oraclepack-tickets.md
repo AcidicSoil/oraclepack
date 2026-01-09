@@ -23,15 +23,225 @@ Project Structure:
     ├── PRD-TUI
     │   ├── Oraclepack TUI Integration.md
     │   └── PRD-generator URL routing.md
+    ├── raw-exports
+    │   └── Output verification failure.md
+    ├── Formalize LLM Decision Points.md
     ├── Oraclepack CLI MCP Parity.md
     ├── Oraclepack File Storage.md
+    ├── Oraclepack Parity Automation.md
     ├── Oraclepack Schema Approach.md
     ├── Oraclepack bash fix.md
+    ├── Oraclepack output verification issues.md
+    ├── Oraclepack-CLI-agents.md
     └── Publish OraclePack MCP.md
 
 </filetree>
 
 <source_code>
+.tickets/Formalize LLM Decision Points.md
+```
+Parent Ticket:
+
+* Title: Formalize enforceable LLM decision points for oraclepack generation/execution across Skills and MCP
+* Summary:
+
+  * The ticket enumerates a comprehensive set of pre-generation and runtime decision points (DP-01..DP-60) intended to improve pack generation and step execution quality. It also notes a preferred way to make these decision points “real, enforceable” by emitting small structured artifacts (JSON/YAML) that deterministic scripts consume, while keeping the emitted pack Markdown schema unchanged.
+* Source:
+
+  * Link/ID: Not provided
+  * Original ticket excerpt (≤25 words) capturing the overall theme: “an ‘extensive’ set of additional, unique LLM decision points you can introduce (or explicitly formalize)…”
+* Global Constraints:
+
+  * “keeping the emitted pack Markdown schema unchanged”
+* Global Environment:
+
+  * Unknown
+* Global Evidence:
+
+  * OpenAI Codex “Custom Prompts” documentation. ([OpenAI Developers][1])
+  * Gemini CLI “Agent Skills” documentation. ([Gemini CLI][2])
+  * MCP specification revision 2025-11-25. ([Model Context Protocol][3])
+  * MCP tools specification (server/tools) revision 2025-06-18. ([Model Context Protocol][4])
+
+Split Plan:
+
+* Coverage Map:
+
+  * “In Codex/Gemini CLI, the ‘live agent’ inference…” → Info-only
+  * “In an MCP setup, the ‘live agent’ inference…” → Info-only
+  * “Below is an ‘extensive’ set…” → Info-only
+  * DP-01 Choose generator mode (tickets-grouped vs codebase-grouped vs gold) → T2
+  * DP-02 Select root(s) to scan (ticket_root/code_root) → T2
+  * DP-03 Decide include/exclude glob rules → T2
+  * DP-04 Decide whether to treat “loose” items as first-class candidates → T2
+  * DP-05 Decide whether to require “strict schema mode” for outputs → T2
+  * DP-06 Choose max pack size strategy (by tokens/bytes/files) → T2
+  * DP-07 Choose per-pack cap: number of tickets/files → T2
+  * DP-08 Decide ticket/file canonical title extraction rule → T3
+  * DP-09 Choose text preprocessing (stopwords, stemming, code tokens) → T3
+  * DP-10 Decide duplicate threshold policy (strict vs lenient) → T3
+  * DP-11 Decide duplicate merge strategy (merge vs link vs pick canonical) → T3
+  * DP-12 Decide what “differences” to preserve when merging duplicates → T3
+  * DP-13 Decide hierarchical topic taxonomy vs flat groups → T4
+  * DP-14 Decide group count target → T4
+  * DP-15 Decide grouping algorithm choice (heuristic vs LLM-labeled vs hybrid) → T4
+  * DP-16 Decide “ambiguous” assignment policy (multi-home vs best-fit) → T4
+  * DP-17 Decide whether to create an “Unsorted / Needs triage” pack → T4
+  * DP-18 Generate group names optimized for human scanning → T4
+  * DP-19 Decide pack order (dependency, ROI, urgency, confidence) → T4
+  * DP-20 Decide ticket order within pack (chronological vs dependency graph) → T4
+  * DP-21 Select “context bundle” files to attach per pack → T5
+  * DP-22 Decide whether to attach full files vs excerpts/summaries → T5
+  * DP-23 Decide whether to generate a synthetic “pack brief” doc → T5
+  * DP-24 Decide whether to include prior run artifacts (outputs) as inputs → T5
+  * DP-25 Choose template variant (tickets vs codebase vs mixed) → T5
+  * DP-26 Decide whether to inject organization standards into prompts → T5
+  * DP-27 Decide step allocation across subtopics (steps per subdomain) → T5
+  * DP-28 Choose prompt “stance” (audit-first vs implement-first vs design-first) → T5
+  * DP-29 Choose “evidence bar” (strict citations vs lightweight) → T5
+  * DP-30 Decide per-step required outputs (files changed, diffs, JSON, etc.) → T5
+  * DP-31 Decide self-contained steps vs relying on previous outputs → T5
+  * DP-32 Decide whether to add “ask-user” gates for missing critical inputs → T5
+  * DP-33 Choose which MCP tools to call during generation (list/validate/generate) → T6
+  * DP-34 Decide oracle model/engine selection and parameters → T6
+  * DP-35 Decide whether to preflight oracle invocations (“--dry-run”) → T6
+  * DP-36 Decide redaction policy for sensitive strings → T6
+  * DP-37 Decide trace/correlation ID scheme for packs/steps → T6
+  * DP-38 Decide which metrics/log events must be emitted per stage → T6
+  * DP-39 Decide run strategy (run-all vs selective) → T7
+  * DP-40 Decide concurrency / rate-limiting policy → T7
+  * DP-41 Decide fail-fast vs continue collecting failures → T7
+  * DP-42 Decide retry policy per failure type → T7
+  * DP-43 Decide “prompt patch” for retries → T7
+  * DP-44 Decide when to escalate to user for clarification → T7
+  * DP-45 Decide whether to re-run earlier steps on contradictions → T7
+  * DP-46 Decide acceptance criteria for a step output (format, completeness) → T8
+  * DP-47 Decide whether to auto-validate produced artifacts (lint/tests/validate) → T8
+  * DP-48 Decide how to synthesize step outputs into a final report → T9
+  * DP-49 Decide PR/patch vs documentation-only output → T9
+  * DP-50 Decide how to resolve conflicting recommendations across steps → T9
+  * DP-51 Decide whether outputs meet policy/security standards before writing → T9
+  * DP-52 Decide whether to reuse cached groupings/packs vs regenerate → T10
+  * DP-53 Decide cache invalidation scope (one pack vs all) → T10
+  * DP-54 Decide incident-style annotation on failures → T10
+  * DP-55 Decide what artifacts to persist (manifests, intermediate summaries) → T10
+  * DP-56 Decide how to shard outputs into “mini-packs” for follow-on runs → T10
+  * DP-57 Decide naming/versioning for generated packs → T10
+  * DP-58 Decide “next best tool call” in MCP (validate vs list vs run vs regenerate) → T10
+  * DP-59 Decide whether to present diffs, file lists, or narrative only → T10
+  * DP-60 Decide whether to extract new org heuristics into a reusable profile → T10
+  * “make each decision point produce a small structured artifact (JSON/YAML)…” → T1
+* Dependencies:
+
+  * T2 depends on T1 because decision outputs should be emitted/consumed as “small structured artifact (JSON/YAML)”.
+  * T3 depends on T1 because decision outputs should be emitted/consumed as “small structured artifact (JSON/YAML)”.
+  * T4 depends on T1 because decision outputs should be emitted/consumed as “small structured artifact (JSON/YAML)”.
+  * T5 depends on T1 because decision outputs should be emitted/consumed as “small structured artifact (JSON/YAML)”.
+  * T6 depends on T1 because decision outputs should be emitted/consumed as “small structured artifact (JSON/YAML)”.
+  * T7 depends on T1 because decision outputs should be emitted/consumed as “small structured artifact (JSON/YAML)”.
+  * T8 depends on T1 because decision outputs should be emitted/consumed as “small structured artifact (JSON/YAML)”.
+  * T9 depends on T1 because decision outputs should be emitted/consumed as “small structured artifact (JSON/YAML)”.
+  * T10 depends on T1 because decision outputs should be emitted/consumed as “small structured artifact (JSON/YAML)”.
+
+```ticket T1
+T# Title: Make decision points enforceable via structured decision artifacts while keeping pack Markdown schema unchanged
+Type: chore
+Target Area: Pack generation/execution control plane (decision capture + deterministic consumption)
+Summary:
+- Establish the “typical pattern” described: each decision point emits a small structured artifact (JSON/YAML) and deterministic scripts consume it. Ensure the emitted pack Markdown schema remains unchanged. This provides a consistent way to formalize the DP-01..DP-60 decisions for both Skills-based flows and MCP tool-calling flows.
+In Scope:
+- “make each decision point produce a small structured artifact (JSON/YAML)”
+- “make the deterministic scripts consume it”
+- “keeping the emitted pack Markdown schema unchanged”
+- Applicability across “skills” and “MCP”
+Out of Scope:
+- Not provided
+Current Behavior (Actual):
+- Not provided
+Expected Behavior:
+- Decision points emit a small structured artifact (JSON/YAML).
+- Deterministic scripts consume the artifact.
+- Emitted pack Markdown schema remains unchanged.
+Reproduction Steps:
+- Not provided
+Requirements / Constraints:
+- Keep emitted pack Markdown schema unchanged.
+Evidence:
+- Text: “make each decision point produce a small structured artifact (JSON/YAML)… deterministic scripts consume it… pack Markdown schema unchanged.”
+Open Items / Unknowns:
+- Exact schema/fields for the structured artifact (JSON vs YAML specifics not provided).
+- Where deterministic consumption is implemented (locations not provided).
+Risks / Dependencies:
+- Not provided
+Acceptance Criteria:
+- A structured decision artifact format exists that can represent DP outputs.
+- Deterministic scripts consume the decision artifact to drive generation/execution flow.
+- No change to the emitted pack Markdown schema is required to adopt the pattern.
+Priority & Severity (if inferable from input text):
+- Priority: Not provided
+- Severity: Not provided
+Source:
+- “make each decision point produce a small structured artifact (JSON/YAML)”
+- “make the deterministic scripts consume it”
+- “keeping the emitted pack Markdown schema unchanged”
+```
+
+```ticket T2
+T# Title: Implement pre-generation routing, scope, governance, and budgeting decision points (DP-01..DP-07)
+Type: enhancement
+Target Area: Pre-gen decision layer (routing/scope/governance/budgeting)
+Summary:
+- Add explicit, formalized pre-generation decisions for selecting generator mode, scan roots, include/exclude rules, loose-item handling, strict schema mode, and pack sizing/caps. Each decision produces the specified output/action for use by pack generation.
+In Scope:
+- DP-01 Choose generator mode (tickets-grouped vs codebase-grouped vs gold)
+- DP-02 Select root(s) to scan (ticket_root/code_root)
+- DP-03 Decide include/exclude glob rules
+- DP-04 Decide whether to treat “loose” items as first-class candidates
+- DP-05 Decide whether to require “strict schema mode” for outputs
+- DP-06 Choose max pack size strategy (by tokens/bytes/files)
+- DP-07 Choose per-pack cap: number of tickets/files
+Out of Scope:
+- Not provided
+Current Behavior (Actual):
+- Not provided
+Expected Behavior:
+- Generator mode can be selected and recorded.
+- Scan roots and include/exclude patterns can be selected and recorded.
+- Loose-item handling policy and strict schema mode selection can be decided and recorded.
+- Pack sizing strategy and per-pack caps can be decided and recorded.
+Reproduction Steps:
+- Not provided
+Requirements / Constraints:
+- Decisions should produce the “Output / action produced” listed for each DP (e.g., “Selected generator + params”, “Root paths”, “Include/exclude patterns”, “Sharding plan”, “Caps per pack”).
+Evidence:
+- DP-01..DP-07 rows (routing/scope/governance/budgeting)
+Open Items / Unknowns:
+- What “gold” mode entails (not provided).
+- Default config values and where they are defined (not provided).
+- Token/byte/file limits used for sizing (not provided).
+Risks / Dependencies:
+- Depends on T1 if adopting the structured decision artifact pattern.
+Acceptance Criteria:
+- DP-01 emits “Selected generator + params”.
+- DP-02 emits “Root paths”.
+- DP-03 emits “Include/exclude patterns”.
+- DP-04 emits a “Loose-ticket policy”.
+- DP-05 emits an “Enforce extra validation gates” decision.
+- DP-06 emits a “Sharding plan”.
+- DP-07 emits “Caps per pack”.
+Priority & Severity (if inferable from input text):
+- Priority: Not provided
+- Severity: Not provided
+Source:
+- “Choose generator mode (tickets-grouped vs codebase-grouped vs gold)”
+- “Select root(s) to scan (ticket_root/code_root)”
+- “Choose max pack size strategy (by tokens/bytes/files)”
+```
+
+```ticket T3
+[TRUNCATED]
+```
+
 .tickets/Oraclepack CLI MCP Parity.md
 ```
 Parent Ticket:
@@ -240,50 +450,6 @@ Source:
 ```ticket T4
 T# Title: Add preflight to fail fast on missing `-f` attachment files
 Type: enhancement
-Target Area: `oraclepack run` preflight; oracle invocation scanning via `ExtractOracleInvocations`; path resolution via WorkDir
-Summary:
-  Add a preflight check that detects missing attachment files referenced by `oracle … -f <path>` before executing steps. This turns late runtime failures into early, actionable errors that identify the step number and missing path. The check must resolve paths relative to the resolved WorkDir.
-In Scope:
-  - Before execution, scan each step’s code for oracle invocations.
-  - For each invocation, verify every `-f <path>` exists relative to the resolved WorkDir.
-  - Fail fast with an error like “step XX references missing file Y.”
-Out of Scope:
-  - Oracle CLI argument validation (handled in T5).
-Current Behavior (Actual):
-  - Missing attachments surface as runtime failures when `oracle` attempts to open `-f` inputs.
-Expected Behavior:
-  - Missing `-f` files are detected prior to running the step, with explicit step attribution.
-Reproduction Steps:
-  - Not provided
-Requirements / Constraints:
-  - Must use the resolved WorkDir for existence checks.
-Evidence:
-  - “Missing attachment file preflight … verify every `-f <path>` exists … fail fast with ‘step XX references missing file Y.’”
-Open Items / Unknowns:
-  - Exact set of oracle invocations and how `ExtractOracleInvocations` represents `-f` arguments not provided.
-Risks / Dependencies:
-  - Depends on T2 for deterministic WorkDir resolution.
-Acceptance Criteria:
-  - If any step contains an oracle invocation with `-f <nonexistent>`, `oraclepack run` fails before executing steps and identifies the step number and missing path.
-  - If all `-f` paths exist, the preflight does not block execution.
-Priority & Severity (if inferable from input text):
-  - Priority: Not provided
-  - Severity: Not provided
-Source:
-  - “4a) ‘Missing attachment file’ preflight … verify every `-f <path>` exists …”
-  - “fail fast with ‘step XX references missing file Y.’”
-```
-
-```ticket T5
-T# Title: Add optional `--preflight-oracle` gate using `--dry-run summary` to catch oracle flag drift
-Type: enhancement
-Target Area: `oraclepack run`; override validation via `ValidateOverrides`; invoking `oracle … --dry-run summary`
-Summary:
-  Add an optional preflight gate (`oraclepack run --preflight-oracle`) that validates extracted oracle invocations against the upstream `oracle` CLI using `--dry-run summary`. This catches flag/argument drift early, before spending time on full runs. The gate uses existing extraction and flag injection capabilities described as “already implemented.”
-In Scope:
-  - Add `oraclepack run --preflight-oracle` optional gate.
-  - Extract invocations (noted as already implemented).
-  - Inject flags safely (noted as already implemented).
 [TRUNCATED]
 ```
 
@@ -493,62 +659,214 @@ Risks / Dependencies:
 - Depends on T1 if migrating global storage to XDG config dir.
 Acceptance Criteria:
 - After using the URL picker, no `<packBase>.chatgpt-urls.json` is created near the pack/state/CWD.
-- Default behavior persists URLs to exactly one global store (stable path; not per-pack).
-- When “project scope” is selected, URLs persist to `<repo>/.oraclepack/chatgpt-urls.json` (single per-project file).
+[TRUNCATED]
+```
+
+.tickets/Oraclepack Parity Automation.md
+```
+Parent Ticket:
+
+* Title: Keep oraclepack in parity with upstream oracle updates
+* Summary: Define and automate a process so oraclepack (wrapper) stays compatible as upstream oracle changes. Approach centers on pinning the upstream oracle version, minimizing wrapper coupling, adding contract tests, and automating upgrade PRs + canary checks.
+* Source:
+
+  * Link/ID: Not provided
+  * Original ticket excerpt (≤25 words) capturing the overall theme: “keep parity with updates with a target repo as their repo updates/changes… wrapper around oracle… keep… up to date”
+* Global Constraints:
+
+  * Not provided
+* Global Environment:
+
+  * Node 22+ (per referenced upstream distribution note)
+  * GitHub Actions (Dependabot + scheduled workflows)
+  * Go toolchain used in CI example (version shown as 1.24.x)
+* Global Evidence:
+
+  * Dependabot configuration requires `.github/dependabot.yml` and supports npm + GitHub Actions ecosystems. ([GitHub Docs][1])
+  * Renovate npm manager documentation (alternative automation). ([Renovate Docs][2])
+  * peter-evans/create-pull-request GitHub Action (PR automation). ([GitHub][3])
+  * Upstream Sync marketplace action (fork-sync scenario). ([GitHub][4])
+  * Git submodule/subtree background (vendor option scenario). ([Atlassian][5])
+  * Full original discussion text.
+
+Split Plan:
+
+* Coverage Map:
+
+  * Original item: “treat upstream as a versioned dependency… automate detection/compat testing/PRs/releases” → Assigned Ticket ID: T1
+  * Original item: “pins `@steipete/oracle`… runs deterministically” → Assigned Ticket ID: T1
+  * Original item: “log/record the exact `oracle` version used into its `.state.json`/`.report.json`” → Assigned Ticket ID: T1
+  * Original item: “Vendor via Node workspace… execute `node_modules/.bin/oracle`” → Assigned Ticket ID: T1
+  * Original item: “Or run `npx -y @steipete/oracle@<pinned>`” → Assigned Ticket ID: T1
+  * Original item: “Reduce parity surface area… pass-through custom args/flags forwarded unchanged” → Assigned Ticket ID: T2
+  * Original item: “Only model/enumerate upstream flags where you must (Overrides Wizard)” → Assigned Ticket ID: T2
+  * Original item: “If you do enumerate, auto-discover rather than hardcode” → Assigned Ticket ID: T3
+  * Original item: “Add a contract test suite that detects upstream CLI surface changes early” → Assigned Ticket ID: T4
+  * Original item: “Snapshot tests… capture `oracle --help` and `oracle <critical-subcommand> --help`… diff snapshots in CI” → Assigned Ticket ID: T4
+  * Original item: “Behavioral ‘golden path’ tests… run a small pack fixture… assert only on wrapper-owned artifacts” → Assigned Ticket ID: T4
+  * Original item: “Automate updates: Dependabot/Renovate” → Assigned Ticket ID: T5
+  * Original item: “Scheduled ‘canary’ workflow… run against `@steipete/oracle@latest`” → Assigned Ticket ID: T7
+  * Original item: “Release discipline: compatibility statement… gate releases on contract tests + canary” → Assigned Ticket ID: T8
+  * Original item: “Concrete GitHub config examples: `.github/dependabot.yml`” → Assigned Ticket ID: T5
+  * Original item: “Concrete workflow example: `.github/workflows/bump-oracle.yml` using `peter-evans/create-pull-request`” → Assigned Ticket ID: T6
+  * Original item: “If you want ‘sync the fork with upstream’… use fork-sync/upstream-sync workflow/action” → Assigned Ticket ID: Info-only
+  * Original item: “If you ever decide to vendor upstream code… use subtree/submodule… submodules don’t auto-track branches” → Assigned Ticket ID: Info-only
+  * Original item: “Minimal next step… pinned version file + CI contract suite + enable Dependabot weekly updates” → Assigned Ticket ID: T1 (pin), T4 (contract suite), T5 (Dependabot)
+* Dependencies:
+
+  * T4 depends on T1 because contract tests are described as running against a pinned/deterministic upstream version.
+  * T6 depends on T4 because the bump workflow is described as running unit + contract tests before opening a PR.
+  * T7 depends on T4 because the canary job is described as running the integration/contract suite.
+  * T8 depends on T4 and T7 because release gating is described as using contract tests and the canary signal.
+* Split Tickets:
+
+```ticket T1
+T# Title: Pin upstream oracle version and record the runtime oracle version used
+Type: enhancement
+Target Area: Dependency boundary / runtime invocation / run artifacts (.state.json/.report.json)
+Summary:
+  Establish a deterministic upstream boundary by pinning the upstream `@steipete/oracle` version used by oraclepack runs. Ensure the exact oracle version used is recorded in wrapper-owned artifacts so reports/bugs are attributable to a specific upstream version.
+In Scope:
+  - Add a single source of truth for the pinned upstream oracle version (example given: `tools/oracle-version.txt`).
+  - Ensure oraclepack uses the pinned `@steipete/oracle` version deterministically at runtime.
+  - Record/log the exact oracle version used into `.state.json` and/or `.report.json` (as referenced).
+  - Support one of the described execution modes:
+    - Node workspace vendoring (`node_modules/.bin/oracle`), or
+    - `npx -y @steipete/oracle@<pinned>` execution.
+Out of Scope:
+  - Upstream fork syncing and vendoring upstream source code (subtree/submodule) approaches.
+Current Behavior (Actual):
+  - Not provided
+Expected Behavior:
+  - oraclepack runs use a deterministic pinned oracle version rather than an implicitly installed/global/latest version.
+  - oraclepack run artifacts include the upstream oracle version used.
+Reproduction Steps:
+  - Not provided
+Requirements / Constraints:
+  - Upstream oracle is referenced as an npm package `@steipete/oracle` and expects Node 22+ (as noted).
+Evidence:
+  - Not provided
+Open Items / Unknowns:
+  - Whether oraclepack currently shells out to a global oracle, vendors a local dependency, or uses npx (not provided).
+  - Whether both `.state.json` and `.report.json` exist and their current schema/paths (not provided).
+Risks / Dependencies:
+  - Depends on CI/runtime environment having Node available if execution uses node workspace or npx.
+Acceptance Criteria:
+  - A pinned oracle version is stored in a single source-of-truth file (example: `tools/oracle-version.txt`).
+  - oraclepack execution uses the pinned version deterministically (no implicit “latest”).
+  - `.state.json` and/or `.report.json` emitted by a run includes the oracle version used.
 Priority & Severity (if inferable from input text):
-- Priority: Not provided
-- Severity: Not provided
+  - Priority: Not provided
+  - Severity: Not provided
 Source:
-- “The TUI ‘ChatGPT URL picker’ then creates `<sameBase>.chatgpt-urls.json`…”
-- “Best UX default: change … default save scope to global…”
-- “Keep ‘project scope’ … `<repo>/.oraclepack/chatgpt-urls.json`, not `<packName>.chatgpt-urls.json`.”
+  - “pins `@steipete/oracle`… runs that version deterministically”
+  - “logs/records the exact `oracle` version used into its `.state.json`/`.report.json`”
+  - “Vendor via Node workspace… or run `npx -y @steipete/oracle@<pinned>`”
+```
+
+```ticket T2
+T# Title: Add pass-through forwarding for upstream oracle args/flags to reduce wrapper coupling
+Type: enhancement
+Target Area: CLI wrapper interface (oraclepack → oracle invocation)
+Summary:
+  Reduce breakage risk by defaulting to a “pass-through” model where oraclepack forwards custom args/flags to upstream oracle unchanged. Only model/enumerate upstream flags where oraclepack explicitly needs structured UX (e.g., an overrides wizard).
+In Scope:
+  - Provide a mechanism for users/config to supply freeform upstream args/flags that oraclepack forwards to oracle unchanged.
+  - Define/implement the boundary: which flags are wrapper-owned vs upstream pass-through.
+  - Keep modeled/enumerated upstream flags limited to where explicitly required (example given: Overrides Wizard).
+Out of Scope:
+  - Auto-discovery of upstream flags/commands for modeled UX (handled in T3).
+Current Behavior (Actual):
+  - Not provided
+Expected Behavior:
+  - oraclepack can forward arbitrary upstream oracle args/flags without needing wrapper updates for each new upstream option.
+  - oraclepack only hard-couples to upstream flag semantics where required for wrapper UX.
+Reproduction Steps:
+  - Not provided
+Requirements / Constraints:
+  - Not provided
+Evidence:
+  - Not provided
+Open Items / Unknowns:
+  - Current oraclepack surface area that models upstream flags vs forwards arguments (not provided).
+  - “Overrides Wizard” location/implementation details in oraclepack (not provided).
+Risks / Dependencies:
+  - Not provided
+Acceptance Criteria:
+  - A user-visible way exists to pass through upstream oracle args/flags unchanged.
+  - Wrapper-owned flags are not silently forwarded (clear separation in behavior/docs/help output).
+  - Existing wrapper features that depend on specific upstream flags continue to function as before.
+Priority & Severity (if inferable from input text):
+  - Priority: Not provided
+  - Severity: Not provided
+Source:
+  - “Reduce ‘parity surface area’… Prefer: ‘pass-through’ custom args/flags… forwards… unchanged”
+  - “Only model/enumerate upstream flags where you must (e.g., your Overrides Wizard)”
+```
+
+```ticket T3
+T# Title: Auto-discover upstream oracle CLI flags/commands used by modeled wrapper UX (avoid hardcoding)
+Type: enhancement
+Target Area: Wrapper UX that enumerates upstream options (e.g., Overrides Wizard)
+Summary:
+  Where oraclepack must enumerate upstream oracle flags/commands for structured UX, implement auto-discovery so upstream additions/changes do not require manual hardcoded updates. This specifically targets the stated risk of wrappers breaking when they re-model upstream too strictly.
+In Scope:
+  - Implement auto-discovery of upstream CLI surface for any wrapper UX that enumerates upstream flags/commands.
+  - Ensure the enumerated list updates when the pinned upstream oracle version changes (ties to T1).
+Out of Scope:
+  - General pass-through forwarding (handled in T2).
+Current Behavior (Actual):
+  - Not provided
+Expected Behavior:
+  - Wrapper UX that enumerates upstream options derives its list from upstream oracle, not a hardcoded list.
+Reproduction Steps:
+  - Not provided
+Requirements / Constraints:
+  - Not provided
+Evidence:
+  - Not provided
+Open Items / Unknowns:
+  - Which wrapper flows enumerate upstream options (only “Overrides Wizard” is referenced; details not provided).
+  - The discovery mechanism source (help output vs another interface) is not specified.
+Risks / Dependencies:
+  - Depends on T1 for a stable/pinned upstream version target during discovery.
+Acceptance Criteria:
+  - For any wrapper UX that enumerates upstream flags/commands, the list is derived from upstream oracle rather than hardcoded constants.
+  - Updating the pinned upstream oracle version results in the enumerated UX reflecting new/changed upstream options without manual list edits.
+Priority & Severity (if inferable from input text):
+  - Priority: Not provided
+  - Severity: Not provided
+Source:
+  - “If you do enumerate, auto-discover rather than hardcode”
+  - “The main way wrappers break is when they re-model upstream flags/commands too strictly”
 ```
 
 ```ticket T4
-T# Title: Add project-local `.oraclepack/` layout guidance and `.gitignore` patterns to prevent repo pollution
-Type: docs
-Target Area: Repo hygiene (docs / templates / ignore rules)
+T# Title: Add contract test suite for upstream oracle CLI surface changes (snapshot + golden path)
+Type: tests
+Target Area: CI tests / compatibility checks between oraclepack and upstream oracle
 Summary:
-- The parent ticket proposes an acceptable project-local layout under `<repo>/.oraclepack/` and an immediate workaround via `.gitignore`.
-- Capture these as documented guidance (and/or provide default ignore patterns) so repos remain clean even before code changes land.
+  Add tests that fail when upstream oracle changes in ways that could break oraclepack. Include snapshot diffs for help output and a small “golden path” integration fixture that asserts on stable, wrapper-owned artifacts.
 In Scope:
-- Document (or provide recommended structure for) project-local layout:
-  - `<repo>/.oraclepack/state/*.state.json`
-  - `<repo>/.oraclepack/state/*.report.json`
-  - `<repo>/.oraclepack/chatgpt-urls.json`
-- Add guidance to add `.oraclepack/` to `.gitignore` when adopting that structure.
-- Add the immediate workaround ignore patterns:
-  - `*.state.json`
-  - `*.report.json`
-  - `*.chatgpt-urls.json`
+  - Snapshot tests capturing `oracle --help` output and `oracle <critical-subcommand> --help` output for a small set of relied-upon commands, then diff snapshots in CI.
+  - A “golden path” test that runs a small pack fixture to exercise oraclepack integration points (dry-run path; API path if keys exist; browser path optionally skipped in CI as described).
+  - Assertions focus on wrapper-owned artifacts (exit codes, oraclepack report/state schema) rather than upstream human text output.
 Out of Scope:
-- Not provided
+  - Automation that updates the pinned upstream version (handled in T5/T6).
 Current Behavior (Actual):
-- Not provided
+  - Not provided
 Expected Behavior:
-- Repos can adopt a single project-local `.oraclepack/` directory and ignore it.
-- Repos can immediately ignore current output filenames to avoid noise.
+  - CI provides early signal when upstream oracle help/CLI surface changes.
+  - CI validates at least one end-to-end wrapper “golden path” behavior against the pinned upstream version.
 Reproduction Steps:
-- Not provided
+  - Not provided
 Requirements / Constraints:
-- Must preserve the exact patterns and structure described in the parent ticket text.
+  - Tests should target the pinned upstream oracle version (deterministic) rather than “latest”.
 Evidence:
-- “Acceptable alternative (project-local…): `<repo>/.oraclepack/state/*.state.json` … add `.oraclepack/` to `.gitignore`.”
-- “Immediate workaround (no code changes): Add these to `.gitignore`: `*.state.json`, `*.report.json`, `*.chatgpt-urls.json`.”
+  - Not provided
 Open Items / Unknowns:
-- Where this guidance should live (README, docs page, template): Not provided
-Risks / Dependencies:
-- Not provided
-Acceptance Criteria:
-- Documentation includes the described `.oraclepack/` directory layout and explicitly recommends ignoring `.oraclepack/` when using it.
-- Documentation includes the three immediate-workaround `.gitignore` patterns exactly as specified.
-Priority & Severity (if inferable from input text):
-- Priority: Not provided
-- Severity: Not provided
-Source:
-- “Acceptable alternative (project-local…): `<repo>/.oraclepack/state/*.state.json`… add `.oraclepack/` to `.gitignore`.”
-- “Immediate workaround… Add these to `.gitignore`: `*.state.json`…”
-```
+  - The “critical subcommands” list oraclepack relies on (examples referenced, but exact dependency set not provided).
+[TRUNCATED]
 ```
 
 .tickets/Oraclepack Schema Approach.md
@@ -788,33 +1106,7 @@ In Scope:
 Out of Scope:
 - Not provided
 Current Behavior (Actual):
-- Pack structural issues can slip into execution time if not validated earlier.
-Expected Behavior:
-- CI fails fast when manifest validation fails or rendered pack fails oraclepack validation.
-Reproduction Steps:
-1) Commit a manifest with 19 steps; CI should fail at validate(manifest.json).
-2) Commit a manifest that renders an invalid pack (if possible); CI should fail at oraclepack validate.
-Requirements / Constraints:
-- CI must preserve existing oraclepack Markdown contract (rendered pack is what oraclepack consumes).
-Evidence:
-- “Add CI checks: validate(manifest.json) → render(pack.md) → oraclepack validate pack.md → (optional) dry-run checks”
-Open Items / Unknowns:
-- Where CI runs (provider/tooling) is not provided.
-- Whether “dry-run checks” exist and what they check is not provided.
-Risks / Dependencies:
-- Depends on T1 and T2 to provide validate+render steps.
-Acceptance Criteria:
-- [ ] CI runs schema validation on manifest.json and fails on invalid manifests.
-- [ ] CI renders pack.md deterministically from the manifest.
-- [ ] CI runs oraclepack validation on pack.md and fails if invalid.
-- [ ] Optional dry-run step is present if supported; otherwise omitted without breaking the sequence intent.
-Priority & Severity (if inferable from input text):
-- Priority: Not provided
-- Severity: Not provided
-Source:
-- “Add CI checks: validate(manifest.json) → render(pack.md) → oraclepack validate pack.md → (optional) dry-run checks”
-- “Treat Markdown packs as a compiled artifact, not the source of truth.”
-```
+[TRUNCATED]
 ```
 
 .tickets/Oraclepack bash fix.md
@@ -1005,8 +1297,265 @@ Priority & Severity (if inferable from input text):
 Source:
 - “Make validate unavoidable in normal use”
 - “Ensure `oraclepack run` always calls `validate` first (or at minimum in TUI ‘Run/Rerun’ paths).”
-- “Add CI/pre-commit: run `oraclepack validate` on any generated/modified pack.”
+[TRUNCATED]
 ```
+
+.tickets/Oraclepack output verification issues.md
+```
+Parent Ticket:
+
+* Title: oraclepack output verification failures and verification configurability gaps
+* Summary: Runs fail with `output verification failed for step 01` due to oraclepack’s post-step validator requiring section tokens (triggered by “Answer format”) that are not present in the `--write-output` file, plus cases where the output file is not created/readable on retry. The ticket also includes requests to make verification easier to disable/configure (including via `.env`) and to support “verify later” workflows.
+* Source:
+
+  * Link/ID: Not provided
+  * Original ticket excerpt (≤25 words) capturing the overall theme: “output verification failed for step 01 … verifier is expecting more sections than you are actually emitting.”
+* Global Constraints:
+
+  * Do not add “wait time” as a validator fix when the failure is due to content/contract mismatch.
+* Global Environment:
+
+  * Unknown
+* Global Evidence:
+
+  * Error context: “output verification failed for step 01: docs/…” and validator behavior around “Answer format” token requirements.
+  * Noted token set required when “Answer format” is present: “direct answer”, “risks unknowns”, “next smallest concrete experiment”, “if evidence is insufficient”.
+  * Suggested multi-file suffix scheme: `-direct-answer`, `-risks-unknowns`, `-next-experiment`, `-missing-evidence`.
+
+Split Plan:
+
+* Coverage Map:
+
+  * “oraclepack’s ‘output verification’ path … expects the file to exist and … contain certain section tokens” → T1
+  * “single `--write-output` + phrase ‘Answer format’ causes verifier to require all four section tokens” → T1
+  * “If your step instructs ‘Return only: Direct answer’ … verification fails” → T1
+  * “On the re-run, the output file isn’t being written at all” → T4
+  * “Don’t add a longer wait time … step command already blocks until CLI exits” → Info-only
+  * “If oracle browser run is incomplete/truncated … increase oracle `--browser-timeout` / `--browser-input-timeout` or switch to API” → T4
+  * “How to make the validator optional … `--output-verify=false` and `--output-retries`” → T4
+  * “Align chunking with verifier … split outputs into multiple `--write-output` files using suffixes” → T4
+  * “Edge: ‘Missing evidence’ heading may fail if required token is literally ‘If evidence is insufficient’” → T4
+  * “Add ‘verify later’ workflow: new `oraclepack verify-outputs <pack.md>` command” → T3
+  * “No built-in env var toggle for output verification; toggle is CLI flag today” → T2
+  * “Option: wrapper script to inject `--output-verify=false`” → T2
+  * “Option: add explicit env var support like `ORACLEPACK_OUTPUT_VERIFY` / `ORACLEPACK_OUTPUT_RETRIES`” → T2
+  * “Which skill produced the pack … matches oraclepack-gold-pack (Gold Stage 1)” → Info-only
+* Dependencies:
+
+  * Not provided
+* Split Tickets:
+
+```ticket T1
+T1 Title: Make output verification contract-aware for “Direct answer only” single-output steps
+Type: enhancement
+Target Area: oraclepack run-step output verification (single `--write-output` expectations)
+Summary:
+  The validator currently requires four section tokens whenever the step text includes “Answer format”, which fails when the produced output contains only “Direct answer” (e.g., when the prompt says “Return only: Direct answer”). Adjust validation so a single-output step can be treated as “direct answer only” when the step explicitly declares that constraint, avoiding false failures.
+In Scope:
+  - Update expectation logic so “Answer format” does not always imply all four tokens for single-output steps.
+  - Support a “Direct answer only” contract when the step text explicitly indicates that output constraint (e.g., “Return only: Direct answer”).
+Out of Scope:
+  - Not provided
+Current Behavior (Actual):
+  - If a step contains “Answer format” and has exactly one `--write-output`, the output file is required to contain all of:
+    - direct answer
+    - risks unknowns
+    - next smallest concrete experiment
+    - if evidence is insufficient
+  - Steps that output only “Direct answer …” fail verification.
+Expected Behavior:
+  - If a step explicitly constrains output to “Direct answer only”, the validator should not require the other three section tokens for that step’s single `--write-output` file.
+  - Steps that truly require all four sections should continue to be validated against all four tokens.
+Reproduction Steps:
+  1) Run a step with a prompt that includes “Answer format:” and also includes “Return only: Direct answer”.
+  2) Produce an output file containing only the “Direct answer” section.
+  3) Observe `output verification failed for step 01` due to missing tokens.
+Requirements / Constraints:
+  - Must preserve existing “all four tokens required” behavior when the step is not explicitly “Direct answer only”.
+Evidence:
+  - Error symptom: `output verification failed for step 01: docs/...`
+  - Required tokens set when “Answer format” is present: “direct answer”, “risks unknowns”, “next smallest concrete experiment”, “if evidence is insufficient”.
+Open Items / Unknowns:
+  - Exact mechanism used today to detect “Answer format” and to compute required tokens (unknown in provided text).
+Risks / Dependencies:
+  - Not provided
+Acceptance Criteria:
+  - A single-output step that includes “Answer format” but explicitly states “Return only: Direct answer” passes verification when the file contains “Direct answer” and omits the other sections.
+  - A single-output step that includes “Answer format” without “Direct answer only” constraint continues to fail verification if any of the other required tokens are missing.
+Priority & Severity (if inferable from input text):
+  - Priority: Not provided
+  - Severity: Not provided
+Source:
+  - “single `--write-output ...` + a prompt that includes the phrase ‘Answer format’ causes the verifier to require all four section tokens”
+  - “If your step instructs ‘Return only: Direct answer’ … verification fails”
+  - “change … verification logic to accept a ‘direct answer only’ contract”
+```
+
+```ticket T2
+T2 Title: Add `.env` / environment-variable control for output verification defaults
+Type: enhancement
+Target Area: oraclepack CLI configuration (env var support for `--output-verify` / `--output-retries`)
+Summary:
+  Output verification can be toggled via CLI flags, but there is no built-in environment variable that can be set in `.env` to control verification on/off. Add explicit env-var support (as suggested) to allow `.env` driven defaults, while keeping CLI flags available.
+In Scope:
+  - Implement an environment variable toggle for output verification (suggested name: `ORACLEPACK_OUTPUT_VERIFY`).
+  - Implement an environment variable for output retries (suggested name: `ORACLEPACK_OUTPUT_RETRIES`).
+  - Define precedence so the env vars provide defaults without removing CLI flag control (exact precedence not specified in provided text; implement per existing CLI config patterns).
+Out of Scope:
+  - Not provided
+Current Behavior (Actual):
+  - Output verification is toggled by CLI flag (`--output-verify`), not an env var.
+  - No built-in `.env` variable exists to turn verification on/off.
+Expected Behavior:
+  - Users can set a `.env` environment variable to control output verification behavior without modifying command lines everywhere.
+Reproduction Steps:
+  1) Attempt to set an env var in `.env` to disable output verification.
+  2) Observe there is “no built-in environment variable in the Go `oraclepack` CLI to toggle output verification.”
+Requirements / Constraints:
+  - Must not remove existing CLI flag support for `--output-verify` / `--output-retries`.
+Evidence:
+  - “There is no built-in environment variable … The toggle is currently a CLI flag (`--output-verify`), not an env var.”
+  - Suggested addition: “Implement something like `ORACLEPACK_OUTPUT_VERIFY=0/1` (and optionally `ORACLEPACK_OUTPUT_RETRIES`).”
+Open Items / Unknowns:
+  - Current CLI config/env binding conventions in the Go CLI (unknown in provided text).
+Risks / Dependencies:
+  - Not provided
+Acceptance Criteria:
+  - Setting `ORACLEPACK_OUTPUT_VERIFY=0` results in verification being disabled by default for `oraclepack run` when the user does not pass an explicit `--output-verify` flag.
+  - Setting `ORACLEPACK_OUTPUT_VERIFY=1` results in verification being enabled by default under the same conditions.
+  - Setting `ORACLEPACK_OUTPUT_RETRIES=<N>` results in the default retries being `<N>` when the user does not pass an explicit `--output-retries` flag.
+Priority & Severity (if inferable from input text):
+  - Priority: Not provided
+  - Severity: Not provided
+Source:
+  - “what environment variable can we set in our .env to turn the verify output on/off?”
+  - “There is no built-in environment variable … The toggle is currently a CLI flag (`--output-verify`), not an env var.”
+  - “Implement something like `ORACLEPACK_OUTPUT_VERIFY=0/1` (and optionally `ORACLEPACK_OUTPUT_RETRIES`).”
+```
+
+```ticket T3
+T3 Title: Add a standalone `verify-outputs` command to validate pack outputs without executing steps
+Type: enhancement
+Target Area: oraclepack CLI commands (output verification workflow)
+Summary:
+  Disabling output verification allows runs to proceed, but then verification is tied to execution and won’t be re-applied later (e.g., with `--resume`). Add a command that only validates outputs using the same expectation logic, enabling “run now, verify later” workflows.
+In Scope:
+  - Add a command: `oraclepack verify-outputs <pack.md>`.
+  - For each step, compute output expectations and validate the referenced `--write-output` files against required tokens.
+  - Exit non-zero when validation fails and print failures (step + file + missing token set).
+Out of Scope:
+  - Not provided
+Current Behavior (Actual):
+  - Verification is performed as part of step execution; disabling verification allows success without later validation.
+Expected Behavior:
+  - `verify-outputs` validates outputs for a pack without executing any step commands.
+Reproduction Steps:
+  1) Run `oraclepack run <pack.md> --output-verify=false`.
+  2) Attempt to validate outputs later without re-running steps.
+  3) Observe verification is tied to execution in the current workflow.
+Requirements / Constraints:
+  - Must reuse the existing expectation/token normalization logic already used during execution (as described).
+Evidence:
+  - Suggested command: “`oraclepack verify-outputs <pack.md>` … compute `pack.StepOutputExpectations(step)` and run `pack.ValidateOutputFile(path, requiredTokens)`.”
+Open Items / Unknowns:
+  - Exact function names/locations of expectation and validation logic in the codebase (unknown in provided text).
+Risks / Dependencies:
+  - Not provided
+Acceptance Criteria:
+  - Running `oraclepack verify-outputs <pack.md>` does not execute step commands.
+  - The command validates each `--write-output` file against the expected token set and reports missing tokens.
+  - The command exits with a non-zero status when any step output fails validation.
+Priority & Severity (if inferable from input text):
+  - Priority: Not provided
+  - Severity: Not provided
+Source:
+  - “If you want ‘run now, verify later’ … add a new command that only validates outputs without executing steps.”
+  - “`oraclepack verify-outputs <pack.md>` … reuses the same expectation logic and token normalization.”
+```
+
+```ticket T4
+T4 Title: Update pack/templates and documentation to avoid validator mismatches and improve reliability in browser mode
+Type: docs
+Target Area: pack authoring guidance (Gold Stage packs), output chunking conventions, oracle CLI invocation guidance
+Summary:
+  The failures are driven by mismatch between what the validator requires (triggered by “Answer format”) and what is actually written to `--write-output`, plus fragility in oracle browser automation runs. Update templates and documentation to (a) ensure outputs include required section tokens when “Answer format” is used, or (b) use multi-file chunking with the documented filename suffixes, and (c) document browser-timeout mitigations and path preconditions for `--write-output`.
+In Scope:
+  - Document that when “Answer format” is present, the validator requires all four tokens in a single-output file unless using chunked outputs.
+  - Provide template guidance for two supported patterns:
+[TRUNCATED]
+```
+
+.tickets/Oraclepack-CLI-agents.md
+```
+
+In Codex/Gemini CLI, the “live agent” inference is the model deciding what actions to take given the skill context (skills are discovered/activated and the model can inspect skill assets). [OpenAI Developers+2OpenAI Developers+2](https://developers.openai.com/codex/custom-prompts/?utm_source=chatgpt.com) In an MCP setup, the “live agent” inference is the model deciding which tools to call (and with what arguments) based on the tools’ schemas. [Model Context Protocol+3Model Context Protocol+3Model Context Protocol+3](https://modelcontextprotocol.io/specification/2025-11-25?utm_source=chatgpt.com)
+
+Below is an “extensive” set of additional, unique LLM decision points you can introduce (or explicitly formalize) beyond “classify tickets/domains then feed into grouping”.
+
+| ID | Stage | Class | LLM decision point | Inputs considered | Output / action produced |
+| --- | --- | --- | --- | --- | --- |
+| DP-01 | Pre-gen | Routing | Choose generator mode (tickets-grouped vs codebase-grouped vs gold) | User goal, repo state, available skills/tools | Selected generator + params |
+| DP-02 | Pre-gen | Scope | Select root(s) to scan (ticket\_root/code\_root) | Working dir tree, config defaults | Root paths |
+| DP-03 | Pre-gen | Scope | Decide include/exclude glob rules | Repo conventions, noise directories | Include/exclude patterns |
+| DP-04 | Pre-gen | Scope | Decide whether to treat “loose” items as first-class candidates | Ticket placement quality, density | Loose-ticket policy |
+| DP-05 | Pre-gen | Governance | Decide whether to require “strict schema mode” for outputs | Target environment strictness | Enforce extra validation gates |
+| DP-06 | Pre-gen | Budgeting | Choose max pack size strategy (by tokens/bytes/files) | Model context limits, file sizes | Sharding plan |
+| DP-07 | Pre-gen | Budgeting | Choose per-pack cap: number of tickets/files | Expected coherence vs coverage | Caps per pack |
+| DP-08 | Pre-gen | Normalization | Decide ticket/file canonical title extraction rule | Noisy headings, filenames | Canonical titles for clustering |
+| DP-09 | Pre-gen | Normalization | Choose text preprocessing (stopwords, stemming, code tokens) | Domain vocabulary | Feature extraction policy |
+| DP-10 | Pre-gen | Dedup | Decide duplicate threshold policy (strict vs lenient) | Similarity signals | Threshold values |
+| DP-11 | Pre-gen | Dedup | Decide duplicate merge strategy (merge vs link vs pick canonical) | Diff size, recency, metadata | Merge plan + canonical selection |
+| DP-12 | Pre-gen | Dedup | Decide what “differences” to preserve when merging duplicates | Patch-like deltas | Delta retention format |
+| DP-13 | Pre-gen | Clustering | Decide whether to use hierarchical topic taxonomy vs flat groups | Repo size, domain diversity | Taxonomy mode |
+| DP-14 | Pre-gen | Clustering | Decide group count target | Ticket count, entropy | K groups target |
+| DP-15 | Pre-gen | Clustering | Decide grouping algorithm choice (heuristic vs LLM-labeled vs hybrid) | Determinism needs, accuracy | Algorithm selection |
+| DP-16 | Pre-gen | Clustering | Decide “ambiguous” assignment policy (multi-home vs best-fit) | Similarity ties | Assignment rule |
+| DP-17 | Pre-gen | Clustering | Decide whether to create an “Unsorted / Needs triage” pack | Low-confidence items | Extra pack creation |
+| DP-18 | Pre-gen | Naming | Generate group names optimized for human scanning | Group summaries | Group name strings |
+| DP-19 | Pre-gen | Ordering | Decide pack order (by dependency, ROI, urgency, confidence) | Ticket metadata, heuristics | Pack sequence |
+| DP-20 | Pre-gen | Ordering | Decide ticket order within pack (chronological vs dependency graph) | References among tickets | Ordered ticket list |
+| DP-21 | Pre-gen | Context | Select “context bundle” files to attach per pack | Code references, paths mentioned | Attachment list |
+| DP-22 | Pre-gen | Context | Decide whether to attach full files vs excerpts/summaries | Token budget, file size | Attachment granularity |
+| DP-23 | Pre-gen | Context | Decide whether to generate a synthetic “pack brief” doc | Need for shared framing | Brief content |
+| DP-24 | Pre-gen | Context | Decide whether to include prior run artifacts (outputs) as inputs | Existing out\_dir contents | Reuse plan |
+| DP-25 | Pre-gen | Template | Choose template variant (tickets vs codebase vs mixed) | Pack type, audience | Template choice |
+| DP-26 | Pre-gen | Template | Decide whether to inject organization standards into prompts (not pack shape) | Policy bundles, style rules | Prompt preamble content |
+| DP-27 | Pre-gen | Template | Decide step allocation across subtopics (how many steps per subdomain) | Group composition | Step budget map |
+| DP-28 | Pre-gen | Prompting | Choose prompt “stance” (audit-first vs implement-first vs design-first) | Risk, stage | Prompt style per step |
+| DP-29 | Pre-gen | Prompting | Choose “evidence bar” (strict citations vs lightweight) | Audience and stakes | Evidence requirements |
+| DP-30 | Pre-gen | Prompting | Decide per-step required outputs (files changed, diffs, JSON, etc.) | Tooling integration, downstream parser | Output spec per step |
+| DP-31 | Pre-gen | Prompting | Decide if each step should be self-contained or rely on previous step outputs | Runtime environment, caching | Dependency policy |
+| DP-32 | Pre-gen | Prompting | Decide whether to add “ask-user” gates for missing critical inputs | Missing file detection | Gate instructions in prompts |
+| DP-33 | Pre-gen | Tooling | Choose which MCP tools to call during generation (list/validate/generate) | Tool availability, cost | Tool call plan [Model Context Protocol+1](https://modelcontextprotocol.io/specification/2025-06-18/server/tools?utm_source=chatgpt.com) |
+| DP-34 | Pre-gen | Tooling | Decide oracle model/engine selection and parameters | Cost, latency, quality | `oracle` flags (model/temperature) |
+| DP-35 | Pre-gen | Tooling | Decide whether to preflight `oracle` invocations (`--dry-run` summary) | Compatibility risk | Preflight on/off |
+| DP-36 | Pre-gen | Compliance | Decide redaction policy for sensitive strings in prompts/attachments | Secrets risk | Redaction rules |
+| DP-37 | Pre-gen | Observability | Decide trace/correlation ID scheme for packs/steps | Downstream logging needs | ID format + propagation plan |
+| DP-38 | Pre-gen | Observability | Decide which metrics/log events must be emitted per stage | Debuggability requirements | Instrumentation checklist |
+| DP-39 | Runtime | Execution planning | Decide run strategy (run-all vs selective) | Confidence map, cost | Step subset |
+| DP-40 | Runtime | Execution planning | Decide concurrency / rate-limiting policy | Provider limits | Parallelism level |
+| DP-41 | Runtime | Execution gating | Decide whether to halt on first failure vs continue collecting failures | Failure criticality | Fail-fast/continue |
+| DP-42 | Runtime | Recovery | Decide retry policy per failure type (tool error vs content error) | Error classification | Retry plan |
+| DP-43 | Runtime | Recovery | Decide “prompt patch” for retries (tighten constraints vs broaden context) | Failure analysis | Revised prompt text |
+| DP-44 | Runtime | Recovery | Decide when to escalate to user for clarification | Low confidence / missing inputs | User question(s) |
+| DP-45 | Runtime | Consistency | Decide whether to re-run earlier steps when later steps reveal contradictions | Cross-step inconsistency | Re-run selection |
+| DP-46 | Runtime | Quality control | Decide acceptance criteria for a step output (format, completeness) | Output parsing/validation | Pass/fail verdict |
+| DP-47 | Runtime | Quality control | Decide whether to auto-validate produced artifacts (lint/tests/validate) | Available checks | Validation commands |
+| DP-48 | Runtime | Post-processing | Decide how to synthesize step outputs into a final report | Audience, required structure | Summary artifact |
+| DP-49 | Runtime | Post-processing | Decide whether to generate PR/patch vs documentation-only output | Repo permissions, user intent | Output mode |
+| DP-50 | Runtime | Post-processing | Decide how to resolve conflicting recommendations across steps | Conflicts detected | Resolution rationale |
+| DP-51 | Runtime | Governance | Decide whether outputs meet policy/security standards before writing | Policy bundle | Block/allow + edits |
+| DP-52 | Runtime | Caching | Decide whether to reuse cached groupings/packs vs regenerate | Cache keys, repo diffs | Cache decision |
+| DP-53 | Runtime | Caching | Decide cache invalidation scope (one pack vs all) | Changed inputs | Invalidation plan |
+| DP-54 | Runtime | Observability | Decide incident-style annotation (root cause, repro, next action) on failures | Error logs, outputs | Failure note artifact |
+| DP-55 | Runtime | Observability | Decide what artifacts to persist (manifests, intermediate summaries) | Debug needs | Persist list |
+| DP-56 | Runtime | Packaging | Decide how to shard outputs into “mini-packs” for follow-on runs | Token limits, dependencies | Mini-pack plan |
+| DP-57 | Runtime | Packaging | Decide naming/versioning for generated packs | Date, domain, stability | Pack names + version tags |
+| DP-58 | Runtime | UX | Decide “next best tool call” in MCP (validate vs list vs run vs regenerate) | Current state | Tool invocation [Model Context Protocol+1](https://modelcontextprotocol.io/docs/develop/build-server?utm_source=chatgpt.com) |
+| DP-59 | Runtime | UX | Decide whether to present diffs, file lists, or narrative only | Reviewer preference | Presentation format |
+| DP-60 | Runtime | Learning loop | Decide whether to extract new org heuristics from this run into a reusable profile | Repeated patterns | Proposed profile snippet |
+
+[TRUNCATED]
 ```
 
 .tickets/Publish OraclePack MCP.md
@@ -1537,74 +2086,6 @@ Summary:
 In Scope:
 - Implement a new subcommand such as `oraclepack call` (or `oraclepack oracle`) that:
   - Lets the user pick a ChatGPT URL preset.
-  - Lets the user specify attachments (e.g., `tickets_prd.md`).
-  - Runs one `oracle …` invocation.
-- Implement a corresponding TUI flow/screen for “Single Oracle Call” with:
-  - URL preset selection
-  - attachments selection
-  - prompt/template input
-  - run
-- Ensure this path bypasses pack parsing requirements (no need for a `bash` fenced block).
-
-Out of Scope:
-- Generating ticket-derived context bundle (`prd_context.md`) and a dedicated PRD generator pack (see T6/T7).
-
-Current Behavior (Actual):
-- “Simple calls” currently imply using packs; running `tickets_prd.md` directly fails pack validation.
-
-Expected Behavior:
-- Users can perform a single oracle call via oraclepack without needing a pack file format.
-
-Reproduction Steps:
-- Not provided
-
-Requirements / Constraints:
-- Must bypass `internal/pack/parser.go` (as described) so it does not require a `bashFenceRegex`-parseable pack structure.
-- Must support selecting a ChatGPT URL preset and attaching files.
-
-Evidence:
-- “Option B (best UX): add a new CLI/TUI mode for single-shot calls”
-- “Add a subcommand like: `oraclepack call`… pick ChatGPT URL preset… files to attach…”
-
-Open Items / Unknowns:
-- Exact CLI UX (flags for attachments, prompt, output path) not fully specified.
-- Whether output-writing is required (“--write-output …” is shown in examples elsewhere but not mandated here).
-
-Risks / Dependencies:
-- Not provided
-
-Acceptance Criteria:
-- [ ] `oraclepack call` (or equivalent) runs a single oracle invocation without requiring a pack file.
-- [ ] User can select a ChatGPT URL preset and attach `tickets_prd.md`.
-- [ ] A TUI “Single Oracle Call” flow exists with URL selection, attachments selection, prompt/template entry, and run.
-- [ ] Running this path does not trigger “no bash code block found” pack-structure errors.
-
-Priority & Severity (if inferable from input text):
-- Priority: Not provided
-- Severity: Not provided
-
-Source:
-- “Option B (best UX): add a new CLI/TUI mode for single-shot calls”
-- “Add a subcommand like: `oraclepack call` (or `oraclepack oracle`)”
-- “This avoids the structural requirement that triggers your error…”
-```
-
-```ticket T5
-T# Title:
-- Extend Overrides Wizard to support per-step ChatGPT URL selection (RuntimeOverrides.ChatGPTURL)
-
-Type:
-- enhancement
-
-Target Area:
-- oraclepack TUI Overrides Wizard UI
-
-Summary:
-- Enable selecting a ChatGPT URL in the Overrides Wizard and applying it to specific steps via per-step targeting. This supports “one of many project urls” where only PRD generation steps use the PRD Generator project while others use the default.
-
-In Scope:
-- Add a wizard step: “ChatGPT URL”.
-- Reuse the existing URL picker/store UI model (URLPickerModel) to choose a URL.
 [TRUNCATED]
 ```
 
@@ -2049,19 +2530,19 @@ Acceptance Criteria:
 
 * Running a pack that defines variables in the prelude and references them in steps behaves according to the selected official contract:
 
-    *   If “sourced prelude”: steps can reference prelude-defined variables successfully.
+  * If “sourced prelude”: steps can reference prelude-defined variables successfully.
 
-    *   If “prep-only”: validation or guidance prevents packs from relying on prelude vars (or template guidance is updated and enforced).
+  * If “prep-only”: validation or guidance prevents packs from relying on prelude vars (or template guidance is updated and enforced).
 
         Workflow Improvement Suggestions
 
 * `oraclepack validate` reliably fails on packs with:
 
-    *   multiple `bash` fences,
+  * multiple `bash` fences,
 
-    *   missing/incorrect `# NN)` step headers (per enforced convention),
+  * missing/incorrect `# NN)` step headers (per enforced convention),
 
-    *   other contract-breaking drift conditions.
+  * other contract-breaking drift conditions.
 
         Workflow Improvement Suggestions
 
@@ -2071,11 +2552,11 @@ Acceptance Criteria:
 
 * `oraclepack chain <pack.md> --mode actions` produces:
 
-    *   `oracle-out/_summary.md`,
+  * `oracle-out/_summary.md`,
 
-    *   `oracle-out/_actions.json` with the specified normalized fields,
+  * `oracle-out/_actions.json` with the specified normalized fields,
 
-    *   `docs/oracle-actions-YYYY-MM-DD.md` suitable for immediate stage-2 execution.
+  * `docs/oracle-actions-YYYY-MM-DD.md` suitable for immediate stage-2 execution.
 
         Workflow Improvement Suggestions
 
@@ -2374,74 +2855,6 @@ In Scope:
 - Ensure Codex invocation is non-interactive (ticket references `codex exec …` as the intended entrypoint).
 - Ensure Gemini invocation is non-interactive (ticket references `gemini -p/--prompt` as intended).
 - Apply safety defaults: “Keep safety defaults strict (do not ‘yolo’ by default)” (flag specifics not mandated beyond this phrase).
-- Reflect/acknowledge runner constraint: “does not attach stdin/TTY” and the resulting failure mode for interactive tools.
-
-Out of Scope:
-- Not provided
-
-Current Behavior (Actual):
-- Runner behavior described: executes scripts via `bash -lc`, does not attach stdin/TTY; interactive CLIs may fail or stall.
-
-Expected Behavior:
-- Action Packs avoid interactive-only command forms and use non-interactive command forms for Codex/Gemini.
-- Defaults remain conservative and do not enable “yolo” behavior by default.
-
-Reproduction Steps:
-- Not provided
-
-Requirements / Constraints:
-- Must account for “oraclepack doesn’t provide stdin/TTY to subprocesses” (per ticket text).
-- Must keep safety defaults strict; do not enable “yolo” by default.
-
-Evidence:
-- “oraclepack will execute each step… but it does not attach stdin/TTY to the subprocess”
-- “interactive CLIs… fail immediately… or stall waiting for input”
-- “Keep safety defaults strict (do not ‘yolo’ by default)”
-
-Open Items / Unknowns:
-- Exact approval/safety flags to use for Gemini/Codex (not provided in ticket text beyond “yolo” mention).
-- Where to place guardrails (template preflight vs dispatcher vs documentation) not specified.
-
-Risks / Dependencies:
-- Works alongside T3 (implement dispatcher); guardrails should apply to that path.
-
-Acceptance Criteria:
-- Implement path uses non-interactive forms (`codex exec …`, `gemini -p/--prompt …`) as referenced in ticket text.
-- Default behavior does not enable “yolo” execution.
-- Action Pack behavior is compatible with “no stdin/TTY” runner constraint (i.e., does not require interactive prompts to proceed).
-
-Priority & Severity (if inferable from input text):
-- Priority: Not provided
-- Severity: Not provided
-
-Source:
-- “oraclepack… does not attach stdin/TTY… interactive CLIs… fail… or stall”
-- “Keep safety defaults strict (do not ‘yolo’ by default)”
-- “Codex… `codex exec`… Gemini CLI… `--prompt` / `-p`”
-```
-
-```ticket T5
-T# Title:
-- Generalize oraclepack override injection/validation beyond `oracle` to a multi-tool command registry (optional)
-
-Type:
-- enhancement
-
-Target Area:
-- oraclepack core: command detection for overrides injection and overrides validation (currently `oracle`-anchored)
-
-Summary:
-- The ticket identifies that oraclepack’s “nice UX features” (flag overrides + validation) are currently oracle-specific because detection/injection targets only `oracle` commands.
-- Optional work: generalize detection to support additional tool prefixes and add per-tool override sets.
-
-In Scope:
-- Generalize command detection/injection from `oracle`-only to a small registry of command prefixes (explicitly listed in ticket text): `oracle`, `codex`, `gemini`, `task-master`, `tm`.
-- Add per-tool override sets so “Oracle Flags” are not the only concept when tools differ.
-
-Out of Scope:
-- Not provided
-
-Current Behavior (Actual):
 [TRUNCATED]
 ```
 
@@ -2901,73 +3314,6 @@ Target Area:
 
 Summary:
 - The ticket explicitly calls out safety: executor tools may run commands or perform actions; defaults should be conservative.
-- Add/confirm guardrails so the implement/dispatcher mode does not auto-approve tool execution by default, and requires explicit opt-in for riskier behaviors.
-
-In Scope:
-- Ensure implement/dispatcher mode defaults are “strict” and not “yolo by default”.
-- Ensure any approval/tool-execution modes are conservative unless a user opts in (mechanism not specified in the ticket text).
-
-Out of Scope:
-- Defining new security models or sandboxing systems beyond what’s stated (not provided).
-
-Current Behavior (Actual):
-- Not provided (safety behavior in implement/dispatcher mode is not yet implemented per ticket text).
-
-Expected Behavior:
-- Implement/dispatcher execution has conservative defaults around tool approvals/execution; opt-in required for less restrictive modes.
-
-Reproduction Steps:
-- Not provided
-
-Requirements / Constraints:
-- “Keep safety defaults strict (do not ‘yolo’ by default)”
-- “keep defaults conservative unless a user opts in”
-
-Evidence:
-- References: “Keep safety defaults strict (do not ‘yolo’ by default)… sandboxing and explicit approvals matter…”
-
-Open Items / Unknowns:
-- Which specific flags/options are used to control approvals for each executor (not provided).
-- How/where opt-in is configured (env var, arg, config) (not provided).
-
-Risks / Dependencies:
-- Depends on T3 because the implement/dispatcher path is where safety defaults apply.
-
-Acceptance Criteria:
-- Implement/dispatcher mode does not default to auto-approving tool execution.
-- Any non-conservative approval behavior requires explicit user opt-in (as defined by existing config patterns; specifics not provided).
-
-Priority & Severity (if inferable from input text):
-- Priority: Not provided
-- Severity: Not provided
-
-Source:
-- “Keep safety defaults strict (do not ‘yolo’ by default)”
-- “keep defaults conservative unless a user opts in”
-```
-
-```ticket T5
-T5 Title:
-- Optional: Generalize oraclepack “oracle-only” overrides UX to support multiple command prefixes (codex/gemini/task-master/tm)
-
-Type:
-- enhancement
-
-Target Area:
-- oraclepack core/TUI overrides and validation logic (oracle-specific detection/injection/validation)
-
-Summary:
-- Oraclepack can run any shell command, but its “nice UX features” (flag overrides + validation) are oracle-specific.
-- Optionally generalize the command detection and flag-injection mechanisms so overrides/validation can apply to non-oracle tools used by Action Packs.
-
-In Scope:
-- Generalize `ExtractOracleInvocations` / `InjectFlags` to a small registry of command prefixes:
-  - `oracle`, `codex`, `gemini`, `task-master`, `tm`
-- Add per-tool override sets (so “Oracle Flags” semantics don’t incorrectly apply to other tools).
-- Keep current oracle behavior intact.
-
-Out of Scope:
-- Implement-mode executor dispatch itself (handled in T3)
 [TRUNCATED]
 ```
 
@@ -3175,52 +3521,1089 @@ In Scope:
 - Step 11: Add verification automation via `codex exec` and/or Gemini diff review:
   - `.oraclepack/ticketify/codex-verify.md` and/or `.oraclepack/ticketify/gemini-review.json`.
 - Step 16: Add PR draft automation that writes `.oraclepack/ticketify/PR.md`.
-- Include command-availability guards and “skip” behavior as shown in the referenced step snippets (e.g., `command -v ...` checks) to avoid hard failures when tools are missing.
+[TRUNCATED]
+```
 
-Out of Scope:
-- Changing Steps 01–07 semantics (ticket discovery/actions/PRD/Task Master parse/complexity/expand).
-- Extending oraclepack’s override injection/validation to cover `codex`/`gemini` (handled in T2).
+.tickets/other/Oraclepack Pipeline Improvements.md
+```
+Title:
+
+* Implement deterministic oraclepack pipeline improvements (strict validation, run manifests, resume/caching, Stage 3 “Actionizer”)
+
+Summary:
+
+* The current two-stage oraclepack workflow (Stage 1 pack generation → Stage 2 execution) is “weakly connected” and lacks deterministic handoff metadata, robust resume/retry, and an automated Stage 3 that converts 20 outputs into actionable engineering work.
+
+    Oracle Pack Workflow Analysis
+
+* This ticket proposes additive, backward-compatible enhancements to oraclepack and the Stage 1 generator prompts so runs are reproducible, CI-friendly, and produce machine-readable artifacts suitable for automation.
+
+    Oracle Pack Workflow Analysis
+
+Background / Context:
+
+* Workflow context:
+
+  * Stage 1: Codex skill or Gemini CLI slash command generates a single Markdown oracle question pack under `docs/*oracle-pack*.md`, following a strict oraclepack schema and containing exactly 20 `oracle ...` commands.
+
+        Oracle Pack Workflow Analysis
+
+  * Stage 2: oraclepack (Go wrapper around `@steipete/oracle`) executes the 20 commands and writes per-question outputs (via `--write-output`).
+
+        Oracle Pack Workflow Analysis
+
+  * Stage 3 is currently missing: outputs are not automatically turned into actionable implementation work.
+
+        Oracle Pack Workflow Analysis
+
+* Non-negotiable constraints:
+
+  * No schema-breaking changes to the oraclepack Markdown pack schema without a backward-compatible migration path and validator-safe proof.
+
+  * Automation must be deterministic and reproducible (no interactive steps in the critical path).
+
+  * Stage 1 output must remain a single-pack deliverable that oraclepack can validate/run (no extra blocks/headers; no schema drift).
+
+  * Prefer minimal file attachments per question; avoid broad globs unless unavoidable.
+
+  * Optimize for longer runtimes with minimal human interaction (batching, resume/retry, caching, stable outputs, CI-friendly).
+
+        Oracle Pack Workflow Analysis
 
 Current Behavior (Actual):
-- Steps 08–20 “are effectively placeholders/notes (echo guidance)” and “don’t dispatch Codex/Gemini or implement code unless the step body explicitly contains those commands.”
-- If `codex`/`gemini` are added and the binary is missing → step fails; if interactive → blocks.
+
+* Stage 1 (generation) failure modes / friction points:
+
+  * Packs can drift from the strict schema (extra fenced blocks, step-like headers, missing fields, wrong ordering, wrong count ≠ 20), causing ingestion/validation issues.
+
+        Oracle Pack Workflow Analysis
+
+  * Attachments may be bloated (broad globs, “just in case” files), increasing token cost and reducing signal-to-noise.
+
+        Oracle Pack Workflow Analysis
+
+  * ROI scoring can be inconsistent (unstable prioritization vs stated rationale).
+
+        Oracle Pack Workflow Analysis
+
+  * Coverage duplication across 20 questions (overlapping targets) wastes runs/budget.
+
+        Oracle Pack Workflow Analysis
+
+* Stage 2 (execution) failure modes / friction points:
+
+  * Resume/retry semantics are weak (reruns may re-execute completed steps; partial failures require manual selection).
+
+        Oracle Pack Workflow Analysis
+
+  * Output determinism gaps: inconsistent output paths/slugs/out\_dir naming undermine CI diffs and Stage 3 discovery.
+
+        Oracle Pack Workflow Analysis
+
+  * Concurrency/rate limiting is not first-class (provider throttling/timeouts lead to nondeterministic failures).
+
+        Oracle Pack Workflow Analysis
+
+* Cross-stage handoff issues:
+
+  * Missing traceability between pack ↔ outputs (no explicit manifest tying outputs to pack hash, git SHA, tool versions, provider/model settings).
+
+        Oracle Pack Workflow Analysis
+
+  * Stage 2 may be bypassed (pack executed “by hand”), losing wrapper state/report and consistent run directory.
+
+        Oracle Pack Workflow Analysis
 
 Expected Behavior:
-- Running the updated steps produces the specified `.oraclepack/ticketify/*` artifacts and enables a headless “select → implement → verify → draft PR” workflow driven by the earlier-generated ticketify outputs.
+
+* Stage 1 packs are always validator-safe and deterministic (single pack, exactly 20 oracle invocations, no schema drift).
+
+    Oracle Pack Workflow Analysis
+
+* Stage 2 produces stable, discoverable, machine-readable run artifacts that bind pack ↔ outputs and enable idempotent resume/rerun.
+
+    Oracle Pack Workflow Analysis
+
+* Stage 3 (“Actionizer”) exists and deterministically converts the 20 outputs into actionable engineering work artifacts (backlog + change plan + optional issue export), without duplicating work on reruns.
+
+    Oracle Pack Workflow Analysis
+
+* CI can run validate → run → actionize non-interactively with structured outputs and policy-driven exit codes.
+
+    Oracle Pack Workflow Analysis
+
+Requirements:
+
+* Validation / linting (additive, backward-compatible):
+
+  * Add `oraclepack validate --strict --json` that reports counts (steps=20, bash\_blocks=1, oracle\_invocations=20), ordering checks (ROI desc; ties effort asc), and required fields presence.
+
+        Oracle Pack Workflow Analysis
+
+* Deterministic run directory + manifest:
+
+  * On `run`, create `.oraclepack/runs/<pack_id>/` and emit `run.json` + `steps.json`.
+
+        Oracle Pack Workflow Analysis
+
+  * `pack_id = YYYY-MM-DD__<gitshort>__<packhash8>`.
+
+        Oracle Pack Workflow Analysis
+
+  * `run.json` must include: `pack_path`, `pack_hash`, `git_sha`, `oraclepack_version`, `oracle_version`, `created_at`.
+
+        Oracle Pack Workflow Analysis
+
+  * `steps.json` must include: `step_id` (01..20), `reference`, `category`, `roi`, `command_hash`, `output_path`, `output_hash`, `status` (pending|ok|failed|skipped).
+
+        Oracle Pack Workflow Analysis
+
+* Resume/rerun semantics:
+
+  * Make resume default: if `run.json` exists, skip steps whose output exists and matches recorded hash.
+
+  * Support explicit overrides: `--rerun all|failed|01,03,07`.
+
+        Oracle Pack Workflow Analysis
+
+* Concurrency and rate limiting:
+
+  * Add global `--max-parallel N` and optionally per-provider caps via config.
+
+  * Implement exponential backoff + jitter on transient errors (e.g., 429/503) with a retry budget.
+
+        Oracle Pack Workflow Analysis
+
+* Deterministic caching (optional initially):
+
+  * Implement caching keyed by `sha256(prompt + attached_file_hashes + oracle_flags + model)`, stored under `.oraclepack/cache/<invocation_key>.md`; rerun reuses cached outputs when key matches.
+
+        Oracle Pack Workflow Analysis
+
+* Stage 3 (“Actionizer”) design and artifacts:
+
+  * Implement `oraclepack actionize --run-dir .oraclepack/runs/<pack_id>`.
+
+  * Inputs: `run.json` + 20 outputs under `.oraclepack/runs/<pack_id>/outputs/`.
+
+        Oracle Pack Workflow Analysis
+
+  * Deterministic processing: normalize outputs → dedupe → categorize via fixed taxonomy → generate action tasks, including blocked/conflict handling.
+
+        Oracle Pack Workflow Analysis
+
+  * Outputs under `.oraclepack/runs/<pack_id>/actionizer/`:
+
+    * `normalized.jsonl`, `backlog.md`, `change-plan.md`
+
+    * Optional: `github-issues.json`, `taskmaster.json`.
+
+            Oracle Pack Workflow Analysis
+
+  * Idempotency: stable IDs derived from `pack_hash` (e.g., `OP3-<packhash8>-<issue_index>-<task_index>`), stable paths, byte-identical regeneration when inputs unchanged.
+
+        Oracle Pack Workflow Analysis
+
+* Stage 1 prompt/skill improvements (without breaking schema):
+
+  * Embed structured mini-metadata inside each `-p` prompt text (not new pack headers), e.g., `QuestionId`, `Category`, `Reference`, `ExpectedArtifacts`.
+
+        Oracle Pack Workflow Analysis
+
+  * Enforce deterministic attachment minimization heuristics (reference file + 0–2 neighbors; avoid broad globs unless evidence demands).
+
+        Oracle Pack Workflow Analysis
+
+  * Standardize generator prompt across Codex skills and Gemini CLI commands using a single canonical prompt file in repo.
+
+        Oracle Pack Workflow Analysis
+
+* CI-native mode:
+
+  * Provide `oraclepack run --ci --non-interactive --json-log` and `oraclepack actionize --ci`.
+
+  * CI policy can fail build if validation fails, completion rate below threshold, or action yield below threshold (threshold values: Not provided).
+
+        Oracle Pack Workflow Analysis
+
+* Security/safety:
+
+  * Path safety: prevent `--write-output` from escaping run dir (reject `..` traversal).
+
+        Oracle Pack Workflow Analysis
+
+Out of Scope:
+
+* Breaking changes to the existing oraclepack Markdown pack schema (unless a backward-compatible migration path and validator-safe proof are provided).
+
+    Oracle Pack Workflow Analysis
 
 Reproduction Steps:
-- Not provided.
 
-Requirements / Constraints:
-- Must write the artifacts to the paths specified in the step examples (e.g., `.oraclepack/ticketify/next.json`, `codex-implement.md`, `codex-verify.md`, `gemini-review.json`, `PR.md`).
-- Must tolerate missing `codex`/`gemini` binaries via skip behavior (per the example snippets).
+1. Generate a pack via Stage 1 and save to `docs/oracle-pack-YYYY-MM-DD.md`.
+
+    Oracle Pack Workflow Analysis
+
+2. Run `oraclepack validate docs/oracle-pack-YYYY-MM-DD.md` and observe schema drift / strictness gaps (exact current validator behavior: Unknown).
+
+    Oracle Pack Workflow Analysis
+
+3. Execute the pack, interrupt mid-run, rerun, and observe whether completed steps are skipped (current behavior: weak/unclear).
+
+    Oracle Pack Workflow Analysis
+
+4. Compare two runs on the same commit and observe output path/slug stability and traceability artifacts (manifest missing today).
+
+    Oracle Pack Workflow Analysis
+
+Environment:
+
+* Tooling:
+
+  * oraclepack (Go wrapper around `@steipete/oracle`).
+
+        Oracle Pack Workflow Analysis
+
+  * Stage 1 generators: Codex skills or Gemini CLI slash commands.
+
+        Oracle Pack Workflow Analysis
+
+* Repository/OS/versions: Unknown (git SHA, oraclepack version, oracle version, provider/model settings not provided in the conversation; also identified as missing traceability today).
+
+    Oracle Pack Workflow Analysis
 
 Evidence:
-- “Best insertion points are the placeholder steps… (09–13 and 16).”
-- Step outputs in examples:
-  - “Wrote .oraclepack/ticketify/next.json”
-  - “Wrote .oraclepack/ticketify/codex-implement.md”
-  - “Wrote .oraclepack/ticketify/codex-verify.md”
-  - “Wrote .oraclepack/ticketify/gemini-review.json”
-  - “Wrote .oraclepack/ticketify/PR.md”
-- “If the CLI is interactive → it will block waiting for input.”
+
+* Proposed stable artifact layout and handoff contract:
+
+    Oracle Pack Workflow Analysis
+
+  * `docs/oracle-pack-YYYY-MM-DD.md`
+
+  * `.oraclepack/runs/<pack_id>/run.json`
+
+  * `.oraclepack/runs/<pack_id>/steps.json`
+
+  * `.oraclepack/runs/<pack_id>/outputs/01-<slug>.md … 20-<slug>.md`
+
+  * `.oraclepack/runs/<pack_id>/actionizer/{normalized.jsonl, backlog.md, change-plan.md}`
+
+* Proposed commands (some flag names explicitly “proposed where not already present”):
+
+    Oracle Pack Workflow Analysis
+
+  * `oraclepack validate --strict docs/oracle-pack-YYYY-MM-DD.md --json > .oraclepack/validate.json`
+
+  * `oraclepack run docs/oracle-pack-YYYY-MM-DD.md --max-parallel 4 --resume --ci`
+
+  * `oraclepack actionize --run-dir .oraclepack/runs/<pack_id> --ci`
+
+* Example Stage 3 output record shape (JSONL line):
+
+    Oracle Pack Workflow Analysis
+
+Decisions / Agreements:
+
+* Do not break the oraclepack Markdown pack schema; any change must be backward-compatible with a validator-safe proof.
+
+    Oracle Pack Workflow Analysis
+
+* Stage 3 (“Actionizer”) is required and should be implemented as a first-class oraclepack subcommand (`actionize`) producing deterministic artifacts with idempotent reruns.
+
+    Oracle Pack Workflow Analysis
+
+* Traceability and determinism should be achieved via additive sidecar files (e.g., `run.json`, `steps.json`) rather than pack schema changes.
+
+    Oracle Pack Workflow Analysis
 
 Open Items / Unknowns:
-- Whether Step 11 should use Codex execution, Gemini review, or both by default is not provided.
-- Whether Steps 12–13 should be modified (they are within the suggested 09–13 range but specifics are not included in the provided snippets).
+
+* Current oraclepack CLI surface area:
+
+  * Whether `validate --strict`, `--json`, `run --ci`, `--resume`, `--json-log`, and `actionize` exist today vs need implementation (conversation notes some flags are “proposed”).
+
+        Oracle Pack Workflow Analysis
+
+* Current on-disk state/report formats and locations (“state lives today (intended): oraclepack state/report + per-step outputs”; exact paths not provided).
+
+    Oracle Pack Workflow Analysis
+
+* Threshold definitions for CI policy (“completion rate < threshold”, “action yield < threshold”): Not provided.
+
+    Oracle Pack Workflow Analysis
+
+* Exact strict pack schema invariants enforced today (beyond “strict output contract” and “exactly 20” requirement): Not provided in this conversation (referenced as external inputs).
+
+    Oracle Pack Workflow Analysis
 
 Risks / Dependencies:
-- Depends on T2 if these steps must participate in oraclepack’s overrides/validation system (otherwise, they run as direct shell commands).
-- Risk: tool interactivity can block runs if headless/non-interactive flags are not sufficient (noted in the ticket content).
+
+* Risk: filesystem layout changes may affect existing users; mitigation is additive behavior that preserves current out\_dir behavior.
+
+    Oracle Pack Workflow Analysis
+
+* Risk: caching correctness depends on hashing all attached file contents; incomplete hashing risks “cache poisoning.”
+
+    Oracle Pack Workflow Analysis
+
+* Risk: provider throttling/timeouts require robust transient-error classification for backoff/retry behavior.
+
+    Oracle Pack Workflow Analysis
+
+* Dependency: Stage 3 quality depends on stable, parseable structure in per-question outputs; mitigated by deterministic normalization heuristics and improved Stage 1 prompt shaping.
 
 Acceptance Criteria:
-- After running Step 09, `.oraclepack/ticketify/next.json` exists.
-- After running Step 10 (with Step 09 completed), `.oraclepack/ticketify/codex-implement.md` exists.
-- After running Step 11, at least one of:
-  - `.oraclepack/ticketify/codex-verify.md` or `.oraclepack/ticketify/gemini-review.json`
-  exists (as configured by the updated pack).
-- After running Step 16, `.oraclepack/ticketify/PR.md` exists.
+
+* Validation:
+
+  * `oraclepack validate --strict --json` deterministically reports schema invariants (20 steps, 20 oracle invocations, schema drift detection) and can gate CI.
+
+        Oracle Pack Workflow Analysis
+
+* Run determinism and traceability:
+
+  * Running a pack produces `.oraclepack/runs/<pack_id>/{run.json,steps.json,outputs/}` with stable `pack_id` and stable output naming.
+
+  * `run.json` includes required metadata fields; `steps.json` includes required per-step fields and statuses.
+
+        Oracle Pack Workflow Analysis
+
+* Resume/rerun:
+
+  * Interrupting a run mid-way and rerunning resumes without re-executing completed steps (validated via output hashes and statuses).
+
+  * `--rerun failed|all|<step list>` behaves as specified.
+
+        Oracle Pack Workflow Analysis
+
+* Concurrency/rate limiting:
+
+  * `--max-parallel N` bounds concurrency; transient failures (e.g., throttling/timeouts) are retried with backoff within a retry budget and recorded in step status.
+
+        Oracle Pack Workflow Analysis
+
+* Caching (if implemented):
+
 [TRUNCATED]
+```
+
+.tickets/other/Oraclepack Prompt Generator.md
+```
+* Title: Create oraclepack-style prompt/skill generator for tickets and .tickets
+* Summary:
+
+  * Need a reusable prompt (and/or “skill” template) that can generate an oraclepack-style prompt/skill specifically for “tickets” and/or “.tickets”.
+  * Must support the existing placeholder-driven wrapper pattern (e.g., `{user-idea}`, `{project-in-question}`, `{PAIN-POINT}`, `{REFERENCE-FILE}`, `{CAPABILITY}`, `{TARGET-AGENT}`, `{OPTIMIZE-PROMPT}`), including optional fields and “infer from context” behavior as described.
+  * Also need guidance on what to change in the current skill and what other viable integration options exist (within the constraints already used in prior work).
+* Source:
+
+  * Link/ID: Not provided
+  * Original ticket excerpt: “prompt that can create an oraclepack prompt/skill but for our tickets and/or .tickets”
+* Global Constraints:
+
+  * Optional inputs may be omitted; proceed by inferring from context or requesting missing info within the generated prompt template (“Not always provided…”).
+  * “Pain point” is optional; proceed without it if absent.
+  * `{REFERENCE-FILE}` may be provided as additional constraints/spec content.
+* Global Environment:
+
+  * Unknown
+* Global Evidence:
+
+  * Existing wrapper pattern + MCP prompt/tool/resource publication precedent captured in: `/mnt/data/MCP server implementation.md`
+
+Split Plan:
+
+* Coverage Map:
+
+  * Original item: “We need a prompt that can create an oraclepack prompt/skill but for our tickets and/or .tickets.”
+
+    * Assigned Ticket ID: T2
+  * Original item: “What could we do to our current skill…”
+
+    * Assigned Ticket ID: T3
+  * Original item: “…and/or what else are our options for this request?”
+
+    * Assigned Ticket ID: T4
+  * Original item: Wrapper placeholders + optionality rules (“Not always provided…”, “Our pain point…”, `{REFERENCE-FILE}`, `{TARGET-AGENT}`, `{CAPABILITY}`, `{OPTIMIZE-PROMPT}`)
+
+    * Assigned Ticket ID: T1
+  * Original item: “optimized prompt that will get the {TARGET-AGENT} to find us a solution for adding capabilities…”
+
+    * Assigned Ticket ID: T2
+* Dependencies:
+
+  * T2 depends on T1 because the prompt/skill generator must align to the placeholder schema + optionality rules.
+  * T3 depends on T2 because “current skill” changes should incorporate the finalized ticket prompt/skill template.
+  * T5 depends on T2 and T3 because examples/validation need the final template and integration approach.
+
+````ticket T1
+T1 Title: Define ticket/.tickets prompt input schema and placeholder mapping
+Type: docs
+Target Area: Ticket input model (tickets and/or .tickets) + wrapper placeholders
+Summary:
+  - Define the canonical set of inputs and placeholders required to generate an oraclepack-style ticket prompt/skill.
+  - Preserve the existing wrapper’s rules around optional inputs and context inference.
+  - Provide a clear mapping between “tickets/.tickets” fields (if any) and wrapper placeholders without inventing unspecified fields.
+In Scope:
+  - Enumerate required vs optional placeholders: {user-idea}, {project-in-question}, {ADDITIONAL-INFORMATION}, {PAIN-POINT}, {REFERENCE-FILE}, {CAPABILITY}, {TARGET-AGENT}, {OPTIMIZE-PROMPT}.
+  - Document handling rules explicitly stated: optional fields, “infer from context”, and behavior when pain point is absent.
+  - Clarify what “tickets” vs “.tickets” means in this system using “Unknown/Not provided” where details are missing.
+Out of Scope:
+  - Defining new ticket fields beyond what is provided.
+  - Implementing tooling or code changes (covered elsewhere).
+Current Behavior (Actual):
+  - Placeholder set and optionality rules exist in the wrapper pattern, but ticket/.tickets-specific mapping is not defined.
+Expected Behavior:
+  - A documented, stable mapping that the ticket prompt/skill generator can follow.
+Reproduction Steps:
+  - Not provided
+Requirements / Constraints:
+  - Do not add new placeholders or required fields beyond what is already used in the wrapper.
+  - Preserve optionality rules: proceed safely when PAIN-POINT or additional info is absent.
+Evidence:
+  - Reference wrapper placeholders and prompt-engineer wrapper structure as precedent. (/mnt/data/MCP server implementation.md) :contentReference[oaicite:1]{index=1}
+Open Items / Unknowns:
+  - Exact structure/format of “tickets” and “.tickets” (not provided).
+  - Whether “.tickets” is a file extension, folder convention, or schema name (not provided).
+Risks / Dependencies:
+  - Risk of mismatch between ticket data shape and placeholder mapping if .tickets format is not standardized.
+Acceptance Criteria:
+  - A single written spec exists that lists:
+    - All placeholders and which are optional.
+    - Rules for missing fields (“infer from context” as described).
+    - How ticket/.tickets inputs populate placeholders (or explicitly “Unknown” where not provided).
+Priority & Severity (if inferable from input text):
+  - Priority: Not provided
+  - Severity: Not provided
+Source:
+  - “Not always provided, inference from context…”
+  - “Our pain point: {PAIN-POINT} … if not just continue…”
+  - “```md {REFERENCE-FILE}.md”
+````
+
+```ticket T2
+T2 Title: Author oraclepack-style prompt/skill template for ticket and .tickets generation
+Type: enhancement
+Target Area: Prompt/skill template content (oraclepack-style) for tickets/.tickets
+Summary:
+  - Create the actual prompt/skill template that produces an oraclepack-style prompt/skill when given a ticket or .tickets input.
+  - The template must use the existing wrapper structure and placeholders, and must instruct the TARGET-AGENT to generate the desired capability for the project/tool in question.
+  - Ensure the template explicitly supports optional inputs and reference-file injection as described.
+In Scope:
+  - Produce the “ticket prompt-engineer wrapper” template that mirrors the existing wrapper pattern but targets tickets/.tickets.
+  - Include all placeholders: {user-idea}, {project-in-question}, {ADDITIONAL-INFORMATION}, {PAIN-POINT}, {REFERENCE-FILE}, {CAPABILITY}, {TARGET-AGENT}, {OPTIMIZE-PROMPT}.
+  - Ensure the prompt text includes the “optimized prompt that will get the {TARGET-AGENT}…” requirement, scoped to tickets/.tickets.
+Out of Scope:
+  - Any new MCP server requirements, tools, or resource URI schemes not explicitly requested for tickets/.tickets.
+Current Behavior (Actual):
+  - There is no ticket/.tickets-specific oraclepack-style prompt/skill generator template.
+Expected Behavior:
+  - A single reusable prompt/skill template exists that can be filled with placeholders to drive a TARGET-AGENT to create ticket/.tickets capabilities.
+Reproduction Steps:
+  - Not provided
+Requirements / Constraints:
+  - Must follow the wrapper’s optionality rules and placeholder usage.
+  - Must treat {REFERENCE-FILE} content as “additional constraints/spec” when present.
+Evidence:
+  - Wrapper structure and placeholder set captured in existing reference prompt material. :contentReference[oaicite:2]{index=2}
+Open Items / Unknowns:
+  - Where this template will live (file path/naming) in the current repo/tooling (not provided).
+Risks / Dependencies:
+  - Depends on T1 for a stable placeholder-to-ticket mapping.
+Acceptance Criteria:
+  - Template includes:
+    - All stated placeholders.
+    - Explicit instruction to proceed when optional fields are missing.
+    - A clearly stated “question to the prompt-engineer: {OPTIMIZE-PROMPT}” section.
+  - Template is copy/paste ready and self-contained.
+Priority & Severity (if inferable from input text):
+  - Priority: Not provided
+  - Severity: Not provided
+Source:
+  - “create an oraclepack prompt/skill but for our tickets and/or .tickets”
+  - “optimized prompt that will get the {TARGET-AGENT}… giving it {CAPABILITY}”
+  - “Our question to the prompt-engineer: {OPTIMIZE-PROMPT}”
+```
+
+```ticket T3
+T3 Title: Update current skill to support ticket/.tickets prompt-skill generation
+Type: enhancement
+Target Area: Existing “current skill” (location/name not provided)
+Summary:
+  - Identify changes required to the existing skill so it can generate or host the new tickets/.tickets oraclepack-style prompt/skill template.
+  - Ensure the current skill can accept the ticket/.tickets inputs and populate the standardized placeholders.
+  - Preserve existing behavior for non-ticket use cases (if any), since only ticket support is being added.
+In Scope:
+  - Incorporate the finalized template from T2 into the current skill workflow.
+  - Add/adjust input handling so the current skill can be driven by “tickets and/or .tickets” as the source material.
+  - Ensure optional inputs (pain point, additional information, reference file) remain optional in the workflow.
+Out of Scope:
+  - Designing a brand-new system if the current skill can be extended (unless extension is impossible; not provided).
+Current Behavior (Actual):
+  - Current skill does not explicitly support generating oraclepack-style prompts/skills for tickets/.tickets (per request).
+Expected Behavior:
+  - Current skill can produce the tickets/.tickets oraclepack-style prompt/skill using the same wrapper placeholder mechanism.
+Reproduction Steps:
+  - Not provided
+Requirements / Constraints:
+  - Do not remove or break existing skill behavior (implied by “current skill” extension request).
+Evidence:
+  - “What could we do to our current skill…”
+Open Items / Unknowns:
+  - Current skill name, file path, and execution context (not provided).
+  - How tickets/.tickets are currently stored or passed into the system (not provided).
+Risks / Dependencies:
+  - Depends on T2 for the template content.
+Acceptance Criteria:
+  - Current skill supports a ticket/.tickets-driven flow that results in the T2 template with placeholders populated (or explicitly left blank when optional).
+  - No regression to existing skill behaviors (validation method not provided; document what was exercised).
+Priority & Severity (if inferable from input text):
+  - Priority: Not provided
+  - Severity: Not provided
+Source:
+  - “What could we do to our current skill…”
+  - “prompt… for our tickets and/or .tickets”
+```
+
+```ticket T4
+T4 Title: Document integration options for delivering the tickets/.tickets prompt-skill capability
+Type: docs
+Target Area: Delivery/integration approach (within existing patterns)
+Summary:
+  - Provide a concise options write-up for how to deliver and reuse the tickets/.tickets prompt/skill generator, aligned to the existing approach patterns already in use.
+  - Focus on the two explicitly requested dimensions: changes to the current skill and “other options” for fulfilling the request.
+  - Avoid committing to new systems; frame as documented options with constraints and unknowns.
+In Scope:
+  - Option 1: Extend current skill to include tickets/.tickets support (ties to T3).
+  - Option 2: Provide a standalone tickets/.tickets prompt/skill template artifact that can be consumed independently (ties to T2).
+  - List constraints/unknowns impacting option choice (e.g., unknown .tickets format, unknown current-skill location).
+Out of Scope:
+  - Implementing the chosen option (handled by T3 and/or T2).
+Current Behavior (Actual):
+  - No documented approach exists for how tickets/.tickets prompt/skill generation should be delivered.
+Expected Behavior:
+  - A short decision-ready document exists describing the options and what each requires, without adding new requirements.
+Reproduction Steps:
+  - Not provided
+Requirements / Constraints:
+  - Options must stay within what’s already requested (modify current skill and/or alternative ways to package the prompt/skill).
+Evidence:
+  - “what else are our options for this request?”
+Open Items / Unknowns:
+  - Whether the user prefers a single consolidated skill vs multiple dedicated skills (not provided).
+Risks / Dependencies:
+  - Depends on T1/T2 clarity to accurately describe what each option would deliver.
+Acceptance Criteria:
+  - Document lists at least:
+    - “Modify current skill” option (summary, prerequisites, impact).
+    - “Standalone template” option (summary, prerequisites, impact).
+    - Explicit unknowns that block a final choice.
+Priority & Severity (if inferable from input text):
+  - Priority: Not provided
+  - Severity: Not provided
+Source:
+  - “What could we do to our current skill…”
+  - “…what else are our options for this request?”
+```
+
+````ticket T5
+T5 Title: Add examples and validation checks for ticket/.tickets prompt-skill generation
+Type: tests
+Target Area: Examples + validation of generated prompt/skill output
+Summary:
+  - Provide concrete example inputs (ticket and/or .tickets) and the expected generated prompt/skill output shape for validation.
+  - Ensure examples exercise optional fields (missing PAIN-POINT, missing ADDITIONAL-INFORMATION, with/without REFERENCE-FILE).
+[TRUNCATED]
+```
+
+.tickets/other/Oraclepack Workflow Enhancement.md
+```
+Title:
+
+* Stabilize oraclepack “oracle-pack” pipeline and add profile-based context + Stage-3 synthesis for actionable follow-through
+
+Summary:
+
+* The current two-step workflow generates an `oracle-pack` Markdown file (20 `oracle` calls) via Codex skills/Gemini CLI commands, then runs it through the `oraclepack` Go wrapper to produce outputs and state/report artifacts.
+
+    Workflow Optimization for Oracl…
+
+    Workflow Optimization for Oracl…
+
+* A key failure mode is schema/format drift in the pack file (human-doc + machine-ingest combined), which can break ingestion; an example drift is step headers using an em dash (`# 01 — ROI=…`) while the documented contract expects `# NN)`.
+
+    Workflow Optimization for Oracl…
+
+* Requested outcome: improve workflow continuity, enable richer context injection without breaking the strict pack contract, and add an automatic next stage that turns the “final twenty questions/answers” into actionable implementation steps with minimal human interaction.
+
+    Workflow Optimization for Oracl…
+
+    Workflow Optimization for Oracl…
+
+Background / Context:
+
+* Workflow stages:
+
+  * Stage 1: LLM authoring creates `docs/oracle-pack-YYYY-MM-DD.md` containing 20 `oracle` commands (with ROI metadata and per-step output paths).
+
+        Workflow Optimization for Oracl…
+
+  * Stage 2: `oraclepack` executes the pack to produce 20 outputs under `oracle-out/...` plus state/report JSON artifacts.
+
+        Workflow Optimization for Oracl…
+
+* `oraclepack` is a wrapper around `oracle` intended for batched/bulk requests.
+
+    Workflow Optimization for Oracl…
+
+* Core concern: “disconnection” after the 20-question output; desire to chain into a useful, actionable implementation stage.
+
+    Workflow Optimization for Oracl…
+
+    Workflow Optimization for Oracl…
+
+Current Behavior (Actual):
+
+* Pack file acts as both:
+
+  * Human documentation, and
+
+  * A strict machine-ingest contract, making formatting drift a pipeline-breaking event.
+
+        Workflow Optimization for Oracl…
+
+* Documented/expected step-header schema (`# NN)`) can drift to alternative formats (example: `# 01 — ROI=…`), risking parse/validation failures.
+
+    Workflow Optimization for Oracl…
+
+* High-risk edits include adding additional code fences (especially additional bash fences) or introducing lines that accidentally match the step-header pattern.
+
+    Workflow Optimization for Oracl…
+
+Expected Behavior:
+
+* Packs remain schema-stable and reliably parse/validate/run across providers (Codex skills, Gemini CLI commands).
+
+    Workflow Optimization for Oracl…
+
+* Richer “skill context” can be injected without changing the pack’s ingest shape (no added code fences / no header drift).
+
+    Workflow Optimization for Oracl…
+
+* After Stage 2 produces 20 outputs + report JSON, a subsequent stage can automatically convert results into actionable implementation steps.
+
+    Workflow Optimization for Oracl…
+
+Requirements:
+
+* Preserve the non-negotiable pack contract:
+
+  * Pack is Markdown containing exactly one `bash` code block; the first bash block is executed.
+
+        Workflow Optimization for Oracl…
+
+  * Steps are identified via header pattern `# NN)` with sequential numbering starting at `01`.
+
+        Workflow Optimization for Oracl…
+
+  * Prelude content before the first step header executes once.
+
+        Workflow Optimization for Oracl…
+
+* Standardize Stage-1 generation to the strict header form `# NN)` (avoid em dash variants).
+
+    Workflow Optimization for Oracl…
+
+* Add a hard gate between Stage 1 and Stage 2:
+
+  * Make `oraclepack validate` mandatory before `oraclepack run` (prevent schema drift reaching execution).
+
+        Workflow Optimization for Oracl…
+
+* Provide schema-safe extensibility for context injection:
+
+  * Allow context to be injected via `oracle -p` prompt text and/or `oracle -f` file/directory attachments (preferred for larger context).
+
+        Workflow Optimization for Oracl…
+
+  * Use prelude variables and templating only if it does not interfere with header parsing.
+
+        Workflow Optimization for Oracl…
+
+  * Avoid adding extra code fences or lines resembling step headers.
+
+        Workflow Optimization for Oracl…
+
+* Implement “Context Profiles” as file-backed bundles:
+
+  * Add `skills/oracle-pack/references/profiles/<name>.md` and inject via `oracle -f "$profile_file"` plus a short prompt preamble (“Follow the attached profile standards”).
+
+  * Add an optional `profile` input to the Stage-1 skill/command, with backwards-compatible behavior when absent.
+
+        Workflow Optimization for Oracl…
+
+* Add a first-class Stage 3 synthesis step:
+
+  * Provide a command shape such as `oraclepack synthesize --in oracle-out --report pack.report.json --out docs/implementation-pack-YYYY-MM-DD.md` that reads the 20 outputs, extracts proposed changes/file targets/tests, and emits a new validated pack for implementation.
+
+        Workflow Optimization for Oracl…
+
+  * Support minimal-interaction execution for Stage 3 (e.g., headless usage via Codex/Gemini CLI).
+
+        Workflow Optimization for Oracl…
+
+Out of Scope:
+
+* Not provided.
+
+Reproduction Steps:
+
+* Not provided.
+
+Environment:
+
+* `oraclepack` Go program wrapping `oracle` CLI.
+
+* Stage-1 generation tools mentioned: Codex skills, Gemini CLI commands.
+
+    Workflow Optimization for Oracl…
+
+* OS/CI details: Unknown.
+
+Evidence:
+
+* Attachment: “Workflow Optimization for Oraclepack.md”.
+
+    Workflow Optimization for Oracl…
+
+    Workflow Optimization for Oracl…
+
+* Example schema drift called out: step headers using `# 01 — ROI=…` vs documented `# NN)`.
+
+    Workflow Optimization for Oracl…
+
+* Proposed validation/run sequence:
+
+  * `oraclepack validate docs/oracle-pack-YYYY-MM-DD.md`
+
+  * `oraclepack list docs/oracle-pack-YYYY-MM-DD.md`
+
+  * `oraclepack run docs/oracle-pack-YYYY-MM-DD.md --no-tui --run-all --stop-on-fail=true --out-dir oracle-out`
+
+        Workflow Optimization for Oracl…
+
+Decisions / Agreements:
+
+* Treat the pack as a stable intermediate representation (IR) and keep context flowing only through `-p` and `-f` to avoid breaking the ingest contract.
+
+* Prefer “Context Profiles” as a file-backed mechanism located under `skills/oracle-pack/references/profiles/`.
+
+* Add a validation gate (`validate` before `run`) to reduce pipeline breakage from formatting drift.
+
+    Workflow Optimization for Oracl…
+
+Open Items / Unknowns:
+
+* Exact current parser/validator behavior regarding em dash header variants (whether it currently accepts them) is not provided; only that it is avoidable schema drift.
+
+    Workflow Optimization for Oracl…
+
+* Exact filenames/paths for current `SKILL.md` and template files in the repo are referenced conceptually but not provided in full.
+
+    Workflow Optimization for Oracl…
+
+* Whether `oraclepack synthesize` already exists or is a new feature request is not provided; it is described as a proposed product shape.
+
+    Workflow Optimization for Oracl…
+
+Risks / Dependencies:
+
+* Dependency on `oracle` CLI flags and behavior (`-p/--prompt`, `-f/--file`, `--write-output`, `--files-report`, `--dry-run`).
+
+    Workflow Optimization for Oracl…
+
+* Risk of pack invalidation from added code fences, additional bash blocks, or accidental header-like lines.
+
+    Workflow Optimization for Oracl…
+
+* Cross-provider consistency risk (Codex skills vs Gemini CLI commands) unless Stage 1 is standardized around a shared template/profile mechanism.
+
+    Workflow Optimization for Oracl…
+
+Acceptance Criteria:
+
+* Pack schema stability
+
+  * Packs validate when they contain exactly one bash block and step headers are strictly `# NN)` starting at `01`.
+
+  * Stage-1 generation output uses `# NN)` (no em dash variant) across providers.
+
+        Workflow Optimization for Oracl…
+
+* Validation gate
+
+  * Workflow includes a required `oraclepack validate` pass before any `oraclepack run`.
+
+        Workflow Optimization for Oracl…
+
+* Context Profiles
+
+  * A `profile` selection results in `oracle -f "$profile_file"` being attached per step without adding new code fences or breaking parsing.
+
+        Workflow Optimization for Oracl…
+
+  * Absence of `profile` preserves current behavior (backwards compatible).
+
+        Workflow Optimization for Oracl…
+
+* Stage 3 synthesis
+
+  * A synthesis step can consume `oracle-out` outputs + report JSON and emit a follow-on implementation pack intended to be validated and run.
+
+        Workflow Optimization for Oracl…
+
+Priority & Severity (if inferable from text):
+
+* Not provided.
+
+Labels (optional):
+
+* enhancement
+
+* workflow
+
+* cli
+
+* parsing
+
+* validation
+
+* context-bundles
+
+* automation
+
+---
+```
+
+.tickets/other/Verbose Payload Rendering TUI.md
+```
+Title:
+
+* Add verbose payload rendering in TUI to display full prepared scripts/flags for oraclepack runs
+
+Summary:
+
+* The TUI should support a verbose mode that prints the full “prepared payload” being executed for oraclepack runs, including effective flags (post overrides and `--chatgpt-url` injection) and the entire script passed to execution.
+
+    Verbose TUI Payload Rendering
+
+* This is needed to verify exactly what payloads are being sent/executed during oraclepack runs and to support tests that confirm the rendered payload contents.
+
+    Verbose TUI Payload Rendering
+
+Background / Context:
+
+* Proposed approach: add a reusable “prepared payload” layer to `internal/exec.Runner` (prepare prelude/step scripts after overrides + flag injection + sanitization), then have the TUI emit these prepared payload blocks to its log viewport immediately before execution.
+
+    Verbose TUI Payload Rendering
+
+* Files implicated by the proposal include `internal/exec/runner.go`, `internal/tui/tui.go`, `internal/cli/run.go`, plus new helpers/tests under `internal/tui/` and `internal/exec/`.
+
+    Verbose TUI Payload Rendering
+
+Current Behavior (Actual):
+
+* The TUI does not provide a verbose rendering that shows the full prepared payload (full script + effective flags + extracted `oracle …` invocations) being executed for oraclepack runs.
+
+    Verbose TUI Payload Rendering
+
+Expected Behavior:
+
+* When verbose payload logging is enabled, the TUI log viewport prints a payload block before each step runs that includes: effective oracle flags, extracted oracle invocations (full lines), and the full prepared script that will be executed.
+
+    Verbose TUI Payload Rendering
+
+* Verbose payload logging can be enabled via CLI flag (e.g., `--verbose-payload` with `-v`) and toggled in the TUI via a keybinding (proposed: `p`).
+
+    Verbose TUI Payload Rendering
+
+Requirements:
+
+* Exec runner: expose “prepared payload” APIs:
+
+  * `PreparePreludePayload(p *pack.Prelude) PreparedPreludePayload`
+
+  * `PrepareStepPayload(s *pack.Step) PreparedStepPayload`
+
+  * `RunPreparedPrelude(...)` / `RunPreparedStep(...)` to execute the prepared scripts.
+
+        Verbose TUI Payload Rendering
+
+* Prepared payload structures must include:
+
+  * `Script` (sanitized, post injection),
+
+  * `EffectiveFlags` (for steps),
+
+  * `OracleInvocations` extracted from the prepared script,
+
+  * sanitizer `Warnings`.
+
+        Verbose TUI Payload Rendering
+
+* TUI formatting helper:
+
+  * Add `internal/tui/verbose_payload.go` to format payload blocks (header, effective flags, oracle invocations, then full script).
+
+        Verbose TUI Payload Rendering
+
+* TUI integration:
+
+  * Add a `verbosePayload bool` toggle to the TUI model.
+
+  * In the run flow, call `PrepareStepPayload` and, when enabled, push formatted payload lines into `logChan` before `RunPreparedStep`.
+
+  * Add keybinding `p` to toggle `verbosePayload`.
+
+        Verbose TUI Payload Rendering
+
+* CLI wiring:
+
+  * Add `--verbose-payload` / `-v` flag and pass it into `tui.NewModel(..., verbosePayload)`.
+
+        Verbose TUI Payload Rendering
+
+* Tests:
+
+  * New `internal/exec/runner_payload_test.go` verifying prepared payload includes effective flags and injected oracle command text.
+
+  * New `internal/tui/verbose_payload_test.go` verifying formatted lines include flags, invocation, and script content.
+
+  * Update existing TUI tests to include the new `NewModel` arg.
+
+        Verbose TUI Payload Rendering
+
+Out of Scope:
+
+* Not provided.
+
+Reproduction Steps:
+
+* Not provided.
+
+Environment:
+
+* Language/runtime: Go (per referenced `.go` files and packages).
+
+    Verbose TUI Payload Rendering
+
+* TUI framework: Bubble Tea (`tea.NewProgram(...)` referenced).
+
+    Verbose TUI Payload Rendering
+
+* OS / terminal / versions: Unknown.
+
+Evidence:
+
+* Proposed change list and implementation sketch in: /mnt/data/Verbose TUI Payload Rendering.md
+
+    Verbose TUI Payload Rendering
+
+* Proposed file tree changes:
+
+  * `internal/exec/runner.go` (modify)
+
+  * `internal/exec/runner_payload_test.go` (new)
+
+  * `internal/tui/verbose_payload.go` (new)
+
+  * `internal/tui/verbose_payload_test.go` (new)
+
+  * `internal/tui/tui.go` (modify)
+
+  * `internal/cli/run.go` (modify)
+
+  * Update TUI tests to pass new model arg.
+
+        Verbose TUI Payload Rendering
+
+Decisions / Agreements:
+
+* Adopt a “prepared payload” abstraction in `exec.Runner` to ensure the TUI logs exactly what will run after overrides, injection, and sanitization.
+
+    Verbose TUI Payload Rendering
+
+* Add both CLI flag control (`--verbose-payload` / `-v`) and an in-TUI toggle (proposed key: `p`).
+
+    Verbose TUI Payload Rendering
+
+Open Items / Unknowns:
+
+* Exact existing TUI run flow for prelude execution (whether/where prelude runs in TUI) is not provided; proposal notes “if you also execute a prelude… do the same.”
+
+    Verbose TUI Payload Rendering
+
+* Exact current `NewModel(...)` signature call sites and all affected tests/files beyond those listed are not fully enumerated (some are referenced as examples).
+
+    Verbose TUI Payload Rendering
+
+Risks / Dependencies:
+
+* Not provided.
+
+Acceptance Criteria:
+
+* Running the TUI with `--verbose-payload` causes each executed step to prepend a log block that includes:
+
+  * “payload (step <id>)” header,
+
+  * “effective oracle flags: …” line,
+
+  * extracted “oracle invocations:” section (or explicit none found),
+
+  * full “script:” content (not truncated),
+
+  * “end payload” footer.
+
+        Verbose TUI Payload Rendering
+
+* Toggling `p` in the TUI flips payload logging on/off for subsequent step executions.
+
+    Verbose TUI Payload Rendering
+
+* `Runner.PrepareStepPayload` produces:
+
+  * effective flags reflecting overrides and `--chatgpt-url`,
+
+  * a prepared script containing the injected oracle invocation with those flags.
+
+        Verbose TUI Payload Rendering
+
+* New tests (`runner_payload_test.go`, `verbose_payload_test.go`) pass, and existing TUI tests compile and pass after updating `NewModel` call signature.
+
+    Verbose TUI Payload Rendering
+
+Priority & Severity (if inferable from text):
+
+* Not provided.
+
+Labels (optional):
+
+* enhancement
+
+* tui
+
+* logging
+
+* exec-runner
+
+* cli
+
+* testing
+
+* go
+
+---
 ```
 
 .tickets/mcp/Expose Oraclepack as MCP.md
@@ -3465,58 +4848,6 @@ Type: enhancement
 Target Area: oraclepack_mcp_server/server.py (MCP tool registration + schemas + formatting)
 Summary:
 - Implement the MCP server surface that maps `oraclepack` CLI operations and Taskify helper functions into callable MCP tools.
-- Provide consistent response formatting (markdown/json) and ensure run tools respect execution gating.
-In Scope:
-- Tool schemas/inputs covering:
-  - `oraclepack_validate_pack`
-  - `oraclepack_list_steps`
-  - `oraclepack_run_pack` (gated)
-  - `oraclepack_read_file`
-  - `oraclepack_taskify_detect_stage2`
-  - `oraclepack_taskify_validate_stage2`
-  - `oraclepack_taskify_validate_action_pack`
-  - `oraclepack_taskify_artifacts_summary`
-  - `oraclepack_taskify_run_action_pack` (gated)
-- Response formatting:
-  - Support JSON and Markdown result formats (including stdout/stderr blocks and truncation notes).
-- CLI arg mapping for oraclepack operations (including references to flags like `--no-tui`, `--out-dir`, `--oracle-bin` as inputs or internal argv composition).
-- Ensure `ORACLEPACK_ENABLE_EXEC=1` gating is enforced for run tools.
-Out of Scope:
-- Implementing the underlying Stage-2 detection/validation logic (T4) and Stage-3 validation/summary logic (T7), except wiring them in.
-Current Behavior (Actual):
-- Not provided.
-Expected Behavior:
-- MCP clients can invoke oraclepack and taskify workflows end-to-end via tools and receive bounded, formatted results.
-Reproduction Steps:
-- Not provided.
-Requirements / Constraints:
-- Must expose the tool list as stated.
-- Run tools must be disabled by default unless enabled via env flag.
-Evidence:
-- Tool list and gating note. :contentReference[oaicite:42]{index=42}
-- Server schema snippets (e.g., ReadFileInput, Taskify*Input, timeout defaults). :contentReference[oaicite:43]{index=43}
-Open Items / Unknowns:
-- Exact argument surface for `oraclepack_validate_pack` / `oraclepack_list_steps` (flags and required params) is not fully specified in excerpts.
-Risks / Dependencies:
-- Depends on config/security/runner/taskify modules existing and being wired correctly.
-Acceptance Criteria:
-- [ ] All tools listed in the parent ticket are registered and callable.
-- [ ] `oraclepack_read_file` enforces allowed roots and max read bytes.
-- [ ] `oraclepack_run_pack` and `oraclepack_taskify_run_action_pack` refuse execution unless `ORACLEPACK_ENABLE_EXEC=1`.
-- [ ] Response formatter supports markdown and json outputs and includes truncation indicators.
-Priority & Severity (if inferable from input text):
-- Priority: Not provided
-- Severity: Not provided
-Source:
-- “Tools — oraclepack_validate_pack … oraclepack_taskify_run_action_pack (requires ORACLEPACK_ENABLE_EXEC=1)” :contentReference[oaicite:44]{index=44}
-- “Map … oraclepack CLI capabilities (validate/list/run + flags like --no-tui, --out-dir, --oracle-bin) into MCP tools” :contentReference[oaicite:45]{index=45}
-```
-
-```ticket T6
-T# Title: Add MCP transport hardening guidance + tool UX annotations (readOnly/destructive/openWorld)
-Type: enhancement
-Target Area: MCP server transport configuration and tool metadata (server.py / deployment guidance)
-Summary:
 [TRUNCATED]
 ```
 
@@ -4267,1224 +5598,258 @@ def validate_action_pack(pack_path: Path) -> dict:
     if len(bash_fence) != 1:
         errors.append(f"expected exactly one ```bash fence; found {len(bash_fence)}")
     if len(any_fence) != 2:
-        # One opening and one closing fence expected, and it must be a bash fence.
-        errors.append(f"expected no other code fences; found {len(any_fence)} total fences")
-
-    # Extract bash block content if possible
-    bash_block = ""
-    m = re.search(r"```bash\s*\n(?P<body>[\s\S]*?)\n```\s*", text)
-    if m:
-        bash_block = m.group("body")
-
-    # Validate step headers inside bash fence
-    step_headers = re.findall(r"(?m)^\s*#\s*(\d{2})\)\s+.*$", bash_block)
-    if not step_headers:
-        errors.append("no step headers found inside the bash fence (expected lines like '# 01) ...')")
-    else:
-        # Ensure they start at 01 and are strictly increasing by 1.
-        nums = [int(x) for x in step_headers]
-        if nums[0] != 1:
-            errors.append(f"first step must be 01; got {nums[0]:02d}")
-        for prev, cur in zip(nums, nums[1:]):
-            if cur != prev + 1:
-                errors.append(f"step numbers must be sequential; got {prev:02d} then {cur:02d}")
-
-    return {
-        "ok": len(errors) == 0,
-        "pack_path": str(pack_path),
-        "step_count": len(step_headers),
-        "errors": errors,
-    }
-
-
-def default_pack_path(today: date | None = None) -> str:
-    d = today or date.today()
-    return f"docs/oracle-actions-pack-{d.isoformat()}.md"
-```
-
-```python
-# path: oraclepack-mcp-server/oraclepack_mcp_server/server.py
-from __future__ import annotations
-
-import json
-from enum import Enum
-from pathlib import Path
-from typing import Any
-
-from pydantic import BaseModel, Field
-from mcp.server.fastmcp import FastMCP
-
-from .config import load_config
-from .security import resolve_under_roots, safe_read_text, PathNotAllowedError
-from .oraclepack_cli import run_cmd
-from .taskify import detect_stage2, validate_stage2_dir, validate_action_pack
-
-
-class ResponseFormat(str, Enum):
-    markdown = "markdown"
-    json = "json"
-
-
-class PackPathInput(BaseModel):
-    pack_path: str = Field(..., description="Path to the pack markdown file")
-    response_format: ResponseFormat = Field(default=ResponseFormat.markdown)
-
-
-class RunPackInput(BaseModel):
-    pack_path: str = Field(..., description="Path to the pack markdown file")
-    out_dir: str | None = Field(default=None, description="Output directory for step execution (passes --out-dir).")
-
-    no_tui: bool = Field(default=True, description="If true, pass --no-tui")
-    yes: bool = Field(default=True, description="If true, pass --yes")
-    run_all: bool = Field(default=True, description="If true, pass --run-all")
-
-    resume: bool = Field(default=False, description="If true, pass --resume")
 [TRUNCATED]
 ```
 
-.tickets/other/Oraclepack Pipeline Improvements.md
+.tickets/raw-exports/Output verification failure.md
 ```
-Title:
+## You asked:
 
-* Implement deterministic oraclepack pipeline improvements (strict validation, run manifests, resume/caching, Stage 3 “Actionizer”)
+oraclepack-op-mcp.md
 
-Summary:
+File
 
-* The current two-stage oraclepack workflow (Stage 1 pack generation → Stage 2 execution) is “weakly connected” and lacks deterministic handoff metadata, robust resume/retry, and an automated Stage 3 that converts 20 outputs into actionable engineering work.
-
-    Oracle Pack Workflow Analysis
-
-* This ticket proposes additive, backward-compatible enhancements to oraclepack and the Stage 1 generator prompts so runs are reproducible, CI-friendly, and produce machine-readable artifacts suitable for automation.
-
-    Oracle Pack Workflow Analysis
-
-Background / Context:
-
-* Workflow context:
-
-  * Stage 1: Codex skill or Gemini CLI slash command generates a single Markdown oracle question pack under `docs/*oracle-pack*.md`, following a strict oraclepack schema and containing exactly 20 `oracle ...` commands.
-
-        Oracle Pack Workflow Analysis
-
-  * Stage 2: oraclepack (Go wrapper around `@steipete/oracle`) executes the 20 commands and writes per-question outputs (via `--write-output`).
-
-        Oracle Pack Workflow Analysis
-
-  * Stage 3 is currently missing: outputs are not automatically turned into actionable implementation work.
-
-        Oracle Pack Workflow Analysis
-
-* Non-negotiable constraints:
-
-  * No schema-breaking changes to the oraclepack Markdown pack schema without a backward-compatible migration path and validator-safe proof.
-
-  * Automation must be deterministic and reproducible (no interactive steps in the critical path).
-
-  * Stage 1 output must remain a single-pack deliverable that oraclepack can validate/run (no extra blocks/headers; no schema drift).
-
-  * Prefer minimal file attachments per question; avoid broad globs unless unavoidable.
-
-  * Optimize for longer runtimes with minimal human interaction (batching, resume/retry, caching, stable outputs, CI-friendly).
-
-        Oracle Pack Workflow Analysis
-
-Current Behavior (Actual):
-
-* Stage 1 (generation) failure modes / friction points:
-
-  * Packs can drift from the strict schema (extra fenced blocks, step-like headers, missing fields, wrong ordering, wrong count ≠ 20), causing ingestion/validation issues.
-
-        Oracle Pack Workflow Analysis
-
-  * Attachments may be bloated (broad globs, “just in case” files), increasing token cost and reducing signal-to-noise.
-
-        Oracle Pack Workflow Analysis
-
-  * ROI scoring can be inconsistent (unstable prioritization vs stated rationale).
-
-        Oracle Pack Workflow Analysis
-
-  * Coverage duplication across 20 questions (overlapping targets) wastes runs/budget.
-
-        Oracle Pack Workflow Analysis
-
-* Stage 2 (execution) failure modes / friction points:
-
-  * Resume/retry semantics are weak (reruns may re-execute completed steps; partial failures require manual selection).
-
-        Oracle Pack Workflow Analysis
-
-  * Output determinism gaps: inconsistent output paths/slugs/out\_dir naming undermine CI diffs and Stage 3 discovery.
-
-        Oracle Pack Workflow Analysis
-
-  * Concurrency/rate limiting is not first-class (provider throttling/timeouts lead to nondeterministic failures).
-
-        Oracle Pack Workflow Analysis
-
-* Cross-stage handoff issues:
-
-  * Missing traceability between pack ↔ outputs (no explicit manifest tying outputs to pack hash, git SHA, tool versions, provider/model settings).
-
-        Oracle Pack Workflow Analysis
-
-  * Stage 2 may be bypassed (pack executed “by hand”), losing wrapper state/report and consistent run directory.
-
-        Oracle Pack Workflow Analysis
-
-Expected Behavior:
-
-* Stage 1 packs are always validator-safe and deterministic (single pack, exactly 20 oracle invocations, no schema drift).
-
-    Oracle Pack Workflow Analysis
-
-* Stage 2 produces stable, discoverable, machine-readable run artifacts that bind pack ↔ outputs and enable idempotent resume/rerun.
-
-    Oracle Pack Workflow Analysis
-
-* Stage 3 (“Actionizer”) exists and deterministically converts the 20 outputs into actionable engineering work artifacts (backlog + change plan + optional issue export), without duplicating work on reruns.
-
-    Oracle Pack Workflow Analysis
-
-* CI can run validate → run → actionize non-interactively with structured outputs and policy-driven exit codes.
-
-    Oracle Pack Workflow Analysis
-
-Requirements:
-
-* Validation / linting (additive, backward-compatible):
-
-  * Add `oraclepack validate --strict --json` that reports counts (steps=20, bash\_blocks=1, oracle\_invocations=20), ordering checks (ROI desc; ties effort asc), and required fields presence.
-
-        Oracle Pack Workflow Analysis
-
-* Deterministic run directory + manifest:
-
-  * On `run`, create `.oraclepack/runs/<pack_id>/` and emit `run.json` + `steps.json`.
-
-        Oracle Pack Workflow Analysis
-
-  * `pack_id = YYYY-MM-DD__<gitshort>__<packhash8>`.
-
-        Oracle Pack Workflow Analysis
-
-  * `run.json` must include: `pack_path`, `pack_hash`, `git_sha`, `oraclepack_version`, `oracle_version`, `created_at`.
-
-        Oracle Pack Workflow Analysis
-
-  * `steps.json` must include: `step_id` (01..20), `reference`, `category`, `roi`, `command_hash`, `output_path`, `output_hash`, `status` (pending|ok|failed|skipped).
-
-        Oracle Pack Workflow Analysis
-
-* Resume/rerun semantics:
-
-  * Make resume default: if `run.json` exists, skip steps whose output exists and matches recorded hash.
-
-  * Support explicit overrides: `--rerun all|failed|01,03,07`.
-
-        Oracle Pack Workflow Analysis
-
-* Concurrency and rate limiting:
-
-  * Add global `--max-parallel N` and optionally per-provider caps via config.
-
-  * Implement exponential backoff + jitter on transient errors (e.g., 429/503) with a retry budget.
-
-        Oracle Pack Workflow Analysis
-
-* Deterministic caching (optional initially):
-
-  * Implement caching keyed by `sha256(prompt + attached_file_hashes + oracle_flags + model)`, stored under `.oraclepack/cache/<invocation_key>.md`; rerun reuses cached outputs when key matches.
-
-        Oracle Pack Workflow Analysis
-
-* Stage 3 (“Actionizer”) design and artifacts:
-
-  * Implement `oraclepack actionize --run-dir .oraclepack/runs/<pack_id>`.
-
-  * Inputs: `run.json` + 20 outputs under `.oraclepack/runs/<pack_id>/outputs/`.
-
-        Oracle Pack Workflow Analysis
-
-  * Deterministic processing: normalize outputs → dedupe → categorize via fixed taxonomy → generate action tasks, including blocked/conflict handling.
-
-        Oracle Pack Workflow Analysis
-
-  * Outputs under `.oraclepack/runs/<pack_id>/actionizer/`:
-
-    * `normalized.jsonl`, `backlog.md`, `change-plan.md`
-
-    * Optional: `github-issues.json`, `taskmaster.json`.
-
-            Oracle Pack Workflow Analysis
-
-  * Idempotency: stable IDs derived from `pack_hash` (e.g., `OP3-<packhash8>-<issue_index>-<task_index>`), stable paths, byte-identical regeneration when inputs unchanged.
-
-        Oracle Pack Workflow Analysis
-
-* Stage 1 prompt/skill improvements (without breaking schema):
-
-  * Embed structured mini-metadata inside each `-p` prompt text (not new pack headers), e.g., `QuestionId`, `Category`, `Reference`, `ExpectedArtifacts`.
-
-        Oracle Pack Workflow Analysis
-
-  * Enforce deterministic attachment minimization heuristics (reference file + 0–2 neighbors; avoid broad globs unless evidence demands).
-
-        Oracle Pack Workflow Analysis
-
-  * Standardize generator prompt across Codex skills and Gemini CLI commands using a single canonical prompt file in repo.
-
-        Oracle Pack Workflow Analysis
-
-* CI-native mode:
-
-  * Provide `oraclepack run --ci --non-interactive --json-log` and `oraclepack actionize --ci`.
-
-  * CI policy can fail build if validation fails, completion rate below threshold, or action yield below threshold (threshold values: Not provided).
-
-        Oracle Pack Workflow Analysis
-
-* Security/safety:
-
-  * Path safety: prevent `--write-output` from escaping run dir (reject `..` traversal).
-
-        Oracle Pack Workflow Analysis
-
-Out of Scope:
-
-* Breaking changes to the existing oraclepack Markdown pack schema (unless a backward-compatible migration path and validator-safe proof are provided).
-
-    Oracle Pack Workflow Analysis
-
-Reproduction Steps:
-
-1. Generate a pack via Stage 1 and save to `docs/oracle-pack-YYYY-MM-DD.md`.
-
-    Oracle Pack Workflow Analysis
-
-2. Run `oraclepack validate docs/oracle-pack-YYYY-MM-DD.md` and observe schema drift / strictness gaps (exact current validator behavior: Unknown).
-
-    Oracle Pack Workflow Analysis
-
-3. Execute the pack, interrupt mid-run, rerun, and observe whether completed steps are skipped (current behavior: weak/unclear).
-
-    Oracle Pack Workflow Analysis
-
-4. Compare two runs on the same commit and observe output path/slug stability and traceability artifacts (manifest missing today).
-
-    Oracle Pack Workflow Analysis
-
-Environment:
-
-* Tooling:
-
-  * oraclepack (Go wrapper around `@steipete/oracle`).
-
-        Oracle Pack Workflow Analysis
-
-  * Stage 1 generators: Codex skills or Gemini CLI slash commands.
-
-        Oracle Pack Workflow Analysis
-
-* Repository/OS/versions: Unknown (git SHA, oraclepack version, oracle version, provider/model settings not provided in the conversation; also identified as missing traceability today).
-
-    Oracle Pack Workflow Analysis
-
-Evidence:
-
-* Proposed stable artifact layout and handoff contract:
-
-    Oracle Pack Workflow Analysis
-
-  * `docs/oracle-pack-YYYY-MM-DD.md`
-
-  * `.oraclepack/runs/<pack_id>/run.json`
-
-  * `.oraclepack/runs/<pack_id>/steps.json`
-
-  * `.oraclepack/runs/<pack_id>/outputs/01-<slug>.md … 20-<slug>.md`
-
-  * `.oraclepack/runs/<pack_id>/actionizer/{normalized.jsonl, backlog.md, change-plan.md}`
-
-* Proposed commands (some flag names explicitly “proposed where not already present”):
-
-    Oracle Pack Workflow Analysis
-
-  * `oraclepack validate --strict docs/oracle-pack-YYYY-MM-DD.md --json > .oraclepack/validate.json`
-
-  * `oraclepack run docs/oracle-pack-YYYY-MM-DD.md --max-parallel 4 --resume --ci`
-
-  * `oraclepack actionize --run-dir .oraclepack/runs/<pack_id> --ci`
-
-* Example Stage 3 output record shape (JSONL line):
-
-    Oracle Pack Workflow Analysis
-
-Decisions / Agreements:
-
-* Do not break the oraclepack Markdown pack schema; any change must be backward-compatible with a validator-safe proof.
-
-    Oracle Pack Workflow Analysis
-
-* Stage 3 (“Actionizer”) is required and should be implemented as a first-class oraclepack subcommand (`actionize`) producing deterministic artifacts with idempotent reruns.
-
-    Oracle Pack Workflow Analysis
-
-* Traceability and determinism should be achieved via additive sidecar files (e.g., `run.json`, `steps.json`) rather than pack schema changes.
-
-    Oracle Pack Workflow Analysis
-
-Open Items / Unknowns:
-
-* Current oraclepack CLI surface area:
-
-  * Whether `validate --strict`, `--json`, `run --ci`, `--resume`, `--json-log`, and `actionize` exist today vs need implementation (conversation notes some flags are “proposed”).
-
-        Oracle Pack Workflow Analysis
-
-* Current on-disk state/report formats and locations (“state lives today (intended): oraclepack state/report + per-step outputs”; exact paths not provided).
-
-    Oracle Pack Workflow Analysis
-
-* Threshold definitions for CI policy (“completion rate < threshold”, “action yield < threshold”): Not provided.
-
-    Oracle Pack Workflow Analysis
-
-* Exact strict pack schema invariants enforced today (beyond “strict output contract” and “exactly 20” requirement): Not provided in this conversation (referenced as external inputs).
-
-    Oracle Pack Workflow Analysis
-
-Risks / Dependencies:
-
-* Risk: filesystem layout changes may affect existing users; mitigation is additive behavior that preserves current out\_dir behavior.
-
-    Oracle Pack Workflow Analysis
-
-* Risk: caching correctness depends on hashing all attached file contents; incomplete hashing risks “cache poisoning.”
-
-    Oracle Pack Workflow Analysis
-
-* Risk: provider throttling/timeouts require robust transient-error classification for backoff/retry behavior.
-
-    Oracle Pack Workflow Analysis
-
-* Dependency: Stage 3 quality depends on stable, parseable structure in per-question outputs; mitigated by deterministic normalization heuristics and improved Stage 1 prompt shaping.
-
-Acceptance Criteria:
-
-* Validation:
-
-  * `oraclepack validate --strict --json` deterministically reports schema invariants (20 steps, 20 oracle invocations, schema drift detection) and can gate CI.
-
-        Oracle Pack Workflow Analysis
-
-* Run determinism and traceability:
-
-  * Running a pack produces `.oraclepack/runs/<pack_id>/{run.json,steps.json,outputs/}` with stable `pack_id` and stable output naming.
-
-  * `run.json` includes required metadata fields; `steps.json` includes required per-step fields and statuses.
-
-        Oracle Pack Workflow Analysis
-
-* Resume/rerun:
-
-  * Interrupting a run mid-way and rerunning resumes without re-executing completed steps (validated via output hashes and statuses).
-
-  * `--rerun failed|all|<step list>` behaves as specified.
-
-        Oracle Pack Workflow Analysis
-
-* Concurrency/rate limiting:
-
-  * `--max-parallel N` bounds concurrency; transient failures (e.g., throttling/timeouts) are retried with backoff within a retry budget and recorded in step status.
-
-        Oracle Pack Workflow Analysis
-
-* Caching (if implemented):
-
-  * Rerunning on unchanged inputs (same prompt, same attached file digests, same flags/model) results in zero provider calls and identical outputs.
-
-        Oracle Pack Workflow Analysis
-
-* Stage 3 “Actionizer”:
-
-  * `oraclepack actionize --run-dir ...` generates deterministic artifacts under `actionizer/` (`normalized.jsonl`, `backlog.md`, `change-plan.md`).
-
-  * Reruns do not duplicate tasks (stable IDs) and produce byte-identical output when inputs unchanged.
-
-  * Missing/contradictory answers produce explicit `blocked`/`conflict` tasks with required evidence patterns.
-
-* CI mode:
-
-  * `--ci --non-interactive --json-log` runs without TUI/interaction and uses structured logs and policy-driven exit codes.
-
-        Oracle Pack Workflow Analysis
-
-Priority & Severity (if inferable from text):
-
-* Priority: Not provided
-
-* Severity: Not provided
-
-Labels (optional):
-
-* enhancement, cli, determinism, validation, resume, caching, concurrency, workflow, stage3-actionizer
+Why is this causing the following error shown?
 
 ---
-```
 
-.tickets/other/Oraclepack Prompt Generator.md
-```
-* Title: Create oraclepack-style prompt/skill generator for tickets and .tickets
-* Summary:
+## ChatGPT Replied:
 
-  * Need a reusable prompt (and/or “skill” template) that can generate an oraclepack-style prompt/skill specifically for “tickets” and/or “.tickets”.
-  * Must support the existing placeholder-driven wrapper pattern (e.g., `{user-idea}`, `{project-in-question}`, `{PAIN-POINT}`, `{REFERENCE-FILE}`, `{CAPABILITY}`, `{TARGET-AGENT}`, `{OPTIMIZE-PROMPT}`), including optional fields and “infer from context” behavior as described.
-  * Also need guidance on what to change in the current skill and what other viable integration options exist (within the constraints already used in prior work).
-* Source:
+Thought for 11m 46s
 
-  * Link/ID: Not provided
-  * Original ticket excerpt: “prompt that can create an oraclepack prompt/skill but for our tickets and/or .tickets”
-* Global Constraints:
+This is failing in oraclepack’s “output verification” path: oraclepack looks for every `--write-output "<path>"` in the step’s shell code, then (a) expects the file to exist and (b) expects it to contain certain section tokens. When that check fails, it re-runs the step, and if the file still can’t be validated, it errors.
 
-  * Optional inputs may be omitted; proceed by inferring from context or requesting missing info within the generated prompt template (“Not always provided…”).
-  * “Pain point” is optional; proceed without it if absent.
-  * `{REFERENCE-FILE}` may be provided as additional constraints/spec content.
-* Global Environment:
+What your screenshot shows is consistent with two stacked problems:
 
-  * Unknown
-* Global Evidence:
+1.  The verifier is expecting more sections than you are actually emitting.  
+    In oraclepack, a single `--write-output ...` + a prompt that includes the phrase “Answer format” causes the verifier to require all four section tokens (normalized): “direct answer”, “risks unknowns”, “next smallest concrete experiment”, and “if evidence is insufficient”. If your step instructs “Return only: Direct answer”, the output file will only contain the direct-answer content, so verification fails and oraclepack re-runs.
+    
+2.  On the re-run, the output file isn’t being written at all, so verification becomes a hard error.  
+    The final error `output verification failed for step 01: docs/o...` is what you get when oraclepack tries to read the `--write-output` path and the file isn’t there (or isn’t readable). In your log, the `oracle` CLI is being used in browser automation mode, and browser automation is explicitly “experimental”, so it can fail to reliably extract/write the final answer in some cases.  
+    Separately, newer `oracle` versions note stricter `--write-output` path safety (rejecting certain destinations while keeping the run going), which can also result in “oracle ran, but the write-output file wasn’t created”.  
+    (Also: `oracle` printing “Saved assistant output to …” is about its session logs, not a guarantee that your `--write-output docs/...` file was successfully created. )
+    
 
-  * Existing wrapper pattern + MCP prompt/tool/resource publication precedent captured in: `/mnt/data/MCP server implementation.md`
+Practical fixes (pick one):
 
-Split Plan:
-
-* Coverage Map:
-
-  * Original item: “We need a prompt that can create an oraclepack prompt/skill but for our tickets and/or .tickets.”
-
-    * Assigned Ticket ID: T2
-  * Original item: “What could we do to our current skill…”
-
-    * Assigned Ticket ID: T3
-  * Original item: “…and/or what else are our options for this request?”
-
-    * Assigned Ticket ID: T4
-  * Original item: Wrapper placeholders + optionality rules (“Not always provided…”, “Our pain point…”, `{REFERENCE-FILE}`, `{TARGET-AGENT}`, `{CAPABILITY}`, `{OPTIMIZE-PROMPT}`)
-
-    * Assigned Ticket ID: T1
-  * Original item: “optimized prompt that will get the {TARGET-AGENT} to find us a solution for adding capabilities…”
-
-    * Assigned Ticket ID: T2
-* Dependencies:
-
-  * T2 depends on T1 because the prompt/skill generator must align to the placeholder schema + optionality rules.
-  * T3 depends on T2 because “current skill” changes should incorporate the finalized ticket prompt/skill template.
-  * T5 depends on T2 and T3 because examples/validation need the final template and integration approach.
-
-````ticket T1
-T1 Title: Define ticket/.tickets prompt input schema and placeholder mapping
-Type: docs
-Target Area: Ticket input model (tickets and/or .tickets) + wrapper placeholders
-Summary:
-  - Define the canonical set of inputs and placeholders required to generate an oraclepack-style ticket prompt/skill.
-  - Preserve the existing wrapper’s rules around optional inputs and context inference.
-  - Provide a clear mapping between “tickets/.tickets” fields (if any) and wrapper placeholders without inventing unspecified fields.
-In Scope:
-  - Enumerate required vs optional placeholders: {user-idea}, {project-in-question}, {ADDITIONAL-INFORMATION}, {PAIN-POINT}, {REFERENCE-FILE}, {CAPABILITY}, {TARGET-AGENT}, {OPTIMIZE-PROMPT}.
-  - Document handling rules explicitly stated: optional fields, “infer from context”, and behavior when pain point is absent.
-  - Clarify what “tickets” vs “.tickets” means in this system using “Unknown/Not provided” where details are missing.
-Out of Scope:
-  - Defining new ticket fields beyond what is provided.
-  - Implementing tooling or code changes (covered elsewhere).
-Current Behavior (Actual):
-  - Placeholder set and optionality rules exist in the wrapper pattern, but ticket/.tickets-specific mapping is not defined.
-Expected Behavior:
-  - A documented, stable mapping that the ticket prompt/skill generator can follow.
-Reproduction Steps:
-  - Not provided
-Requirements / Constraints:
-  - Do not add new placeholders or required fields beyond what is already used in the wrapper.
-  - Preserve optionality rules: proceed safely when PAIN-POINT or additional info is absent.
-Evidence:
-  - Reference wrapper placeholders and prompt-engineer wrapper structure as precedent. (/mnt/data/MCP server implementation.md) :contentReference[oaicite:1]{index=1}
-Open Items / Unknowns:
-  - Exact structure/format of “tickets” and “.tickets” (not provided).
-  - Whether “.tickets” is a file extension, folder convention, or schema name (not provided).
-Risks / Dependencies:
-  - Risk of mismatch between ticket data shape and placeholder mapping if .tickets format is not standardized.
-Acceptance Criteria:
-  - A single written spec exists that lists:
-    - All placeholders and which are optional.
-    - Rules for missing fields (“infer from context” as described).
-    - How ticket/.tickets inputs populate placeholders (or explicitly “Unknown” where not provided).
-Priority & Severity (if inferable from input text):
-  - Priority: Not provided
-  - Severity: Not provided
-Source:
-  - “Not always provided, inference from context…”
-  - “Our pain point: {PAIN-POINT} … if not just continue…”
-  - “```md {REFERENCE-FILE}.md”
-````
-
-```ticket T2
-T2 Title: Author oraclepack-style prompt/skill template for ticket and .tickets generation
-Type: enhancement
-Target Area: Prompt/skill template content (oraclepack-style) for tickets/.tickets
-Summary:
-  - Create the actual prompt/skill template that produces an oraclepack-style prompt/skill when given a ticket or .tickets input.
-  - The template must use the existing wrapper structure and placeholders, and must instruct the TARGET-AGENT to generate the desired capability for the project/tool in question.
-  - Ensure the template explicitly supports optional inputs and reference-file injection as described.
-In Scope:
-  - Produce the “ticket prompt-engineer wrapper” template that mirrors the existing wrapper pattern but targets tickets/.tickets.
-  - Include all placeholders: {user-idea}, {project-in-question}, {ADDITIONAL-INFORMATION}, {PAIN-POINT}, {REFERENCE-FILE}, {CAPABILITY}, {TARGET-AGENT}, {OPTIMIZE-PROMPT}.
-  - Ensure the prompt text includes the “optimized prompt that will get the {TARGET-AGENT}…” requirement, scoped to tickets/.tickets.
-Out of Scope:
-  - Any new MCP server requirements, tools, or resource URI schemes not explicitly requested for tickets/.tickets.
-Current Behavior (Actual):
-  - There is no ticket/.tickets-specific oraclepack-style prompt/skill generator template.
-Expected Behavior:
-  - A single reusable prompt/skill template exists that can be filled with placeholders to drive a TARGET-AGENT to create ticket/.tickets capabilities.
-Reproduction Steps:
-  - Not provided
-Requirements / Constraints:
-  - Must follow the wrapper’s optionality rules and placeholder usage.
-  - Must treat {REFERENCE-FILE} content as “additional constraints/spec” when present.
-Evidence:
-  - Wrapper structure and placeholder set captured in existing reference prompt material. :contentReference[oaicite:2]{index=2}
-Open Items / Unknowns:
-  - Where this template will live (file path/naming) in the current repo/tooling (not provided).
-Risks / Dependencies:
-  - Depends on T1 for a stable placeholder-to-ticket mapping.
-Acceptance Criteria:
-  - Template includes:
-    - All stated placeholders.
-    - Explicit instruction to proceed when optional fields are missing.
-    - A clearly stated “question to the prompt-engineer: {OPTIMIZE-PROMPT}” section.
-  - Template is copy/paste ready and self-contained.
-Priority & Severity (if inferable from input text):
-  - Priority: Not provided
-  - Severity: Not provided
-Source:
-  - “create an oraclepack prompt/skill but for our tickets and/or .tickets”
-  - “optimized prompt that will get the {TARGET-AGENT}… giving it {CAPABILITY}”
-  - “Our question to the prompt-engineer: {OPTIMIZE-PROMPT}”
-```
-
-```ticket T3
-T3 Title: Update current skill to support ticket/.tickets prompt-skill generation
-Type: enhancement
-Target Area: Existing “current skill” (location/name not provided)
-Summary:
-  - Identify changes required to the existing skill so it can generate or host the new tickets/.tickets oraclepack-style prompt/skill template.
-  - Ensure the current skill can accept the ticket/.tickets inputs and populate the standardized placeholders.
-  - Preserve existing behavior for non-ticket use cases (if any), since only ticket support is being added.
-In Scope:
-  - Incorporate the finalized template from T2 into the current skill workflow.
-  - Add/adjust input handling so the current skill can be driven by “tickets and/or .tickets” as the source material.
-  - Ensure optional inputs (pain point, additional information, reference file) remain optional in the workflow.
-Out of Scope:
-  - Designing a brand-new system if the current skill can be extended (unless extension is impossible; not provided).
-Current Behavior (Actual):
-  - Current skill does not explicitly support generating oraclepack-style prompts/skills for tickets/.tickets (per request).
-Expected Behavior:
-  - Current skill can produce the tickets/.tickets oraclepack-style prompt/skill using the same wrapper placeholder mechanism.
-Reproduction Steps:
-  - Not provided
-Requirements / Constraints:
-  - Do not remove or break existing skill behavior (implied by “current skill” extension request).
-Evidence:
-  - “What could we do to our current skill…”
-Open Items / Unknowns:
-  - Current skill name, file path, and execution context (not provided).
-  - How tickets/.tickets are currently stored or passed into the system (not provided).
-Risks / Dependencies:
-  - Depends on T2 for the template content.
-Acceptance Criteria:
-  - Current skill supports a ticket/.tickets-driven flow that results in the T2 template with placeholders populated (or explicitly left blank when optional).
-  - No regression to existing skill behaviors (validation method not provided; document what was exercised).
-Priority & Severity (if inferable from input text):
-  - Priority: Not provided
-  - Severity: Not provided
-Source:
-  - “What could we do to our current skill…”
-  - “prompt… for our tickets and/or .tickets”
-```
-
-```ticket T4
-T4 Title: Document integration options for delivering the tickets/.tickets prompt-skill capability
-Type: docs
-Target Area: Delivery/integration approach (within existing patterns)
-Summary:
-  - Provide a concise options write-up for how to deliver and reuse the tickets/.tickets prompt/skill generator, aligned to the existing approach patterns already in use.
-  - Focus on the two explicitly requested dimensions: changes to the current skill and “other options” for fulfilling the request.
-  - Avoid committing to new systems; frame as documented options with constraints and unknowns.
-In Scope:
-  - Option 1: Extend current skill to include tickets/.tickets support (ties to T3).
-  - Option 2: Provide a standalone tickets/.tickets prompt/skill template artifact that can be consumed independently (ties to T2).
-  - List constraints/unknowns impacting option choice (e.g., unknown .tickets format, unknown current-skill location).
-Out of Scope:
-  - Implementing the chosen option (handled by T3 and/or T2).
-Current Behavior (Actual):
-  - No documented approach exists for how tickets/.tickets prompt/skill generation should be delivered.
-Expected Behavior:
-  - A short decision-ready document exists describing the options and what each requires, without adding new requirements.
-Reproduction Steps:
-  - Not provided
-Requirements / Constraints:
-  - Options must stay within what’s already requested (modify current skill and/or alternative ways to package the prompt/skill).
-Evidence:
-  - “what else are our options for this request?”
-Open Items / Unknowns:
-  - Whether the user prefers a single consolidated skill vs multiple dedicated skills (not provided).
-Risks / Dependencies:
-  - Depends on T1/T2 clarity to accurately describe what each option would deliver.
-Acceptance Criteria:
-  - Document lists at least:
-    - “Modify current skill” option (summary, prerequisites, impact).
-    - “Standalone template” option (summary, prerequisites, impact).
-    - Explicit unknowns that block a final choice.
-Priority & Severity (if inferable from input text):
-  - Priority: Not provided
-  - Severity: Not provided
-Source:
-  - “What could we do to our current skill…”
-  - “…what else are our options for this request?”
-```
-
-````ticket T5
-T5 Title: Add examples and validation checks for ticket/.tickets prompt-skill generation
-Type: tests
-Target Area: Examples + validation of generated prompt/skill output
-Summary:
-  - Provide concrete example inputs (ticket and/or .tickets) and the expected generated prompt/skill output shape for validation.
-  - Ensure examples exercise optional fields (missing PAIN-POINT, missing ADDITIONAL-INFORMATION, with/without REFERENCE-FILE).
-  - Add lightweight validation criteria to confirm generated output preserves placeholders and wrapper structure.
-In Scope:
-  - Example cases covering:
-    - Only {user-idea} + {project-in-question}
-    - With {PAIN-POINT}
-    - With {REFERENCE-FILE}
-  - Validation checklist for generated output structure (placeholders present; optional fields handled).
-Out of Scope:
-  - End-to-end integration tests that require specific repo tooling not provided.
-Current Behavior (Actual):
-  - No examples/validation for tickets/.tickets prompt-skill generation are defined.
-Expected Behavior:
-  - Examples exist and can be used to validate that the template and current-skill integration behave as intended.
-Reproduction Steps:
-  - Not provided
-Requirements / Constraints:
-  - Must preserve the wrapper structure and placeholders as-is.
-Evidence:
-  - Placeholder and wrapper expectations referenced in the existing wrapper pattern. :contentReference[oaicite:3]{index=3}
-Open Items / Unknowns:
-  - Exact acceptance mechanism for “validation checks” in the existing system (not provided).
-Risks / Dependencies:
-  - Depends on T2 (template) and T3 (integration) for meaningful expected outputs.
-Acceptance Criteria:
-  - At least 3 example inputs exist (covering optionality cases).
-  - Each example includes an expected output outline that confirms:
-    - Placeholders are present.
-    - Optional fields can be omitted without breaking structure.
-Priority & Severity (if inferable from input text):
-  - Priority: Not provided
-  - Severity: Not provided
-Source:
-  - “Not always provided…”
-  - “Our pain point: {PAIN-POINT} … continue without needing it.”
-  - “```md {REFERENCE-FILE}.md”
-````
-```
-
-.tickets/other/Oraclepack Workflow Enhancement.md
-```
-Title:
-
-* Stabilize oraclepack “oracle-pack” pipeline and add profile-based context + Stage-3 synthesis for actionable follow-through
-
-Summary:
-
-* The current two-step workflow generates an `oracle-pack` Markdown file (20 `oracle` calls) via Codex skills/Gemini CLI commands, then runs it through the `oraclepack` Go wrapper to produce outputs and state/report artifacts.
-
-    Workflow Optimization for Oracl…
-
-    Workflow Optimization for Oracl…
-
-* A key failure mode is schema/format drift in the pack file (human-doc + machine-ingest combined), which can break ingestion; an example drift is step headers using an em dash (`# 01 — ROI=…`) while the documented contract expects `# NN)`.
-
-    Workflow Optimization for Oracl…
-
-* Requested outcome: improve workflow continuity, enable richer context injection without breaking the strict pack contract, and add an automatic next stage that turns the “final twenty questions/answers” into actionable implementation steps with minimal human interaction.
-
-    Workflow Optimization for Oracl…
-
-    Workflow Optimization for Oracl…
-
-Background / Context:
-
-* Workflow stages:
-
-  * Stage 1: LLM authoring creates `docs/oracle-pack-YYYY-MM-DD.md` containing 20 `oracle` commands (with ROI metadata and per-step output paths).
-
-        Workflow Optimization for Oracl…
-
-  * Stage 2: `oraclepack` executes the pack to produce 20 outputs under `oracle-out/...` plus state/report JSON artifacts.
-
-        Workflow Optimization for Oracl…
-
-* `oraclepack` is a wrapper around `oracle` intended for batched/bulk requests.
-
-    Workflow Optimization for Oracl…
-
-* Core concern: “disconnection” after the 20-question output; desire to chain into a useful, actionable implementation stage.
-
-    Workflow Optimization for Oracl…
-
-    Workflow Optimization for Oracl…
-
-Current Behavior (Actual):
-
-* Pack file acts as both:
-
-  * Human documentation, and
-
-  * A strict machine-ingest contract, making formatting drift a pipeline-breaking event.
-
-        Workflow Optimization for Oracl…
-
-* Documented/expected step-header schema (`# NN)`) can drift to alternative formats (example: `# 01 — ROI=…`), risking parse/validation failures.
-
-    Workflow Optimization for Oracl…
-
-* High-risk edits include adding additional code fences (especially additional bash fences) or introducing lines that accidentally match the step-header pattern.
-
-    Workflow Optimization for Oracl…
-
-Expected Behavior:
-
-* Packs remain schema-stable and reliably parse/validate/run across providers (Codex skills, Gemini CLI commands).
-
-    Workflow Optimization for Oracl…
-
-* Richer “skill context” can be injected without changing the pack’s ingest shape (no added code fences / no header drift).
-
-    Workflow Optimization for Oracl…
-
-* After Stage 2 produces 20 outputs + report JSON, a subsequent stage can automatically convert results into actionable implementation steps.
-
-    Workflow Optimization for Oracl…
-
-Requirements:
-
-* Preserve the non-negotiable pack contract:
-
-  * Pack is Markdown containing exactly one `bash` code block; the first bash block is executed.
-
-        Workflow Optimization for Oracl…
-
-  * Steps are identified via header pattern `# NN)` with sequential numbering starting at `01`.
-
-        Workflow Optimization for Oracl…
-
-  * Prelude content before the first step header executes once.
-
-        Workflow Optimization for Oracl…
-
-* Standardize Stage-1 generation to the strict header form `# NN)` (avoid em dash variants).
-
-    Workflow Optimization for Oracl…
-
-* Add a hard gate between Stage 1 and Stage 2:
-
-  * Make `oraclepack validate` mandatory before `oraclepack run` (prevent schema drift reaching execution).
-
-        Workflow Optimization for Oracl…
-
-* Provide schema-safe extensibility for context injection:
-
-  * Allow context to be injected via `oracle -p` prompt text and/or `oracle -f` file/directory attachments (preferred for larger context).
-
-        Workflow Optimization for Oracl…
-
-  * Use prelude variables and templating only if it does not interfere with header parsing.
-
-        Workflow Optimization for Oracl…
-
-  * Avoid adding extra code fences or lines resembling step headers.
-
-        Workflow Optimization for Oracl…
-
-* Implement “Context Profiles” as file-backed bundles:
-
-  * Add `skills/oracle-pack/references/profiles/<name>.md` and inject via `oracle -f "$profile_file"` plus a short prompt preamble (“Follow the attached profile standards”).
-
-  * Add an optional `profile` input to the Stage-1 skill/command, with backwards-compatible behavior when absent.
-
-        Workflow Optimization for Oracl…
-
-* Add a first-class Stage 3 synthesis step:
-
-  * Provide a command shape such as `oraclepack synthesize --in oracle-out --report pack.report.json --out docs/implementation-pack-YYYY-MM-DD.md` that reads the 20 outputs, extracts proposed changes/file targets/tests, and emits a new validated pack for implementation.
-
-        Workflow Optimization for Oracl…
-
-  * Support minimal-interaction execution for Stage 3 (e.g., headless usage via Codex/Gemini CLI).
-
-        Workflow Optimization for Oracl…
-
-Out of Scope:
-
-* Not provided.
-
-Reproduction Steps:
-
-* Not provided.
-
-Environment:
-
-* `oraclepack` Go program wrapping `oracle` CLI.
-
-* Stage-1 generation tools mentioned: Codex skills, Gemini CLI commands.
-
-    Workflow Optimization for Oracl…
-
-* OS/CI details: Unknown.
-
-Evidence:
-
-* Attachment: “Workflow Optimization for Oraclepack.md”.
-
-    Workflow Optimization for Oracl…
-
-    Workflow Optimization for Oracl…
-
-* Example schema drift called out: step headers using `# 01 — ROI=…` vs documented `# NN)`.
-
-    Workflow Optimization for Oracl…
-
-* Proposed validation/run sequence:
-
-  * `oraclepack validate docs/oracle-pack-YYYY-MM-DD.md`
-
-  * `oraclepack list docs/oracle-pack-YYYY-MM-DD.md`
-
-  * `oraclepack run docs/oracle-pack-YYYY-MM-DD.md --no-tui --run-all --stop-on-fail=true --out-dir oracle-out`
-
-        Workflow Optimization for Oracl…
-
-Decisions / Agreements:
-
-* Treat the pack as a stable intermediate representation (IR) and keep context flowing only through `-p` and `-f` to avoid breaking the ingest contract.
-
-* Prefer “Context Profiles” as a file-backed mechanism located under `skills/oracle-pack/references/profiles/`.
-
-* Add a validation gate (`validate` before `run`) to reduce pipeline breakage from formatting drift.
-
-    Workflow Optimization for Oracl…
-
-Open Items / Unknowns:
-
-* Exact current parser/validator behavior regarding em dash header variants (whether it currently accepts them) is not provided; only that it is avoidable schema drift.
-
-    Workflow Optimization for Oracl…
-
-* Exact filenames/paths for current `SKILL.md` and template files in the repo are referenced conceptually but not provided in full.
-
-    Workflow Optimization for Oracl…
-
-* Whether `oraclepack synthesize` already exists or is a new feature request is not provided; it is described as a proposed product shape.
-
-    Workflow Optimization for Oracl…
-
-Risks / Dependencies:
-
-* Dependency on `oracle` CLI flags and behavior (`-p/--prompt`, `-f/--file`, `--write-output`, `--files-report`, `--dry-run`).
-
-    Workflow Optimization for Oracl…
-
-* Risk of pack invalidation from added code fences, additional bash blocks, or accidental header-like lines.
-
-    Workflow Optimization for Oracl…
-
-* Cross-provider consistency risk (Codex skills vs Gemini CLI commands) unless Stage 1 is standardized around a shared template/profile mechanism.
-
-    Workflow Optimization for Oracl…
-
-Acceptance Criteria:
-
-* Pack schema stability
-
-  * Packs validate when they contain exactly one bash block and step headers are strictly `# NN)` starting at `01`.
-
-  * Stage-1 generation output uses `# NN)` (no em dash variant) across providers.
-
-        Workflow Optimization for Oracl…
-
-* Validation gate
-
-  * Workflow includes a required `oraclepack validate` pass before any `oraclepack run`.
-
-        Workflow Optimization for Oracl…
-
-* Context Profiles
-
-  * A `profile` selection results in `oracle -f "$profile_file"` being attached per step without adding new code fences or breaking parsing.
-
-        Workflow Optimization for Oracl…
-
-  * Absence of `profile` preserves current behavior (backwards compatible).
-
-        Workflow Optimization for Oracl…
-
-* Stage 3 synthesis
-
-  * A synthesis step can consume `oracle-out` outputs + report JSON and emit a follow-on implementation pack intended to be validated and run.
-
-        Workflow Optimization for Oracl…
-
-Priority & Severity (if inferable from text):
-
-* Not provided.
-
-Labels (optional):
-
-* enhancement
-
-* workflow
-
-* cli
-
-* parsing
-
-* validation
-
-* context-bundles
-
-* automation
+*   If you only want “Direct answer”: remove the “Answer format” block from the step prompt, or disable oraclepack’s output verification for this run/step.
+    
+*   If you want verification: make the output actually include all required sections in the written file (don’t “Return only: Direct answer”), or split into multiple outputs whose filenames include `-direct-answer`, `-risks-unknowns`, etc. (oraclepack’s verifier keys off those suffixes).
+    
+*   Ensure the write target is valid at runtime: run from the directory where `docs/...` exists (oraclepack runs steps with `WorkDir="."`), `mkdir -p docs`, and consider using an absolute `--write-output` path so you’re not depending on CWD.
 
 ---
-```
 
-.tickets/other/Verbose Payload Rendering TUI.md
-```
-Title:
+## You asked:
 
-* Add verbose payload rendering in TUI to display full prepared scripts/flags for oraclepack runs
-
-Summary:
-
-* The TUI should support a verbose mode that prints the full “prepared payload” being executed for oraclepack runs, including effective flags (post overrides and `--chatgpt-url` injection) and the entire script passed to execution.
-
-    Verbose TUI Payload Rendering
-
-* This is needed to verify exactly what payloads are being sent/executed during oraclepack runs and to support tests that confirm the rendered payload contents.
-
-    Verbose TUI Payload Rendering
-
-Background / Context:
-
-* Proposed approach: add a reusable “prepared payload” layer to `internal/exec.Runner` (prepare prelude/step scripts after overrides + flag injection + sanitization), then have the TUI emit these prepared payload blocks to its log viewport immediately before execution.
-
-    Verbose TUI Payload Rendering
-
-* Files implicated by the proposal include `internal/exec/runner.go`, `internal/tui/tui.go`, `internal/cli/run.go`, plus new helpers/tests under `internal/tui/` and `internal/exec/`.
-
-    Verbose TUI Payload Rendering
-
-Current Behavior (Actual):
-
-* The TUI does not provide a verbose rendering that shows the full prepared payload (full script + effective flags + extracted `oracle …` invocations) being executed for oraclepack runs.
-
-    Verbose TUI Payload Rendering
-
-Expected Behavior:
-
-* When verbose payload logging is enabled, the TUI log viewport prints a payload block before each step runs that includes: effective oracle flags, extracted oracle invocations (full lines), and the full prepared script that will be executed.
-
-    Verbose TUI Payload Rendering
-
-* Verbose payload logging can be enabled via CLI flag (e.g., `--verbose-payload` with `-v`) and toggled in the TUI via a keybinding (proposed: `p`).
-
-    Verbose TUI Payload Rendering
-
-Requirements:
-
-* Exec runner: expose “prepared payload” APIs:
-
-  * `PreparePreludePayload(p *pack.Prelude) PreparedPreludePayload`
-
-  * `PrepareStepPayload(s *pack.Step) PreparedStepPayload`
-
-  * `RunPreparedPrelude(...)` / `RunPreparedStep(...)` to execute the prepared scripts.
-
-        Verbose TUI Payload Rendering
-
-* Prepared payload structures must include:
-
-  * `Script` (sanitized, post injection),
-
-  * `EffectiveFlags` (for steps),
-
-  * `OracleInvocations` extracted from the prepared script,
-
-  * sanitizer `Warnings`.
-
-        Verbose TUI Payload Rendering
-
-* TUI formatting helper:
-
-  * Add `internal/tui/verbose_payload.go` to format payload blocks (header, effective flags, oracle invocations, then full script).
-
-        Verbose TUI Payload Rendering
-
-* TUI integration:
-
-  * Add a `verbosePayload bool` toggle to the TUI model.
-
-  * In the run flow, call `PrepareStepPayload` and, when enabled, push formatted payload lines into `logChan` before `RunPreparedStep`.
-
-  * Add keybinding `p` to toggle `verbosePayload`.
-
-        Verbose TUI Payload Rendering
-
-* CLI wiring:
-
-  * Add `--verbose-payload` / `-v` flag and pass it into `tui.NewModel(..., verbosePayload)`.
-
-        Verbose TUI Payload Rendering
-
-* Tests:
-
-  * New `internal/exec/runner_payload_test.go` verifying prepared payload includes effective flags and injected oracle command text.
-
-  * New `internal/tui/verbose_payload_test.go` verifying formatted lines include flags, invocation, and script content.
-
-  * Update existing TUI tests to include the new `NewModel` arg.
-
-        Verbose TUI Payload Rendering
-
-Out of Scope:
-
-* Not provided.
-
-Reproduction Steps:
-
-* Not provided.
-
-Environment:
-
-* Language/runtime: Go (per referenced `.go` files and packages).
-
-    Verbose TUI Payload Rendering
-
-* TUI framework: Bubble Tea (`tea.NewProgram(...)` referenced).
-
-    Verbose TUI Payload Rendering
-
-* OS / terminal / versions: Unknown.
-
-Evidence:
-
-* Proposed change list and implementation sketch in: /mnt/data/Verbose TUI Payload Rendering.md
-
-    Verbose TUI Payload Rendering
-
-* Proposed file tree changes:
-
-  * `internal/exec/runner.go` (modify)
-
-  * `internal/exec/runner_payload_test.go` (new)
-
-  * `internal/tui/verbose_payload.go` (new)
-
-  * `internal/tui/verbose_payload_test.go` (new)
-
-  * `internal/tui/tui.go` (modify)
-
-  * `internal/cli/run.go` (modify)
-
-  * Update TUI tests to pass new model arg.
-
-        Verbose TUI Payload Rendering
-
-Decisions / Agreements:
-
-* Adopt a “prepared payload” abstraction in `exec.Runner` to ensure the TUI logs exactly what will run after overrides, injection, and sanitization.
-
-    Verbose TUI Payload Rendering
-
-* Add both CLI flag control (`--verbose-payload` / `-v`) and an in-TUI toggle (proposed key: `p`).
-
-    Verbose TUI Payload Rendering
-
-Open Items / Unknowns:
-
-* Exact existing TUI run flow for prelude execution (whether/where prelude runs in TUI) is not provided; proposal notes “if you also execute a prelude… do the same.”
-
-    Verbose TUI Payload Rendering
-
-* Exact current `NewModel(...)` signature call sites and all affected tests/files beyond those listed are not fully enumerated (some are referenced as examples).
-
-    Verbose TUI Payload Rendering
-
-Risks / Dependencies:
-
-* Not provided.
-
-Acceptance Criteria:
-
-* Running the TUI with `--verbose-payload` causes each executed step to prepend a log block that includes:
-
-  * “payload (step <id>)” header,
-
-  * “effective oracle flags: …” line,
-
-  * extracted “oracle invocations:” section (or explicit none found),
-
-  * full “script:” content (not truncated),
-
-  * “end payload” footer.
-
-        Verbose TUI Payload Rendering
-
-* Toggling `p` in the TUI flips payload logging on/off for subsequent step executions.
-
-    Verbose TUI Payload Rendering
-
-* `Runner.PrepareStepPayload` produces:
-
-  * effective flags reflecting overrides and `--chatgpt-url`,
-
-  * a prepared script containing the injected oracle invocation with those flags.
-
-        Verbose TUI Payload Rendering
-
-* New tests (`runner_payload_test.go`, `verbose_payload_test.go`) pass, and existing TUI tests compile and pass after updating `NewModel` call signature.
-
-    Verbose TUI Payload Rendering
-
-Priority & Severity (if inferable from text):
-
-* Not provided.
-
-Labels (optional):
-
-* enhancement
-
-* tui
-
-* logging
-
-* exec-runner
-
-* cli
-
-* testing
-
-* go
+Should we add a longer wait time ? Maybe it was too quick to validate ?
 
 ---
+
+## ChatGPT Replied:
+
+Thought for 5m 41s
+
+The failure is coming from oraclepack’s output verifier, not from the oracle run “returning too fast.”
+
+What oraclepack is doing:
+
+*   It runs each step via `/bin/bash -lc <step>` and blocks until the command finishes (`exec.CommandContext(...).Run()`), so the process should not return until the underlying CLI has exited.
+    
+    oraclepack-op-mcp
+    
+*   After the step exits, oraclepack extracts any `--write-output "<path>"` value(s) from the step code and then validates the _contents_ of the written file.
+    
+    oraclepack-op-mcp
+    
+*   If the step’s prompt text contains the phrase “Answer format”, oraclepack requires the output file to contain (after normalization) all of these section tokens: `direct answer`, `risks unknowns`, `next smallest concrete experiment`, and `if evidence is insufficient`.
+    
+    oraclepack-op-mcp
+    
+*   Validation is a simple “file contains tokens” check; it lowercases and strips punctuation, then checks `strings.Contains(...)` for each required token. Missing any token yields “output verification failed.”
+    
+    oraclepack-op-mcp
+    
+
+Why your screenshot triggers it:
+
+Your captured output clearly includes “Direct answer …”, but it does not show the other required sections (“Risks/unknowns”, “Next smallest concrete experiment”, “If evidence is insufficient …”). That is exactly the condition that causes verification to fail.
+
+oraclepack-op-mcp
+
+Should you add a longer wait time?
+
+*   Adding a fixed sleep before validation is unlikely to help, because the verifier is failing on missing required sections (content mismatch), not on the file being “mid-write.” The step command already blocks until the CLI exits.
+    
+    oraclepack-op-mcp
+    
+    oraclepack-op-mcp
+    
+*   If the underlying issue is that the oracle **browser** run is sometimes incomplete/truncated (so the file is written but missing sections), the right “wait” knob is on the oracle side, not oraclepack’s verifier. The oracle CLI exposes `--browser-timeout` / `--browser-input-timeout` and `--wait` (for background API runs), and notes browser mode is more fragile than API. [GitHub](https://github.com/steipete/oracle?utm_source=chatgpt.com)
+    
+
+Most direct fixes:
+
+1.  Make the LLM output include all required sections whenever the prompt includes “Answer format” (so it satisfies the existing verifier).
+    
+    oraclepack-op-mcp
+    
+2.  If you intentionally only want “Direct answer”, change oraclepack’s verification logic to accept a “direct answer only” contract for that step (right now, single-output steps ignore filename hints and only use the “Answer format” heuristic).
+    
+    oraclepack-op-mcp
+    
+3.  If you’re seeing intermittent truncation in browser mode, increase oracle’s `--browser-timeout` (and/or switch to API engine where possible). [GitHub](https://github.com/steipete/oracle?utm_source=chatgpt.com)
+
+---
+
+## You asked:
+
+Because we may have broken down the way we send packs into smaller chunks so that outputs are not cut short. How can we set the validator as optional so that we can verify further?
+
+---
+
+## ChatGPT Replied:
+
+Thought for 6m 44s
+
+The failure is not a “too fast to validate” timing issue in oraclepack; it is a content/contract mismatch.
+
+Oraclepack’s runner does this sequence per step: run the step command, then (if enabled) immediately open the `--write-output` file(s) and check that they contain specific required section tokens. If any token is missing, the step is treated as failed (and it may re-run the step, depending on `--output-retries`).
+
+oraclepack-op-mcp
+
+Why your step 01 fails in the screenshot
+
+1.  Your step includes an “Answer format” clause in the prompt. Oraclepack uses that to decide that output verification is required.
+    
+    oraclepack-op-mcp
+    
+2.  When verification is required and there is exactly one `--write-output` target, oraclepack requires the output file to contain all of these normalized tokens:
+    
+
+*   `direct answer`
+    
+*   `risks unknowns`
+    
+*   `next smallest concrete experiment`
+    
+*   `if evidence is insufficient`
+    
+    oraclepack-op-mcp
+    
+
+3.  The screenshot indicates the output file was written, but it didn’t contain one or more of those required sections, so verification failed and oraclepack re-ran the step once (default `--output-retries=1`).
+    
+    oraclepack-op-mcp
+    
+
+Should you “add a longer wait time”?  
+Oraclepack does not currently “wait then validate”; it validates immediately after the step returns. The built-in mitigation is retries (which re-runs the whole step), not a delay.
+
+oraclepack-op-mcp
+
+  
+Given the re-run also failed, this points to “output doesn’t include required sections” (likely due to your chunking change), not a race.
+
+How to make the validator optional right now (no code changes)  
+Output verification is already optional via the run command flag:
+
+*   `--output-verify` (default `true`)
+    
+*   `--output-retries` (default `1`)
+    
+    oraclepack-op-mcp
+    
+
+So you can run:
+
+    oraclepack run <pack.md> --output-verify=false
+    
+
+This bypasses the post-step output section checks entirely. The runner explicitly returns success after the step executes when `OutputVerify` is false.
+
+oraclepack-op-mcp
+
+If your goal is “chunked outputs without failing,” the better fix is to align chunking with the verifier  
+Oraclepack already supports splitting output across multiple `--write-output` files, and in that case it relaxes expectations to one token per file based on filename suffixes: `-direct-answer`, `-risks-unknowns`, `-next-experiment`, `-missing-evidence`.
+
+oraclepack-op-mcp
+
+Practically: instead of writing all sections into one file per step (which forces all tokens), write each section into its own file and name them with those suffixes. Then oraclepack will only require (e.g.) “direct answer” to appear in the `*-direct-answer*` file, etc.
+
+oraclepack-op-mcp
+
+How to “verify further later” (what’s missing today, and the cleanest addition)  
+If you run with `--output-verify=false`, oraclepack will mark steps as succeeded, and a later `--resume` run will skip those steps and won’t re-check outputs (because verification is tied to step execution in `runStepWithOutputVerification`).
+
+oraclepack-op-mcp
+
+If you want “run now, verify later” as a first-class workflow, the smallest product change is to add a new command that only validates outputs without executing steps, e.g.:
+
+*   `oraclepack verify-outputs <pack.md>`
+    
+    *   For each step: compute `pack.StepOutputExpectations(step)` and run `pack.ValidateOutputFile(path, requiredTokens)`
+        
+    *   Print failures and exit non-zero if any are missing.
+        
+
+This directly reuses the same expectation logic and token normalization already used during execution.
+
+---
+
+## You asked:
+
+oracle-pack-2026-01-09.md
+
+File
+
+verify the issue for us. here's the pack we ran to get the error
+
+---
+
+## ChatGPT Replied:
+
+Thought for 5m 25s
+
+The failure is not “too quick to validate.” It’s failing because oraclepack’s validator is doing a content check on the `--write-output` file, and step 01’s output file does not contain the required section tokens.
+
+Why it fails (grounded in your pack + oraclepack code)
+
+1.  Your step 01 prompt contains the literal phrase `Answer format:` and lists 4 required sections.
+    
+    oracle-pack-2026-01-09
+    
+2.  oraclepack treats the presence of “answer format” in the step code as a signal to require _all four_ tokens in the output file:
+    
+    *   `direct answer`
+        
+    *   `risks unknowns`
+        
+    *   `next smallest concrete experiment`
+        
+    *   `if evidence is insufficient`
+        
+        oraclepack-op-mcp
+        
+3.  For steps with a single `--write-output`, oraclepack reads the output file and checks (after normalization) that all required tokens appear. If any are missing, you get `output verification failed for step 01`.
+    
+    oraclepack-op-mcp
+    
+4.  `oracle --write-output <path>` saves only the final answer content. So if the model response only includes the “Direct answer” section (as your screenshot suggests), the other tokens never appear in the file and validation fails.
+    
+
+So: increasing a “wait time” won’t fix it, because the validator isn’t racing the write; it’s rejecting the contents that were written.
+
+How to confirm in your repo (fastest verification)
+
+Open the file oracle wrote:
+
+    sed -n '1,200p' docs/oracle-questions-2026-01-09/01-contracts-interfaces-surface.md
+    
+
+Then check for the required tokens (case/punctuation don’t matter; oraclepack normalizes):
+
+[TRUNCATED]
 ```
 
 </source_code>

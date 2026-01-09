@@ -1,39 +1,348 @@
 <filetree>
 Project Structure:
 └── docs
-    └── oracle-questions-2026-01-08
-        ├── actions
-        │   ├── 01-contracts-interfaces-ticket-surface.md
-        │   ├── 02-contracts-interfaces-integration-points.md
-        │   ├── 03-invariants-invariant-map.md
-        │   ├── 04-invariants-validation-boundaries.md
-        │   ├── 05-caching-state-state-artifacts.md
-        │   ├── 06-caching-state-cache-keys.md
-        │   ├── 07-background-jobs-job-model.md
-        │   ├── 08-background-jobs-queue-failure.md
-        │   ├── 09-observability-logging-metrics.md
-        │   ├── 10-observability-tracing.md
-        │   ├── 11-permissions-authz-gaps.md
-        │   ├── 13-migrations-schema-migrations.md
-        │   ├── 14-migrations-backfill-plan.md
-        │   ├── 15-ux-flows-user-journeys.md
-        │   ├── 16-ux-flows-edge-cases.md
-        │   ├── 17-failure-modes-timeouts-retries.md
-        │   ├── 18-failure-modes-rollback-plan.md
-        │   ├── 19-feature-flags-flag-plan.md
-        │   └── 20-feature-flags-compat-rollout.md
-        ├── packs
-        │   ├── actions.md
-        │   ├── mcp.md
-        │   ├── misc.md
-        │   ├── other.md
-        │   └── prd-tui.md
-        ├── _groups.json
-        └── manifest.json
+    ├── oracle-questions-2026-01-08
+    │   ├── actions
+    │   │   ├── 01-contracts-interfaces-ticket-surface.md
+    │   │   ├── 02-contracts-interfaces-integration-points.md
+    │   │   ├── 03-invariants-invariant-map.md
+    │   │   ├── 04-invariants-validation-boundaries.md
+    │   │   ├── 05-caching-state-state-artifacts.md
+    │   │   ├── 06-caching-state-cache-keys.md
+    │   │   ├── 07-background-jobs-job-model.md
+    │   │   ├── 08-background-jobs-queue-failure.md
+    │   │   ├── 09-observability-logging-metrics.md
+    │   │   ├── 10-observability-tracing.md
+    │   │   ├── 11-permissions-authz-gaps.md
+    │   │   ├── 13-migrations-schema-migrations.md
+    │   │   ├── 14-migrations-backfill-plan.md
+    │   │   ├── 15-ux-flows-user-journeys.md
+    │   │   ├── 16-ux-flows-edge-cases.md
+    │   │   ├── 17-failure-modes-timeouts-retries.md
+    │   │   ├── 18-failure-modes-rollback-plan.md
+    │   │   ├── 19-feature-flags-flag-plan.md
+    │   │   └── 20-feature-flags-compat-rollout.md
+    │   ├── packs
+    │   │   ├── actions.md
+    │   │   ├── mcp.md
+    │   │   ├── misc.md
+    │   │   ├── other.md
+    │   │   └── prd-tui.md
+    │   ├── _groups.json
+    │   └── manifest.json
+    ├── oracle-questions-2026-01-09-030000
+    │   ├── packs
+    │   │   ├── actions.md
+    │   │   ├── mcp.md
+    │   │   ├── misc.md
+    │   │   ├── other.md
+    │   │   ├── prd-tui.md
+    │   │   └── raw-exports.md
+    │   ├── _groups.json
+    │   └── manifest.json
+    └── oracle-pack-2026-01-09.md
 
 </filetree>
 
 <source_code>
+docs/oracle-pack-2026-01-09.md
+```
+# Oracle Pack — Unknown (Gold Stage 1)
+
+## Parsed args
+- codebase_name: Unknown
+- constraints: None
+- non_goals: None
+- team_size: Unknown
+- deadline: Unknown
+- out_dir: docs/oracle-questions-2026-01-09
+- oracle_cmd: oracle
+- oracle_flags: --files-report
+- engine: None
+- model: None
+- extra_files: (none)
+
+Notes:
+- Template is the contract. Keep the pack runner-ingestible.
+- Exactly one fenced bash block in this whole document.
+- Exactly 20 steps, numbered 01..20.
+- Each step includes: ROI= impact= confidence= effort= horizon= category= reference=
+- Categories must be exactly the fixed set used in Coverage check.
+
+## Commands
+```bash
+# Optional preflight pattern:
+# - Add --dry-run summary to preview what will be sent, and keep --files-report enabled when available.
+
+# 01) ROI=4.2 impact=High confidence=High effort=Low horizon=Immediate category=contracts/interfaces reference=internal/cli/root.go
+oracle \
+  --files-report \
+  --write-output "docs/oracle-questions-2026-01-09/01-contracts-interfaces-surface.md" \
+  -f "README.md" \
+  -f "internal/cli/root.go" \
+  -p "$(cat <<'PROMPT'
+Strategist question #01
+
+Reference: internal/cli/root.go
+Category: contracts/interfaces
+Horizon: Immediate
+ROI: 4.2 (impact=High, confidence=High, effort=Low)
+
+Question:
+Identify the primary public interface(s) of this system (CLI commands, flags, and pack format surface). For each, list the key inputs/outputs and where they are defined in the code.
+
+Rationale (one sentence):
+We need a trustworthy map of the system's outside-facing contract before deeper planning.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–6 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 02) ROI=3.6 impact=High confidence=Medium effort=Medium horizon=Immediate category=contracts/interfaces reference=internal/tools/types.go
+oracle \
+  --files-report \
+  --write-output "docs/oracle-questions-2026-01-09/02-contracts-interfaces-integration.md" \
+  -f "internal/tools/types.go" \
+  -f "internal/exec/runner.go" \
+  -p "$(cat <<'PROMPT'
+Strategist question #02
+
+Reference: internal/tools/types.go
+Category: contracts/interfaces
+Horizon: Immediate
+ROI: 3.6 (impact=High, confidence=Medium, effort=Medium)
+
+Question:
+What are the top integration points with external tools or systems (oracle CLI, shell environment, filesystem, optional task-master/codex/gemini prefixes)? For each, point to the contract or config that declares it.
+
+Rationale (one sentence):
+Integration boundaries drive risk, deployment needs, and test strategy.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–6 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 03) ROI=3.4 impact=High confidence=Medium effort=Medium horizon=NearTerm category=invariants reference=internal/pack/parser.go
+oracle \
+  --files-report \
+  --write-output "docs/oracle-questions-2026-01-09/03-invariants-domain.md" \
+  -f "internal/pack/parser.go" \
+  -f "internal/pack/types.go" \
+  -p "$(cat <<'PROMPT'
+Strategist question #03
+
+Reference: internal/pack/parser.go
+Category: invariants
+Horizon: NearTerm
+ROI: 3.4 (impact=High, confidence=Medium, effort=Medium)
+
+Question:
+List the system's most important invariants about pack structure and step metadata (e.g., numbering, ROI parsing, header format). For each, show where it is enforced or where enforcement is missing.
+
+Rationale (one sentence):
+Invariants define correctness and are the backbone of reliable changes.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–8 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 04) ROI=3.1 impact=Medium confidence=Medium effort=Medium horizon=NearTerm category=invariants reference=internal/pack/output_check.go
+oracle \
+  --files-report \
+  --write-output "docs/oracle-questions-2026-01-09/04-invariants-validation.md" \
+  -f "internal/pack/output_check.go" \
+  -f "internal/pack/parser.go" \
+  -p "$(cat <<'PROMPT'
+Strategist question #04
+
+Reference: internal/pack/output_check.go
+Category: invariants
+Horizon: NearTerm
+ROI: 3.1 (impact=Medium, confidence=Medium, effort=Medium)
+
+Question:
+Where does validation happen (pack parsing, output section validation, tool detection)? Identify the validation boundaries and the most likely gaps that could cause inconsistent state or false positives.
+
+Rationale (one sentence):
+Knowing validation boundaries prevents regressions and reduces correctness risk.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–8 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 05) ROI=3.0 impact=Medium confidence=Medium effort=Low horizon=NearTerm category=caching/state reference=internal/state/types.go
+oracle \
+  --files-report \
+  --write-output "docs/oracle-questions-2026-01-09/05-caching-state-layers.md" \
+  -f "internal/state/types.go" \
+  -f "internal/state/persist.go" \
+  -p "$(cat <<'PROMPT'
+Strategist question #05
+
+Reference: internal/state/types.go
+Category: caching/state
+Horizon: NearTerm
+ROI: 3.0 (impact=Medium, confidence=Medium, effort=Low)
+
+Question:
+What stateful components exist (run state, report artifacts, in-memory tracking within a run)? For each, describe lifecycle, persistence, and where it is implemented.
+
+Rationale (one sentence):
+State and caching are common sources of subtle bugs and performance issues.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–8 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 06) ROI=2.6 impact=Medium confidence=Low effort=Medium horizon=NearTerm category=caching/state reference=internal/app/run.go
+oracle \
+  --files-report \
+  --write-output "docs/oracle-questions-2026-01-09/06-caching-state-consistency.md" \
+  -f "internal/app/run.go" \
+  -f "internal/state/persist.go" \
+  -p "$(cat <<'PROMPT'
+Strategist question #06
+
+Reference: internal/app/run.go
+Category: caching/state
+Horizon: NearTerm
+ROI: 2.6 (impact=Medium, confidence=Low, effort=Medium)
+
+Question:
+Identify the top consistency risks between in-memory run state and persisted state/report files (e.g., partial writes, skipped updates, resume behavior). Where are the knobs/configs that influence state persistence?
+
+Rationale (one sentence):
+Consistency failure modes often surface as "random bugs" and are expensive to debug.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–8 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 07) ROI=2.4 impact=Medium confidence=Low effort=Medium horizon=NearTerm category=background jobs reference=internal/app/run.go
+oracle \
+  --files-report \
+  --write-output "docs/oracle-questions-2026-01-09/07-background-jobs-discovery.md" \
+  -f "internal/app/run.go" \
+  -f "internal/tui/tui.go" \
+  -p "$(cat <<'PROMPT'
+Strategist question #07
+
+Reference: internal/app/run.go
+Category: background jobs
+Horizon: NearTerm
+ROI: 2.4 (impact=Medium, confidence=Low, effort=Medium)
+
+Question:
+What background jobs/workers/scheduled tasks exist (if any)? For each, identify trigger mechanism, payload, retries, idempotency, and where it is defined.
+
+Rationale (one sentence):
+Background work affects reliability, cost, and operational complexity.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–8 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 08) ROI=2.2 impact=Medium confidence=Low effort=High horizon=NearTerm category=background jobs reference=internal/exec/runner.go
+oracle \
+  --files-report \
+  --write-output "docs/oracle-questions-2026-01-09/08-background-jobs-reliability.md" \
+  -f "internal/exec/runner.go" \
+  -f "internal/app/run.go" \
+  -p "$(cat <<'PROMPT'
+Strategist question #08
+
+Reference: internal/exec/runner.go
+Category: background jobs
+Horizon: NearTerm
+ROI: 2.2 (impact=Medium, confidence=Low, effort=High)
+
+Question:
+Where are the main reliability controls for any background or long-running work (timeouts, retries, cancellation, concurrency limits), and what is missing or inconsistent?
+
+Rationale (one sentence):
+Reliability controls prevent incident loops and data corruption.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–8 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+# 09) ROI=3.3 impact=High confidence=Medium effort=Low horizon=Immediate category=observability reference=internal/report/generate.go
+oracle \
+  --files-report \
+  --write-output "docs/oracle-questions-2026-01-09/09-observability-signals.md" \
+  -f "internal/report/generate.go" \
+  -f "internal/report/types.go" \
+  -p "$(cat <<'PROMPT'
+Strategist question #09
+
+Reference: internal/report/generate.go
+Category: observability
+Horizon: Immediate
+ROI: 3.3 (impact=High, confidence=Medium, effort=Low)
+
+Question:
+What observability signals exist (run reports, warnings, stdout/stderr logs), and what are the primary identifiers for correlating a step/run across components? Point to the code/config that defines them.
+
+Rationale (one sentence):
+[TRUNCATED]
+```
+
 docs/oracle-questions-2026-01-08/_groups.json
 ```
 {
@@ -174,6 +483,182 @@ docs/oracle-questions-2026-01-08/manifest.json
       "pack_path": "docs/oracle-questions-2026-01-08/packs/other.md",
       "part": 1,
       "slug": "other"
+    }
+  ]
+}
+```
+
+docs/oracle-questions-2026-01-09-030000/_groups.json
+```
+{
+  "PRD-TUI": [
+    ".tickets/PRD-TUI/Oraclepack TUI Integration.md",
+    ".tickets/PRD-TUI/PRD-generator URL routing.md"
+  ],
+  "actions": [
+    ".tickets/actions/Enable Action Packs Dispatch.md",
+    ".tickets/actions/Improving Oraclepack Workflow.md",
+    ".tickets/actions/Oraclepack Action Pack Integration.md",
+    ".tickets/actions/Oraclepack Action Pack Issue.md",
+    ".tickets/actions/Oraclepack Action Packs.md",
+    ".tickets/actions/Oraclepack Compatibility Issues.md"
+  ],
+  "mcp": [
+    ".tickets/mcp/Expose Oraclepack as MCP.md",
+    ".tickets/mcp/MCP Server for Oraclepack.md",
+    ".tickets/mcp/gaps-still-not-covered.md",
+    ".tickets/mcp/gaps_part2-mcp-builder.md",
+    ".tickets/mcp/oraclepack-MCP.md",
+    ".tickets/mcp/oraclepack_mcp_server.md"
+  ],
+  "misc": [
+    ".tickets/Formalize LLM Decision Points.md",
+    ".tickets/Oraclepack CLI MCP Parity.md",
+    ".tickets/Oraclepack File Storage.md",
+    ".tickets/Oraclepack Parity Automation.md",
+    ".tickets/Oraclepack Schema Approach.md",
+    ".tickets/Oraclepack bash fix.md",
+    ".tickets/Oraclepack output verification issues.md",
+    ".tickets/Oraclepack-CLI-agents.md",
+    ".tickets/Publish OraclePack MCP.md"
+  ],
+  "other": [
+    ".tickets/other/Oraclepack Pipeline Improvements.md",
+    ".tickets/other/Oraclepack Prompt Generator.md",
+    ".tickets/other/Oraclepack Workflow Enhancement.md",
+    ".tickets/other/Verbose Payload Rendering TUI.md"
+  ],
+  "raw-exports": [
+    ".tickets/raw-exports/Output verification failure.md"
+  ]
+}
+```
+
+docs/oracle-questions-2026-01-09-030000/manifest.json
+```
+{
+  "groups": [
+    {
+      "attached_paths": [
+        ".tickets/PRD-TUI/Oraclepack TUI Integration.md",
+        ".tickets/PRD-TUI/PRD-generator URL routing.md"
+      ],
+      "group": "PRD-TUI",
+      "original_tickets": [
+        ".tickets/PRD-TUI/Oraclepack TUI Integration.md",
+        ".tickets/PRD-TUI/PRD-generator URL routing.md"
+      ],
+      "out_dir": "docs/oracle-questions-2026-01-09-030000/prd-tui",
+      "pack_path": "docs/oracle-questions-2026-01-09-030000/packs/prd-tui.md",
+      "part": 1,
+      "slug": "prd-tui"
+    },
+    {
+      "attached_paths": [
+        ".tickets/actions/Enable Action Packs Dispatch.md",
+        ".tickets/actions/Improving Oraclepack Workflow.md",
+        ".tickets/actions/Oraclepack Action Pack Integration.md",
+        ".tickets/actions/Oraclepack Action Pack Issue.md",
+        ".tickets/actions/Oraclepack Action Packs.md",
+        ".tickets/actions/Oraclepack Compatibility Issues.md"
+      ],
+      "group": "actions",
+      "original_tickets": [
+        ".tickets/actions/Enable Action Packs Dispatch.md",
+        ".tickets/actions/Improving Oraclepack Workflow.md",
+        ".tickets/actions/Oraclepack Action Pack Integration.md",
+        ".tickets/actions/Oraclepack Action Pack Issue.md",
+        ".tickets/actions/Oraclepack Action Packs.md",
+        ".tickets/actions/Oraclepack Compatibility Issues.md"
+      ],
+      "out_dir": "docs/oracle-questions-2026-01-09-030000/actions",
+      "pack_path": "docs/oracle-questions-2026-01-09-030000/packs/actions.md",
+      "part": 1,
+      "slug": "actions"
+    },
+    {
+      "attached_paths": [
+        ".tickets/mcp/Expose Oraclepack as MCP.md",
+        ".tickets/mcp/MCP Server for Oraclepack.md",
+        ".tickets/mcp/gaps-still-not-covered.md",
+        ".tickets/mcp/gaps_part2-mcp-builder.md",
+        ".tickets/mcp/oraclepack-MCP.md",
+        ".tickets/mcp/oraclepack_mcp_server.md"
+      ],
+      "group": "mcp",
+      "original_tickets": [
+        ".tickets/mcp/Expose Oraclepack as MCP.md",
+        ".tickets/mcp/MCP Server for Oraclepack.md",
+        ".tickets/mcp/gaps-still-not-covered.md",
+        ".tickets/mcp/gaps_part2-mcp-builder.md",
+        ".tickets/mcp/oraclepack-MCP.md",
+        ".tickets/mcp/oraclepack_mcp_server.md"
+      ],
+      "out_dir": "docs/oracle-questions-2026-01-09-030000/mcp",
+      "pack_path": "docs/oracle-questions-2026-01-09-030000/packs/mcp.md",
+      "part": 1,
+      "slug": "mcp"
+    },
+    {
+      "attached_paths": [
+        ".tickets/Formalize LLM Decision Points.md",
+        ".tickets/Oraclepack CLI MCP Parity.md",
+        ".tickets/Oraclepack File Storage.md",
+        ".tickets/Oraclepack Parity Automation.md",
+        ".tickets/Oraclepack Schema Approach.md",
+        ".tickets/Oraclepack bash fix.md",
+        ".tickets/Oraclepack output verification issues.md",
+        ".tickets/Oraclepack-CLI-agents.md",
+        ".tickets/Publish OraclePack MCP.md"
+      ],
+      "group": "misc",
+      "original_tickets": [
+        ".tickets/Formalize LLM Decision Points.md",
+        ".tickets/Oraclepack CLI MCP Parity.md",
+        ".tickets/Oraclepack File Storage.md",
+        ".tickets/Oraclepack Parity Automation.md",
+        ".tickets/Oraclepack Schema Approach.md",
+        ".tickets/Oraclepack bash fix.md",
+        ".tickets/Oraclepack output verification issues.md",
+        ".tickets/Oraclepack-CLI-agents.md",
+        ".tickets/Publish OraclePack MCP.md"
+      ],
+      "out_dir": "docs/oracle-questions-2026-01-09-030000/misc",
+      "pack_path": "docs/oracle-questions-2026-01-09-030000/packs/misc.md",
+      "part": 1,
+      "slug": "misc"
+    },
+    {
+      "attached_paths": [
+        ".tickets/other/Oraclepack Pipeline Improvements.md",
+        ".tickets/other/Oraclepack Prompt Generator.md",
+        ".tickets/other/Oraclepack Workflow Enhancement.md",
+        ".tickets/other/Verbose Payload Rendering TUI.md"
+      ],
+      "group": "other",
+      "original_tickets": [
+        ".tickets/other/Oraclepack Pipeline Improvements.md",
+        ".tickets/other/Oraclepack Prompt Generator.md",
+        ".tickets/other/Oraclepack Workflow Enhancement.md",
+        ".tickets/other/Verbose Payload Rendering TUI.md"
+      ],
+      "out_dir": "docs/oracle-questions-2026-01-09-030000/other",
+      "pack_path": "docs/oracle-questions-2026-01-09-030000/packs/other.md",
+      "part": 1,
+      "slug": "other"
+    },
+    {
+      "attached_paths": [
+        ".tickets/raw-exports/Output verification failure.md"
+      ],
+      "group": "raw-exports",
+      "original_tickets": [
+        ".tickets/raw-exports/Output verification failure.md"
+      ],
+      "out_dir": "docs/oracle-questions-2026-01-09-030000/raw-exports",
+      "pack_path": "docs/oracle-questions-2026-01-09-030000/packs/raw-exports.md",
+      "part": 1,
+      "slug": "raw-exports"
     }
   ]
 }
@@ -1502,100 +1987,6 @@ if [ "${#ticket_args[@]}" -eq 0 ]; then
 fi
 
 # extra_files appended literally (may be empty; may include -f/--file):
-oracle   --files-report   --write-output "docs/oracle-questions-2026-01-08/actions/04-invariants-validation-boundaries.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
-Strategist question #04  (ticket-driven, group: actions)
-
-Reference: actions
-Category: invariants
-Horizon: NearTerm
-ROI: 5.0 (impact=7, confidence=0.72, effort=2)
-
-Question:
-Using the attached tickets as the primary context, identify validation boundaries that must exist (ticket parsing, pack generation, pack validation); propose minimal validation plan.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 05) ROI=4.4 impact=6 confidence=0.78 effort=2 horizon=NearTerm category=caching/state reference=actions
-
-# tickets attached directly (deterministic; self-contained)
-mapfile -t __tickets < <(python3 - <<'PY'
-from __future__ import annotations
-from pathlib import Path
-
-TICKET_ROOT = ".tickets"
-TICKET_GLOB = "**/*.md"
-TICKET_PATHS = ".tickets/actions/Enable Action Packs Dispatch.md,.tickets/actions/Improving Oraclepack Workflow.md,.tickets/actions/Oraclepack Action Pack Integration.md,.tickets/actions/Oraclepack Action Pack Issue.md,.tickets/actions/Oraclepack Action Packs.md,.tickets/actions/Oraclepack Compatibility Issues.md".strip()
-MAX = int("6")
-
-root = Path(TICKET_ROOT)
-
-def lex_sorted(ps):
-    return sorted((str(p) for p in ps), key=lambda s: s)
-
-if TICKET_PATHS:
-    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
-else:
-    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
-
-tickets = [Path(p) for p in lex_sorted(tickets)]
-if MAX and MAX > 0:
-    tickets = tickets[:MAX]
-
-for p in tickets:
-    print(str(p))
-PY
-)
-
-ticket_args=()
-for p in "${__tickets[@]}"; do
-  ticket_args+=(-f "$p")
-done
-
-if [ "${#ticket_args[@]}" -eq 0 ]; then
-  echo "WARNING: no tickets resolved for group 'actions'." >&2
-fi
-
-# extra_files appended literally (may be empty; may include -f/--file):
-oracle   --files-report   --write-output "docs/oracle-questions-2026-01-08/actions/05-caching-state-state-artifacts.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
-Strategist question #05  (ticket-driven, group: actions)
-
-Reference: actions
-Category: caching/state
-Horizon: NearTerm
-ROI: 4.4 (impact=6, confidence=0.78, effort=2)
-
-Question:
-Using the attached tickets as the primary context, identify state/artifacts that must be produced and preserved; schema/format expectations; stability/back-compat requirements.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 06) ROI=4.2 impact=6 confidence=0.75 effort=2 horizon=NearTerm category=caching/state reference=actions
-
-# tickets attached directly (deterministic; self-contained)
-mapfile -t __tickets < <(python3 - <<'PY'
-from __future__ import annotations
-from pathlib import Path
-
-TICKET_ROOT = ".tickets"
-TICKET_GLOB = "**/*.md"
 [TRUNCATED]
 ```
 
@@ -1862,100 +2253,6 @@ if [ "${#ticket_args[@]}" -eq 0 ]; then
 fi
 
 # extra_files appended literally (may be empty; may include -f/--file):
-oracle   --files-report   --write-output "docs/oracle-questions-2026-01-08/mcp/04-invariants-validation-boundaries.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
-Strategist question #04  (ticket-driven, group: mcp)
-
-Reference: mcp
-Category: invariants
-Horizon: NearTerm
-ROI: 5.0 (impact=7, confidence=0.72, effort=2)
-
-Question:
-Using the attached tickets as the primary context, identify validation boundaries that must exist (ticket parsing, pack generation, pack validation); propose minimal validation plan.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 05) ROI=4.4 impact=6 confidence=0.78 effort=2 horizon=NearTerm category=caching/state reference=mcp
-
-# tickets attached directly (deterministic; self-contained)
-mapfile -t __tickets < <(python3 - <<'PY'
-from __future__ import annotations
-from pathlib import Path
-
-TICKET_ROOT = ".tickets"
-TICKET_GLOB = "**/*.md"
-TICKET_PATHS = ".tickets/mcp/Expose Oraclepack as MCP.md,.tickets/mcp/MCP Server for Oraclepack.md,.tickets/mcp/gaps-still-not-covered.md,.tickets/mcp/gaps_part2-mcp-builder.md,.tickets/mcp/oraclepack-MCP.md,.tickets/mcp/oraclepack_mcp_server.md".strip()
-MAX = int("6")
-
-root = Path(TICKET_ROOT)
-
-def lex_sorted(ps):
-    return sorted((str(p) for p in ps), key=lambda s: s)
-
-if TICKET_PATHS:
-    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
-else:
-    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
-
-tickets = [Path(p) for p in lex_sorted(tickets)]
-if MAX and MAX > 0:
-    tickets = tickets[:MAX]
-
-for p in tickets:
-    print(str(p))
-PY
-)
-
-ticket_args=()
-for p in "${__tickets[@]}"; do
-  ticket_args+=(-f "$p")
-done
-
-if [ "${#ticket_args[@]}" -eq 0 ]; then
-  echo "WARNING: no tickets resolved for group 'mcp'." >&2
-fi
-
-# extra_files appended literally (may be empty; may include -f/--file):
-oracle   --files-report   --write-output "docs/oracle-questions-2026-01-08/mcp/05-caching-state-state-artifacts.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
-Strategist question #05  (ticket-driven, group: mcp)
-
-Reference: mcp
-Category: caching/state
-Horizon: NearTerm
-ROI: 4.4 (impact=6, confidence=0.78, effort=2)
-
-Question:
-Using the attached tickets as the primary context, identify state/artifacts that must be produced and preserved; schema/format expectations; stability/back-compat requirements.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 06) ROI=4.2 impact=6 confidence=0.75 effort=2 horizon=NearTerm category=caching/state reference=mcp
-
-# tickets attached directly (deterministic; self-contained)
-mapfile -t __tickets < <(python3 - <<'PY'
-from __future__ import annotations
-from pathlib import Path
-
-TICKET_ROOT = ".tickets"
-TICKET_GLOB = "**/*.md"
 [TRUNCATED]
 ```
 
@@ -2244,110 +2541,6 @@ Answer format:
 PROMPT
 )"
 
-# 05) ROI=4.4 impact=6 confidence=0.78 effort=2 horizon=NearTerm category=caching/state reference=misc
-
-# tickets attached directly (deterministic; self-contained)
-mapfile -t __tickets < <(python3 - <<'PY'
-from __future__ import annotations
-from pathlib import Path
-
-TICKET_ROOT = ".tickets"
-TICKET_GLOB = "**/*.md"
-TICKET_PATHS = ".tickets/Oraclepack File Storage.md,.tickets/Oraclepack Schema Approach.md,.tickets/Oraclepack bash fix.md,.tickets/Publish OraclePack MCP.md".strip()
-MAX = int("4")
-
-root = Path(TICKET_ROOT)
-
-def lex_sorted(ps):
-    return sorted((str(p) for p in ps), key=lambda s: s)
-
-if TICKET_PATHS:
-    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
-else:
-    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
-
-tickets = [Path(p) for p in lex_sorted(tickets)]
-if MAX and MAX > 0:
-    tickets = tickets[:MAX]
-
-for p in tickets:
-    print(str(p))
-PY
-)
-
-ticket_args=()
-for p in "${__tickets[@]}"; do
-  ticket_args+=(-f "$p")
-done
-
-if [ "${#ticket_args[@]}" -eq 0 ]; then
-  echo "WARNING: no tickets resolved for group 'misc'." >&2
-fi
-
-# extra_files appended literally (may be empty; may include -f/--file):
-oracle   --files-report   --write-output "docs/oracle-questions-2026-01-08/misc/05-caching-state-state-artifacts.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
-Strategist question #05  (ticket-driven, group: misc)
-
-Reference: misc
-Category: caching/state
-Horizon: NearTerm
-ROI: 4.4 (impact=6, confidence=0.78, effort=2)
-
-Question:
-Using the attached tickets as the primary context, identify state/artifacts that must be produced and preserved; schema/format expectations; stability/back-compat requirements.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 06) ROI=4.2 impact=6 confidence=0.75 effort=2 horizon=NearTerm category=caching/state reference=misc
-
-# tickets attached directly (deterministic; self-contained)
-mapfile -t __tickets < <(python3 - <<'PY'
-from __future__ import annotations
-from pathlib import Path
-
-TICKET_ROOT = ".tickets"
-TICKET_GLOB = "**/*.md"
-TICKET_PATHS = ".tickets/Oraclepack File Storage.md,.tickets/Oraclepack Schema Approach.md,.tickets/Oraclepack bash fix.md,.tickets/Publish OraclePack MCP.md".strip()
-MAX = int("4")
-
-root = Path(TICKET_ROOT)
-
-def lex_sorted(ps):
-    return sorted((str(p) for p in ps), key=lambda s: s)
-
-if TICKET_PATHS:
-    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
-else:
-    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
-
-tickets = [Path(p) for p in lex_sorted(tickets)]
-if MAX and MAX > 0:
-    tickets = tickets[:MAX]
-
-for p in tickets:
-    print(str(p))
-PY
-)
-
-ticket_args=()
-for p in "${__tickets[@]}"; do
-  ticket_args+=(-f "$p")
-done
-
-if [ "${#ticket_args[@]}" -eq 0 ]; then
-  echo "WARNING: no tickets resolved for group 'misc'." >&2
-fi
-
-# extra_files appended literally (may be empty; may include -f/--file):
 [TRUNCATED]
 ```
 
@@ -2631,110 +2824,6 @@ Non-goals: None
 Answer format:
 1) Direct answer (1–10 bullets, evidence-cited)
 2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 05) ROI=4.4 impact=6 confidence=0.78 effort=2 horizon=NearTerm category=caching/state reference=other
-
-# tickets attached directly (deterministic; self-contained)
-mapfile -t __tickets < <(python3 - <<'PY'
-from __future__ import annotations
-from pathlib import Path
-
-TICKET_ROOT = ".tickets"
-TICKET_GLOB = "**/*.md"
-TICKET_PATHS = ".tickets/other/Oraclepack Pipeline Improvements.md,.tickets/other/Oraclepack Prompt Generator.md,.tickets/other/Oraclepack Workflow Enhancement.md,.tickets/other/Verbose Payload Rendering TUI.md".strip()
-MAX = int("4")
-
-root = Path(TICKET_ROOT)
-
-def lex_sorted(ps):
-    return sorted((str(p) for p in ps), key=lambda s: s)
-
-if TICKET_PATHS:
-    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
-else:
-    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
-
-tickets = [Path(p) for p in lex_sorted(tickets)]
-if MAX and MAX > 0:
-    tickets = tickets[:MAX]
-
-for p in tickets:
-    print(str(p))
-PY
-)
-
-ticket_args=()
-for p in "${__tickets[@]}"; do
-  ticket_args+=(-f "$p")
-done
-
-if [ "${#ticket_args[@]}" -eq 0 ]; then
-  echo "WARNING: no tickets resolved for group 'other'." >&2
-fi
-
-# extra_files appended literally (may be empty; may include -f/--file):
-oracle   --files-report   --write-output "docs/oracle-questions-2026-01-08/other/05-caching-state-state-artifacts.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
-Strategist question #05  (ticket-driven, group: other)
-
-Reference: other
-Category: caching/state
-Horizon: NearTerm
-ROI: 4.4 (impact=6, confidence=0.78, effort=2)
-
-Question:
-Using the attached tickets as the primary context, identify state/artifacts that must be produced and preserved; schema/format expectations; stability/back-compat requirements.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 06) ROI=4.2 impact=6 confidence=0.75 effort=2 horizon=NearTerm category=caching/state reference=other
-
-# tickets attached directly (deterministic; self-contained)
-mapfile -t __tickets < <(python3 - <<'PY'
-from __future__ import annotations
-from pathlib import Path
-
-TICKET_ROOT = ".tickets"
-TICKET_GLOB = "**/*.md"
-TICKET_PATHS = ".tickets/other/Oraclepack Pipeline Improvements.md,.tickets/other/Oraclepack Prompt Generator.md,.tickets/other/Oraclepack Workflow Enhancement.md,.tickets/other/Verbose Payload Rendering TUI.md".strip()
-MAX = int("4")
-
-root = Path(TICKET_ROOT)
-
-def lex_sorted(ps):
-    return sorted((str(p) for p in ps), key=lambda s: s)
-
-if TICKET_PATHS:
-    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
-else:
-    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
-
-tickets = [Path(p) for p in lex_sorted(tickets)]
-if MAX and MAX > 0:
-    tickets = tickets[:MAX]
-
-for p in tickets:
-    print(str(p))
-PY
-)
-
-ticket_args=()
-for p in "${__tickets[@]}"; do
-  ticket_args+=(-f "$p")
-done
-
 [TRUNCATED]
 ```
 
@@ -3023,20 +3112,123 @@ Answer format:
 PROMPT
 )"
 
-# 05) ROI=4.4 impact=6 confidence=0.78 effort=2 horizon=NearTerm category=caching/state reference=prd-tui
+[TRUNCATED]
+```
+
+docs/oracle-questions-2026-01-09-030000/packs/actions.md
+```
+# Oracle Pack — Unknown (Grouped Tickets Stage 1 — Direct Attach)
+
+## Parsed args
+- codebase_name: Unknown
+- out_dir: docs/oracle-questions-2026-01-09-030000/actions
+- oracle_cmd: oracle
+- oracle_flags: --files-report
+- extra_files: 
+- ticket_root: .tickets
+- ticket_glob: **/*.md
+- ticket_paths: .tickets/actions/Enable Action Packs Dispatch.md,.tickets/actions/Improving Oraclepack Workflow.md,.tickets/actions/Oraclepack Action Pack Integration.md,.tickets/actions/Oraclepack Action Pack Issue.md,.tickets/actions/Oraclepack Action Packs.md,.tickets/actions/Oraclepack Compatibility Issues.md
+- ticket_max_files: 6
+- group_name: actions
+- group_slug: actions
+- mode: tickets-grouped-direct
+
+Notes (contract):
+- Exactly one fenced `bash` block in this document.
+- No other ``` fences anywhere.
+- Exactly 20 steps, numbered 01..20 in order.
+- Step header: `# NN) ROI=... impact=... confidence=... effort=... horizon=... category=... reference=...`
+- Every step includes: `--write-output "docs/oracle-questions-2026-01-09-030000/actions/NN-<slug>.md"` (double quotes required).
+- Steps must be self-contained and must not rely on shell variables created in previous steps.
+- Each step must attach tickets directly (no `_tickets_bundle.md` dependency).
+- Pack ends with a Coverage check section listing all 10 categories as OK or Missing(<step ids>).
+
+```bash
+set -euo pipefail
+
+mkdir -p "docs/oracle-questions-2026-01-09-030000/actions"
+
+# 01) ROI=4.8 impact=6 confidence=0.80 effort=1 horizon=Immediate category=contracts/interfaces reference=actions
 
 # tickets attached directly (deterministic; self-contained)
 mapfile -t __tickets < <(python3 - <<'PY'
 from __future__ import annotations
 from pathlib import Path
+import fnmatch
 
 TICKET_ROOT = ".tickets"
 TICKET_GLOB = "**/*.md"
-TICKET_PATHS = ".tickets/PRD-TUI/Oraclepack TUI Integration.md,.tickets/PRD-TUI/PRD-generator URL routing.md".strip()
-MAX = int("2")
+TICKET_PATHS = ".tickets/actions/Enable Action Packs Dispatch.md,.tickets/actions/Improving Oraclepack Workflow.md,.tickets/actions/Oraclepack Action Pack Integration.md,.tickets/actions/Oraclepack Action Pack Issue.md,.tickets/actions/Oraclepack Action Packs.md,.tickets/actions/Oraclepack Compatibility Issues.md".strip()
+MAX = int("6")
+
 
 root = Path(TICKET_ROOT)
 
+def read_gitignore(start: Path):
+    cur = start.resolve()
+    if cur.is_file():
+        cur = cur.parent
+    while True:
+        p = cur / ".gitignore"
+        if p.exists():
+            lines = []
+            for ln in p.read_text(encoding="utf-8", errors="replace").splitlines():
+                s = ln.strip()
+                if not s or s.startswith("#"):
+                    continue
+                lines.append(s)
+            return cur, lines
+        if cur.parent == cur:
+            return start.resolve(), []
+        cur = cur.parent
+
+
+def gitignore_match(rel_posix: str, name: str, pattern: str) -> bool:
+    neg = pattern.startswith("!")
+    if neg:
+        pattern = pattern[1:]
+    if not pattern:
+        return False
+
+    anchored = pattern.startswith("/")
+    if anchored:
+        pattern = pattern.lstrip("/")
+
+    dir_only = pattern.endswith("/")
+    if dir_only:
+        pattern = pattern.rstrip("/")
+
+    if "/" not in pattern:
+        if dir_only:
+            return any(part == pattern for part in rel_posix.split("/"))
+        return fnmatch.fnmatch(name, pattern)
+
+    target = rel_posix
+    if anchored:
+        if dir_only:
+            return target.startswith(pattern + "/")
+        return fnmatch.fnmatch(target, pattern)
+    if dir_only:
+        return f"/{pattern}/" in f"/{target}/"
+    return fnmatch.fnmatch(target, f"**/{pattern}") or fnmatch.fnmatch(target, pattern)
+
+
+def is_gitignored(path: Path, git_root: Path, patterns: list[str]) -> bool:
+    try:
+        rel = path.resolve().relative_to(git_root)
+    except Exception:
+        rel = path
+    rel_posix = rel.as_posix()
+    name = rel_posix.split("/")[-1]
+    ignored = False
+    for pat in patterns:
+        neg = pat.startswith("!")
+        if gitignore_match(rel_posix, name, pat):
+            ignored = not neg
+    return ignored
+
+
+git_root, git_patterns = read_gitignore(root)
 def lex_sorted(ps):
     return sorted((str(p) for p in ps), key=lambda s: s)
 
@@ -3046,6 +3238,7 @@ else:
     tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
 
 tickets = [Path(p) for p in lex_sorted(tickets)]
+tickets = [p for p in tickets if not is_gitignored(p, git_root, git_patterns)]
 if MAX and MAX > 0:
     tickets = tickets[:MAX]
 
@@ -3060,20 +3253,20 @@ for p in "${__tickets[@]}"; do
 done
 
 if [ "${#ticket_args[@]}" -eq 0 ]; then
-  echo "WARNING: no tickets resolved for group 'PRD-TUI'." >&2
+  echo "WARNING: no tickets resolved for group 'actions'." >&2
 fi
 
 # extra_files appended literally (may be empty; may include -f/--file):
-oracle   --files-report   --write-output "docs/oracle-questions-2026-01-08/prd-tui/05-caching-state-state-artifacts.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
-Strategist question #05  (ticket-driven, group: PRD-TUI)
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/actions/01-contracts-interfaces-ticket-surface-direct-answer.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #01  (ticket-driven, group: actions)
 
-Reference: prd-tui
-Category: caching/state
-Horizon: NearTerm
-ROI: 4.4 (impact=6, confidence=0.78, effort=2)
+Reference: actions
+Category: contracts/interfaces
+Horizon: Immediate
+ROI: 4.8 (impact=6, confidence=0.80, effort=1)
 
 Question:
-Using the attached tickets as the primary context, identify state/artifacts that must be produced and preserved; schema/format expectations; stability/back-compat requirements.
+Using the attached tickets as the primary context, list the public surface changes implied by the tickets (CLI/TUI/API/interfaces/contracts); call out backwards-compat constraints.
 
 Constraints: None
 Non-goals: None
@@ -3083,23 +3276,239 @@ Answer format:
 2) Risks/unknowns (bullets)
 3) Next smallest concrete experiment (exactly one action)
 4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+
+Output section: Direct answer
+Start with heading: Direct answer
+Return only: Direct answer (1–10 bullets, evidence-cited)
 PROMPT
 )"
 
-# 06) ROI=4.2 impact=6 confidence=0.75 effort=2 horizon=NearTerm category=caching/state reference=prd-tui
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/actions/01-contracts-interfaces-ticket-surface-risks-unknowns.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #01  (ticket-driven, group: actions)
+
+Reference: actions
+Category: contracts/interfaces
+Horizon: Immediate
+ROI: 4.8 (impact=6, confidence=0.80, effort=1)
+
+Question:
+Using the attached tickets as the primary context, list the public surface changes implied by the tickets (CLI/TUI/API/interfaces/contracts); call out backwards-compat constraints.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+
+Output section: Risks/unknowns
+Start with heading: Risks/unknowns
+Return only: Risks/unknowns (bullets)
+PROMPT
+)"
+
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/actions/01-contracts-interfaces-ticket-surface-next-experiment.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #01  (ticket-driven, group: actions)
+
+Reference: actions
+Category: contracts/interfaces
+Horizon: Immediate
+ROI: 4.8 (impact=6, confidence=0.80, effort=1)
+
+Question:
+Using the attached tickets as the primary context, list the public surface changes implied by the tickets (CLI/TUI/API/interfaces/contracts); call out backwards-compat constraints.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+
+Output section: Next smallest concrete experiment
+Start with heading: Next smallest concrete experiment
+Return only: Next smallest concrete experiment (exactly one action)
+PROMPT
+)"
+
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/actions/01-contracts-interfaces-ticket-surface-missing-evidence.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #01  (ticket-driven, group: actions)
+
+Reference: actions
+Category: contracts/interfaces
+Horizon: Immediate
+ROI: 4.8 (impact=6, confidence=0.80, effort=1)
+
+Question:
+Using the attached tickets as the primary context, list the public surface changes implied by the tickets (CLI/TUI/API/interfaces/contracts); call out backwards-compat constraints.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+
+Output section: Missing evidence
+Start with heading: Missing evidence
+Return only: If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+
+# 02) ROI=4.6 impact=6 confidence=0.78 effort=1 horizon=Immediate category=contracts/interfaces reference=actions
 
 # tickets attached directly (deterministic; self-contained)
 mapfile -t __tickets < <(python3 - <<'PY'
 from __future__ import annotations
 from pathlib import Path
+import fnmatch
 
 TICKET_ROOT = ".tickets"
 TICKET_GLOB = "**/*.md"
-TICKET_PATHS = ".tickets/PRD-TUI/Oraclepack TUI Integration.md,.tickets/PRD-TUI/PRD-generator URL routing.md".strip()
-MAX = int("2")
+TICKET_PATHS = ".tickets/actions/Enable Action Packs Dispatch.md,.tickets/actions/Improving Oraclepack Workflow.md,.tickets/actions/Oraclepack Action Pack Integration.md,.tickets/actions/Oraclepack Action Pack Issue.md,.tickets/actions/Oraclepack Action Packs.md,.tickets/actions/Oraclepack Compatibility Issues.md".strip()
+MAX = int("6")
+
 
 root = Path(TICKET_ROOT)
 
+def read_gitignore(start: Path):
+    cur = start.resolve()
+    if cur.is_file():
+        cur = cur.parent
+    while True:
+        p = cur / ".gitignore"
+        if p.exists():
+            lines = []
+            for ln in p.read_text(encoding="utf-8", errors="replace").splitlines():
+                s = ln.strip()
+                if not s or s.startswith("#"):
+                    continue
+                lines.append(s)
+            return cur, lines
+[TRUNCATED]
+```
+
+docs/oracle-questions-2026-01-09-030000/packs/mcp.md
+```
+# Oracle Pack — Unknown (Grouped Tickets Stage 1 — Direct Attach)
+
+## Parsed args
+- codebase_name: Unknown
+- out_dir: docs/oracle-questions-2026-01-09-030000/mcp
+- oracle_cmd: oracle
+- oracle_flags: --files-report
+- extra_files: 
+- ticket_root: .tickets
+- ticket_glob: **/*.md
+- ticket_paths: .tickets/mcp/Expose Oraclepack as MCP.md,.tickets/mcp/MCP Server for Oraclepack.md,.tickets/mcp/gaps-still-not-covered.md,.tickets/mcp/gaps_part2-mcp-builder.md,.tickets/mcp/oraclepack-MCP.md,.tickets/mcp/oraclepack_mcp_server.md
+- ticket_max_files: 6
+- group_name: mcp
+- group_slug: mcp
+- mode: tickets-grouped-direct
+
+Notes (contract):
+- Exactly one fenced `bash` block in this document.
+- No other ``` fences anywhere.
+- Exactly 20 steps, numbered 01..20 in order.
+- Step header: `# NN) ROI=... impact=... confidence=... effort=... horizon=... category=... reference=...`
+- Every step includes: `--write-output "docs/oracle-questions-2026-01-09-030000/mcp/NN-<slug>.md"` (double quotes required).
+- Steps must be self-contained and must not rely on shell variables created in previous steps.
+- Each step must attach tickets directly (no `_tickets_bundle.md` dependency).
+- Pack ends with a Coverage check section listing all 10 categories as OK or Missing(<step ids>).
+
+```bash
+set -euo pipefail
+
+mkdir -p "docs/oracle-questions-2026-01-09-030000/mcp"
+
+# 01) ROI=4.8 impact=6 confidence=0.80 effort=1 horizon=Immediate category=contracts/interfaces reference=mcp
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+import fnmatch
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/mcp/Expose Oraclepack as MCP.md,.tickets/mcp/MCP Server for Oraclepack.md,.tickets/mcp/gaps-still-not-covered.md,.tickets/mcp/gaps_part2-mcp-builder.md,.tickets/mcp/oraclepack-MCP.md,.tickets/mcp/oraclepack_mcp_server.md".strip()
+MAX = int("6")
+
+
+root = Path(TICKET_ROOT)
+
+def read_gitignore(start: Path):
+    cur = start.resolve()
+    if cur.is_file():
+        cur = cur.parent
+    while True:
+        p = cur / ".gitignore"
+        if p.exists():
+            lines = []
+            for ln in p.read_text(encoding="utf-8", errors="replace").splitlines():
+                s = ln.strip()
+                if not s or s.startswith("#"):
+                    continue
+                lines.append(s)
+            return cur, lines
+        if cur.parent == cur:
+            return start.resolve(), []
+        cur = cur.parent
+
+
+def gitignore_match(rel_posix: str, name: str, pattern: str) -> bool:
+    neg = pattern.startswith("!")
+    if neg:
+        pattern = pattern[1:]
+    if not pattern:
+        return False
+
+    anchored = pattern.startswith("/")
+    if anchored:
+        pattern = pattern.lstrip("/")
+
+    dir_only = pattern.endswith("/")
+    if dir_only:
+        pattern = pattern.rstrip("/")
+
+    if "/" not in pattern:
+        if dir_only:
+            return any(part == pattern for part in rel_posix.split("/"))
+        return fnmatch.fnmatch(name, pattern)
+
+    target = rel_posix
+    if anchored:
+        if dir_only:
+            return target.startswith(pattern + "/")
+        return fnmatch.fnmatch(target, pattern)
+    if dir_only:
+        return f"/{pattern}/" in f"/{target}/"
+    return fnmatch.fnmatch(target, f"**/{pattern}") or fnmatch.fnmatch(target, pattern)
+
+
+def is_gitignored(path: Path, git_root: Path, patterns: list[str]) -> bool:
+    try:
+        rel = path.resolve().relative_to(git_root)
+    except Exception:
+        rel = path
+    rel_posix = rel.as_posix()
+    name = rel_posix.split("/")[-1]
+    ignored = False
+    for pat in patterns:
+        neg = pat.startswith("!")
+        if gitignore_match(rel_posix, name, pat):
+            ignored = not neg
+    return ignored
+
+
+git_root, git_patterns = read_gitignore(root)
 def lex_sorted(ps):
     return sorted((str(p) for p in ps), key=lambda s: s)
 
@@ -3109,6 +3518,854 @@ else:
     tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
 
 tickets = [Path(p) for p in lex_sorted(tickets)]
+tickets = [p for p in tickets if not is_gitignored(p, git_root, git_patterns)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group 'mcp'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/mcp/01-contracts-interfaces-ticket-surface-direct-answer.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #01  (ticket-driven, group: mcp)
+
+Reference: mcp
+Category: contracts/interfaces
+Horizon: Immediate
+ROI: 4.8 (impact=6, confidence=0.80, effort=1)
+
+Question:
+Using the attached tickets as the primary context, list the public surface changes implied by the tickets (CLI/TUI/API/interfaces/contracts); call out backwards-compat constraints.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+
+Output section: Direct answer
+Start with heading: Direct answer
+Return only: Direct answer (1–10 bullets, evidence-cited)
+PROMPT
+)"
+
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/mcp/01-contracts-interfaces-ticket-surface-risks-unknowns.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #01  (ticket-driven, group: mcp)
+
+Reference: mcp
+Category: contracts/interfaces
+Horizon: Immediate
+ROI: 4.8 (impact=6, confidence=0.80, effort=1)
+
+Question:
+Using the attached tickets as the primary context, list the public surface changes implied by the tickets (CLI/TUI/API/interfaces/contracts); call out backwards-compat constraints.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+
+Output section: Risks/unknowns
+Start with heading: Risks/unknowns
+Return only: Risks/unknowns (bullets)
+PROMPT
+)"
+
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/mcp/01-contracts-interfaces-ticket-surface-next-experiment.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #01  (ticket-driven, group: mcp)
+
+Reference: mcp
+Category: contracts/interfaces
+Horizon: Immediate
+ROI: 4.8 (impact=6, confidence=0.80, effort=1)
+
+Question:
+Using the attached tickets as the primary context, list the public surface changes implied by the tickets (CLI/TUI/API/interfaces/contracts); call out backwards-compat constraints.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+
+Output section: Next smallest concrete experiment
+Start with heading: Next smallest concrete experiment
+Return only: Next smallest concrete experiment (exactly one action)
+PROMPT
+)"
+
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/mcp/01-contracts-interfaces-ticket-surface-missing-evidence.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #01  (ticket-driven, group: mcp)
+
+Reference: mcp
+Category: contracts/interfaces
+Horizon: Immediate
+ROI: 4.8 (impact=6, confidence=0.80, effort=1)
+
+Question:
+Using the attached tickets as the primary context, list the public surface changes implied by the tickets (CLI/TUI/API/interfaces/contracts); call out backwards-compat constraints.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+
+Output section: Missing evidence
+Start with heading: Missing evidence
+Return only: If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+
+# 02) ROI=4.6 impact=6 confidence=0.78 effort=1 horizon=Immediate category=contracts/interfaces reference=mcp
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+import fnmatch
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/mcp/Expose Oraclepack as MCP.md,.tickets/mcp/MCP Server for Oraclepack.md,.tickets/mcp/gaps-still-not-covered.md,.tickets/mcp/gaps_part2-mcp-builder.md,.tickets/mcp/oraclepack-MCP.md,.tickets/mcp/oraclepack_mcp_server.md".strip()
+MAX = int("6")
+
+
+root = Path(TICKET_ROOT)
+
+def read_gitignore(start: Path):
+    cur = start.resolve()
+    if cur.is_file():
+        cur = cur.parent
+    while True:
+        p = cur / ".gitignore"
+        if p.exists():
+            lines = []
+            for ln in p.read_text(encoding="utf-8", errors="replace").splitlines():
+                s = ln.strip()
+                if not s or s.startswith("#"):
+                    continue
+                lines.append(s)
+            return cur, lines
+[TRUNCATED]
+```
+
+docs/oracle-questions-2026-01-09-030000/packs/misc.md
+```
+# Oracle Pack — Unknown (Grouped Tickets Stage 1 — Direct Attach)
+
+## Parsed args
+- codebase_name: Unknown
+- out_dir: docs/oracle-questions-2026-01-09-030000/misc
+- oracle_cmd: oracle
+- oracle_flags: --files-report
+- extra_files: 
+- ticket_root: .tickets
+- ticket_glob: **/*.md
+- ticket_paths: .tickets/Formalize LLM Decision Points.md,.tickets/Oraclepack CLI MCP Parity.md,.tickets/Oraclepack File Storage.md,.tickets/Oraclepack Parity Automation.md,.tickets/Oraclepack Schema Approach.md,.tickets/Oraclepack bash fix.md,.tickets/Oraclepack output verification issues.md,.tickets/Oraclepack-CLI-agents.md,.tickets/Publish OraclePack MCP.md
+- ticket_max_files: 9
+- group_name: misc
+- group_slug: misc
+- mode: tickets-grouped-direct
+
+Notes (contract):
+- Exactly one fenced `bash` block in this document.
+- No other ``` fences anywhere.
+- Exactly 20 steps, numbered 01..20 in order.
+- Step header: `# NN) ROI=... impact=... confidence=... effort=... horizon=... category=... reference=...`
+- Every step includes: `--write-output "docs/oracle-questions-2026-01-09-030000/misc/NN-<slug>.md"` (double quotes required).
+- Steps must be self-contained and must not rely on shell variables created in previous steps.
+- Each step must attach tickets directly (no `_tickets_bundle.md` dependency).
+- Pack ends with a Coverage check section listing all 10 categories as OK or Missing(<step ids>).
+
+```bash
+set -euo pipefail
+
+mkdir -p "docs/oracle-questions-2026-01-09-030000/misc"
+
+# 01) ROI=4.8 impact=6 confidence=0.80 effort=1 horizon=Immediate category=contracts/interfaces reference=misc
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+import fnmatch
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/Formalize LLM Decision Points.md,.tickets/Oraclepack CLI MCP Parity.md,.tickets/Oraclepack File Storage.md,.tickets/Oraclepack Parity Automation.md,.tickets/Oraclepack Schema Approach.md,.tickets/Oraclepack bash fix.md,.tickets/Oraclepack output verification issues.md,.tickets/Oraclepack-CLI-agents.md,.tickets/Publish OraclePack MCP.md".strip()
+MAX = int("9")
+
+
+root = Path(TICKET_ROOT)
+
+def read_gitignore(start: Path):
+    cur = start.resolve()
+    if cur.is_file():
+        cur = cur.parent
+    while True:
+        p = cur / ".gitignore"
+        if p.exists():
+            lines = []
+            for ln in p.read_text(encoding="utf-8", errors="replace").splitlines():
+                s = ln.strip()
+                if not s or s.startswith("#"):
+                    continue
+                lines.append(s)
+            return cur, lines
+        if cur.parent == cur:
+            return start.resolve(), []
+        cur = cur.parent
+
+
+def gitignore_match(rel_posix: str, name: str, pattern: str) -> bool:
+    neg = pattern.startswith("!")
+    if neg:
+        pattern = pattern[1:]
+    if not pattern:
+        return False
+
+    anchored = pattern.startswith("/")
+    if anchored:
+        pattern = pattern.lstrip("/")
+
+    dir_only = pattern.endswith("/")
+    if dir_only:
+        pattern = pattern.rstrip("/")
+
+    if "/" not in pattern:
+        if dir_only:
+            return any(part == pattern for part in rel_posix.split("/"))
+        return fnmatch.fnmatch(name, pattern)
+
+    target = rel_posix
+    if anchored:
+        if dir_only:
+            return target.startswith(pattern + "/")
+        return fnmatch.fnmatch(target, pattern)
+    if dir_only:
+        return f"/{pattern}/" in f"/{target}/"
+    return fnmatch.fnmatch(target, f"**/{pattern}") or fnmatch.fnmatch(target, pattern)
+
+
+def is_gitignored(path: Path, git_root: Path, patterns: list[str]) -> bool:
+    try:
+        rel = path.resolve().relative_to(git_root)
+    except Exception:
+        rel = path
+    rel_posix = rel.as_posix()
+    name = rel_posix.split("/")[-1]
+    ignored = False
+    for pat in patterns:
+        neg = pat.startswith("!")
+        if gitignore_match(rel_posix, name, pat):
+            ignored = not neg
+    return ignored
+
+
+git_root, git_patterns = read_gitignore(root)
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+tickets = [p for p in tickets if not is_gitignored(p, git_root, git_patterns)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group 'misc'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/misc/01-contracts-interfaces-ticket-surface-direct-answer.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #01  (ticket-driven, group: misc)
+
+Reference: misc
+Category: contracts/interfaces
+Horizon: Immediate
+ROI: 4.8 (impact=6, confidence=0.80, effort=1)
+
+Question:
+Using the attached tickets as the primary context, list the public surface changes implied by the tickets (CLI/TUI/API/interfaces/contracts); call out backwards-compat constraints.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+
+Output section: Direct answer
+Start with heading: Direct answer
+Return only: Direct answer (1–10 bullets, evidence-cited)
+PROMPT
+)"
+
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/misc/01-contracts-interfaces-ticket-surface-risks-unknowns.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #01  (ticket-driven, group: misc)
+
+Reference: misc
+Category: contracts/interfaces
+Horizon: Immediate
+ROI: 4.8 (impact=6, confidence=0.80, effort=1)
+
+Question:
+Using the attached tickets as the primary context, list the public surface changes implied by the tickets (CLI/TUI/API/interfaces/contracts); call out backwards-compat constraints.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+
+Output section: Risks/unknowns
+Start with heading: Risks/unknowns
+Return only: Risks/unknowns (bullets)
+PROMPT
+)"
+
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/misc/01-contracts-interfaces-ticket-surface-next-experiment.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #01  (ticket-driven, group: misc)
+
+Reference: misc
+Category: contracts/interfaces
+Horizon: Immediate
+ROI: 4.8 (impact=6, confidence=0.80, effort=1)
+
+Question:
+Using the attached tickets as the primary context, list the public surface changes implied by the tickets (CLI/TUI/API/interfaces/contracts); call out backwards-compat constraints.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+
+Output section: Next smallest concrete experiment
+Start with heading: Next smallest concrete experiment
+Return only: Next smallest concrete experiment (exactly one action)
+PROMPT
+)"
+
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/misc/01-contracts-interfaces-ticket-surface-missing-evidence.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #01  (ticket-driven, group: misc)
+
+Reference: misc
+Category: contracts/interfaces
+Horizon: Immediate
+ROI: 4.8 (impact=6, confidence=0.80, effort=1)
+
+Question:
+Using the attached tickets as the primary context, list the public surface changes implied by the tickets (CLI/TUI/API/interfaces/contracts); call out backwards-compat constraints.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+
+Output section: Missing evidence
+Start with heading: Missing evidence
+Return only: If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+
+# 02) ROI=4.6 impact=6 confidence=0.78 effort=1 horizon=Immediate category=contracts/interfaces reference=misc
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+import fnmatch
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/Formalize LLM Decision Points.md,.tickets/Oraclepack CLI MCP Parity.md,.tickets/Oraclepack File Storage.md,.tickets/Oraclepack Parity Automation.md,.tickets/Oraclepack Schema Approach.md,.tickets/Oraclepack bash fix.md,.tickets/Oraclepack output verification issues.md,.tickets/Oraclepack-CLI-agents.md,.tickets/Publish OraclePack MCP.md".strip()
+MAX = int("9")
+
+
+root = Path(TICKET_ROOT)
+
+def read_gitignore(start: Path):
+    cur = start.resolve()
+    if cur.is_file():
+        cur = cur.parent
+    while True:
+        p = cur / ".gitignore"
+        if p.exists():
+            lines = []
+[TRUNCATED]
+```
+
+docs/oracle-questions-2026-01-09-030000/packs/other.md
+```
+# Oracle Pack — Unknown (Grouped Tickets Stage 1 — Direct Attach)
+
+## Parsed args
+- codebase_name: Unknown
+- out_dir: docs/oracle-questions-2026-01-09-030000/other
+- oracle_cmd: oracle
+- oracle_flags: --files-report
+- extra_files: 
+- ticket_root: .tickets
+- ticket_glob: **/*.md
+- ticket_paths: .tickets/other/Oraclepack Pipeline Improvements.md,.tickets/other/Oraclepack Prompt Generator.md,.tickets/other/Oraclepack Workflow Enhancement.md,.tickets/other/Verbose Payload Rendering TUI.md
+- ticket_max_files: 4
+- group_name: other
+- group_slug: other
+- mode: tickets-grouped-direct
+
+Notes (contract):
+- Exactly one fenced `bash` block in this document.
+- No other ``` fences anywhere.
+- Exactly 20 steps, numbered 01..20 in order.
+- Step header: `# NN) ROI=... impact=... confidence=... effort=... horizon=... category=... reference=...`
+- Every step includes: `--write-output "docs/oracle-questions-2026-01-09-030000/other/NN-<slug>.md"` (double quotes required).
+- Steps must be self-contained and must not rely on shell variables created in previous steps.
+- Each step must attach tickets directly (no `_tickets_bundle.md` dependency).
+- Pack ends with a Coverage check section listing all 10 categories as OK or Missing(<step ids>).
+
+```bash
+set -euo pipefail
+
+mkdir -p "docs/oracle-questions-2026-01-09-030000/other"
+
+# 01) ROI=4.8 impact=6 confidence=0.80 effort=1 horizon=Immediate category=contracts/interfaces reference=other
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+import fnmatch
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/other/Oraclepack Pipeline Improvements.md,.tickets/other/Oraclepack Prompt Generator.md,.tickets/other/Oraclepack Workflow Enhancement.md,.tickets/other/Verbose Payload Rendering TUI.md".strip()
+MAX = int("4")
+
+
+root = Path(TICKET_ROOT)
+
+def read_gitignore(start: Path):
+    cur = start.resolve()
+    if cur.is_file():
+        cur = cur.parent
+    while True:
+        p = cur / ".gitignore"
+        if p.exists():
+            lines = []
+            for ln in p.read_text(encoding="utf-8", errors="replace").splitlines():
+                s = ln.strip()
+                if not s or s.startswith("#"):
+                    continue
+                lines.append(s)
+            return cur, lines
+        if cur.parent == cur:
+            return start.resolve(), []
+        cur = cur.parent
+
+
+def gitignore_match(rel_posix: str, name: str, pattern: str) -> bool:
+    neg = pattern.startswith("!")
+    if neg:
+        pattern = pattern[1:]
+    if not pattern:
+        return False
+
+    anchored = pattern.startswith("/")
+    if anchored:
+        pattern = pattern.lstrip("/")
+
+    dir_only = pattern.endswith("/")
+    if dir_only:
+        pattern = pattern.rstrip("/")
+
+    if "/" not in pattern:
+        if dir_only:
+            return any(part == pattern for part in rel_posix.split("/"))
+        return fnmatch.fnmatch(name, pattern)
+
+    target = rel_posix
+    if anchored:
+        if dir_only:
+            return target.startswith(pattern + "/")
+        return fnmatch.fnmatch(target, pattern)
+    if dir_only:
+        return f"/{pattern}/" in f"/{target}/"
+    return fnmatch.fnmatch(target, f"**/{pattern}") or fnmatch.fnmatch(target, pattern)
+
+
+def is_gitignored(path: Path, git_root: Path, patterns: list[str]) -> bool:
+    try:
+        rel = path.resolve().relative_to(git_root)
+    except Exception:
+        rel = path
+    rel_posix = rel.as_posix()
+    name = rel_posix.split("/")[-1]
+    ignored = False
+    for pat in patterns:
+        neg = pat.startswith("!")
+        if gitignore_match(rel_posix, name, pat):
+            ignored = not neg
+    return ignored
+
+
+git_root, git_patterns = read_gitignore(root)
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+tickets = [p for p in tickets if not is_gitignored(p, git_root, git_patterns)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group 'other'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/other/01-contracts-interfaces-ticket-surface-direct-answer.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #01  (ticket-driven, group: other)
+
+Reference: other
+Category: contracts/interfaces
+Horizon: Immediate
+ROI: 4.8 (impact=6, confidence=0.80, effort=1)
+
+Question:
+Using the attached tickets as the primary context, list the public surface changes implied by the tickets (CLI/TUI/API/interfaces/contracts); call out backwards-compat constraints.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+
+Output section: Direct answer
+Start with heading: Direct answer
+Return only: Direct answer (1–10 bullets, evidence-cited)
+PROMPT
+)"
+
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/other/01-contracts-interfaces-ticket-surface-risks-unknowns.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #01  (ticket-driven, group: other)
+
+Reference: other
+Category: contracts/interfaces
+Horizon: Immediate
+ROI: 4.8 (impact=6, confidence=0.80, effort=1)
+
+Question:
+Using the attached tickets as the primary context, list the public surface changes implied by the tickets (CLI/TUI/API/interfaces/contracts); call out backwards-compat constraints.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+
+Output section: Risks/unknowns
+Start with heading: Risks/unknowns
+Return only: Risks/unknowns (bullets)
+PROMPT
+)"
+
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/other/01-contracts-interfaces-ticket-surface-next-experiment.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #01  (ticket-driven, group: other)
+
+Reference: other
+Category: contracts/interfaces
+Horizon: Immediate
+ROI: 4.8 (impact=6, confidence=0.80, effort=1)
+
+Question:
+Using the attached tickets as the primary context, list the public surface changes implied by the tickets (CLI/TUI/API/interfaces/contracts); call out backwards-compat constraints.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+
+Output section: Next smallest concrete experiment
+Start with heading: Next smallest concrete experiment
+Return only: Next smallest concrete experiment (exactly one action)
+PROMPT
+)"
+
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/other/01-contracts-interfaces-ticket-surface-missing-evidence.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #01  (ticket-driven, group: other)
+
+Reference: other
+Category: contracts/interfaces
+Horizon: Immediate
+ROI: 4.8 (impact=6, confidence=0.80, effort=1)
+
+Question:
+Using the attached tickets as the primary context, list the public surface changes implied by the tickets (CLI/TUI/API/interfaces/contracts); call out backwards-compat constraints.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+
+Output section: Missing evidence
+Start with heading: Missing evidence
+Return only: If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+
+# 02) ROI=4.6 impact=6 confidence=0.78 effort=1 horizon=Immediate category=contracts/interfaces reference=other
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+import fnmatch
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/other/Oraclepack Pipeline Improvements.md,.tickets/other/Oraclepack Prompt Generator.md,.tickets/other/Oraclepack Workflow Enhancement.md,.tickets/other/Verbose Payload Rendering TUI.md".strip()
+MAX = int("4")
+
+
+root = Path(TICKET_ROOT)
+
+def read_gitignore(start: Path):
+    cur = start.resolve()
+    if cur.is_file():
+        cur = cur.parent
+    while True:
+        p = cur / ".gitignore"
+        if p.exists():
+            lines = []
+            for ln in p.read_text(encoding="utf-8", errors="replace").splitlines():
+                s = ln.strip()
+                if not s or s.startswith("#"):
+                    continue
+                lines.append(s)
+            return cur, lines
+        if cur.parent == cur:
+            return start.resolve(), []
+        cur = cur.parent
+
+
+def gitignore_match(rel_posix: str, name: str, pattern: str) -> bool:
+    neg = pattern.startswith("!")
+    if neg:
+        pattern = pattern[1:]
+    if not pattern:
+        return False
+
+    anchored = pattern.startswith("/")
+[TRUNCATED]
+```
+
+docs/oracle-questions-2026-01-09-030000/packs/prd-tui.md
+```
+# Oracle Pack — Unknown (Grouped Tickets Stage 1 — Direct Attach)
+
+## Parsed args
+- codebase_name: Unknown
+- out_dir: docs/oracle-questions-2026-01-09-030000/prd-tui
+- oracle_cmd: oracle
+- oracle_flags: --files-report
+- extra_files: 
+- ticket_root: .tickets
+- ticket_glob: **/*.md
+- ticket_paths: .tickets/PRD-TUI/Oraclepack TUI Integration.md,.tickets/PRD-TUI/PRD-generator URL routing.md
+- ticket_max_files: 2
+- group_name: PRD-TUI
+- group_slug: prd-tui
+- mode: tickets-grouped-direct
+
+Notes (contract):
+- Exactly one fenced `bash` block in this document.
+- No other ``` fences anywhere.
+- Exactly 20 steps, numbered 01..20 in order.
+- Step header: `# NN) ROI=... impact=... confidence=... effort=... horizon=... category=... reference=...`
+- Every step includes: `--write-output "docs/oracle-questions-2026-01-09-030000/prd-tui/NN-<slug>.md"` (double quotes required).
+- Steps must be self-contained and must not rely on shell variables created in previous steps.
+- Each step must attach tickets directly (no `_tickets_bundle.md` dependency).
+- Pack ends with a Coverage check section listing all 10 categories as OK or Missing(<step ids>).
+
+```bash
+set -euo pipefail
+
+mkdir -p "docs/oracle-questions-2026-01-09-030000/prd-tui"
+
+# 01) ROI=4.8 impact=6 confidence=0.80 effort=1 horizon=Immediate category=contracts/interfaces reference=prd-tui
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+import fnmatch
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/PRD-TUI/Oraclepack TUI Integration.md,.tickets/PRD-TUI/PRD-generator URL routing.md".strip()
+MAX = int("2")
+
+
+root = Path(TICKET_ROOT)
+
+def read_gitignore(start: Path):
+    cur = start.resolve()
+    if cur.is_file():
+        cur = cur.parent
+    while True:
+        p = cur / ".gitignore"
+        if p.exists():
+            lines = []
+            for ln in p.read_text(encoding="utf-8", errors="replace").splitlines():
+                s = ln.strip()
+                if not s or s.startswith("#"):
+                    continue
+                lines.append(s)
+            return cur, lines
+        if cur.parent == cur:
+            return start.resolve(), []
+        cur = cur.parent
+
+
+def gitignore_match(rel_posix: str, name: str, pattern: str) -> bool:
+    neg = pattern.startswith("!")
+    if neg:
+        pattern = pattern[1:]
+    if not pattern:
+        return False
+
+    anchored = pattern.startswith("/")
+    if anchored:
+        pattern = pattern.lstrip("/")
+
+    dir_only = pattern.endswith("/")
+    if dir_only:
+        pattern = pattern.rstrip("/")
+
+    if "/" not in pattern:
+        if dir_only:
+            return any(part == pattern for part in rel_posix.split("/"))
+        return fnmatch.fnmatch(name, pattern)
+
+    target = rel_posix
+    if anchored:
+        if dir_only:
+            return target.startswith(pattern + "/")
+        return fnmatch.fnmatch(target, pattern)
+    if dir_only:
+        return f"/{pattern}/" in f"/{target}/"
+    return fnmatch.fnmatch(target, f"**/{pattern}") or fnmatch.fnmatch(target, pattern)
+
+
+def is_gitignored(path: Path, git_root: Path, patterns: list[str]) -> bool:
+    try:
+        rel = path.resolve().relative_to(git_root)
+    except Exception:
+        rel = path
+    rel_posix = rel.as_posix()
+    name = rel_posix.split("/")[-1]
+    ignored = False
+    for pat in patterns:
+        neg = pat.startswith("!")
+        if gitignore_match(rel_posix, name, pat):
+            ignored = not neg
+    return ignored
+
+
+git_root, git_patterns = read_gitignore(root)
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+tickets = [p for p in tickets if not is_gitignored(p, git_root, git_patterns)]
 if MAX and MAX > 0:
     tickets = tickets[:MAX]
 
@@ -3127,6 +4384,459 @@ if [ "${#ticket_args[@]}" -eq 0 ]; then
 fi
 
 # extra_files appended literally (may be empty; may include -f/--file):
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/prd-tui/01-contracts-interfaces-ticket-surface-direct-answer.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #01  (ticket-driven, group: PRD-TUI)
+
+Reference: prd-tui
+Category: contracts/interfaces
+Horizon: Immediate
+ROI: 4.8 (impact=6, confidence=0.80, effort=1)
+
+Question:
+Using the attached tickets as the primary context, list the public surface changes implied by the tickets (CLI/TUI/API/interfaces/contracts); call out backwards-compat constraints.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+
+Output section: Direct answer
+Start with heading: Direct answer
+Return only: Direct answer (1–10 bullets, evidence-cited)
+PROMPT
+)"
+
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/prd-tui/01-contracts-interfaces-ticket-surface-risks-unknowns.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #01  (ticket-driven, group: PRD-TUI)
+
+Reference: prd-tui
+Category: contracts/interfaces
+Horizon: Immediate
+ROI: 4.8 (impact=6, confidence=0.80, effort=1)
+
+Question:
+Using the attached tickets as the primary context, list the public surface changes implied by the tickets (CLI/TUI/API/interfaces/contracts); call out backwards-compat constraints.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+
+Output section: Risks/unknowns
+Start with heading: Risks/unknowns
+Return only: Risks/unknowns (bullets)
+PROMPT
+)"
+
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/prd-tui/01-contracts-interfaces-ticket-surface-next-experiment.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #01  (ticket-driven, group: PRD-TUI)
+
+Reference: prd-tui
+Category: contracts/interfaces
+Horizon: Immediate
+ROI: 4.8 (impact=6, confidence=0.80, effort=1)
+
+Question:
+Using the attached tickets as the primary context, list the public surface changes implied by the tickets (CLI/TUI/API/interfaces/contracts); call out backwards-compat constraints.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+
+Output section: Next smallest concrete experiment
+Start with heading: Next smallest concrete experiment
+Return only: Next smallest concrete experiment (exactly one action)
+PROMPT
+)"
+
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/prd-tui/01-contracts-interfaces-ticket-surface-missing-evidence.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #01  (ticket-driven, group: PRD-TUI)
+
+Reference: prd-tui
+Category: contracts/interfaces
+Horizon: Immediate
+ROI: 4.8 (impact=6, confidence=0.80, effort=1)
+
+Question:
+Using the attached tickets as the primary context, list the public surface changes implied by the tickets (CLI/TUI/API/interfaces/contracts); call out backwards-compat constraints.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+
+Output section: Missing evidence
+Start with heading: Missing evidence
+Return only: If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+
+# 02) ROI=4.6 impact=6 confidence=0.78 effort=1 horizon=Immediate category=contracts/interfaces reference=prd-tui
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+import fnmatch
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/PRD-TUI/Oraclepack TUI Integration.md,.tickets/PRD-TUI/PRD-generator URL routing.md".strip()
+MAX = int("2")
+
+
+root = Path(TICKET_ROOT)
+
+def read_gitignore(start: Path):
+    cur = start.resolve()
+    if cur.is_file():
+        cur = cur.parent
+    while True:
+        p = cur / ".gitignore"
+        if p.exists():
+            lines = []
+            for ln in p.read_text(encoding="utf-8", errors="replace").splitlines():
+                s = ln.strip()
+                if not s or s.startswith("#"):
+                    continue
+                lines.append(s)
+            return cur, lines
+        if cur.parent == cur:
+            return start.resolve(), []
+        cur = cur.parent
+
+
+def gitignore_match(rel_posix: str, name: str, pattern: str) -> bool:
+    neg = pattern.startswith("!")
+    if neg:
+        pattern = pattern[1:]
+    if not pattern:
+        return False
+
+    anchored = pattern.startswith("/")
+    if anchored:
+        pattern = pattern.lstrip("/")
+
+[TRUNCATED]
+```
+
+docs/oracle-questions-2026-01-09-030000/packs/raw-exports.md
+```
+# Oracle Pack — Unknown (Grouped Tickets Stage 1 — Direct Attach)
+
+## Parsed args
+- codebase_name: Unknown
+- out_dir: docs/oracle-questions-2026-01-09-030000/raw-exports
+- oracle_cmd: oracle
+- oracle_flags: --files-report
+- extra_files: 
+- ticket_root: .tickets
+- ticket_glob: **/*.md
+- ticket_paths: .tickets/raw-exports/Output verification failure.md
+- ticket_max_files: 1
+- group_name: raw-exports
+- group_slug: raw-exports
+- mode: tickets-grouped-direct
+
+Notes (contract):
+- Exactly one fenced `bash` block in this document.
+- No other ``` fences anywhere.
+- Exactly 20 steps, numbered 01..20 in order.
+- Step header: `# NN) ROI=... impact=... confidence=... effort=... horizon=... category=... reference=...`
+- Every step includes: `--write-output "docs/oracle-questions-2026-01-09-030000/raw-exports/NN-<slug>.md"` (double quotes required).
+- Steps must be self-contained and must not rely on shell variables created in previous steps.
+- Each step must attach tickets directly (no `_tickets_bundle.md` dependency).
+- Pack ends with a Coverage check section listing all 10 categories as OK or Missing(<step ids>).
+
+```bash
+set -euo pipefail
+
+mkdir -p "docs/oracle-questions-2026-01-09-030000/raw-exports"
+
+# 01) ROI=4.8 impact=6 confidence=0.80 effort=1 horizon=Immediate category=contracts/interfaces reference=raw-exports
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+import fnmatch
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/raw-exports/Output verification failure.md".strip()
+MAX = int("1")
+
+
+root = Path(TICKET_ROOT)
+
+def read_gitignore(start: Path):
+    cur = start.resolve()
+    if cur.is_file():
+        cur = cur.parent
+    while True:
+        p = cur / ".gitignore"
+        if p.exists():
+            lines = []
+            for ln in p.read_text(encoding="utf-8", errors="replace").splitlines():
+                s = ln.strip()
+                if not s or s.startswith("#"):
+                    continue
+                lines.append(s)
+            return cur, lines
+        if cur.parent == cur:
+            return start.resolve(), []
+        cur = cur.parent
+
+
+def gitignore_match(rel_posix: str, name: str, pattern: str) -> bool:
+    neg = pattern.startswith("!")
+    if neg:
+        pattern = pattern[1:]
+    if not pattern:
+        return False
+
+    anchored = pattern.startswith("/")
+    if anchored:
+        pattern = pattern.lstrip("/")
+
+    dir_only = pattern.endswith("/")
+    if dir_only:
+        pattern = pattern.rstrip("/")
+
+    if "/" not in pattern:
+        if dir_only:
+            return any(part == pattern for part in rel_posix.split("/"))
+        return fnmatch.fnmatch(name, pattern)
+
+    target = rel_posix
+    if anchored:
+        if dir_only:
+            return target.startswith(pattern + "/")
+        return fnmatch.fnmatch(target, pattern)
+    if dir_only:
+        return f"/{pattern}/" in f"/{target}/"
+    return fnmatch.fnmatch(target, f"**/{pattern}") or fnmatch.fnmatch(target, pattern)
+
+
+def is_gitignored(path: Path, git_root: Path, patterns: list[str]) -> bool:
+    try:
+        rel = path.resolve().relative_to(git_root)
+    except Exception:
+        rel = path
+    rel_posix = rel.as_posix()
+    name = rel_posix.split("/")[-1]
+    ignored = False
+    for pat in patterns:
+        neg = pat.startswith("!")
+        if gitignore_match(rel_posix, name, pat):
+            ignored = not neg
+    return ignored
+
+
+git_root, git_patterns = read_gitignore(root)
+def lex_sorted(ps):
+    return sorted((str(p) for p in ps), key=lambda s: s)
+
+if TICKET_PATHS:
+    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
+else:
+    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
+
+tickets = [Path(p) for p in lex_sorted(tickets)]
+tickets = [p for p in tickets if not is_gitignored(p, git_root, git_patterns)]
+if MAX and MAX > 0:
+    tickets = tickets[:MAX]
+
+for p in tickets:
+    print(str(p))
+PY
+)
+
+ticket_args=()
+for p in "${__tickets[@]}"; do
+  ticket_args+=(-f "$p")
+done
+
+if [ "${#ticket_args[@]}" -eq 0 ]; then
+  echo "WARNING: no tickets resolved for group 'raw-exports'." >&2
+fi
+
+# extra_files appended literally (may be empty; may include -f/--file):
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/raw-exports/01-contracts-interfaces-ticket-surface-direct-answer.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #01  (ticket-driven, group: raw-exports)
+
+Reference: raw-exports
+Category: contracts/interfaces
+Horizon: Immediate
+ROI: 4.8 (impact=6, confidence=0.80, effort=1)
+
+Question:
+Using the attached tickets as the primary context, list the public surface changes implied by the tickets (CLI/TUI/API/interfaces/contracts); call out backwards-compat constraints.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+
+Output section: Direct answer
+Start with heading: Direct answer
+Return only: Direct answer (1–10 bullets, evidence-cited)
+PROMPT
+)"
+
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/raw-exports/01-contracts-interfaces-ticket-surface-risks-unknowns.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #01  (ticket-driven, group: raw-exports)
+
+Reference: raw-exports
+Category: contracts/interfaces
+Horizon: Immediate
+ROI: 4.8 (impact=6, confidence=0.80, effort=1)
+
+Question:
+Using the attached tickets as the primary context, list the public surface changes implied by the tickets (CLI/TUI/API/interfaces/contracts); call out backwards-compat constraints.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+
+Output section: Risks/unknowns
+Start with heading: Risks/unknowns
+Return only: Risks/unknowns (bullets)
+PROMPT
+)"
+
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/raw-exports/01-contracts-interfaces-ticket-surface-next-experiment.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #01  (ticket-driven, group: raw-exports)
+
+Reference: raw-exports
+Category: contracts/interfaces
+Horizon: Immediate
+ROI: 4.8 (impact=6, confidence=0.80, effort=1)
+
+Question:
+Using the attached tickets as the primary context, list the public surface changes implied by the tickets (CLI/TUI/API/interfaces/contracts); call out backwards-compat constraints.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+
+Output section: Next smallest concrete experiment
+Start with heading: Next smallest concrete experiment
+Return only: Next smallest concrete experiment (exactly one action)
+PROMPT
+)"
+
+oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/raw-exports/01-contracts-interfaces-ticket-surface-missing-evidence.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
+Strategist question #01  (ticket-driven, group: raw-exports)
+
+Reference: raw-exports
+Category: contracts/interfaces
+Horizon: Immediate
+ROI: 4.8 (impact=6, confidence=0.80, effort=1)
+
+Question:
+Using the attached tickets as the primary context, list the public surface changes implied by the tickets (CLI/TUI/API/interfaces/contracts); call out backwards-compat constraints.
+
+Constraints: None
+Non-goals: None
+
+Answer format:
+1) Direct answer (1–10 bullets, evidence-cited)
+2) Risks/unknowns (bullets)
+3) Next smallest concrete experiment (exactly one action)
+4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+
+Output section: Missing evidence
+Start with heading: Missing evidence
+Return only: If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
+PROMPT
+)"
+
+
+# 02) ROI=4.6 impact=6 confidence=0.78 effort=1 horizon=Immediate category=contracts/interfaces reference=raw-exports
+
+# tickets attached directly (deterministic; self-contained)
+mapfile -t __tickets < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+import fnmatch
+
+TICKET_ROOT = ".tickets"
+TICKET_GLOB = "**/*.md"
+TICKET_PATHS = ".tickets/raw-exports/Output verification failure.md".strip()
+MAX = int("1")
+
+
+root = Path(TICKET_ROOT)
+
+def read_gitignore(start: Path):
+    cur = start.resolve()
+    if cur.is_file():
+        cur = cur.parent
+    while True:
+        p = cur / ".gitignore"
+        if p.exists():
+            lines = []
+            for ln in p.read_text(encoding="utf-8", errors="replace").splitlines():
+                s = ln.strip()
+                if not s or s.startswith("#"):
+                    continue
+                lines.append(s)
+            return cur, lines
+        if cur.parent == cur:
+            return start.resolve(), []
+        cur = cur.parent
+
+
+def gitignore_match(rel_posix: str, name: str, pattern: str) -> bool:
+    neg = pattern.startswith("!")
+    if neg:
+        pattern = pattern[1:]
+    if not pattern:
+        return False
+
+    anchored = pattern.startswith("/")
+    if anchored:
+        pattern = pattern.lstrip("/")
+
+    dir_only = pattern.endswith("/")
+    if dir_only:
+        pattern = pattern.rstrip("/")
+
+    if "/" not in pattern:
+        if dir_only:
 [TRUNCATED]
 ```
 

@@ -6,10 +6,16 @@ Project Structure:
     │   ├── app_test.go
     │   ├── run.go
     │   └── run_test.go
+    ├── artifacts
+    │   ├── contract.go
+    │   └── contract_test.go
     ├── cli
     │   ├── cmds.go
     │   ├── root.go
     │   └── run.go
+    ├── dispatch
+    │   ├── classify.go
+    │   └── classify_test.go
     ├── errors
     │   ├── errors.go
     │   └── errors_test.go
@@ -26,6 +32,15 @@ Project Structure:
     │   ├── sanitize.go
     │   ├── sanitize_test.go
     │   └── stream.go
+    ├── foundation
+    │   ├── atomic.go
+    │   ├── atomic_test.go
+    │   ├── clock.go
+    │   ├── clock_test.go
+    │   ├── config.go
+    │   ├── config_test.go
+    │   ├── errors.go
+    │   └── errors_test.go
     ├── overrides
     │   ├── merge.go
     │   ├── merge_test.go
@@ -40,26 +55,54 @@ Project Structure:
     │   └── render_test.go
     ├── report
     │   ├── generate.go
+    │   ├── io.go
+    │   ├── io_test.go
     │   ├── report_test.go
     │   └── types.go
+    ├── shell
+    │   ├── detect.go
+    │   ├── detect_test.go
+    │   ├── engine.go
+    │   ├── engine_test.go
+    │   ├── runner.go
+    │   └── runner_test.go
     ├── state
+    │   ├── io.go
+    │   ├── io_test.go
     │   ├── persist.go
     │   ├── state_test.go
     │   └── types.go
-    └── tui
-        ├── clipboard.go
-        ├── filter_test.go
-        ├── overrides_confirm.go
-        ├── overrides_flags.go
-        ├── overrides_flow.go
-        ├── overrides_steps.go
-        ├── overrides_url.go
-        ├── preview_test.go
-        ├── tui.go
-        ├── tui_test.go
-        ├── url_picker.go
-        ├── url_store.go
-        └── url_store_test.go
+    ├── templates
+    │   ├── template_test.go
+    │   ├── ticket-action-pack.md
+    │   └── ticket_action_pack.go
+    ├── tools
+    │   ├── types.go
+    │   └── types_test.go
+    ├── tui
+    │   ├── clipboard.go
+    │   ├── filter_test.go
+    │   ├── overrides_confirm.go
+    │   ├── overrides_flags.go
+    │   ├── overrides_flow.go
+    │   ├── overrides_steps.go
+    │   ├── overrides_url.go
+    │   ├── preview_test.go
+    │   ├── tui.go
+    │   ├── tui_test.go
+    │   ├── url_picker.go
+    │   ├── url_store.go
+    │   └── url_store_test.go
+    └── validate
+        ├── artifact_gate.go
+        ├── artifact_gate_test.go
+        ├── composite.go
+        ├── composite_test.go
+        ├── oracle.go
+        ├── presence.go
+        ├── presence_test.go
+        ├── report.go
+        └── types.go
 
 </filetree>
 
@@ -194,18 +237,17 @@ package app
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"os"
 	"testing"
 )
 
 func TestApp_RunPlain(t *testing.T) {
+	steps := buildSteps(20, "echo")
 	packContent := `
 # Test Pack
 ` + "```" + `bash
-# 01)
-echo "step 1"
-# 02)
-echo "step 2"
+` + steps + `
 ` + "```" + `
 `
 	packFile := "test.md"
@@ -254,6 +296,21 @@ echo "step 2"
 func contains(s, substr string) bool {
 	return len(s) >= len(substr) && (s == substr || (len(substr) > 0 && (s[:len(substr)] == substr || contains(s[1:], substr))))
 }
+
+func buildSteps(count int, cmd string) string {
+	var b bytes.Buffer
+	for i := 1; i <= count; i++ {
+		if i < 10 {
+			b.WriteString("# 0")
+		} else {
+			b.WriteString("# ")
+		}
+		b.WriteString(fmt.Sprintf("%d)\n", i))
+		b.WriteString(cmd)
+		b.WriteString(fmt.Sprintf(" \"step %d\"\n", i))
+	}
+	return b.String()
+}
 ```
 
 internal/app/run.go
@@ -262,10 +319,8 @@ package app
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -302,6 +357,7 @@ func (a *App) RunPlain(ctx context.Context, out io.Writer) error {
 	}
 
 	for _, step := range a.Pack.Steps {
+		a.State.CurrentStep = step.Number
 		// Filter by ROI
 		if a.Config.ROIThreshold > 0 {
 			if a.Config.ROIMode == "under" {
@@ -415,30 +471,7 @@ func (a *App) recordWarnings() {
 	}
 	for _, w := range warnings {
 		a.State.Warnings = append(a.State.Warnings, state.Warning{
-			Scope:   w.Scope,
-			StepID:  w.StepID,
-			Line:    w.Line,
-			Token:   w.Token,
-			Message: w.Message,
-		})
-	}
-	a.saveState()
-}
-
-func (a *App) saveState() {
-	if a.Config.StatePath != "" {
-		_ = state.SaveStateAtomic(a.Config.StatePath, a.State)
-	}
-}
-
-func (a *App) finalize(out io.Writer) {
-	if a.Config.ReportPath != "" {
-		rep := report.GenerateReport(a.State, filepath.Base(a.Config.PackPath))
-		data, _ := json.MarshalIndent(rep, "", "  ")
-		_ = os.WriteFile(a.Config.ReportPath, data, 0644)
-		fmt.Fprintf(out, "\nReport written to %s\n", a.Config.ReportPath)
-	}
-}
+[TRUNCATED]
 ```
 
 internal/app/run_test.go
@@ -449,20 +482,17 @@ import (
 	"bytes"
 	"context"
 	"os"
+	"strconv"
 	"strings"
 	"testing"
 )
 
 func TestApp_RunPlain_ROI(t *testing.T) {
+	steps := buildROISteps()
 	packContent := `
 # ROI Test Pack
 ` + "```" + `bash
-# 01) ROI=5.0
-echo "high"
-# 02) ROI=3.3
-echo "threshold"
-# 03) ROI=1.0
-echo "low"
+` + steps + `
 ` + "```" + `
 `
 	packFile := "roi_test.md"
@@ -529,6 +559,121 @@ echo "low"
 		}
 	})
 }
+
+func buildROISteps() string {
+	var b strings.Builder
+	for i := 1; i <= 20; i++ {
+		id := i
+		if id < 10 {
+			b.WriteString("# 0")
+		} else {
+			b.WriteString("# ")
+		}
+		b.WriteString(strconv.Itoa(id))
+		if i == 1 {
+			b.WriteString(") ROI=5.0\n")
+			b.WriteString("echo \"high\"\n\n")
+			continue
+		}
+		if i == 2 {
+			b.WriteString(") ROI=3.3\n")
+			b.WriteString("echo \"threshold\"\n\n")
+			continue
+		}
+		if i == 3 {
+			b.WriteString(") ROI=1.0\n")
+			b.WriteString("echo \"low\"\n\n")
+			continue
+		}
+		b.WriteString(")\n")
+		b.WriteString("echo \"step ")
+		b.WriteString(strconv.Itoa(id))
+		b.WriteString("\"\n\n")
+	}
+	return b.String()
+}
+```
+
+internal/artifacts/contract.go
+```
+package artifacts
+
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+
+	"github.com/user/oraclepack/internal/foundation"
+)
+
+// Contract maps step IDs to required artifact paths.
+type Contract map[string][]string
+
+// DefaultContract returns the standard artifact contract.
+func DefaultContract() Contract {
+	base := ".oraclepack/ticketify"
+	return Contract{
+		"09": {filepath.Join(base, "next.json")},
+		"10": {filepath.Join(base, "codex-implement.md")},
+		"11": {filepath.Join(base, "codex-verify.md")},
+		"12": {filepath.Join(base, "PR.md")},
+	}
+}
+
+// EvaluateGates checks required artifacts for a given step.
+func EvaluateGates(stepID string, contract Contract) error {
+	paths, ok := contract[stepID]
+	if !ok || len(paths) == 0 {
+		return nil
+	}
+	var missing []string
+	for _, p := range paths {
+		info, err := os.Stat(p)
+		if err != nil || info.IsDir() || info.Size() == 0 {
+			missing = append(missing, p)
+		}
+	}
+	if len(missing) > 0 {
+		return fmt.Errorf("%w: %v", foundation.ErrArtifactMissing, missing)
+	}
+	return nil
+}
+```
+
+internal/artifacts/contract_test.go
+```
+package artifacts
+
+import (
+	"os"
+	"path/filepath"
+	"testing"
+)
+
+func TestEvaluateGates(t *testing.T) {
+	dir := t.TempDir()
+	base := filepath.Join(dir, ".oraclepack", "ticketify")
+	if err := os.MkdirAll(base, 0755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	contract := Contract{
+		"09": {filepath.Join(base, "next.json")},
+	}
+
+	// Missing file should error.
+	if err := EvaluateGates("09", contract); err == nil {
+		t.Fatal("expected missing artifact error")
+	}
+
+	// Create file and verify pass.
+	path := filepath.Join(base, "next.json")
+	if err := os.WriteFile(path, []byte("ok"), 0644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	if err := EvaluateGates("09", contract); err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+}
 ```
 
 internal/cli/cmds.go
@@ -537,9 +682,12 @@ package cli
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/user/oraclepack/internal/app"
+	"github.com/user/oraclepack/internal/pack"
+	"github.com/user/oraclepack/internal/validate"
 )
 
 var validateCmd = &cobra.Command{
@@ -547,12 +695,28 @@ var validateCmd = &cobra.Command{
 	Short: "Validate an oracle pack",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg := app.Config{PackPath: args[0]}
-		a := app.New(cfg)
-		if err := a.LoadPack(); err != nil {
+		data, err := os.ReadFile(args[0])
+		if err != nil {
 			return err
 		}
-		fmt.Println("Pack is valid.")
+		p, err := pack.Parse(data)
+		if err != nil {
+			return err
+		}
+		if err := p.Validate(); err != nil {
+			return err
+		}
+		cv := validate.CompositeValidator{}
+		results := cv.ValidatePack(p)
+		out := cmd.OutOrStdout()
+		fmt.Fprintf(out, "Validated %d steps\n", len(results))
+		for _, r := range results {
+			fmt.Fprintf(out, "Step %s [%s] %s", r.StepID, r.ToolKind.Name(), r.Status)
+			if r.Error != "" {
+				fmt.Fprintf(out, " (%s)", r.Error)
+			}
+			fmt.Fprintln(out)
+		}
 		return nil
 	},
 }
@@ -625,7 +789,7 @@ package cli
 
 import (
 	"context"
-	"os"
+	"fmt"
 	"path/filepath"
 	"strings"
 
@@ -683,7 +847,16 @@ var runCmd = &cobra.Command{
 		}
 
 		if noTUI {
-			return a.RunPlain(context.Background(), os.Stdout)
+			out := cmd.OutOrStdout()
+			fmt.Fprintf(out, "[Selected] %s\n", packPath)
+			fmt.Fprintln(out, "[Ready] Parsed and validated pack")
+			err := a.RunPlain(context.Background(), out)
+			if err != nil {
+				fmt.Fprintf(out, "[Completed] Failed: %v\n", err)
+				return err
+			}
+			fmt.Fprintln(out, "[Completed] Success")
+			return nil
 		}
 
 		m := tui.NewModel(a.Pack, a.Runner, a.State, cfg.StatePath, cfg.ROIThreshold, cfg.ROIMode, runAll, cfg.OutputVerify, cfg.OutputRetries)
@@ -703,6 +876,94 @@ func init() {
 	runCmd.Flags().BoolVar(&outputVerify, "output-verify", true, "Verify --write-output files contain required answer sections")
 	runCmd.Flags().IntVar(&outputRetries, "output-retries", 1, "Retries for output verification failures")
 	rootCmd.AddCommand(runCmd)
+}
+```
+
+internal/dispatch/classify.go
+```
+package dispatch
+
+import (
+	"regexp"
+	"strings"
+
+	"github.com/user/oraclepack/internal/tools"
+)
+
+var classifier = regexp.MustCompile(`^(\s*)(oracle|tm|task-master|codex|gemini)\b`)
+
+// Classification describes a parsed command prefix.
+type Classification struct {
+	Kind    tools.ToolKind
+	Prefix  string
+	Command string
+}
+
+// Classify detects a supported tool prefix and returns the remaining command.
+func Classify(line string) (Classification, bool) {
+	m := classifier.FindStringSubmatch(line)
+	if len(m) < 3 {
+		return Classification{}, false
+	}
+	prefix := m[2]
+	kind := toolKindFromPrefix(prefix)
+	if kind == nil {
+		return Classification{}, false
+	}
+	trimmed := strings.TrimSpace(line[len(m[1])+len(prefix):])
+	return Classification{Kind: *kind, Prefix: prefix, Command: strings.TrimSpace(trimmed)}, true
+}
+
+func toolKindFromPrefix(prefix string) *tools.ToolKind {
+	var kind tools.ToolKind
+	switch prefix {
+	case "oracle":
+		kind = tools.ToolOracle
+	case "tm":
+		kind = tools.ToolTM
+	case "task-master":
+		kind = tools.ToolTaskMaster
+	case "codex":
+		kind = tools.ToolCodex
+	case "gemini":
+		kind = tools.ToolGemini
+	default:
+		return nil
+	}
+	return &kind
+}
+```
+
+internal/dispatch/classify_test.go
+```
+package dispatch
+
+import "testing"
+
+func TestClassify(t *testing.T) {
+	tests := []struct {
+		line    string
+		wantOK  bool
+		wantCmd string
+	}{
+		{"oracle query \"hi\"", true, "query \"hi\""},
+		{"  tm list", true, "list"},
+		{"task-master next", true, "next"},
+		{"codex exec \"x\"", true, "exec \"x\""},
+		{"gemini run", true, "run"},
+		{"echo hello", false, ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.line, func(t *testing.T) {
+			got, ok := Classify(tt.line)
+			if ok != tt.wantOK {
+				t.Fatalf("expected ok=%v got %v", tt.wantOK, ok)
+			}
+			if ok && got.Command != tt.wantCmd {
+				t.Fatalf("expected cmd %q got %q", tt.wantCmd, got.Command)
+			}
+		})
+	}
 }
 ```
 
@@ -1756,6 +2017,263 @@ func MultiWriter(writers ...io.Writer) io.Writer {
 }
 ```
 
+internal/foundation/atomic.go
+```
+package foundation
+
+import (
+	"fmt"
+	"os"
+)
+
+// WriteAtomic writes data to path atomically by writing to a temp file and renaming.
+func WriteAtomic(path string, data []byte, perm os.FileMode) error {
+	tempPath := path + ".tmp"
+	if err := os.WriteFile(tempPath, data, perm); err != nil {
+		return fmt.Errorf("write temp file: %w", err)
+	}
+	if err := os.Rename(tempPath, path); err != nil {
+		_ = os.Remove(tempPath)
+		return fmt.Errorf("rename temp file: %w", err)
+	}
+	return nil
+}
+```
+
+internal/foundation/atomic_test.go
+```
+package foundation
+
+import (
+	"os"
+	"path/filepath"
+	"testing"
+)
+
+func TestWriteAtomic(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "out.json")
+	if err := WriteAtomic(path, []byte("hello"), 0644); err != nil {
+		t.Fatalf("WriteAtomic: %v", err)
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read: %v", err)
+	}
+	if string(data) != "hello" {
+		t.Fatalf("unexpected contents: %q", string(data))
+	}
+}
+```
+
+internal/foundation/clock.go
+```
+package foundation
+
+import "time"
+
+// Clock abstracts time for deterministic testing.
+type Clock interface {
+	Now() time.Time
+}
+
+// RealClock uses the system clock.
+type RealClock struct{}
+
+// Now returns the current time.
+func (RealClock) Now() time.Time { return time.Now() }
+
+// MockClock returns a fixed time that can be advanced.
+type MockClock struct {
+	current time.Time
+}
+
+// NewMockClock initializes a mock clock with a starting time.
+func NewMockClock(start time.Time) *MockClock {
+	return &MockClock{current: start}
+}
+
+// Now returns the mock time.
+func (m *MockClock) Now() time.Time { return m.current }
+
+// Advance moves the mock time forward.
+func (m *MockClock) Advance(d time.Duration) {
+	m.current = m.current.Add(d)
+}
+```
+
+internal/foundation/clock_test.go
+```
+package foundation
+
+import (
+	"testing"
+	"time"
+)
+
+func TestMockClock(t *testing.T) {
+	start := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+	m := NewMockClock(start)
+	if !m.Now().Equal(start) {
+		t.Fatalf("expected %v, got %v", start, m.Now())
+	}
+	m.Advance(2 * time.Hour)
+	want := start.Add(2 * time.Hour)
+	if !m.Now().Equal(want) {
+		t.Fatalf("expected %v, got %v", want, m.Now())
+	}
+}
+```
+
+internal/foundation/config.go
+```
+package foundation
+
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+	"strconv"
+)
+
+// Config holds runtime settings that can be loaded from JSON and environment variables.
+// Env values always take precedence over JSON values.
+type Config struct {
+	Name      string  `json:"name" env:"ORACLEPACK_NAME"`
+	Retries   int     `json:"retries" env:"ORACLEPACK_RETRIES"`
+	Enabled   bool    `json:"enabled" env:"ORACLEPACK_ENABLED"`
+	Threshold float64 `json:"threshold" env:"ORACLEPACK_THRESHOLD"`
+}
+
+// LoadConfig loads configuration from a JSON file and then applies environment overrides.
+// If path is empty, JSON loading is skipped and only env overrides are applied.
+func LoadConfig(path string) (Config, error) {
+	var cfg Config
+	if path != "" {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return Config{}, fmt.Errorf("read config: %w", err)
+		}
+		if err := json.Unmarshal(data, &cfg); err != nil {
+			return Config{}, fmt.Errorf("parse config: %w", err)
+		}
+	}
+
+	if v, ok := os.LookupEnv("ORACLEPACK_NAME"); ok {
+		cfg.Name = v
+	}
+	if v, ok := os.LookupEnv("ORACLEPACK_RETRIES"); ok {
+		parsed, err := strconv.Atoi(v)
+		if err != nil {
+			return Config{}, fmt.Errorf("parse ORACLEPACK_RETRIES: %w", err)
+		}
+		cfg.Retries = parsed
+	}
+	if v, ok := os.LookupEnv("ORACLEPACK_ENABLED"); ok {
+		parsed, err := strconv.ParseBool(v)
+		if err != nil {
+			return Config{}, fmt.Errorf("parse ORACLEPACK_ENABLED: %w", err)
+		}
+		cfg.Enabled = parsed
+	}
+	if v, ok := os.LookupEnv("ORACLEPACK_THRESHOLD"); ok {
+		parsed, err := strconv.ParseFloat(v, 64)
+		if err != nil {
+			return Config{}, fmt.Errorf("parse ORACLEPACK_THRESHOLD: %w", err)
+		}
+		cfg.Threshold = parsed
+	}
+
+	return cfg, nil
+}
+```
+
+internal/foundation/config_test.go
+```
+package foundation
+
+import (
+	"os"
+	"path/filepath"
+	"testing"
+)
+
+func TestLoadConfigEnvOverrides(t *testing.T) {
+	t.Setenv("ORACLEPACK_NAME", "env-name")
+	t.Setenv("ORACLEPACK_RETRIES", "5")
+	t.Setenv("ORACLEPACK_ENABLED", "true")
+	t.Setenv("ORACLEPACK_THRESHOLD", "2.5")
+
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.json")
+	if err := os.WriteFile(path, []byte(`{"name":"json-name","retries":1,"enabled":false,"threshold":1.0}`), 0644); err != nil {
+		t.Fatalf("write json: %v", err)
+	}
+
+	cfg, err := LoadConfig(path)
+	if err != nil {
+		t.Fatalf("LoadConfig: %v", err)
+	}
+
+	if cfg.Name != "env-name" || cfg.Retries != 5 || cfg.Enabled != true || cfg.Threshold != 2.5 {
+		t.Fatalf("env overrides not applied: %+v", cfg)
+	}
+}
+
+func TestLoadConfigJSONOnly(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.json")
+	if err := os.WriteFile(path, []byte(`{"name":"json-name","retries":3,"enabled":true,"threshold":4.25}`), 0644); err != nil {
+		t.Fatalf("write json: %v", err)
+	}
+
+	cfg, err := LoadConfig(path)
+	if err != nil {
+		t.Fatalf("LoadConfig: %v", err)
+	}
+
+	if cfg.Name != "json-name" || cfg.Retries != 3 || cfg.Enabled != true || cfg.Threshold != 4.25 {
+		t.Fatalf("json load mismatch: %+v", cfg)
+	}
+}
+```
+
+internal/foundation/errors.go
+```
+package foundation
+
+import "errors"
+
+var (
+	// ErrMissingBinary is returned when a required binary is not found on PATH.
+	ErrMissingBinary = errors.New("missing binary")
+	// ErrArtifactMissing is returned when an expected artifact is absent.
+	ErrArtifactMissing = errors.New("artifact missing")
+)
+```
+
+internal/foundation/errors_test.go
+```
+package foundation
+
+import (
+	"errors"
+	"testing"
+)
+
+func TestCommonErrors(t *testing.T) {
+	if ErrMissingBinary == nil || ErrArtifactMissing == nil {
+		t.Fatal("expected error variables to be initialized")
+	}
+	if !errors.Is(ErrMissingBinary, ErrMissingBinary) {
+		t.Fatal("errors.Is failed for ErrMissingBinary")
+	}
+	if !errors.Is(ErrArtifactMissing, ErrArtifactMissing) {
+		t.Fatal("errors.Is failed for ErrArtifactMissing")
+	}
+}
+```
+
 internal/overrides/merge.go
 ```
 package overrides
@@ -2015,6 +2533,7 @@ var (
 	// Updated regex to support ")", " —", and " -" separators
 	stepHeaderRegex = regexp.MustCompile(`^#\s*(\d{2})(?:\)|[\s]+[—-])`)
 	roiRegex        = regexp.MustCompile(`ROI=(\d+(\.\d+)?)`)
+	impactRegex     = regexp.MustCompile(`^#\s*Impact:\s*(.+)$`)
 	outDirRegex    = regexp.MustCompile(`(?m)^out_dir=["']?([^"'\s]+)["']?`)
 	writeOutputRegex = regexp.MustCompile(`(?m)--write-output`)
 )
@@ -2041,6 +2560,7 @@ func Parse(content []byte) (*Pack, error) {
 		if len(headerMatch) > 1 {
 			inSteps = true
 			if currentStep != nil {
+				applyStepMetadata(currentStep)
 				pack.Steps = append(pack.Steps, *currentStep)
 			}
 			num, _ := strconv.Atoi(headerMatch[1])
@@ -2085,6 +2605,7 @@ func Parse(content []byte) (*Pack, error) {
 	}
 
 	if currentStep != nil {
+		applyStepMetadata(currentStep)
 		pack.Steps = append(pack.Steps, *currentStep)
 	}
 
@@ -2111,6 +2632,9 @@ func (p *Pack) Validate() error {
 	if len(p.Steps) == 0 {
 		return fmt.Errorf("%w: at least one step is required", errors.ErrInvalidPack)
 	}
+	if len(p.Steps) != 20 {
+		return fmt.Errorf("%w: expected exactly 20 steps, got %d", errors.ErrInvalidPack, len(p.Steps))
+	}
 
 	seen := make(map[int]bool)
 	for i, step := range p.Steps {
@@ -2124,12 +2648,7 @@ func (p *Pack) Validate() error {
 
 		// Optional: Ensure sequential starting from 1
 		if step.Number != i+1 {
-			return fmt.Errorf("%w: steps must be sequential starting from 1 (expected %d, got %d)", errors.ErrInvalidPack, i+1, step.Number)
-		}
-	}
-
-	return nil
-}
+[TRUNCATED]
 ```
 
 internal/pack/parser_test.go
@@ -2137,11 +2656,13 @@ internal/pack/parser_test.go
 package pack
 
 import (
+	"strconv"
 	"strings"
 	"testing"
 )
 
 func TestParse(t *testing.T) {
+	steps := buildSteps(20, "echo")
 	content := []byte(`
 # My Pack
 Some description.
@@ -2150,11 +2671,7 @@ Some description.
 out_dir="dist"
 --write-output
 
-# 01)
-echo "hello"
-
-# 02)
-echo "world"
+` + steps + `
 ` + "```" + `
 `)
 
@@ -2171,8 +2688,8 @@ echo "world"
 		t.Errorf("expected WriteOutput true, got false")
 	}
 
-	if len(p.Steps) != 2 {
-		t.Errorf("expected 2 steps, got %d", len(p.Steps))
+	if len(p.Steps) != 20 {
+		t.Errorf("expected 20 steps, got %d", len(p.Steps))
 	}
 
 	if p.Steps[0].ID != "01" || p.Steps[0].Number != 1 {
@@ -2262,6 +2779,7 @@ echo "default"
 }
 
 func TestValidateErrors(t *testing.T) {
+	base := buildStepSlice(20)
 	tests := []struct {
 		name    string
 		pack    *Pack
@@ -2275,20 +2793,33 @@ func TestValidateErrors(t *testing.T) {
 		{
 			"duplicate steps",
 			&Pack{
-				Steps: []Step{
-					{Number: 1, ID: "01"},
-					{Number: 1, ID: "01"},
-				},
+				Steps: func() []Step {
+					steps := append([]Step(nil), base...)
+					steps[1].Number = steps[0].Number
+					steps[1].ID = steps[0].ID
+					return steps
+				}(),
 			},
 			"duplicate step number 1",
 		},
 		{
-			"non-sequential",
+			"wrong step count",
 			&Pack{
 				Steps: []Step{
 					{Number: 1, ID: "01"},
-					{Number: 3, ID: "03"},
 				},
+			},
+			"expected exactly 20 steps",
+		},
+		{
+			"non-sequential",
+			&Pack{
+				Steps: func() []Step {
+					steps := append([]Step(nil), base...)
+					steps[1].Number = 3
+					steps[1].ID = "03"
+					return steps
+				}(),
 			},
 			"steps must be sequential starting from 1",
 		},
@@ -2309,6 +2840,8 @@ func TestValidateErrors(t *testing.T) {
 func contains(s, substr string) bool {
 	return len(s) >= len(substr) && (s == substr || (len(substr) > 0 && (s[:len(substr)] == substr || contains(s[1:], substr))))
 }
+
+[TRUNCATED]
 ```
 
 internal/pack/types.go
@@ -2336,6 +2869,7 @@ type Step struct {
 	Code         string  // The bash code
 	OriginalLine string  // The header line, e.g., "# 01)"
 	ROI          float64 // Return on Investment value extracted from header
+	Impact       string  // Optional impact metadata extracted from step comments
 }
 ```
 
@@ -2518,6 +3052,57 @@ func GenerateReport(s *state.RunState, packName string) *ReportV1 {
 }
 ```
 
+internal/report/io.go
+```
+package report
+
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+)
+
+// WriteReport writes a ReportV1 to disk.
+func WriteReport(path string, rep *ReportV1) error {
+	data, err := json.MarshalIndent(rep, "", "  ")
+	if err != nil {
+		return fmt.Errorf("marshal report: %w", err)
+	}
+	if err := os.WriteFile(path, data, 0644); err != nil {
+		return fmt.Errorf("write report: %w", err)
+	}
+	return nil
+}
+```
+
+internal/report/io_test.go
+```
+package report
+
+import (
+	"os"
+	"path/filepath"
+	"testing"
+)
+
+func TestWriteReport(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "report.json")
+
+	rep := &ReportV1{
+		PackInfo: PackInfo{Name: "pack"},
+		Summary:  Summary{TotalSteps: 1},
+	}
+	if err := WriteReport(path, rep); err != nil {
+		t.Fatalf("WriteReport: %v", err)
+	}
+
+	if _, err := os.Stat(path); err != nil {
+		t.Fatalf("expected report file to exist: %v", err)
+	}
+}
+```
+
 internal/report/report_test.go
 ```
 package report
@@ -2604,6 +3189,345 @@ type Warning struct {
 	Line    int    `json:"line"`
 	Token   string `json:"token"`
 	Message string `json:"message"`
+}
+```
+
+internal/shell/detect.go
+```
+package shell
+
+import "os/exec"
+
+// DetectBinary checks PATH for a binary and returns its full path if found.
+func DetectBinary(name string) (string, bool) {
+	path, err := exec.LookPath(name)
+	if err != nil {
+		return "", false
+	}
+	return path, true
+}
+```
+
+internal/shell/detect_test.go
+```
+package shell
+
+import "testing"
+
+func TestDetectBinary(t *testing.T) {
+	if _, ok := DetectBinary("ls"); !ok {
+		t.Fatalf("expected to find ls on PATH")
+	}
+	if _, ok := DetectBinary("definitely-not-a-real-binary-123"); ok {
+		t.Fatalf("expected missing binary to return false")
+	}
+}
+```
+
+internal/shell/engine.go
+```
+package shell
+
+import (
+	"context"
+	"fmt"
+	"strings"
+	"time"
+
+	"github.com/user/oraclepack/internal/dispatch"
+	"github.com/user/oraclepack/internal/pack"
+	"github.com/user/oraclepack/internal/state"
+	"github.com/user/oraclepack/internal/tools"
+)
+
+// Engine executes pack steps in headless mode.
+type Engine struct {
+	Pack       *pack.Pack
+	State      *state.RunState
+	StatePath  string
+	StopOnFail bool
+	Timeout    time.Duration
+	Checker    tools.PresenceChecker
+}
+
+// Run executes all steps sequentially, updating state on disk.
+func (e *Engine) Run(ctx context.Context) error {
+	if e.Pack == nil {
+		return nil
+	}
+	if e.State == nil {
+		e.State = &state.RunState{
+			SchemaVersion: 1,
+			StepStatuses:  make(map[string]state.StepStatus),
+		}
+	}
+	if e.State.StepStatuses == nil {
+		e.State.StepStatuses = make(map[string]state.StepStatus)
+	}
+
+	for i := range e.Pack.Steps {
+		step := e.Pack.Steps[i]
+		e.State.CurrentStep = step.Number
+		status := state.StepStatus{Status: state.StatusRunning, StartedAt: time.Now()}
+		e.State.StepStatuses[step.ID] = status
+		_ = state.WriteState(e.StatePath, e.State)
+
+		kind := detectToolKind(&step)
+		if shouldSkipForMissingTool(kind, e.Checker) {
+			status.Status = state.StatusSkipped
+			status.Error = "tool missing"
+			status.EndedAt = time.Now()
+			e.State.StepStatuses[step.ID] = status
+			_ = state.WriteState(e.StatePath, e.State)
+			continue
+		}
+
+		stepCtx := ctx
+		if e.Timeout > 0 {
+			var cancel context.CancelFunc
+			stepCtx, cancel = context.WithTimeout(ctx, e.Timeout)
+			defer cancel()
+		}
+
+		res, err := RunCommand(stepCtx, step.Code)
+		if err == nil && res.ExitCode != 0 {
+			err = fmt.Errorf("command failed with exit code %d", res.ExitCode)
+		}
+		status.EndedAt = time.Now()
+		if err != nil {
+			status.Status = state.StatusFailed
+			status.Error = err.Error()
+			e.State.StepStatuses[step.ID] = status
+			_ = state.WriteState(e.StatePath, e.State)
+			if e.StopOnFail {
+				return err
+			}
+			continue
+		}
+		status.Status = state.StatusSuccess
+		e.State.StepStatuses[step.ID] = status
+		_ = state.WriteState(e.StatePath, e.State)
+	}
+	return nil
+}
+
+func detectToolKind(step *pack.Step) tools.ToolKind {
+	if step == nil {
+		return tools.ToolUnknown
+	}
+	lines := strings.Split(step.Code, "\n")
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "" || strings.HasPrefix(trimmed, "#") {
+			continue
+		}
+		if cls, ok := dispatch.Classify(trimmed); ok {
+			return cls.Kind
+		}
+		break
+	}
+	return tools.ToolUnknown
+}
+
+func shouldSkipForMissingTool(kind tools.ToolKind, checker tools.PresenceChecker) bool {
+	if kind == tools.ToolUnknown {
+		return false
+	}
+	meta, ok := tools.Metadata(kind)
+	if !ok {
+		return false
+	}
+	if checker == nil {
+		_, found := DetectBinary(meta.Name)
+		return !found
+	}
+	_, found := checker.DetectBinary(meta.Name)
+	return !found
+}
+```
+
+internal/shell/engine_test.go
+```
+package shell
+
+import (
+	"context"
+	"path/filepath"
+	"testing"
+
+	"github.com/user/oraclepack/internal/pack"
+	"github.com/user/oraclepack/internal/state"
+)
+
+type fakeChecker struct {
+	found map[string]bool
+}
+
+func (f fakeChecker) DetectBinary(name string) (string, bool) {
+	return name, f.found[name]
+}
+
+func TestEngineSkipsMissingTool(t *testing.T) {
+	p := &pack.Pack{
+		Steps: []pack.Step{
+			{ID: "01", Number: 1, Code: "codex exec \"hi\""},
+		},
+	}
+	dir := t.TempDir()
+	engine := &Engine{
+		Pack:      p,
+		State:     &state.RunState{SchemaVersion: 1, StepStatuses: map[string]state.StepStatus{}},
+		StatePath: filepath.Join(dir, "state.json"),
+		Checker:   fakeChecker{found: map[string]bool{"codex": false}},
+	}
+	if err := engine.Run(context.Background()); err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if engine.State.StepStatuses["01"].Status != state.StatusSkipped {
+		t.Fatalf("expected skipped, got %s", engine.State.StepStatuses["01"].Status)
+	}
+}
+
+func TestEngineFailsOnError(t *testing.T) {
+	p := &pack.Pack{
+		Steps: []pack.Step{
+			{ID: "01", Number: 1, Code: "exit 1"},
+		},
+	}
+	engine := &Engine{
+		Pack:      p,
+		State:     &state.RunState{SchemaVersion: 1, StepStatuses: map[string]state.StepStatus{}},
+		StopOnFail: true,
+		Checker:   fakeChecker{found: map[string]bool{}},
+	}
+	if err := engine.Run(context.Background()); err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	if engine.State.StepStatuses["01"].Status != state.StatusFailed {
+		t.Fatalf("expected failed, got %s", engine.State.StepStatuses["01"].Status)
+	}
+}
+```
+
+internal/shell/runner.go
+```
+package shell
+
+import (
+	"bytes"
+	"context"
+	"fmt"
+	"os/exec"
+)
+
+// Result captures command output and exit code.
+type Result struct {
+	Stdout   string
+	Stderr   string
+	ExitCode int
+}
+
+// RunCommand executes a command with login shell semantics using /bin/bash -lc.
+func RunCommand(ctx context.Context, cmd string) (Result, error) {
+	c := exec.CommandContext(ctx, "/bin/bash", "-lc", cmd)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	c.Stdout = &stdout
+	c.Stderr = &stderr
+
+	err := c.Run()
+	exitCode := 0
+	if err != nil {
+		if ee, ok := err.(*exec.ExitError); ok {
+			exitCode = ee.ExitCode()
+		} else {
+			return Result{}, fmt.Errorf("run command: %w", err)
+		}
+	}
+
+	return Result{
+		Stdout:   stdout.String(),
+		Stderr:   stderr.String(),
+		ExitCode: exitCode,
+	}, nil
+}
+```
+
+internal/shell/runner_test.go
+```
+package shell
+
+import (
+	"context"
+	"strings"
+	"testing"
+)
+
+func TestRunCommandLoginShell(t *testing.T) {
+	res, err := RunCommand(context.Background(), "echo $PATH")
+	if err != nil {
+		t.Fatalf("RunCommand: %v", err)
+	}
+	if strings.TrimSpace(res.Stdout) == "" {
+		t.Fatalf("expected PATH output, got empty stdout")
+	}
+	if res.ExitCode != 0 {
+		t.Fatalf("expected exit code 0, got %d", res.ExitCode)
+	}
+}
+```
+
+internal/state/io.go
+```
+package state
+
+// Intentionally left without extra imports.
+
+// WriteState writes RunState atomically to disk.
+func WriteState(path string, state *RunState) error {
+	return SaveStateAtomic(path, state)
+}
+```
+
+internal/state/io_test.go
+```
+package state
+
+import (
+	"path/filepath"
+	"testing"
+	"time"
+)
+
+func TestWriteStateAndLoadState(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "state.json")
+
+	input := &RunState{
+		SchemaVersion: 1,
+		PackHash:      "hash",
+		StartTime:     time.Now(),
+		CurrentStep:   2,
+		StepStatuses: map[string]StepStatus{
+			"01": {Status: StatusSuccess},
+		},
+	}
+
+	if err := WriteState(path, input); err != nil {
+		t.Fatalf("WriteState: %v", err)
+	}
+
+	out, err := LoadState(path)
+	if err != nil {
+		t.Fatalf("LoadState: %v", err)
+	}
+
+	if out.CurrentStep != 2 {
+		t.Fatalf("expected CurrentStep 2, got %d", out.CurrentStep)
+	}
+	if out.StepStatuses["01"].Status != StatusSuccess {
+		t.Fatalf("expected status success, got %s", out.StepStatuses["01"].Status)
+	}
 }
 ```
 
@@ -2719,6 +3643,7 @@ type RunState struct {
 	SchemaVersion int                   `json:"schema_version"`
 	PackHash      string                `json:"pack_hash"`
 	StartTime     time.Time             `json:"start_time"`
+	CurrentStep   int                   `json:"current_step,omitempty"`
 	StepStatuses  map[string]StepStatus `json:"step_statuses"`
 	ROIThreshold  float64               `json:"roi_threshold,omitempty"`
 	ROIMode       string                `json:"roi_mode,omitempty"`
@@ -2741,6 +3666,229 @@ type Warning struct {
 	Line    int    `json:"line"`
 	Token   string `json:"token"`
 	Message string `json:"message"`
+}
+```
+
+internal/templates/template_test.go
+```
+package templates
+
+import (
+	"os"
+	"testing"
+
+	"github.com/user/oraclepack/internal/pack"
+)
+
+func TestRenderTicketActionPack(t *testing.T) {
+	got := RenderTicketActionPack()
+	if got == "" {
+		t.Fatal("expected non-empty template")
+	}
+
+	// Golden comparison
+	data, err := os.ReadFile("ticket-action-pack.md")
+	if err != nil {
+		t.Fatalf("read template: %v", err)
+	}
+	if string(data) != got {
+		t.Fatalf("template mismatch with golden file")
+	}
+
+	// Ensure pack is parseable and validates 20-step contract.
+	p, err := pack.Parse([]byte(got))
+	if err != nil {
+		t.Fatalf("Parse failed: %v", err)
+	}
+	if err := p.Validate(); err != nil {
+		t.Fatalf("Validate failed: %v", err)
+	}
+	if len(p.Steps) != 20 {
+		t.Fatalf("expected 20 steps, got %d", len(p.Steps))
+	}
+}
+```
+
+internal/templates/ticket-action-pack.md
+```
+# Ticket Action Pack
+
+```bash
+out_dir=".oraclepack/ticketify"
+--write-output
+
+# 01)
+echo "Build tickets index"
+
+# 02)
+echo "Generate actions json"
+
+# 03)
+echo "Generate tickets PRD"
+
+# 04)
+echo "Prep taskmaster inputs"
+
+# 05)
+task-master parse-prd .taskmaster/docs/prd.md
+
+# 06)
+task-master analyze-complexity --research
+
+# 07)
+task-master expand --all --research
+
+# 08)
+echo "Prepare headless automation"
+
+# 09)
+if command -v gemini >/dev/null 2>&1; then
+  gemini run "Select next tasks" --write-output ".oraclepack/ticketify/next.json"
+else
+  echo "Skipped: gemini missing"
+fi
+
+# 10)
+if command -v codex >/dev/null 2>&1; then
+  codex exec "Implement tasks" --write-output ".oraclepack/ticketify/codex-implement.md"
+else
+  echo "Skipped: codex missing"
+fi
+
+# 11)
+if command -v codex >/dev/null 2>&1; then
+  codex exec "Verify changes" --write-output ".oraclepack/ticketify/codex-verify.md"
+else
+  echo "Skipped: codex missing"
+fi
+
+# 12)
+if command -v gemini >/dev/null 2>&1; then
+  gemini run "Review outputs" --write-output ".oraclepack/ticketify/gemini-review.json"
+else
+  echo "Skipped: gemini missing"
+fi
+
+# 13)
+if command -v codex >/dev/null 2>&1; then
+  codex exec "Prepare fixes" --write-output ".oraclepack/ticketify/codex-fixes.md"
+else
+  echo "Skipped: codex missing"
+fi
+
+# 14)
+echo "Summarize results"
+
+# 15)
+echo "Prepare release notes"
+
+# 16)
+if command -v codex >/dev/null 2>&1; then
+  codex exec "Draft PR description" --write-output ".oraclepack/ticketify/PR.md"
+else
+  echo "Skipped: codex missing"
+fi
+
+# 17)
+echo "Finalize checklist"
+
+# 18)
+echo "Post-run cleanup"
+
+# 19)
+echo "Audit artifacts"
+
+# 20)
+echo "Done"
+```
+```
+
+internal/templates/ticket_action_pack.go
+```
+package templates
+
+import _ "embed"
+
+//go:embed ticket-action-pack.md
+var ticketActionPack string
+
+// RenderTicketActionPack returns the canonical ticket action pack template.
+func RenderTicketActionPack() string {
+	return ticketActionPack
+}
+```
+
+internal/tools/types.go
+```
+package tools
+
+// ToolKind identifies a supported tool prefix.
+type ToolKind int
+
+const (
+	ToolUnknown ToolKind = iota
+	ToolOracle
+	ToolTM
+	ToolTaskMaster
+	ToolCodex
+	ToolGemini
+)
+
+// ToolMetadata captures tool invocation details.
+type ToolMetadata struct {
+	Name string
+	Args []string
+}
+
+var registry = map[ToolKind]ToolMetadata{
+	ToolUnknown:    {Name: "unknown"},
+	ToolOracle:     {Name: "oracle"},
+	ToolTM:         {Name: "tm"},
+	ToolTaskMaster: {Name: "task-master"},
+	ToolCodex:      {Name: "codex", Args: []string{"exec"}},
+	ToolGemini:     {Name: "gemini"},
+}
+
+// Metadata returns tool metadata if present.
+func Metadata(kind ToolKind) (ToolMetadata, bool) {
+	meta, ok := registry[kind]
+	return meta, ok
+}
+
+// Name returns the canonical tool name.
+func (k ToolKind) Name() string {
+	if meta, ok := registry[k]; ok {
+		return meta.Name
+	}
+	return "unknown"
+}
+
+// PresenceChecker abstracts binary detection.
+type PresenceChecker interface {
+	DetectBinary(name string) (string, bool)
+}
+```
+
+internal/tools/types_test.go
+```
+package tools
+
+import "testing"
+
+func TestMetadataRegistry(t *testing.T) {
+	meta, ok := Metadata(ToolCodex)
+	if !ok {
+		t.Fatalf("expected metadata for codex")
+	}
+	if meta.Name != "codex" {
+		t.Fatalf("expected codex name, got %s", meta.Name)
+	}
+	if len(meta.Args) != 1 || meta.Args[0] != "exec" {
+		t.Fatalf("expected codex exec args, got %+v", meta.Args)
+	}
+	if ToolOracle.Name() != "oracle" {
+		t.Fatalf("expected oracle name, got %s", ToolOracle.Name())
+	}
 }
 ```
 
@@ -2822,7 +3970,7 @@ func TestFilterLogic(t *testing.T) {
 	s := &state.RunState{}
 
 	// Initialize model with no filter (threshold 0)
-	m := NewModel(p, r, s, "", 0, "over", false)
+	m := NewModel(p, r, s, "", 0, "over", false, false, 0)
 
 	if len(m.list.Items()) != 3 {
 		t.Fatalf("expected 3 items initially, got %d", len(m.list.Items()))
@@ -2870,7 +4018,7 @@ func TestROIModeTogglePersists(t *testing.T) {
 	r := exec.NewRunner(exec.RunnerOptions{})
 	s := &state.RunState{SchemaVersion: 1}
 
-	m := NewModel(p, r, s, statePath, 0, "over", false)
+	m := NewModel(p, r, s, statePath, 0, "over", false, false, 0)
 
 	updated, _ := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("m")})
 	m2 := updated.(Model)
@@ -3595,7 +4743,7 @@ func TestStepPreviewContentUnwrapped(t *testing.T) {
 	}
 	r := exec.NewRunner(exec.RunnerOptions{})
 	s := &state.RunState{}
-	m := NewModel(p, r, s, "", 0, "over", false)
+	m := NewModel(p, r, s, "", 0, "over", false, false, 0)
 	m.width = 80
 	m.previewID = "01"
 	m.previewWrap = false
@@ -3805,132 +4953,6 @@ func (m Model) refreshList() Model {
 
 type StartAutoRunMsg struct{}
 
-func (m Model) Init() tea.Cmd {
-	var cmds []tea.Cmd
-	if m.autoRun {
-		cmds = append(cmds, func() tea.Msg { return StartAutoRunMsg{} })
-	}
-	cmds = append(cmds, textinput.Blink)
-	return tea.Batch(cmds...)
-}
-
-type LogMsg string
-type FinishedMsg struct {
-	Err error
-	ID  string
-}
-
-func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var cmds []tea.Cmd
-
-	// Global keys (Quit)
-	if msg, ok := msg.(tea.KeyMsg); ok {
-		switch msg.String() {
-		case "ctrl+c":
-			return m, tea.Quit
-		}
-	}
-
-	if msg, ok := msg.(OverridesStartedMsg); ok {
-		_ = msg
-		m.viewState = ViewOverrides
-		m.overridesFlow = NewOverridesFlowModel(m.pack.Steps, m.runner.OracleFlags, RunnerOptionsFromRunner(m.runner))
-		return m, nil
-	}
-	if msg, ok := msg.(OverridesAppliedMsg); ok {
-		over := msg.Overrides
-		m.appliedOverrides = &over
-		if m.runner != nil {
-			m.runner.Overrides = &over
-		}
-		m.viewState = ViewSteps
-		return m, nil
-	}
-	if msg, ok := msg.(OverridesCancelledMsg); ok {
-		_ = msg
-		m.appliedOverrides = nil
-		if m.runner != nil {
-			m.runner.Overrides = nil
-		}
-		m.viewState = ViewSteps
-		return m, nil
-	}
-	if msg, ok := msg.(URLPickedMsg); ok {
-		m.chatGPTURL = msg.URL
-		if m.runner != nil {
-			m.runner.ChatGPTURL = m.chatGPTURL
-		}
-		m.urlInput.SetValue(m.chatGPTURL)
-		m.isPickingURL = false
-		return m, nil
-	}
-	if _, ok := msg.(URLPickerCancelledMsg); ok {
-		m.isPickingURL = false
-		return m, nil
-	}
-
-	if m.viewState == ViewOverrides {
-		var cmd tea.Cmd
-		m.overridesFlow, cmd = m.overridesFlow.Update(msg)
-		return m, cmd
-	}
-
-	if m.viewState == ViewStepPreview {
-		switch msg := msg.(type) {
-		case clearPreviewNoticeMsg:
-			m.previewNotice = ""
-			return m, nil
-		case tea.KeyMsg:
-			switch msg.String() {
-			case "q":
-				return m, tea.Quit
-			case "b", "esc":
-				m.previewID = ""
-				m.previewNotice = ""
-				m.viewState = ViewSteps
-				m.setListPreviewContent(m.selectedItemID())
-				return m, nil
-			case "t":
-				m.previewWrap = !m.previewWrap
-				m.viewport.SetContent(m.stepPreviewContent())
-				return m, nil
-			case "c":
-				content := m.stepPlainTextFor(m.previewID)
-				if err := copyToClipboard(content); err != nil {
-					path, fallbackErr := writeClipboardFallback(content)
-					if fallbackErr != nil {
-						m.previewNotice = "Copy failed: " + err.Error()
-					} else {
-						m.previewNotice = "Copy failed; saved to " + path
-					}
-				} else {
-					m.previewNotice = "Copied to clipboard"
-				}
-				return m, tea.Tick(2*time.Second, func(time.Time) tea.Msg {
-					return clearPreviewNoticeMsg{}
-				})
-			}
-		}
-		var cmd tea.Cmd
-		m.viewport, cmd = m.viewport.Update(msg)
-		return m, cmd
-	}
-
-	switch m.viewState {
-	case ViewDone:
-		if msg, ok := msg.(tea.KeyMsg); ok {
-			switch msg.String() {
-			case "q":
-				return m, tea.Quit
-			case "b":
-				m.viewState = ViewSteps
-				m.setListPreviewContent(m.selectedItemID())
-				return m, nil
-			case "n":
-				m.resetState()
-				return m, nil
-			case "r":
-				// Rerun selected step (if we have one selected in list)
 [TRUNCATED]
 ```
 
@@ -3956,7 +4978,7 @@ func TestInitAutoRun(t *testing.T) {
 	s := &state.RunState{}
 
 	// Test case 1: autoRun = true
-	modelAuto := NewModel(p, r, s, "", 0, "over", true)
+	modelAuto := NewModel(p, r, s, "", 0, "over", true, false, 0)
 	cmdAuto := modelAuto.Init()
 	
 	if cmdAuto == nil {
@@ -3965,7 +4987,7 @@ func TestInitAutoRun(t *testing.T) {
 	// Note: We can't easily assert the content of a Batch command in a unit test.
 
 	// Test case 2: autoRun = false
-	modelManual := NewModel(p, r, s, "", 0, "over", false)
+	modelManual := NewModel(p, r, s, "", 0, "over", false, false, 0)
 	// Even with autoRun false, we have textinput.Blink, so Init is not nil.
 	cmdManual := modelManual.Init()
 	if cmdManual == nil {
@@ -4166,148 +5188,6 @@ func (m URLPickerModel) DefaultURL() string {
 		return ""
 	}
 	for _, it := range store.Items {
-		if it.Name == name {
-			return it.URL
-		}
-	}
-	return ""
-}
-
-func (m *URLPickerModel) refresh() {
-	m.list.SetItems(makeURLItems(m.project, m.global))
-	selectDefault(&m.list, m.project, m.global)
-}
-
-func (m *URLPickerModel) touch(item urlItem) {
-	store := m.storeFor(item.scope)
-	if store == nil {
-		return
-	}
-	for i := range store.Items {
-		if store.Items[i].Name == item.name {
-			store.Items[i].LastUsed = nowRFC3339()
-			break
-		}
-	}
-	_ = m.saveStores()
-}
-
-func (m *URLPickerModel) delete(item urlItem) {
-	store := m.storeFor(item.scope)
-	if store == nil {
-		return
-	}
-	var out []URLItem
-	for _, it := range store.Items {
-		if it.Name == item.name {
-			continue
-		}
-		out = append(out, it)
-	}
-	store.Items = out
-	if store.Default == item.name {
-		store.Default = ""
-	}
-	_ = m.saveStores()
-	m.refresh()
-}
-
-func (m *URLPickerModel) setDefault(item urlItem) {
-	store := m.storeFor(item.scope)
-	if store == nil {
-		return
-	}
-	store.Default = item.name
-	_ = m.saveStores()
-}
-
-func (m *URLPickerModel) startEdit(scope, name, url string, isNew bool) {
-	m.editing = true
-	m.editScope = scope
-	m.editIsNew = isNew
-	m.editName.SetValue(name)
-	m.editURL.SetValue(url)
-	m.editName.Focus()
-	m.editURL.Blur()
-	m.errMsg = ""
-}
-
-func (m URLPickerModel) editView() string {
-	scopeLabel := fmt.Sprintf("Scope: %s (g=global, p=project)", m.editScope)
-	if m.globalPath == "" && m.projectPath != "" {
-		scopeLabel = "Scope: project"
-		m.editScope = urlScopeProject
-	}
-	if m.projectPath == "" && m.globalPath != "" {
-		scopeLabel = "Scope: global"
-		m.editScope = urlScopeGlobal
-	}
-	lines := []string{
-		"Add / Edit ChatGPT URL",
-		scopeLabel,
-		"",
-		"Name:",
-		m.editName.View(),
-		"",
-		"URL:",
-		m.editURL.View(),
-		"",
-		"[tab] switch field  [enter] save  [esc] cancel",
-	}
-	if m.errMsg != "" {
-		lines = append(lines, "", lipgloss.NewStyle().Foreground(lipgloss.Color("196")).Render(m.errMsg))
-	}
-	return lipgloss.JoinVertical(lipgloss.Left, lines...)
-}
-
-func (m URLPickerModel) updateEdit(msg tea.Msg) (URLPickerModel, tea.Cmd) {
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "esc":
-			m.editing = false
-			return m, nil
-		case "tab":
-			if m.editName.Focused() {
-				m.editName.Blur()
-				m.editURL.Focus()
-			} else {
-				m.editURL.Blur()
-				m.editName.Focus()
-			}
-			return m, nil
-		case "g":
-			if m.globalPath != "" {
-				m.editScope = urlScopeGlobal
-			}
-		case "p":
-			if m.projectPath != "" {
-				m.editScope = urlScopeProject
-			}
-		case "enter":
-			name := strings.TrimSpace(m.editName.Value())
-			url := strings.TrimSpace(m.editURL.Value())
-			if name == "" || !isValidURL(url) {
-				m.errMsg = "Name and a valid URL are required."
-				return m, nil
-			}
-			m.saveEdit(name, url)
-			m.editing = false
-			m.refresh()
-			return m, nil
-		}
-	}
-
-	var cmd tea.Cmd
-	if m.editName.Focused() {
-		m.editName, cmd = m.editName.Update(msg)
-	} else {
-		m.editURL, cmd = m.editURL.Update(msg)
-	}
-	return m, cmd
-}
-
-func (m *URLPickerModel) saveEdit(name, url string) {
 [TRUNCATED]
 ```
 
@@ -4473,6 +5353,336 @@ func TestURLPickerDefaultURLPrefersProject(t *testing.T) {
 	if got := picker.DefaultURL(); got != project.Items[0].URL {
 		t.Fatalf("expected project default URL %q, got %q", project.Items[0].URL, got)
 	}
+}
+```
+
+internal/validate/artifact_gate.go
+```
+package validate
+
+import (
+	"errors"
+
+	"github.com/user/oraclepack/internal/artifacts"
+	"github.com/user/oraclepack/internal/foundation"
+	"github.com/user/oraclepack/internal/pack"
+	"github.com/user/oraclepack/internal/state"
+	"github.com/user/oraclepack/internal/tools"
+)
+
+// ArtifactGateValidator checks expected artifacts after a step.
+type ArtifactGateValidator struct {
+	Contract artifacts.Contract
+}
+
+func (v ArtifactGateValidator) Validate(step *pack.Step, kind tools.ToolKind, toolPresent bool) (state.Status, string) {
+	if step == nil {
+		return state.StatusSuccess, ""
+	}
+	contract := v.Contract
+	if contract == nil {
+		contract = artifacts.DefaultContract()
+	}
+	if !toolPresent {
+		if _, ok := contract[step.ID]; ok {
+			return state.StatusSkipped, "tool missing; skipping artifact gate"
+		}
+		return state.StatusSuccess, ""
+	}
+	err := artifacts.EvaluateGates(step.ID, contract)
+	if err == nil {
+		return state.StatusSuccess, ""
+	}
+	if errors.Is(err, foundation.ErrArtifactMissing) {
+		return state.StatusFailed, err.Error()
+	}
+	return state.StatusFailed, err.Error()
+}
+```
+
+internal/validate/artifact_gate_test.go
+```
+package validate
+
+import (
+	"os"
+	"path/filepath"
+	"testing"
+
+	"github.com/user/oraclepack/internal/artifacts"
+	"github.com/user/oraclepack/internal/pack"
+	"github.com/user/oraclepack/internal/state"
+	"github.com/user/oraclepack/internal/tools"
+)
+
+func TestArtifactGateValidator(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "next.json")
+	contract := artifacts.Contract{"09": {path}}
+	step := &pack.Step{ID: "09"}
+	v := ArtifactGateValidator{Contract: contract}
+
+	status, _ := v.Validate(step, tools.ToolCodex, true)
+	if status != state.StatusFailed {
+		t.Fatalf("expected failed for missing artifact, got %s", status)
+	}
+
+	if err := os.WriteFile(path, []byte("ok"), 0644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	status, _ = v.Validate(step, tools.ToolCodex, true)
+	if status != state.StatusSuccess {
+		t.Fatalf("expected success, got %s", status)
+	}
+
+	status, _ = v.Validate(step, tools.ToolCodex, false)
+	if status != state.StatusSkipped {
+		t.Fatalf("expected skipped when tool missing, got %s", status)
+	}
+}
+```
+
+internal/validate/composite.go
+```
+package validate
+
+import (
+	"github.com/user/oraclepack/internal/pack"
+	"github.com/user/oraclepack/internal/state"
+)
+
+// CompositeValidator coordinates multiple validators for all steps.
+type CompositeValidator struct {
+	ToolPresence ToolPresenceValidator
+	OracleDryRun OracleDryRunValidator
+	ArtifactGate ArtifactGateValidator
+}
+
+// ValidatePack validates all steps in a pack and returns per-step results.
+func (v CompositeValidator) ValidatePack(p *pack.Pack) []StepResult {
+	if p == nil {
+		return nil
+	}
+	results := make([]StepResult, 0, len(p.Steps))
+	for i := range p.Steps {
+		step := &p.Steps[i]
+		kind := DetectToolKind(step)
+
+		status, reason, toolPresent := v.ToolPresence.Validate(step, kind)
+		if status == state.StatusSkipped {
+			results = append(results, StepResult{
+				StepID:   step.ID,
+				ToolKind: kind,
+				Status:   status,
+				Error:    reason,
+			})
+			continue
+		}
+
+		if oracleStatus, oracleErr := v.OracleDryRun.Validate(step, kind); oracleStatus == state.StatusFailed {
+			results = append(results, StepResult{
+				StepID:   step.ID,
+				ToolKind: kind,
+				Status:   oracleStatus,
+				Error:    oracleErr,
+			})
+			continue
+		}
+
+		gateStatus, gateErr := v.ArtifactGate.Validate(step, kind, toolPresent)
+		finalStatus := gateStatus
+		errMsg := gateErr
+		if finalStatus == "" {
+			finalStatus = state.StatusSuccess
+		}
+		results = append(results, StepResult{
+			StepID:   step.ID,
+			ToolKind: kind,
+			Status:   finalStatus,
+			Error:    errMsg,
+		})
+	}
+	return results
+}
+```
+
+internal/validate/composite_test.go
+```
+package validate
+
+import (
+	"testing"
+
+	"github.com/user/oraclepack/internal/pack"
+	"github.com/user/oraclepack/internal/state"
+)
+
+func TestCompositeValidator(t *testing.T) {
+	p := &pack.Pack{
+		Steps: []pack.Step{
+			{ID: "01", Code: "codex exec \"hi\""},
+		},
+	}
+	cv := CompositeValidator{
+		ToolPresence: ToolPresenceValidator{Checker: fakeChecker{found: map[string]bool{"codex": false}}},
+	}
+	results := cv.ValidatePack(p)
+	if len(results) != 1 {
+		t.Fatalf("expected 1 result, got %d", len(results))
+	}
+	if results[0].Status != state.StatusSkipped {
+		t.Fatalf("expected skipped, got %s", results[0].Status)
+	}
+}
+```
+
+internal/validate/oracle.go
+```
+package validate
+
+import (
+	"github.com/user/oraclepack/internal/pack"
+	"github.com/user/oraclepack/internal/state"
+	"github.com/user/oraclepack/internal/tools"
+)
+
+// OracleDryRunValidator is a placeholder for oracle-specific validation.
+type OracleDryRunValidator struct{}
+
+// Validate returns success for non-oracle tools and no-op for oracle until wired.
+func (OracleDryRunValidator) Validate(step *pack.Step, kind tools.ToolKind) (state.Status, string) {
+	if kind != tools.ToolOracle {
+		return state.StatusSuccess, ""
+	}
+	return state.StatusSuccess, ""
+}
+```
+
+internal/validate/presence.go
+```
+package validate
+
+import (
+	"fmt"
+
+	"github.com/user/oraclepack/internal/pack"
+	"github.com/user/oraclepack/internal/shell"
+	"github.com/user/oraclepack/internal/state"
+	"github.com/user/oraclepack/internal/tools"
+)
+
+// ToolPresenceValidator checks that tool binaries exist on PATH.
+type ToolPresenceValidator struct {
+	Checker tools.PresenceChecker
+}
+
+// Validate returns skipped if the tool is missing.
+func (v ToolPresenceValidator) Validate(step *pack.Step, kind tools.ToolKind) (state.Status, string, bool) {
+	if kind == tools.ToolUnknown {
+		return state.StatusSuccess, "", true
+	}
+	meta, ok := tools.Metadata(kind)
+	if !ok {
+		return state.StatusSuccess, "", true
+	}
+	checker := v.Checker
+	if checker == nil {
+		checker = shellChecker{}
+	}
+	if _, found := checker.DetectBinary(meta.Name); !found {
+		return state.StatusSkipped, fmt.Sprintf("tool %s not found on PATH", meta.Name), false
+	}
+	return state.StatusSuccess, "", true
+}
+
+type shellChecker struct{}
+
+func (shellChecker) DetectBinary(name string) (string, bool) {
+	return shell.DetectBinary(name)
+}
+```
+
+internal/validate/presence_test.go
+```
+package validate
+
+import (
+	"testing"
+
+	"github.com/user/oraclepack/internal/pack"
+	"github.com/user/oraclepack/internal/state"
+	"github.com/user/oraclepack/internal/tools"
+)
+
+type fakeChecker struct {
+	found map[string]bool
+}
+
+func (f fakeChecker) DetectBinary(name string) (string, bool) {
+	return name, f.found[name]
+}
+
+func TestToolPresenceValidator(t *testing.T) {
+	step := &pack.Step{ID: "01", Code: "codex exec \"hi\""}
+	v := ToolPresenceValidator{Checker: fakeChecker{found: map[string]bool{"codex": false}}}
+	status, reason, present := v.Validate(step, tools.ToolCodex)
+	if status != state.StatusSkipped || present {
+		t.Fatalf("expected skipped/missing, got status=%s present=%v", status, present)
+	}
+	if reason == "" {
+		t.Fatalf("expected reason for missing tool")
+	}
+}
+```
+
+internal/validate/report.go
+```
+package validate
+
+// ValidationReport captures results for all steps.
+type ValidationReport struct {
+	Steps []StepResult
+}
+```
+
+internal/validate/types.go
+```
+package validate
+
+import (
+	"strings"
+
+	"github.com/user/oraclepack/internal/dispatch"
+	"github.com/user/oraclepack/internal/pack"
+	"github.com/user/oraclepack/internal/state"
+	"github.com/user/oraclepack/internal/tools"
+)
+
+// StepResult captures validation output for a step.
+type StepResult struct {
+	StepID   string
+	ToolKind tools.ToolKind
+	Status   state.Status
+	Error    string
+}
+
+// DetectToolKind scans a step for a known tool prefix.
+func DetectToolKind(step *pack.Step) tools.ToolKind {
+	if step == nil {
+		return tools.ToolUnknown
+	}
+	lines := strings.Split(step.Code, "\n")
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "" || strings.HasPrefix(trimmed, "#") {
+			continue
+		}
+		if cls, ok := dispatch.Classify(trimmed); ok {
+			return cls.Kind
+		}
+		break
+	}
+	return tools.ToolUnknown
 }
 ```
 
