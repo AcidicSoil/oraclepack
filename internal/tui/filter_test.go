@@ -7,14 +7,14 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/user/oraclepack/internal/exec"
-	"github.com/user/oraclepack/internal/pack"
 	"github.com/user/oraclepack/internal/state"
+	"github.com/user/oraclepack/internal/types"
 )
 
 func TestFilterLogic(t *testing.T) {
 	// Setup pack with steps having different ROI
-	p := &pack.Pack{
-		Steps: []pack.Step{
+	p := &types.Pack{
+		Steps: []types.Step{
 			{ID: "01", ROI: 1.0, OriginalLine: "Step 1"},
 			{ID: "02", ROI: 5.0, OriginalLine: "Step 2"},
 			{ID: "03", ROI: 10.0, OriginalLine: "Step 3"},
@@ -64,8 +64,8 @@ func TestFilterLogic(t *testing.T) {
 func TestROIModeTogglePersists(t *testing.T) {
 	dir := t.TempDir()
 	statePath := filepath.Join(dir, "state.json")
-	p := &pack.Pack{
-		Steps: []pack.Step{
+	p := &types.Pack{
+		Steps: []types.Step{
 			{ID: "01", ROI: 1.0, OriginalLine: "Step 1"},
 		},
 	}

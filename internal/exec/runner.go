@@ -9,7 +9,7 @@ import (
 
 	"github.com/user/oraclepack/internal/errors"
 	"github.com/user/oraclepack/internal/overrides"
-	"github.com/user/oraclepack/internal/pack"
+	"github.com/user/oraclepack/internal/types"
 )
 
 // Runner handles the execution of shell scripts.
@@ -51,14 +51,14 @@ func NewRunner(opts RunnerOptions) *Runner {
 }
 
 // RunPrelude executes the prelude code.
-func (r *Runner) RunPrelude(ctx context.Context, p *pack.Prelude, logWriter io.Writer) error {
+func (r *Runner) RunPrelude(ctx context.Context, p *types.Prelude, logWriter io.Writer) error {
 	script, warnings := SanitizeScript(p.Code, "prelude", "")
 	r.recordWarnings(warnings, logWriter)
 	return r.run(ctx, script, logWriter)
 }
 
 // RunStep executes a single step's code.
-func (r *Runner) RunStep(ctx context.Context, s *pack.Step, logWriter io.Writer) error {
+func (r *Runner) RunStep(ctx context.Context, s *types.Step, logWriter io.Writer) error {
 	flags := ApplyChatGPTURL(r.OracleFlags, r.ChatGPTURL)
 	if r.Overrides != nil {
 		flags = r.Overrides.EffectiveFlags(s.ID, r.OracleFlags)

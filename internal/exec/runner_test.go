@@ -5,12 +5,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/user/oraclepack/internal/pack"
+	"github.com/user/oraclepack/internal/types"
 )
 
 func TestRunner_RunStep(t *testing.T) {
 	r := NewRunner(RunnerOptions{})
-	
+
 	var lines []string
 	lw := &LineWriter{
 		Callback: func(line string) {
@@ -18,7 +18,7 @@ func TestRunner_RunStep(t *testing.T) {
 		},
 	}
 
-	step := &pack.Step{
+	step := &types.Step{
 		Code: "echo 'hello world'",
 	}
 
@@ -43,11 +43,11 @@ func TestRunner_RunStep(t *testing.T) {
 
 func TestRunner_ContextCancellation(t *testing.T) {
 	r := NewRunner(RunnerOptions{})
-	
+
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // Cancel immediately
 
-	step := &pack.Step{
+	step := &types.Step{
 		Code: "sleep 10",
 	}
 

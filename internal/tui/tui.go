@@ -17,6 +17,7 @@ import (
 	"github.com/user/oraclepack/internal/pack"
 	"github.com/user/oraclepack/internal/render"
 	"github.com/user/oraclepack/internal/state"
+	"github.com/user/oraclepack/internal/types"
 )
 
 type ViewState int
@@ -47,7 +48,7 @@ type Model struct {
 	filterInput textinput.Model
 	urlInput    URLInputModel
 	urlPicker   URLPickerModel
-	pack        *pack.Pack
+	pack        *types.Pack
 	runner      *exec.Runner
 	state       *state.RunState
 	statePath   string
@@ -83,7 +84,7 @@ type Model struct {
 	logChan  chan string
 }
 
-func NewModel(p *pack.Pack, r *exec.Runner, s *state.RunState, statePath string, roiThreshold float64, roiMode string, autoRun bool, outputVerify bool, outputRetries int) Model {
+func NewModel(p *types.Pack, r *exec.Runner, s *state.RunState, statePath string, roiThreshold float64, roiMode string, autoRun bool, outputVerify bool, outputRetries int) Model {
 	if s != nil {
 		if s.ROIThreshold > 0 {
 			roiThreshold = s.ROIThreshold
@@ -161,7 +162,7 @@ func (m Model) refreshList() Model {
 	var filtered []list.Item
 	for _, it := range m.allSteps {
 		// Find the original step to check ROI
-		var step *pack.Step
+		var step *types.Step
 		for _, s := range m.pack.Steps {
 			if s.ID == it.id {
 				step = &s
@@ -520,12 +521,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			if m.runAll {
 				m.currentIdx++
-					if m.currentIdx < len(m.list.Items()) {
-						m.list.Select(m.currentIdx)
-						i := m.list.Items()[m.currentIdx].(item)
-						m.logLines = append(m.logLines, fmt.Sprintf("\n--- Starting Step %d/%d ---\n", m.currentIdx+1, len(m.list.Items())))
-						return m, tea.Batch(m.runStep(i.id), m.waitForLogs(), m.spinner.Tick)
-					} else {
+				if m.currentIdx < len(m.list.Items()) {
+					m.list.Select(m.currentIdx)
+					i := m.list.Items()[m.currentIdx].(item)
+					m.logLines = append(m.logLines, fmt.Sprintf("\n--- Starting Step %d/%d ---\n", m.currentIdx+1, len(m.list.Items())))
+					return m, tea.Batch(m.runStep(i.id), m.waitForLogs(), m.spinner.Tick)
+				} else {
 					m.logLines = append(m.logLines, "\n🏁 ALL STEPS COMPLETED")
 					m.running = false
 					m.runAll = false
@@ -687,7 +688,7 @@ func (m *Model) stepPlainTextFor(id string) string {
 	return header + "\n" + step.Code
 }
 
-func (m *Model) stepForID(id string) *pack.Step {
+func (m *Model) stepForID(id string) *types.Step {
 	for i := range m.pack.Steps {
 		if m.pack.Steps[i].ID == id {
 			return &m.pack.Steps[i]
@@ -893,7 +894,7 @@ func (m Model) waitForLogs() tea.Cmd {
 
 func (m Model) runStep(id string) tea.Cmd {
 	return func() tea.Msg {
-		var step *pack.Step
+		var step *types.Step
 		for _, s := range m.pack.Steps {
 			if s.ID == id {
 				step = &s
@@ -933,12 +934,12 @@ func (m Model) runStep(id string) tea.Cmd {
 
 			var failures []string
 			for path, required := range expectations {
-				ok, missing, err := pack.ValidateOutputFile(path, required)
-				if err != nil {
-					return FinishedMsg{Err: fmt.Errorf("output verification failed for step %s: %w", step.ID, err), ID: id}
-				}
+				ok, failure := pack.ValidateOutputFile(path, required)
 				if !ok {
-					failures = append(failures, fmt.Sprintf("%s missing: %s", path, strings.Join(missing, ", ")))
+					if failure.Error != "" {
+						return FinishedMsg{Err: fmt.Errorf("output verification failed for step %s: %s", step.ID, failure.Error), ID: id}
+					}
+					failures = append(failures, fmt.Sprintf("%s missing: %s", path, strings.Join(failure.MissingTokens, ", ")))
 				}
 			}
 			if len(failures) == 0 {

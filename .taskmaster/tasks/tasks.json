@@ -4010,5 +4010,494 @@
       "description": "Tasks for feature-action-pack-artifact-gates-headless-steps context",
       "updated": "2026-01-09T22:12:45.274Z"
     }
+  },
+  "chore-overview": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Establish Core Types and Domain Models",
+        "description": "Define the foundational data structures for Packs, Steps, and Verification results in a central internal package.",
+        "details": "Create `internal/types/pack.go` and `internal/types/verification.go`. Define `Pack` and `Step` structs. Introduce `OutputContract` enum (e.g., `AllSections`, `DirectAnswerOnly`, `ChunkedBySuffix`). Define `OutputFailure` and `SyntaxFinding` structs to represent validation errors across the system. This centralizes types to prevent circular dependencies in subsequent phases.",
+        "testStrategy": "Unit tests verifying that the structs can be instantiated and serialized/deserialized correctly. Ensure zero-dependency status for the types package.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Define Core Pack and Step Structs",
+            "description": "Establish the primary domain models for the application by creating the Pack and Step data structures.",
+            "dependencies": [],
+            "details": "Create the file internal/types/pack.go. Define the Pack and Step Go structs, ensuring they include fields for identification, titles, and step sequences. This file must remain free of external dependencies to prevent circular imports.",
+            "status": "pending",
+            "testStrategy": "Unit tests to verify struct instantiation and field accessibility."
+          },
+          {
+            "id": 2,
+            "title": "Define OutputContract and Validation Structs",
+            "description": "Implement the enum for output contracts and the structures used for reporting validation failures.",
+            "dependencies": [
+              1
+            ],
+            "details": "Create internal/types/verification.go. Define the OutputContract enum (e.g., AllSections, DirectAnswerOnly) and the OutputFailure and SyntaxFinding structs to standardize how validation errors are passed through the system.",
+            "status": "pending",
+            "testStrategy": "Verify enum values and ensure validation structs correctly capture error metadata."
+          },
+          {
+            "id": 3,
+            "title": "Implement Serialization Tags and Tests",
+            "description": "Add metadata tags to the core structs and implement unit tests to ensure correct serialization behavior.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Decorate all structs in internal/types with standard JSON and YAML tags. Implement table-driven unit tests that perform Round-Trip serialization (Marshal then Unmarshal) to ensure data integrity across formats.",
+            "status": "pending",
+            "testStrategy": "Table-driven unit tests using json.Marshal and yaml.Marshal for all core types."
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Implement Configuration Defaults and Env-Var Constants",
+        "description": "Define the environment variable mapping and default values for oraclepack's operation.",
+        "details": "Create `internal/config/defaults.go`. Define constants for `ORACLEPACK_OUTPUT_VERIFY` (default: true) and `ORACLEPACK_OUTPUT_RETRIES` (default: 0). Use a standard approach like `os.LookupEnv` or prepare for `spf13/viper` integration. Ensure these defaults are accessible to both execution and verification commands.",
+        "testStrategy": "Unit tests ensuring default values are returned when no environment variables are set and that names match the PRD specification.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Define Environment Variable Key Constants",
+            "description": "Create the constant string definitions for environment variables in the configuration package.",
+            "dependencies": [],
+            "details": "In internal/config/defaults.go, define exported constants for all configuration keys, specifically ORACLEPACK_OUTPUT_VERIFY and ORACLEPACK_OUTPUT_RETRIES, to prevent magic strings throughout the codebase.",
+            "status": "pending",
+            "testStrategy": "Unit test to verify that the constant values match the naming conventions defined in the PRD."
+          },
+          {
+            "id": 2,
+            "title": "Implement Default Configuration Provider",
+            "description": "Develop a function that returns a base configuration object with defaults and environment overrides.",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement a 'GetDefaultConfig' function in internal/config/defaults.go. Use os.LookupEnv to populate a Config struct, applying defaults of 'true' for verification and '0' for retries if the environment variables are unset.",
+            "status": "pending",
+            "testStrategy": "Table-driven unit tests ensuring defaults are applied when environment variables are missing, and correctly overridden when they are present."
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Implement Contract-Aware Output Expectation Inference",
+        "description": "Develop logic to detect when a step requires a full 4-token response versus a single 'Direct answer' token.",
+        "details": "Create `internal/pack/output_expectations.go`. Implement `DetectOutputContract(step Step) OutputContract`. Use regex or string matching to find 'Answer format' AND 'Return only: Direct answer' (or common variants). If both are present, the contract is `DirectAnswerOnly`. Otherwise, if 'Answer format' is present, default to `AllSections`. Return an array of required tokens (e.g., [\"### Direct answer\"] or the full set).",
+        "testStrategy": "Table-driven unit tests with various Step Markdown snippets (e.g., varying indentation, casing, and phrasing of 'Direct answer only') to verify correct contract detection.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Develop Regex for 'Answer format' Detection",
+            "description": "Create robust regular expressions to identify and extract 'Answer format' sections within Markdown step descriptions.",
+            "dependencies": [],
+            "details": "Use the Go `regexp` package to handle variations in Markdown header levels (e.g., ## or ###) and case-insensitive matching for the 'Answer format' string to ensure reliable extraction of the instruction block.",
+            "status": "pending",
+            "testStrategy": "Unit tests with various header styles and whitespace configurations to verify successful block extraction."
+          },
+          {
+            "id": 2,
+            "title": "Implement Contract Variant Detection Logic",
+            "description": "Develop the internal logic to distinguish between standard multi-section responses and direct-answer-only responses.",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement the logic in `internal/pack/output_expectations.go` to scan extracted blocks for phrases like 'Return only: Direct answer' or 'Direct answer only'. Return a `DirectAnswerOnly` contract if found, otherwise default to `AllSections`.",
+            "status": "pending",
+            "testStrategy": "Tests using specific instruction strings to ensure 'Direct answer' variants are correctly classified into the appropriate contract type."
+          },
+          {
+            "id": 3,
+            "title": "Create Token Array Mapping Logic",
+            "description": "Map the identified output contracts to their corresponding required token arrays used for validation.",
+            "dependencies": [
+              2
+            ],
+            "details": "Define a mapping function that returns `[]string{\"### Direct answer\"}` for the `DirectAnswerOnly` contract and a full list (e.g., Research, Steps, Code, Direct Answer) for the `AllSections` contract.",
+            "status": "pending",
+            "testStrategy": "Verification of the returned string slice contents for each specific OutputContract enum value."
+          },
+          {
+            "id": 4,
+            "title": "Build Comprehensive Table-Driven Test Suite",
+            "description": "Develop a table-driven test suite in `internal/pack/output_expectations_test.go` to handle edge cases in Markdown parsing.",
+            "dependencies": [
+              1,
+              2,
+              3
+            ],
+            "details": "Create a test suite covering scenarios such as missing 'Answer format' sections, mixed casing, extra indentation, Windows vs Linux line endings, and malformed Markdown snippets to ensure the inference engine never panics.",
+            "status": "pending",
+            "testStrategy": "A suite of at least 15 distinct Markdown input cases compared against expected contract types and token lists."
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Refactor Suffix-Based Chunked Output Mapping",
+        "description": "Map specific file suffixes to literal token requirements, removing placeholder logic.",
+        "details": "Update `internal/pack/output_expectations.go` to handle multiple `--write-output` paths. Map suffixes: `-direct-answer` -> '### Direct answer', `-risks-unknowns` -> '### Risks and unknowns', `-next-experiment` -> '### Next experiment', and `-missing-evidence` -> '### Missing evidence' (literal token). Ensure the logic prioritizes suffix matching for multiple files.",
+        "testStrategy": "Unit tests passing arrays of file paths to the inference engine and asserting the resulting token map matches the suffix-to-literal-token rules exactly.",
+        "priority": "medium",
+        "dependencies": [
+          3
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Define Suffix-to-Token Mapping Table",
+            "description": "Create a lookup structure to map specific filename suffixes to their required Markdown header tokens.",
+            "dependencies": [],
+            "details": "In `internal/pack/output_expectations.go`, implement a map or constant list linking suffixes like '-direct-answer' to '### Direct answer', '-risks-unknowns' to '### Risks and unknowns', '-next-experiment' to '### Next experiment', and '-missing-evidence' to '### Missing evidence'.",
+            "status": "pending",
+            "testStrategy": "Unit tests ensuring the mapping function returns the correct literal token string for each defined suffix."
+          },
+          {
+            "id": 2,
+            "title": "Implement Multi-Path Suffix Inference Logic",
+            "description": "Extend the expectation logic to handle multiple file paths provided in the '--write-output' flags.",
+            "dependencies": [
+              1
+            ],
+            "details": "Modify the inference engine to iterate through all output file paths for a Step. For each path, check against the suffix map defined in Task 1. Ensure the system can handle an array of paths and return a mapping of filename to its specific token expectation.",
+            "status": "pending",
+            "testStrategy": "Unit tests passing arrays of varied file paths and asserting that the resulting expectation map assigns the correct token to each file."
+          },
+          {
+            "id": 3,
+            "title": "Develop Suffix Conflict Resolution and Prioritization",
+            "description": "Handle edge cases where multiple suffixes might conflict or where no suffix is found in a chunked output context.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Implement logic to prioritize the most specific suffix match if multiple exist. Define behavior for files without recognized suffixes when other files in the same step have them (e.g., falling back to Step-level contract or flagging as invalid).",
+            "status": "pending",
+            "testStrategy": "Table-driven unit tests covering edge cases like overlapping suffix strings and file paths that do not match any known suffix pattern."
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Develop Config Precedence Resolver",
+        "description": "Create a resolver that merges CLI flags, environment variables, and defaults.",
+        "details": "Implement `internal/config/resolve.go`. The precedence logic must be: CLI Flag > Environment Variable > Default. This resolver will be used by `run.go` and the new `verify_outputs.go`. Ensure boolean flags handle 'false' correctly from environment variables (e.g., '0', 'false', 'off').",
+        "testStrategy": "Integration tests mocking CLI flags and environment variables to ensure the resolved runtime config follows the defined hierarchy.",
+        "priority": "medium",
+        "dependencies": [
+          2
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement Configuration Merging Logic",
+            "description": "Develop the core logic in internal/config/resolve.go to merge configuration settings from multiple sources.",
+            "dependencies": [],
+            "details": "Create a resolver function that applies overrides in the specific order: CLI Flag > Environment Variable > Default. The implementation must ensure that a value provided at a higher precedence level completely overrides values at lower levels.",
+            "status": "pending",
+            "testStrategy": "Unit tests with mock input structures representing flags, environment variables, and defaults to verify the resulting merged object."
+          },
+          {
+            "id": 2,
+            "title": "Develop Boolean String Parsing Utility",
+            "description": "Create a robust parser to convert various string representations of booleans into actual boolean types.",
+            "dependencies": [],
+            "details": "Implement a helper function to correctly interpret environment variables like '1'/'0', 'true'/'false', and 'on'/'off'. This is critical for ensuring ORACLEPACK_OUTPUT_VERIFY and similar flags behave as expected when set via shell environments.",
+            "status": "pending",
+            "testStrategy": "Table-driven unit tests covering all truthy and falsy variations, including case-insensitivity and error handling for invalid strings."
+          },
+          {
+            "id": 3,
+            "title": "Integration Testing for Config Precedence",
+            "description": "Validate the full end-to-end precedence logic (Flag > Env > Default) through integration tests.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Set up integration tests that simulate a runtime environment by mocking OS environment variables and CLI argument structures. Assert that the resolver returns the correct configuration state when values conflict across sources.",
+            "status": "pending",
+            "testStrategy": "Integration tests using a controlled environment to verify that CLI flags successfully override environment variables and defaults."
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Implement 'verify-outputs' CLI Command",
+        "description": "Create a new command to validate existing output files without executing bash commands.",
+        "details": "Create `cmd/oraclepack/verify_outputs.go`. Logic: 1. Parse Pack. 2. Resolve config (verify enabled?). 3. For each Step, infer expectations. 4. Check if files exist on disk. 5. Scan files for tokens using `internal/pack/output_validator.go`. 6. Exit non-zero and print a report using `internal/pack/verify_report.go` if any tokens are missing.",
+        "testStrategy": "Integration test using a sample Pack and pre-generated output files (some valid, some invalid). Assert the command returns non-zero for missing tokens and zero for success.",
+        "priority": "high",
+        "dependencies": [
+          4,
+          5
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement CLI command scaffolding and flag parsing",
+            "description": "Create the entry point for the 'verify-outputs' command and define necessary CLI flags.",
+            "dependencies": [],
+            "details": "Create `cmd/oraclepack/verify_outputs.go` using spf13/cobra. Implement flags for the Pack file path and the target output directory. Ensure the command is correctly registered in the main CLI entry point.",
+            "status": "pending",
+            "testStrategy": "Manual verification of command availability via 'oraclepack verify-outputs --help' and unit tests for flag binding."
+          },
+          {
+            "id": 2,
+            "title": "Develop file system scanning logic for step output discovery",
+            "description": "Implement logic to iterate through Pack steps, identify expected output file paths, and check their existence on disk.",
+            "dependencies": [
+              1
+            ],
+            "details": "Integrate with the Pack parser to iterate through defined steps. For each step, determine the expected file path in the output directory. Implement logic to check if these files exist and record missing files as initial validation failures.",
+            "status": "pending",
+            "testStrategy": "Unit tests using temporary directories and mock Pack files to verify correct file path resolution and existence checks."
+          },
+          {
+            "id": 3,
+            "title": "Implement token-based content validation logic",
+            "description": "Create the core validation engine to scan file contents for required tokens based on step contracts.",
+            "dependencies": [
+              2
+            ],
+            "details": "Develop `internal/pack/output_validator.go`. This logic must take an OutputContract (from Task 3) and a file handle, then scan for required headers/tokens like '### Direct answer'. It should return a list of missing tokens for each file.",
+            "status": "pending",
+            "testStrategy": "Table-driven unit tests with various string contents and expected OutputContract requirements to ensure precise token detection."
+          },
+          {
+            "id": 4,
+            "title": "Implement detailed error reporting and report generator",
+            "description": "Develop the reporting module to aggregate validation failures and format them for the console.",
+            "dependencies": [
+              3
+            ],
+            "details": "Create `internal/pack/verify_report.go`. Implement logic to aggregate 'OutputFailure' objects into a structured report. The report should highlight exactly which steps failed and which tokens were missing. Ensure the CLI exits with status code 1 if any failures are detected.",
+            "status": "pending",
+            "testStrategy": "Visual verification of the report output format and automated tests checking for non-zero exit codes on validation failure."
+          },
+          {
+            "id": 5,
+            "title": "Create integration tests for 'verify-outputs' command",
+            "description": "Establish end-to-end tests that simulate a full verification run against mock data.",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "details": "Set up a test suite that uses a sample Pack markdown and a directory of pre-generated output files. Include scenarios for perfect compliance, missing files, and files missing specific required tokens. Assert that the CLI output and exit codes match expectations.",
+            "status": "pending",
+            "testStrategy": "Integration tests using 'os/exec' or internal CLI invocation to verify the complete command workflow."
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Implement Bash Syntax and Orphaned-Flag Validator",
+        "description": "Detect unsafe structural issues in the generated bash blocks of a pack.",
+        "details": "Create `internal/pack/bash_syntax_validator.go`. Use regex to detect lines containing ONLY flags like `-p` or `--prompt` without a preceding command or a line continuation (`\\`). Also implement `internal/pack/bash_tooling_checks.go` to wrap `bash -n`. If `bash` is not found in $PATH, log a warning and skip the check instead of failing.",
+        "testStrategy": "Unit tests with bash strings containing orphaned flags and malformed syntax. Ensure the validator returns the correct line numbers and clear error messages.",
+        "priority": "medium",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement Regex-Based Orphaned Flag Detection",
+            "description": "Develop the core logic to identify lines in bash blocks that contain isolated flags without valid preceding commands.",
+            "dependencies": [],
+            "details": "Create 'internal/pack/bash_syntax_validator.go'. Implement a regex such as '^\\s*(-[a-zA-Z0-9]+|--[a-z-]+)\\s*$' to detect lines containing ONLY flags. Ensure it ignores lines ending in a backslash continuation or lines where flags are preceded by non-whitespace characters.",
+            "status": "pending",
+            "testStrategy": "Unit tests using strings with valid command-flag pairs vs strings with isolated flags like ' -p' on a new line."
+          },
+          {
+            "id": 2,
+            "title": "Develop Bash Syntax Execution Wrapper",
+            "description": "Create a service to wrap the 'bash -n' command for external syntax validation with environmental safety checks.",
+            "dependencies": [],
+            "details": "Implement 'internal/pack/bash_tooling_checks.go'. Use 'os/exec' to run 'bash -n'. Add logic to check 'os.LookupEnv' or 'exec.LookPath' for bash; if not found, log a warning using the internal logger and skip the check to maintain portability.",
+            "status": "pending",
+            "testStrategy": "Execution tests that verify the validator gracefully handles environments where the bash binary is missing."
+          },
+          {
+            "id": 3,
+            "title": "Create Validation Result Aggregator",
+            "description": "Build a component to consolidate errors from both regex checks and external bash output into a unified report.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Implement a 'Validator' struct that calls both the regex detector and the bash -n wrapper. Implement parsing logic for bash stderr output (e.g., 'line 5: ...') to extract line numbers and map them to a standardized error structure alongside regex-detected orphaned flags.",
+            "status": "pending",
+            "testStrategy": "Integration testing of the aggregator to ensure it returns a combined slice of errors with correct line numbers."
+          },
+          {
+            "id": 4,
+            "title": "Implement Comprehensive Validation Test Suite",
+            "description": "Write a suite of unit and integration tests using broken and malformed bash scripts to ensure detection accuracy.",
+            "dependencies": [
+              3
+            ],
+            "details": "Create 'internal/pack/bash_syntax_validator_test.go'. Test cases must include: unclosed quotes, missing 'done' keywords (syntax errors), and isolated flags like '--prompt' followed by empty lines. Assert that the returned error messages point to the exact expected line numbers.",
+            "status": "pending",
+            "testStrategy": "Table-driven unit tests comparing actual error objects against expected line numbers and error types."
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "title": "Integrate Syntax Checks into 'validate' and 'run' Commands",
+        "description": "Ensure bash safety checks run automatically before execution or during manual validation.",
+        "details": "Modify `cmd/oraclepack/validate.go` to include the new structural and `bash -n` checks. Update `cmd/oraclepack/run.go` to optionally (or by default) run these checks before starting step execution to prevent 'command not found' errors mid-run.",
+        "testStrategy": "End-to-end test running `oraclepack validate` on a pack with an orphaned `-p` line. Confirm it fails with a non-zero exit code.",
+        "priority": "medium",
+        "dependencies": [
+          7
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Integrate Syntax Validator into 'validate' Command",
+            "description": "Incorporate structural and bash syntax checks into the existing manual validation command flow.",
+            "dependencies": [
+              7
+            ],
+            "details": "Modify 'cmd/oraclepack/validate.go' to import and invoke the validators defined in Task 7. Update the validation loop to aggregate syntax errors alongside schema errors and ensure the command returns a non-zero exit code if fatal syntax errors are detected.",
+            "status": "pending",
+            "testStrategy": "Execute 'oraclepack validate' on a pack file containing intentional bash syntax errors (e.g., unclosed quotes) and verify the command reports the error and exits with code 1."
+          },
+          {
+            "id": 2,
+            "title": "Implement Pre-run Syntax Guards for 'run' Command",
+            "description": "Add logic to the 'run' command to verify step scripts before they are executed to prevent mid-run failures.",
+            "dependencies": [
+              7
+            ],
+            "details": "Update 'cmd/oraclepack/run.go' to trigger the bash syntax validator before initiating the step execution loop. If syntax errors are detected, the system should halt execution or prompt the user for confirmation, depending on the configuration for bash safety.",
+            "status": "pending",
+            "testStrategy": "Run 'oraclepack run' on a pack with an orphaned '-p' flag. Confirm that the execution is blocked before any shell commands are executed or external API calls are made."
+          },
+          {
+            "id": 3,
+            "title": "Standardize Syntax Error Reporting in CLI/TUI",
+            "description": "Enhance the user interface to clearly display syntax warnings and line-specific error messages to the user.",
+            "dependencies": [
+              1
+            ],
+            "details": "Refactor error reporting within the TUI components to handle multi-line syntax error details. Implement color-coding (e.g., red for fatal structural errors, yellow for 'bash -n' warnings) to provide clear developer feedback during the validation and execution cycles.",
+            "status": "pending",
+            "testStrategy": "Visual inspection of CLI output when running validation on a malformed pack; verify that line numbers and error descriptions are correctly aligned and color-coded."
+          }
+        ]
+      },
+      {
+        "id": 9,
+        "title": "Update Pack Authoring Documentation and Templates",
+        "description": "Revise documentation to align with the new verification contracts and browser-mode mitigations.",
+        "details": "Update the 'Gold Stage' pack templates. Document the literal token requirements and the suffix scheme. Add a section on 'Browser Mode Reliability' recommending adjustments to `--browser-timeout` and `--browser-input-timeout` (e.g., using `30s`, `1m`). Mention the `MSYS_NO_PATHCONV=1` caveat for Windows/Git Bash environments.",
+        "testStrategy": "Manual review of documentation for accuracy. Verify that example packs provided in docs pass the new `verify-outputs` command.",
+        "priority": "low",
+        "dependencies": [
+          6
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Update Example Markdown Templates in examples/ Directory",
+            "description": "Revise the 'Gold Stage' and other pack templates in the examples folder to reflect new suffix schemes and literal token requirements.",
+            "dependencies": [],
+            "details": "Modify the example files to include the correct suffixes (e.g., -direct-answer) and ensure the Markdown content contains the required literal tokens like '### Direct answer'. This ensures users have functional starting points that align with the new verification logic.",
+            "status": "pending",
+            "testStrategy": "Run oraclepack verify-outputs against the updated example files to ensure they conform to the new verification contracts."
+          },
+          {
+            "id": 2,
+            "title": "Update Documentation for Browser-Mode and Verification Contracts",
+            "description": "Update the project README and main documentation with details on verification contracts, browser timeouts, and Windows environment caveats.",
+            "dependencies": [
+              1
+            ],
+            "details": "Add sections explaining the literal token suffix scheme. Include a 'Browser Mode Reliability' guide recommending --browser-timeout and --browser-input-timeout values (30s, 1m). Document the MSYS_NO_PATHCONV=1 fix for Git Bash on Windows environments.",
+            "status": "pending",
+            "testStrategy": "Manual proofreading of Markdown files and verification that all technical instructions (timeouts and env vars) are accurate and easy to follow."
+          }
+        ]
+      },
+      {
+        "id": 10,
+        "title": "Final Integration and CI Verification",
+        "description": "Ensure all components work together and provide guidance for CI implementation.",
+        "details": "Perform a full pass over the TUI and CLI output formatting for consistency. Create a sample GitHub Action or GitLab CI snippet in the README demonstrating the use of `oraclepack validate` and `oraclepack verify-outputs` in a pipeline.",
+        "testStrategy": "E2E smoke test: Create a pack, run it with fake outputs, then run `verify-outputs` to ensure a green pipeline.",
+        "priority": "low",
+        "dependencies": [
+          8,
+          9
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Develop E2E Smoke Test Script",
+            "description": "Create a comprehensive shell script that simulates a full user lifecycle including pack creation, validation, and output verification.",
+            "dependencies": [],
+            "details": "The script should be located in `scripts/smoke_test.sh`. It will initialize a test environment, run `oraclepack validate` on a sample pack, simulate step execution to generate files, and finally execute `oraclepack verify-outputs` to confirm the pipeline's integrity.",
+            "status": "pending",
+            "testStrategy": "Run the script in a clean Docker container or temporary directory to ensure it exits with code 0 under success conditions and catches injected errors."
+          },
+          {
+            "id": 2,
+            "title": "Create CI/CD Configuration Templates",
+            "description": "Author reusable configuration snippets for GitHub Actions and GitLab CI to provide users with copy-pasteable pipeline integrations.",
+            "dependencies": [
+              1
+            ],
+            "details": "Update the README.md or a new `docs/ci.md` file with YAML examples. These examples must demonstrate how to install the binary and use the `validate` and `verify-outputs` commands as gates in a standard CI workflow.",
+            "status": "pending",
+            "testStrategy": "Validate the generated YAML snippets using online linter tools and perform a test run in a private GitHub repository."
+          },
+          {
+            "id": 3,
+            "title": "Final CLI/TUI Output Polish Pass",
+            "description": "Review and standardize all CLI outputs, error messages, and TUI components for consistent branding and user clarity.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Audit the `cmd/` and `internal/ui/` packages. Ensure consistent color schemes (e.g., using `lipgloss` or `fatih/color`), align table headers in the verification report, and ensure all error messages provide actionable feedback.",
+            "status": "pending",
+            "testStrategy": "Manual visual inspection of all CLI command outputs (validate, run, verify-outputs) across different terminal sizes and themes."
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "created": "2026-01-09T22:29:37.220Z",
+      "updated": "2026-01-09T22:31:48.630Z",
+      "description": "Tasks for chore-overview context"
+    }
   }
 }

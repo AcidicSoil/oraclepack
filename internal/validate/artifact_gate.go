@@ -5,9 +5,9 @@ import (
 
 	"github.com/user/oraclepack/internal/artifacts"
 	"github.com/user/oraclepack/internal/foundation"
-	"github.com/user/oraclepack/internal/pack"
 	"github.com/user/oraclepack/internal/state"
 	"github.com/user/oraclepack/internal/tools"
+	"github.com/user/oraclepack/internal/types"
 )
 
 // ArtifactGateValidator checks expected artifacts after a step.
@@ -15,7 +15,7 @@ type ArtifactGateValidator struct {
 	Contract artifacts.Contract
 }
 
-func (v ArtifactGateValidator) Validate(step *pack.Step, kind tools.ToolKind, toolPresent bool) (state.Status, string) {
+func (v ArtifactGateValidator) Validate(step *types.Step, kind tools.ToolKind, toolPresent bool) (state.Status, string) {
 	if step == nil {
 		return state.StatusSuccess, ""
 	}

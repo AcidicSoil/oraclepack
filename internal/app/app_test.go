@@ -38,7 +38,7 @@ func TestApp_RunPlain(t *testing.T) {
 	if err := a.LoadState(); err != nil {
 		t.Fatalf("LoadState failed: %v", err)
 	}
-	
+
 	var out bytes.Buffer
 	err := a.RunPlain(context.Background(), &out)
 	if err != nil {

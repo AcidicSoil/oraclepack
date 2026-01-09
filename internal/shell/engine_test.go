@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/user/oraclepack/internal/pack"
 	"github.com/user/oraclepack/internal/state"
+	"github.com/user/oraclepack/internal/types"
 )
 
 type fakeChecker struct {
@@ -18,8 +18,8 @@ func (f fakeChecker) DetectBinary(name string) (string, bool) {
 }
 
 func TestEngineSkipsMissingTool(t *testing.T) {
-	p := &pack.Pack{
-		Steps: []pack.Step{
+	p := &types.Pack{
+		Steps: []types.Step{
 			{ID: "01", Number: 1, Code: "codex exec \"hi\""},
 		},
 	}
@@ -39,16 +39,16 @@ func TestEngineSkipsMissingTool(t *testing.T) {
 }
 
 func TestEngineFailsOnError(t *testing.T) {
-	p := &pack.Pack{
-		Steps: []pack.Step{
+	p := &types.Pack{
+		Steps: []types.Step{
 			{ID: "01", Number: 1, Code: "exit 1"},
 		},
 	}
 	engine := &Engine{
-		Pack:      p,
-		State:     &state.RunState{SchemaVersion: 1, StepStatuses: map[string]state.StepStatus{}},
+		Pack:       p,
+		State:      &state.RunState{SchemaVersion: 1, StepStatuses: map[string]state.StepStatus{}},
 		StopOnFail: true,
-		Checker:   fakeChecker{found: map[string]bool{}},
+		Checker:    fakeChecker{found: map[string]bool{}},
 	}
 	if err := engine.Run(context.Background()); err == nil {
 		t.Fatal("expected error, got nil")

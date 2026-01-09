@@ -3,10 +3,10 @@ package validate
 import (
 	"fmt"
 
-	"github.com/user/oraclepack/internal/pack"
 	"github.com/user/oraclepack/internal/shell"
 	"github.com/user/oraclepack/internal/state"
 	"github.com/user/oraclepack/internal/tools"
+	"github.com/user/oraclepack/internal/types"
 )
 
 // ToolPresenceValidator checks that tool binaries exist on PATH.
@@ -15,7 +15,7 @@ type ToolPresenceValidator struct {
 }
 
 // Validate returns skipped if the tool is missing.
-func (v ToolPresenceValidator) Validate(step *pack.Step, kind tools.ToolKind) (state.Status, string, bool) {
+func (v ToolPresenceValidator) Validate(step *types.Step, kind tools.ToolKind) (state.Status, string, bool) {
 	if kind == tools.ToolUnknown {
 		return state.StatusSuccess, "", true
 	}

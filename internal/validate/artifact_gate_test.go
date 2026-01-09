@@ -6,16 +6,16 @@ import (
 	"testing"
 
 	"github.com/user/oraclepack/internal/artifacts"
-	"github.com/user/oraclepack/internal/pack"
 	"github.com/user/oraclepack/internal/state"
 	"github.com/user/oraclepack/internal/tools"
+	"github.com/user/oraclepack/internal/types"
 )
 
 func TestArtifactGateValidator(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "next.json")
 	contract := artifacts.Contract{"09": {path}}
-	step := &pack.Step{ID: "09"}
+	step := &types.Step{ID: "09"}
 	v := ArtifactGateValidator{Contract: contract}
 
 	status, _ := v.Validate(step, tools.ToolCodex, true)

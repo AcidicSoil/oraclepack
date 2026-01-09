@@ -7,14 +7,14 @@ import (
 	"time"
 
 	"github.com/user/oraclepack/internal/dispatch"
-	"github.com/user/oraclepack/internal/pack"
 	"github.com/user/oraclepack/internal/state"
 	"github.com/user/oraclepack/internal/tools"
+	"github.com/user/oraclepack/internal/types"
 )
 
 // Engine executes pack steps in headless mode.
 type Engine struct {
-	Pack       *pack.Pack
+	Pack       *types.Pack
 	State      *state.RunState
 	StatePath  string
 	StopOnFail bool
@@ -83,7 +83,7 @@ func (e *Engine) Run(ctx context.Context) error {
 	return nil
 }
 
-func detectToolKind(step *pack.Step) tools.ToolKind {
+func detectToolKind(step *types.Step) tools.ToolKind {
 	if step == nil {
 		return tools.ToolUnknown
 	}

@@ -3,13 +3,13 @@ package validate
 import (
 	"testing"
 
-	"github.com/user/oraclepack/internal/pack"
 	"github.com/user/oraclepack/internal/state"
+	"github.com/user/oraclepack/internal/types"
 )
 
 func TestCompositeValidator(t *testing.T) {
-	p := &pack.Pack{
-		Steps: []pack.Step{
+	p := &types.Pack{
+		Steps: []types.Step{
 			{ID: "01", Code: "codex exec \"hi\""},
 		},
 	}

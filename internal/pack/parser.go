@@ -8,30 +8,31 @@ import (
 	"strings"
 
 	"github.com/user/oraclepack/internal/errors"
+	"github.com/user/oraclepack/internal/types"
 )
 
 var (
 	bashFenceRegex = regexp.MustCompile("(?s)```bash\n(.*?)\n```")
 	// Updated regex to support ")", " —", and " -" separators
-	stepHeaderRegex = regexp.MustCompile(`^#\s*(\d{2})(?:\)|[\s]+[—-])`)
-	roiRegex        = regexp.MustCompile(`ROI=(\d+(\.\d+)?)`)
-	impactRegex     = regexp.MustCompile(`^#\s*Impact:\s*(.+)$`)
-	outDirRegex    = regexp.MustCompile(`(?m)^out_dir=["']?([^"'\s]+)["']?`)
+	stepHeaderRegex  = regexp.MustCompile(`^#\s*(\d{2})(?:\)|[\s]+[—-])`)
+	roiRegex         = regexp.MustCompile(`ROI=(\d+(\.\d+)?)`)
+	impactRegex      = regexp.MustCompile(`^#\s*Impact:\s*(.+)$`)
+	outDirRegex      = regexp.MustCompile(`(?m)^out_dir=["']?([^"'\s]+)["']?`)
 	writeOutputRegex = regexp.MustCompile(`(?m)--write-output`)
 )
 
 // Parse reads a Markdown content and returns a Pack.
-func Parse(content []byte) (*Pack, error) {
+func Parse(content []byte) (*types.Pack, error) {
 	match := bashFenceRegex.FindSubmatch(content)
 	if match == nil || len(match) < 2 {
 		return nil, fmt.Errorf("%w: no bash code block found", errors.ErrInvalidPack)
 	}
 
 	bashCode := string(match[1])
-	pack := &Pack{}
-	
+	pack := &types.Pack{}
+
 	scanner := bufio.NewScanner(strings.NewReader(bashCode))
-	var currentStep *Step
+	var currentStep *types.Step
 	var preludeLines []string
 	var inSteps bool
 
@@ -46,7 +47,7 @@ func Parse(content []byte) (*Pack, error) {
 				pack.Steps = append(pack.Steps, *currentStep)
 			}
 			num, _ := strconv.Atoi(headerMatch[1])
-			
+
 			// Extract ROI if present
 			var roi float64
 			cleanedLine := line
@@ -60,7 +61,7 @@ func Parse(content []byte) (*Pack, error) {
 					// I'll assume OriginalLine is what is displayed, or I should add a Title field.
 					// Looking at Step struct: ID, Number, Code, OriginalLine.
 					// I'll remove it from OriginalLine for now or add a Title field.
-					// The existing TUI uses OriginalLine as description. 
+					// The existing TUI uses OriginalLine as description.
 					// Let's clean OriginalLine for display purposes or add a dedicated Title field.
 					// Adding a dedicated Title field seems cleaner but requires struct change.
 					// For now, I'll strip it from OriginalLine to match the prompt requirement "cleaner UI display".
@@ -70,7 +71,7 @@ func Parse(content []byte) (*Pack, error) {
 				}
 			}
 
-			currentStep = &Step{
+			currentStep = &types.Step{
 				ID:           headerMatch[1],
 				Number:       num,
 				OriginalLine: cleanedLine,
@@ -92,52 +93,12 @@ func Parse(content []byte) (*Pack, error) {
 	}
 
 	pack.Prelude.Code = strings.Join(preludeLines, "\n")
-	pack.DeriveMetadata()
+	DeriveMetadata(pack)
 
 	return pack, nil
 }
 
-// DeriveMetadata extracts configuration from the prelude.
-func (p *Pack) DeriveMetadata() {
-	outDirMatch := outDirRegex.FindStringSubmatch(p.Prelude.Code)
-	if len(outDirMatch) > 1 {
-		p.OutDir = outDirMatch[1]
-	}
-
-	if writeOutputRegex.MatchString(p.Prelude.Code) {
-		p.WriteOutput = true
-	}
-}
-
-// Validate checks if the pack follows all rules.
-func (p *Pack) Validate() error {
-	if len(p.Steps) == 0 {
-		return fmt.Errorf("%w: at least one step is required", errors.ErrInvalidPack)
-	}
-	if len(p.Steps) != 20 {
-		return fmt.Errorf("%w: expected exactly 20 steps, got %d", errors.ErrInvalidPack, len(p.Steps))
-	}
-
-	seen := make(map[int]bool)
-	for i, step := range p.Steps {
-		if step.Number <= 0 {
-			return fmt.Errorf("%w: invalid step number %d", errors.ErrInvalidPack, step.Number)
-		}
-		if seen[step.Number] {
-			return fmt.Errorf("%w: duplicate step number %d", errors.ErrInvalidPack, step.Number)
-		}
-		seen[step.Number] = true
-
-		// Optional: Ensure sequential starting from 1
-		if step.Number != i+1 {
-			return fmt.Errorf("%w: steps must be sequential starting from 1 (expected %d, got %d)", errors.ErrInvalidPack, i+1, step.Number)
-		}
-	}
-
-	return nil
-}
-
-func applyStepMetadata(step *Step) {
+func applyStepMetadata(step *types.Step) {
 	if step == nil {
 		return
 	}

@@ -5,13 +5,13 @@ import (
 	"testing"
 
 	"github.com/user/oraclepack/internal/exec"
-	"github.com/user/oraclepack/internal/pack"
 	"github.com/user/oraclepack/internal/state"
+	"github.com/user/oraclepack/internal/types"
 )
 
 func TestStepPreviewContentUnwrapped(t *testing.T) {
-	p := &pack.Pack{
-		Steps: []pack.Step{
+	p := &types.Pack{
+		Steps: []types.Step{
 			{ID: "01", OriginalLine: "Step 1", Code: "echo hello"},
 		},
 	}

@@ -4,7 +4,7 @@ import (
 	"sync"
 
 	"github.com/charmbracelet/glamour"
-	"github.com/user/oraclepack/internal/pack"
+	"github.com/user/oraclepack/internal/types"
 )
 
 const (
@@ -40,7 +40,7 @@ func RenderMarkdown(text string, width int, style string) (string, error) {
 }
 
 // RenderStepCode renders a step's code block for preview.
-func RenderStepCode(s pack.Step, width int, style string) (string, error) {
+func RenderStepCode(s types.Step, width int, style string) (string, error) {
 	md := "```bash\n" + s.Code + "\n```"
 	return RenderMarkdown(md, width, style)
 }

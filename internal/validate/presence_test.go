@@ -3,9 +3,9 @@ package validate
 import (
 	"testing"
 
-	"github.com/user/oraclepack/internal/pack"
 	"github.com/user/oraclepack/internal/state"
 	"github.com/user/oraclepack/internal/tools"
+	"github.com/user/oraclepack/internal/types"
 )
 
 type fakeChecker struct {
@@ -17,7 +17,7 @@ func (f fakeChecker) DetectBinary(name string) (string, bool) {
 }
 
 func TestToolPresenceValidator(t *testing.T) {
-	step := &pack.Step{ID: "01", Code: "codex exec \"hi\""}
+	step := &types.Step{ID: "01", Code: "codex exec \"hi\""}
 	v := ToolPresenceValidator{Checker: fakeChecker{found: map[string]bool{"codex": false}}}
 	status, reason, present := v.Validate(step, tools.ToolCodex)
 	if status != state.StatusSkipped || present {

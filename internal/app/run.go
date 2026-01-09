@@ -11,6 +11,7 @@ import (
 	"github.com/user/oraclepack/internal/pack"
 	"github.com/user/oraclepack/internal/report"
 	"github.com/user/oraclepack/internal/state"
+	"github.com/user/oraclepack/internal/types"
 )
 
 func (a *App) RunPlain(ctx context.Context, out io.Writer) error {
@@ -101,7 +102,7 @@ func (a *App) RunPlain(ctx context.Context, out io.Writer) error {
 	return nil
 }
 
-func (a *App) runStepWithOutputVerification(ctx context.Context, step *pack.Step, out io.Writer) error {
+func (a *App) runStepWithOutputVerification(ctx context.Context, step *types.Step, out io.Writer) error {
 	retries := a.Config.OutputRetries
 	if retries < 0 {
 		retries = 0
@@ -120,12 +121,12 @@ func (a *App) runStepWithOutputVerification(ctx context.Context, step *pack.Step
 		}
 		var failures []string
 		for path, required := range expectations {
-			ok, missing, err := pack.ValidateOutputFile(path, required)
-			if err != nil {
-				return fmt.Errorf("output verification failed for step %s: %w", step.ID, err)
-			}
+			ok, failure := pack.ValidateOutputFile(path, required)
 			if !ok {
-				failures = append(failures, fmt.Sprintf("%s missing: %s", path, strings.Join(missing, ", ")))
+				if failure.Error != "" {
+					return fmt.Errorf("output verification failed for step %s: %s", step.ID, failure.Error)
+				}
+				failures = append(failures, fmt.Sprintf("%s missing: %s", path, strings.Join(failure.MissingTokens, ", ")))
 			}
 		}
 		if len(failures) == 0 {

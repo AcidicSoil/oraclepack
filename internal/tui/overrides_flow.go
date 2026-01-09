@@ -8,7 +8,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/user/oraclepack/internal/exec"
 	"github.com/user/oraclepack/internal/overrides"
-	"github.com/user/oraclepack/internal/pack"
+	"github.com/user/oraclepack/internal/types"
 )
 
 type OverridesStep int
@@ -33,13 +33,13 @@ type OverridesFlowModel struct {
 	steps   StepsPickerModel
 	confirm OverridesConfirmModel
 
-	packSteps        []pack.Step
+	packSteps        []types.Step
 	baseline         []string
 	runnerOpts       exec.RunnerOptions
 	pendingOverrides overrides.RuntimeOverrides
 }
 
-func NewOverridesFlowModel(steps []pack.Step, baseline []string, opts exec.RunnerOptions) OverridesFlowModel {
+func NewOverridesFlowModel(steps []types.Step, baseline []string, opts exec.RunnerOptions) OverridesFlowModel {
 	return OverridesFlowModel{
 		step:       OverridesFlags,
 		flags:      NewFlagsPickerModel(nil),

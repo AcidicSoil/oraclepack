@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/user/oraclepack/internal/overrides"
-	"github.com/user/oraclepack/internal/pack"
+	"github.com/user/oraclepack/internal/types"
 )
 
 // ValidationError captures a failed oracle validation for a step.
@@ -21,7 +21,7 @@ type ValidationError struct {
 // ValidateOverrides runs oracle --dry-run summary for targeted steps.
 func ValidateOverrides(
 	ctx context.Context,
-	steps []pack.Step,
+	steps []types.Step,
 	over *overrides.RuntimeOverrides,
 	baseline []string,
 	opts RunnerOptions,

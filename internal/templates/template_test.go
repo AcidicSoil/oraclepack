@@ -27,7 +27,7 @@ func TestRenderTicketActionPack(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Parse failed: %v", err)
 	}
-	if err := p.Validate(); err != nil {
+	if err := pack.Validate(p); err != nil {
 		t.Fatalf("Validate failed: %v", err)
 	}
 	if len(p.Steps) != 20 {

@@ -7,7 +7,7 @@ import (
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/user/oraclepack/internal/pack"
+	"github.com/user/oraclepack/internal/types"
 )
 
 type StepItem struct {
@@ -25,7 +25,7 @@ type StepsPickerModel struct {
 	list list.Model
 }
 
-func NewStepsPickerModel(steps []pack.Step) StepsPickerModel {
+func NewStepsPickerModel(steps []types.Step) StepsPickerModel {
 	items := make([]list.Item, 0, len(steps))
 	for _, s := range steps {
 		items = append(items, StepItem{

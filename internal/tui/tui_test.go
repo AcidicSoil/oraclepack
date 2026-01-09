@@ -4,13 +4,13 @@ import (
 	"testing"
 
 	"github.com/user/oraclepack/internal/exec"
-	"github.com/user/oraclepack/internal/pack"
 	"github.com/user/oraclepack/internal/state"
+	"github.com/user/oraclepack/internal/types"
 )
 
 func TestInitAutoRun(t *testing.T) {
-	p := &pack.Pack{
-		Steps: []pack.Step{
+	p := &types.Pack{
+		Steps: []types.Step{
 			{ID: "01", Number: 1, Code: "echo hello"},
 		},
 	}
@@ -20,7 +20,7 @@ func TestInitAutoRun(t *testing.T) {
 	// Test case 1: autoRun = true
 	modelAuto := NewModel(p, r, s, "", 0, "over", true, false, 0)
 	cmdAuto := modelAuto.Init()
-	
+
 	if cmdAuto == nil {
 		t.Fatal("expected Init cmd to be non-nil when autoRun is true")
 	}

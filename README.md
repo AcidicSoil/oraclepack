@@ -103,6 +103,8 @@ exec bash
 
 ## Fix: Git Bash wrapper with path-conversion disabled
 
+Note: Git Bash may rewrite `/home/...` paths unless path-conversion is disabled. Use `MSYS_NO_PATHCONV=1` when invoking oraclepack from Git Bash/Windows.
+
 ### Run in Git Bash on Windows
 
 ```bash
@@ -164,12 +166,36 @@ oraclepack list examples/setup-project.md
 oraclepack validate examples/setup-project.md
 ```
 
+### 7. Verify Outputs (No Execution)
+
+```bash
+oraclepack verify-outputs examples/setup-project.md
+```
+
 ## ⚙️ Execution Semantics
 
 - Packs are executed as literal shell scripts via `bash -lc`, so your login shell config and PATH are respected.
 - Supported tool prefixes in steps: `oracle`, `tm`, `task-master`, `codex`, `gemini`.
 - For Codex automation, use non-interactive `codex exec` in pack steps.
 - Artifact gates can validate expected outputs (missing tools are skipped; missing artifacts after a tool runs are treated as failures).
+
+### Output verification contracts
+
+When `--write-output` is present, oraclepack checks for literal section headings in the output:
+
+- Required headings: `### Direct answer`, `### Risks and unknowns`, `### Next experiment`, `### Missing evidence`
+- Direct-only variant: include `Answer format` plus `Return only: Direct answer` in the prompt; oraclepack will require only `### Direct answer`.
+- Multi-output suffix scheme: if multiple `--write-output` paths are present, oraclepack expects per-file headings:
+  - `-direct-answer` → `### Direct answer`
+  - `-risks-unknowns` → `### Risks and unknowns`
+  - `-next-experiment` → `### Next experiment`
+  - `-missing-evidence` → `### Missing evidence`
+
+### Browser Mode Reliability
+
+If your pack uses browser mode, consider increasing timeouts to reduce flaky steps:
+- `--browser-timeout 30s` or `1m`
+- `--browser-input-timeout 30s` or `1m`
 
 ### CLI Flags (run)
 
@@ -185,6 +211,15 @@ oraclepack run <pack.md> \
 ```
 
 `oraclepack` expects the `oracle` CLI to be available on your PATH. Overrides let you append official `oracle` flags at runtime.
+
+### CI Example
+
+```yaml
+- name: Validate pack
+  run: oraclepack validate docs/oracle-pack.md
+- name: Verify outputs
+  run: oraclepack verify-outputs docs/oracle-pack.md
+```
 
 ## ⌨️ TUI Controls (Core)
 

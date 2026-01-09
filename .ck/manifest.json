@@ -1,0 +1,22 @@
+{
+  "version": "0.1.0",
+  "created": 1767998277,
+  "updated": 1767998286,
+  "files": {
+    "./codefetch/oraclepack-question-responses.md": {
+      "path": "./codefetch/oraclepack-question-responses.md",
+      "hash": "09a91ceb800f215c70c4c2f4bdfa6be8d1e0aec4f8e4cd97120092fbc2fc8998",
+      "last_modified": 1767996986,
+      "size": 261093
+    },
+    "./package.json": {
+      "path": "./package.json",
+      "hash": "41aac9a84a7937904ef49a5538cb163d6fc1178573560e9ef0663f6bbd87dc02",
+      "last_modified": 1767996696,
+      "size": 948
+    }
+  },
+  "embedding_model": "BAAI/bge-small-en-v1.5",
+  "embedding_dimensions": 384,
+  "chunk_hash_version": 2
+}

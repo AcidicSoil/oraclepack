@@ -4,6 +4,8 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/user/oraclepack/internal/types"
 )
 
 func TestParse(t *testing.T) {
@@ -41,7 +43,7 @@ out_dir="dist"
 		t.Errorf("step 1 mismatch: %+v", p.Steps[0])
 	}
 
-	if err := p.Validate(); err != nil {
+	if err := Validate(p); err != nil {
 		t.Errorf("Validate failed: %v", err)
 	}
 }
@@ -127,19 +129,19 @@ func TestValidateErrors(t *testing.T) {
 	base := buildStepSlice(20)
 	tests := []struct {
 		name    string
-		pack    *Pack
+		pack    *types.Pack
 		wantErr string
 	}{
 		{
 			"no steps",
-			&Pack{},
+			&types.Pack{},
 			"at least one step is required",
 		},
 		{
 			"duplicate steps",
-			&Pack{
-				Steps: func() []Step {
-					steps := append([]Step(nil), base...)
+			&types.Pack{
+				Steps: func() []types.Step {
+					steps := append([]types.Step(nil), base...)
 					steps[1].Number = steps[0].Number
 					steps[1].ID = steps[0].ID
 					return steps
@@ -149,8 +151,8 @@ func TestValidateErrors(t *testing.T) {
 		},
 		{
 			"wrong step count",
-			&Pack{
-				Steps: []Step{
+			&types.Pack{
+				Steps: []types.Step{
 					{Number: 1, ID: "01"},
 				},
 			},
@@ -158,9 +160,9 @@ func TestValidateErrors(t *testing.T) {
 		},
 		{
 			"non-sequential",
-			&Pack{
-				Steps: func() []Step {
-					steps := append([]Step(nil), base...)
+			&types.Pack{
+				Steps: func() []types.Step {
+					steps := append([]types.Step(nil), base...)
 					steps[1].Number = 3
 					steps[1].ID = "03"
 					return steps
@@ -172,7 +174,7 @@ func TestValidateErrors(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := tt.pack.Validate()
+			err := Validate(tt.pack)
 			if err == nil {
 				t.Error("expected error, got nil")
 			} else if !contains(err.Error(), tt.wantErr) {
@@ -201,14 +203,14 @@ func buildSteps(count int, cmd string) string {
 	return b.String()
 }
 
-func buildStepSlice(count int) []Step {
-	steps := make([]Step, 0, count)
+func buildStepSlice(count int) []types.Step {
+	steps := make([]types.Step, 0, count)
 	for i := 1; i <= count; i++ {
 		id := strconv.Itoa(i)
 		if i < 10 {
 			id = "0" + id
 		}
-		steps = append(steps, Step{Number: i, ID: id})
+		steps = append(steps, types.Step{Number: i, ID: id})
 	}
 	return steps
 }

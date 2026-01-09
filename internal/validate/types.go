@@ -4,9 +4,9 @@ import (
 	"strings"
 
 	"github.com/user/oraclepack/internal/dispatch"
-	"github.com/user/oraclepack/internal/pack"
 	"github.com/user/oraclepack/internal/state"
 	"github.com/user/oraclepack/internal/tools"
+	"github.com/user/oraclepack/internal/types"
 )
 
 // StepResult captures validation output for a step.
@@ -18,7 +18,7 @@ type StepResult struct {
 }
 
 // DetectToolKind scans a step for a known tool prefix.
-func DetectToolKind(step *pack.Step) tools.ToolKind {
+func DetectToolKind(step *types.Step) tools.ToolKind {
 	if step == nil {
 		return tools.ToolUnknown
 	}

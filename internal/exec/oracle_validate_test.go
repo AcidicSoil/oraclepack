@@ -8,14 +8,14 @@ import (
 	"testing"
 
 	"github.com/user/oraclepack/internal/overrides"
-	"github.com/user/oraclepack/internal/pack"
+	"github.com/user/oraclepack/internal/types"
 )
 
 func TestValidateOverrides_Success(t *testing.T) {
 	dir := t.TempDir()
 	writeOracleStub(t, dir)
 
-	steps := []pack.Step{
+	steps := []types.Step{
 		{ID: "01", Code: "oracle --ok"},
 	}
 	over := &overrides.RuntimeOverrides{
@@ -41,7 +41,7 @@ func TestValidateOverrides_Error(t *testing.T) {
 	dir := t.TempDir()
 	writeOracleStub(t, dir)
 
-	steps := []pack.Step{
+	steps := []types.Step{
 		{ID: "01", Code: "oracle --bad"},
 	}
 	over := &overrides.RuntimeOverrides{

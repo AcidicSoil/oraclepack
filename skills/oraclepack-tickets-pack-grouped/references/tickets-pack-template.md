@@ -85,6 +85,7 @@ Constraints: None
 Non-goals: None
 
 Answer format:
+Use headings exactly: ### Direct answer / ### Risks and unknowns / ### Next experiment / ### Missing evidence.
 1) Direct answer (1–10 bullets, evidence-cited)
 2) Risks/unknowns (bullets)
 3) Next smallest concrete experiment (exactly one action)
@@ -148,6 +149,7 @@ Constraints: None
 Non-goals: None
 
 Answer format:
+Use headings exactly: ### Direct answer / ### Risks and unknowns / ### Next experiment / ### Missing evidence.
 1) Direct answer (1–10 bullets, evidence-cited)
 2) Risks/unknowns (bullets)
 3) Next smallest concrete experiment (exactly one action)
@@ -211,6 +213,7 @@ Constraints: None
 Non-goals: None
 
 Answer format:
+Use headings exactly: ### Direct answer / ### Risks and unknowns / ### Next experiment / ### Missing evidence.
 1) Direct answer (1–10 bullets, evidence-cited)
 2) Risks/unknowns (bullets)
 3) Next smallest concrete experiment (exactly one action)
@@ -274,6 +277,7 @@ Constraints: None
 Non-goals: None
 
 Answer format:
+Use headings exactly: ### Direct answer / ### Risks and unknowns / ### Next experiment / ### Missing evidence.
 1) Direct answer (1–10 bullets, evidence-cited)
 2) Risks/unknowns (bullets)
 3) Next smallest concrete experiment (exactly one action)
@@ -337,6 +341,7 @@ Constraints: None
 Non-goals: None
 
 Answer format:
+Use headings exactly: ### Direct answer / ### Risks and unknowns / ### Next experiment / ### Missing evidence.
 1) Direct answer (1–10 bullets, evidence-cited)
 2) Risks/unknowns (bullets)
 3) Next smallest concrete experiment (exactly one action)
@@ -400,6 +405,7 @@ Constraints: None
 Non-goals: None
 
 Answer format:
+Use headings exactly: ### Direct answer / ### Risks and unknowns / ### Next experiment / ### Missing evidence.
 1) Direct answer (1–10 bullets, evidence-cited)
 2) Risks/unknowns (bullets)
 3) Next smallest concrete experiment (exactly one action)
@@ -463,6 +469,7 @@ Constraints: None
 Non-goals: None
 
 Answer format:
+Use headings exactly: ### Direct answer / ### Risks and unknowns / ### Next experiment / ### Missing evidence.
 1) Direct answer (1–10 bullets, evidence-cited)
 2) Risks/unknowns (bullets)
 3) Next smallest concrete experiment (exactly one action)
@@ -526,6 +533,7 @@ Constraints: None
 Non-goals: None
 
 Answer format:
+Use headings exactly: ### Direct answer / ### Risks and unknowns / ### Next experiment / ### Missing evidence.
 1) Direct answer (1–10 bullets, evidence-cited)
 2) Risks/unknowns (bullets)
 3) Next smallest concrete experiment (exactly one action)
@@ -589,6 +597,7 @@ Constraints: None
 Non-goals: None
 
 Answer format:
+Use headings exactly: ### Direct answer / ### Risks and unknowns / ### Next experiment / ### Missing evidence.
 1) Direct answer (1–10 bullets, evidence-cited)
 2) Risks/unknowns (bullets)
 3) Next smallest concrete experiment (exactly one action)
@@ -652,6 +661,7 @@ Constraints: None
 Non-goals: None
 
 Answer format:
+Use headings exactly: ### Direct answer / ### Risks and unknowns / ### Next experiment / ### Missing evidence.
 1) Direct answer (1–10 bullets, evidence-cited)
 2) Risks/unknowns (bullets)
 3) Next smallest concrete experiment (exactly one action)
@@ -715,6 +725,7 @@ Constraints: None
 Non-goals: None
 
 Answer format:
+Use headings exactly: ### Direct answer / ### Risks and unknowns / ### Next experiment / ### Missing evidence.
 1) Direct answer (1–10 bullets, evidence-cited)
 2) Risks/unknowns (bullets)
 3) Next smallest concrete experiment (exactly one action)
@@ -778,6 +789,7 @@ Constraints: None
 Non-goals: None
 
 Answer format:
+Use headings exactly: ### Direct answer / ### Risks and unknowns / ### Next experiment / ### Missing evidence.
 1) Direct answer (1–10 bullets, evidence-cited)
 2) Risks/unknowns (bullets)
 3) Next smallest concrete experiment (exactly one action)
@@ -841,6 +853,7 @@ Constraints: None
 Non-goals: None
 
 Answer format:
+Use headings exactly: ### Direct answer / ### Risks and unknowns / ### Next experiment / ### Missing evidence.
 1) Direct answer (1–10 bullets, evidence-cited)
 2) Risks/unknowns (bullets)
 3) Next smallest concrete experiment (exactly one action)
@@ -904,6 +917,7 @@ Constraints: None
 Non-goals: None
 
 Answer format:
+Use headings exactly: ### Direct answer / ### Risks and unknowns / ### Next experiment / ### Missing evidence.
 1) Direct answer (1–10 bullets, evidence-cited)
 2) Risks/unknowns (bullets)
 3) Next smallest concrete experiment (exactly one action)
@@ -967,6 +981,7 @@ Constraints: None
 Non-goals: None
 
 Answer format:
+Use headings exactly: ### Direct answer / ### Risks and unknowns / ### Next experiment / ### Missing evidence.
 1) Direct answer (1–10 bullets, evidence-cited)
 2) Risks/unknowns (bullets)
 3) Next smallest concrete experiment (exactly one action)
@@ -1030,6 +1045,7 @@ Constraints: None
 Non-goals: None
 
 Answer format:
+Use headings exactly: ### Direct answer / ### Risks and unknowns / ### Next experiment / ### Missing evidence.
 1) Direct answer (1–10 bullets, evidence-cited)
 2) Risks/unknowns (bullets)
 3) Next smallest concrete experiment (exactly one action)
@@ -1093,6 +1109,7 @@ Constraints: None
 Non-goals: None
 
 Answer format:
+Use headings exactly: ### Direct answer / ### Risks and unknowns / ### Next experiment / ### Missing evidence.
 1) Direct answer (1–10 bullets, evidence-cited)
 2) Risks/unknowns (bullets)
 3) Next smallest concrete experiment (exactly one action)
@@ -1156,6 +1173,7 @@ Constraints: None
 Non-goals: None
 
 Answer format:
+Use headings exactly: ### Direct answer / ### Risks and unknowns / ### Next experiment / ### Missing evidence.
 1) Direct answer (1–10 bullets, evidence-cited)
 2) Risks/unknowns (bullets)
 3) Next smallest concrete experiment (exactly one action)
@@ -1219,6 +1237,7 @@ Constraints: None
 Non-goals: None
 
 Answer format:
+Use headings exactly: ### Direct answer / ### Risks and unknowns / ### Next experiment / ### Missing evidence.
 1) Direct answer (1–10 bullets, evidence-cited)
 2) Risks/unknowns (bullets)
 3) Next smallest concrete experiment (exactly one action)
@@ -1282,6 +1301,7 @@ Constraints: None
 Non-goals: None
 
 Answer format:
+Use headings exactly: ### Direct answer / ### Risks and unknowns / ### Next experiment / ### Missing evidence.
 1) Direct answer (1–10 bullets, evidence-cited)
 2) Risks/unknowns (bullets)
 3) Next smallest concrete experiment (exactly one action)

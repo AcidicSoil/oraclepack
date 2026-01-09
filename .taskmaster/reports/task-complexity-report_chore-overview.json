@@ -1,0 +1,93 @@
+{
+	"meta": {
+		"generatedAt": "2026-01-09T22:33:43.647Z",
+		"tasksAnalyzed": 10,
+		"totalTasks": 10,
+		"analysisCount": 10,
+		"thresholdScore": 5,
+		"projectName": "Task Master",
+		"usedResearch": true
+	},
+	"complexityAnalysis": [
+		{
+			"taskId": 1,
+			"taskTitle": "Establish Core Types and Domain Models",
+			"complexityScore": 3,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the implementation into: 1. Definition of core Pack/Step structs in internal/types/pack.go. 2. Definition of OutputContract enum and validation structs in internal/types/verification.go. 3. Implementation of basic JSON/YAML tags and serialization tests.",
+			"reasoning": "This task is foundational but architecturally straightforward. The primary challenge is ensuring a clean, dependency-free package that correctly maps the domain without causing circular imports later."
+		},
+		{
+			"taskId": 2,
+			"taskTitle": "Implement Configuration Defaults and Env-Var Constants",
+			"complexityScore": 2,
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Separate into: 1. Constant definitions for environment variable keys. 2. A default provider function that returns a base configuration object.",
+			"reasoning": "Standard boilerplate for Go CLI applications. Complexity is low as it follows well-established patterns using os.LookupEnv or simple constant mapping."
+		},
+		{
+			"taskId": 3,
+			"taskTitle": "Implement Contract-Aware Output Expectation Inference",
+			"complexityScore": 5,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Divide into: 1. Regex development for identifying 'Answer format' blocks. 2. Logic for variant detection (e.g., 'Direct answer' vs 'Direct answer only'). 3. Mapping logic from contract to token arrays. 4. Table-driven test suite for edge-case Markdown snippets.",
+			"reasoning": "Parsing natural language/markdown instructions with regex is inherently fragile. Requires robust pattern matching to handle variations in user formatting while correctly inferring the contract."
+		},
+		{
+			"taskId": 4,
+			"taskTitle": "Refactor Suffix-Based Chunked Output Mapping",
+			"complexityScore": 4,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Split into: 1. Mapping table definition for suffixes to literal tokens. 2. Logic to handle multiple output file paths in a single step. 3. Conflict resolution logic when multiple suffixes are present.",
+			"reasoning": "This builds on Task 3 but adds complexity by requiring the system to look at file metadata (suffixes) in addition to step content to determine expectations."
+		},
+		{
+			"taskId": 5,
+			"taskTitle": "Develop Config Precedence Resolver",
+			"complexityScore": 4,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Decompose into: 1. Logic for merging nested configuration objects. 2. Boolean string parser (handling 1/0, true/false, on/off). 3. Integration tests for the resolution hierarchy (Flag > Env > Default).",
+			"reasoning": "Merging multiple sources of truth correctly, especially with boolean flags and optional values, requires careful implementation to avoid subtle bugs in runtime behavior."
+		},
+		{
+			"taskId": 6,
+			"taskTitle": "Implement 'verify-outputs' CLI Command",
+			"complexityScore": 7,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Break down into: 1. CLI command scaffolding and flag parsing. 2. File system scanning logic for step output paths. 3. Token-based content validation. 4. Detailed error reporting/TUI integration. 5. Integration tests with mock output files.",
+			"reasoning": "This is a high-level orchestration task. It integrates the parser, config, and file system logic, requiring significant error handling and user-facing reporting logic."
+		},
+		{
+			"taskId": 7,
+			"taskTitle": "Implement Bash Syntax and Orphaned-Flag Validator",
+			"complexityScore": 6,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Segment into: 1. Regex logic for structural 'orphaned flag' detection. 2. Exec wrapper for 'bash -n' with environment PATH checks. 3. Result aggregator that maps errors back to specific line numbers. 4. Unit tests with intentionally broken shell scripts.",
+			"reasoning": "Mixing internal regex checks with external process execution ('bash -n') introduces portability concerns and complex error mapping requirements."
+		},
+		{
+			"taskId": 8,
+			"taskTitle": "Integrate Syntax Checks into 'validate' and 'run' Commands",
+			"complexityScore": 4,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Divide into: 1. Hooking the validator into the 'validate' command pipeline. 2. Pre-execution check logic for the 'run' command. 3. User feedback/warning formatting for the TUI.",
+			"reasoning": "Involves refactoring existing command flows. The challenge is ensuring the UX remains responsive and that 'bash -n' failures are treated correctly based on user config (warning vs error)."
+		},
+		{
+			"taskId": 9,
+			"taskTitle": "Update Pack Authoring Documentation and Templates",
+			"complexityScore": 2,
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Split into: 1. Updating Markdown templates in the examples/ directory. 2. Updating README and documentation sections for browser-mode and verification contracts.",
+			"reasoning": "Low technical complexity, primarily focused on content accuracy and providing clear examples for end-users."
+		},
+		{
+			"taskId": 10,
+			"taskTitle": "Final Integration and CI Verification",
+			"complexityScore": 5,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Decompose into: 1. End-to-end smoke test script encompassing the full lifecycle. 2. Development of reusable CI configuration snippets. 3. Final UX/CLI output polish pass.",
+			"reasoning": "Ensuring the disparate parts work in a real-world pipeline requires careful environment setup and verification of the end-to-end user experience."
+		}
+	]
+}

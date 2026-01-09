@@ -7,6 +7,7 @@ import (
 	"github.com/user/oraclepack/internal/exec"
 	"github.com/user/oraclepack/internal/pack"
 	"github.com/user/oraclepack/internal/state"
+	"github.com/user/oraclepack/internal/types"
 )
 
 // Config holds application-wide configuration.
@@ -30,7 +31,7 @@ type Config struct {
 // App orchestrates the execution flow.
 type App struct {
 	Config Config
-	Pack   *pack.Pack
+	Pack   *types.Pack
 	State  *state.RunState
 	Runner *exec.Runner
 }
@@ -58,7 +59,7 @@ func (a *App) LoadPack() error {
 		return err
 	}
 
-	if err := p.Validate(); err != nil {
+	if err := pack.Validate(p); err != nil {
 		return err
 	}
 

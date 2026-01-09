@@ -1,8 +1,8 @@
 package validate
 
 import (
-	"github.com/user/oraclepack/internal/pack"
 	"github.com/user/oraclepack/internal/state"
+	"github.com/user/oraclepack/internal/types"
 )
 
 // CompositeValidator coordinates multiple validators for all steps.
@@ -13,7 +13,7 @@ type CompositeValidator struct {
 }
 
 // ValidatePack validates all steps in a pack and returns per-step results.
-func (v CompositeValidator) ValidatePack(p *pack.Pack) []StepResult {
+func (v CompositeValidator) ValidatePack(p *types.Pack) []StepResult {
 	if p == nil {
 		return nil
 	}
