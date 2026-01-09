@@ -23,8 +23,6 @@ Project Structure:
     ├── PRD-TUI
     │   ├── Oraclepack TUI Integration.md
     │   └── PRD-generator URL routing.md
-    ├── raw-exports
-    │   └── Output verification failure.md
     ├── Formalize LLM Decision Points.md
     ├── Oraclepack CLI MCP Parity.md
     ├── Oraclepack File Storage.md
@@ -239,6 +237,13 @@ Source:
 ```
 
 ```ticket T3
+T# Title: Implement pre-generation normalization and deduplication decision points (DP-08..DP-12)
+Type: enhancement
+Target Area: Pre-gen text normalization + dedup decisions
+Summary:
+- Add explicit, formalized decisions for canonical title extraction, preprocessing policy, duplicate thresholds, merge strategy, and delta preservation when merging duplicates. Each decision produces the specified output/action for use during grouping/packing.
+In Scope:
+- DP-08 Decide ticket/file canonical title extraction rule
 [TRUNCATED]
 ```
 
@@ -450,6 +455,10 @@ Source:
 ```ticket T4
 T# Title: Add preflight to fail fast on missing `-f` attachment files
 Type: enhancement
+Target Area: `oraclepack run` preflight; oracle invocation scanning via `ExtractOracleInvocations`; path resolution via WorkDir
+Summary:
+  Add a preflight check that detects missing attachment files referenced by `oracle … -f <path>` before executing steps. This turns late runtime failures into early, actionable errors that identify the step number and missing path. The check must resolve paths relative to the resolved WorkDir.
+In Scope:
 [TRUNCATED]
 ```
 
@@ -659,6 +668,14 @@ Risks / Dependencies:
 - Depends on T1 if migrating global storage to XDG config dir.
 Acceptance Criteria:
 - After using the URL picker, no `<packBase>.chatgpt-urls.json` is created near the pack/state/CWD.
+- Default behavior persists URLs to exactly one global store (stable path; not per-pack).
+- When “project scope” is selected, URLs persist to `<repo>/.oraclepack/chatgpt-urls.json` (single per-project file).
+Priority & Severity (if inferable from input text):
+- Priority: Not provided
+- Severity: Not provided
+Source:
+- “The TUI ‘ChatGPT URL picker’ then creates `<sameBase>.chatgpt-urls.json`…”
+- “Best UX default: change … default save scope to global…”
 [TRUNCATED]
 ```
 
@@ -866,6 +883,12 @@ Evidence:
   - Not provided
 Open Items / Unknowns:
   - The “critical subcommands” list oraclepack relies on (examples referenced, but exact dependency set not provided).
+  - Where oraclepack stores `.state.json`/`.report.json` and current schema stability guarantees (not provided).
+Risks / Dependencies:
+  - Depends on T1 for deterministic upstream version selection in tests.
+Acceptance Criteria:
+  - Snapshot tests exist for `oracle --help` and at least one `oracle <subcommand> --help`, and are executed in CI with diffs detected.
+  - A runnable golden-path fixture exists and asserts only on wrapper-owned artifacts (exit code and/or `.state.json`/`.report.json`).
 [TRUNCATED]
 ```
 
@@ -1106,6 +1129,13 @@ In Scope:
 Out of Scope:
 - Not provided
 Current Behavior (Actual):
+- Pack structural issues can slip into execution time if not validated earlier.
+Expected Behavior:
+- CI fails fast when manifest validation fails or rendered pack fails oraclepack validation.
+Reproduction Steps:
+1) Commit a manifest with 19 steps; CI should fail at validate(manifest.json).
+2) Commit a manifest that renders an invalid pack (if possible); CI should fail at oraclepack validate.
+Requirements / Constraints:
 [TRUNCATED]
 ```
 
@@ -1297,7 +1327,8 @@ Priority & Severity (if inferable from input text):
 Source:
 - “Make validate unavoidable in normal use”
 - “Ensure `oraclepack run` always calls `validate` first (or at minimum in TUI ‘Run/Rerun’ paths).”
-[TRUNCATED]
+- “Add CI/pre-commit: run `oraclepack validate` on any generated/modified pack.”
+```
 ```
 
 .tickets/Oraclepack output verification issues.md
@@ -1482,6 +1513,13 @@ Summary:
 In Scope:
   - Document that when “Answer format” is present, the validator requires all four tokens in a single-output file unless using chunked outputs.
   - Provide template guidance for two supported patterns:
+    - Single file per step: output must include headings/phrases that satisfy all required tokens (“Direct answer”, “Risks/unknowns”, “Next smallest concrete experiment”, “If evidence is insufficient”).
+    - Chunked outputs: use multiple `--write-output` files with suffixes:
+      - `-direct-answer`
+      - `-risks-unknowns`
+      - `-next-experiment`
+      - `-missing-evidence`
+  - Document the “Missing evidence” vs “If evidence is insufficient” token mismatch risk (token is literal).
 [TRUNCATED]
 ```
 
@@ -2086,6 +2124,19 @@ Summary:
 In Scope:
 - Implement a new subcommand such as `oraclepack call` (or `oraclepack oracle`) that:
   - Lets the user pick a ChatGPT URL preset.
+  - Lets the user specify attachments (e.g., `tickets_prd.md`).
+  - Runs one `oracle …` invocation.
+- Implement a corresponding TUI flow/screen for “Single Oracle Call” with:
+  - URL preset selection
+  - attachments selection
+  - prompt/template input
+  - run
+- Ensure this path bypasses pack parsing requirements (no need for a `bash` fenced block).
+
+Out of Scope:
+- Generating ticket-derived context bundle (`prd_context.md`) and a dedicated PRD generator pack (see T6/T7).
+
+Current Behavior (Actual):
 [TRUNCATED]
 ```
 
@@ -2855,6 +2906,22 @@ In Scope:
 - Ensure Codex invocation is non-interactive (ticket references `codex exec …` as the intended entrypoint).
 - Ensure Gemini invocation is non-interactive (ticket references `gemini -p/--prompt` as intended).
 - Apply safety defaults: “Keep safety defaults strict (do not ‘yolo’ by default)” (flag specifics not mandated beyond this phrase).
+- Reflect/acknowledge runner constraint: “does not attach stdin/TTY” and the resulting failure mode for interactive tools.
+
+Out of Scope:
+- Not provided
+
+Current Behavior (Actual):
+- Runner behavior described: executes scripts via `bash -lc`, does not attach stdin/TTY; interactive CLIs may fail or stall.
+
+Expected Behavior:
+- Action Packs avoid interactive-only command forms and use non-interactive command forms for Codex/Gemini.
+- Defaults remain conservative and do not enable “yolo” behavior by default.
+
+Reproduction Steps:
+- Not provided
+
+Requirements / Constraints:
 [TRUNCATED]
 ```
 
@@ -3314,6 +3381,15 @@ Target Area:
 
 Summary:
 - The ticket explicitly calls out safety: executor tools may run commands or perform actions; defaults should be conservative.
+- Add/confirm guardrails so the implement/dispatcher mode does not auto-approve tool execution by default, and requires explicit opt-in for riskier behaviors.
+
+In Scope:
+- Ensure implement/dispatcher mode defaults are “strict” and not “yolo by default”.
+- Ensure any approval/tool-execution modes are conservative unless a user opts in (mechanism not specified in the ticket text).
+
+Out of Scope:
+- Defining new security models or sandboxing systems beyond what’s stated (not provided).
+
 [TRUNCATED]
 ```
 
@@ -3521,6 +3597,13 @@ In Scope:
 - Step 11: Add verification automation via `codex exec` and/or Gemini diff review:
   - `.oraclepack/ticketify/codex-verify.md` and/or `.oraclepack/ticketify/gemini-review.json`.
 - Step 16: Add PR draft automation that writes `.oraclepack/ticketify/PR.md`.
+- Include command-availability guards and “skip” behavior as shown in the referenced step snippets (e.g., `command -v ...` checks) to avoid hard failures when tools are missing.
+
+Out of Scope:
+- Changing Steps 01–07 semantics (ticket discovery/actions/PRD/Task Master parse/complexity/expand).
+- Extending oraclepack’s override injection/validation to cover `codex`/`gemini` (handled in T2).
+
+Current Behavior (Actual):
 [TRUNCATED]
 ```
 
@@ -3884,6 +3967,20 @@ Acceptance Criteria:
 
 * Caching (if implemented):
 
+  * Rerunning on unchanged inputs (same prompt, same attached file digests, same flags/model) results in zero provider calls and identical outputs.
+
+        Oracle Pack Workflow Analysis
+
+* Stage 3 “Actionizer”:
+
+  * `oraclepack actionize --run-dir ...` generates deterministic artifacts under `actionizer/` (`normalized.jsonl`, `backlog.md`, `change-plan.md`).
+
+  * Reruns do not duplicate tasks (stable IDs) and produce byte-identical output when inputs unchanged.
+
+  * Missing/contradictory answers produce explicit `blocked`/`conflict` tasks with required evidence patterns.
+
+* CI mode:
+
 [TRUNCATED]
 ```
 
@@ -4113,6 +4210,18 @@ Target Area: Examples + validation of generated prompt/skill output
 Summary:
   - Provide concrete example inputs (ticket and/or .tickets) and the expected generated prompt/skill output shape for validation.
   - Ensure examples exercise optional fields (missing PAIN-POINT, missing ADDITIONAL-INFORMATION, with/without REFERENCE-FILE).
+  - Add lightweight validation criteria to confirm generated output preserves placeholders and wrapper structure.
+In Scope:
+  - Example cases covering:
+    - Only {user-idea} + {project-in-question}
+    - With {PAIN-POINT}
+    - With {REFERENCE-FILE}
+  - Validation checklist for generated output structure (placeholders present; optional fields handled).
+Out of Scope:
+  - End-to-end integration tests that require specific repo tooling not provided.
+Current Behavior (Actual):
+  - No examples/validation for tickets/.tickets prompt-skill generation are defined.
+Expected Behavior:
 [TRUNCATED]
 ```
 
@@ -4848,6 +4957,20 @@ Type: enhancement
 Target Area: oraclepack_mcp_server/server.py (MCP tool registration + schemas + formatting)
 Summary:
 - Implement the MCP server surface that maps `oraclepack` CLI operations and Taskify helper functions into callable MCP tools.
+- Provide consistent response formatting (markdown/json) and ensure run tools respect execution gating.
+In Scope:
+- Tool schemas/inputs covering:
+  - `oraclepack_validate_pack`
+  - `oraclepack_list_steps`
+  - `oraclepack_run_pack` (gated)
+  - `oraclepack_read_file`
+  - `oraclepack_taskify_detect_stage2`
+  - `oraclepack_taskify_validate_stage2`
+  - `oraclepack_taskify_validate_action_pack`
+  - `oraclepack_taskify_artifacts_summary`
+  - `oraclepack_taskify_run_action_pack` (gated)
+- Response formatting:
+  - Support JSON and Markdown result formats (including stdout/stderr blocks and truncation notes).
 [TRUNCATED]
 ```
 
@@ -5598,257 +5721,16 @@ def validate_action_pack(pack_path: Path) -> dict:
     if len(bash_fence) != 1:
         errors.append(f"expected exactly one ```bash fence; found {len(bash_fence)}")
     if len(any_fence) != 2:
-[TRUNCATED]
-```
-
-.tickets/raw-exports/Output verification failure.md
-```
-## You asked:
-
-oraclepack-op-mcp.md
-
-File
-
-Why is this causing the following error shown?
-
----
-
-## ChatGPT Replied:
-
-Thought for 11m 46s
-
-This is failing in oraclepack’s “output verification” path: oraclepack looks for every `--write-output "<path>"` in the step’s shell code, then (a) expects the file to exist and (b) expects it to contain certain section tokens. When that check fails, it re-runs the step, and if the file still can’t be validated, it errors.
-
-What your screenshot shows is consistent with two stacked problems:
-
-1.  The verifier is expecting more sections than you are actually emitting.  
-    In oraclepack, a single `--write-output ...` + a prompt that includes the phrase “Answer format” causes the verifier to require all four section tokens (normalized): “direct answer”, “risks unknowns”, “next smallest concrete experiment”, and “if evidence is insufficient”. If your step instructs “Return only: Direct answer”, the output file will only contain the direct-answer content, so verification fails and oraclepack re-runs.
-    
-2.  On the re-run, the output file isn’t being written at all, so verification becomes a hard error.  
-    The final error `output verification failed for step 01: docs/o...` is what you get when oraclepack tries to read the `--write-output` path and the file isn’t there (or isn’t readable). In your log, the `oracle` CLI is being used in browser automation mode, and browser automation is explicitly “experimental”, so it can fail to reliably extract/write the final answer in some cases.  
-    Separately, newer `oracle` versions note stricter `--write-output` path safety (rejecting certain destinations while keeping the run going), which can also result in “oracle ran, but the write-output file wasn’t created”.  
-    (Also: `oracle` printing “Saved assistant output to …” is about its session logs, not a guarantee that your `--write-output docs/...` file was successfully created. )
-    
-
-Practical fixes (pick one):
-
-*   If you only want “Direct answer”: remove the “Answer format” block from the step prompt, or disable oraclepack’s output verification for this run/step.
-    
-*   If you want verification: make the output actually include all required sections in the written file (don’t “Return only: Direct answer”), or split into multiple outputs whose filenames include `-direct-answer`, `-risks-unknowns`, etc. (oraclepack’s verifier keys off those suffixes).
-    
-*   Ensure the write target is valid at runtime: run from the directory where `docs/...` exists (oraclepack runs steps with `WorkDir="."`), `mkdir -p docs`, and consider using an absolute `--write-output` path so you’re not depending on CWD.
-
----
-
-## You asked:
-
-Should we add a longer wait time ? Maybe it was too quick to validate ?
-
----
-
-## ChatGPT Replied:
-
-Thought for 5m 41s
-
-The failure is coming from oraclepack’s output verifier, not from the oracle run “returning too fast.”
-
-What oraclepack is doing:
-
-*   It runs each step via `/bin/bash -lc <step>` and blocks until the command finishes (`exec.CommandContext(...).Run()`), so the process should not return until the underlying CLI has exited.
-    
-    oraclepack-op-mcp
-    
-*   After the step exits, oraclepack extracts any `--write-output "<path>"` value(s) from the step code and then validates the _contents_ of the written file.
-    
-    oraclepack-op-mcp
-    
-*   If the step’s prompt text contains the phrase “Answer format”, oraclepack requires the output file to contain (after normalization) all of these section tokens: `direct answer`, `risks unknowns`, `next smallest concrete experiment`, and `if evidence is insufficient`.
-    
-    oraclepack-op-mcp
-    
-*   Validation is a simple “file contains tokens” check; it lowercases and strips punctuation, then checks `strings.Contains(...)` for each required token. Missing any token yields “output verification failed.”
-    
-    oraclepack-op-mcp
-    
-
-Why your screenshot triggers it:
-
-Your captured output clearly includes “Direct answer …”, but it does not show the other required sections (“Risks/unknowns”, “Next smallest concrete experiment”, “If evidence is insufficient …”). That is exactly the condition that causes verification to fail.
-
-oraclepack-op-mcp
-
-Should you add a longer wait time?
-
-*   Adding a fixed sleep before validation is unlikely to help, because the verifier is failing on missing required sections (content mismatch), not on the file being “mid-write.” The step command already blocks until the CLI exits.
-    
-    oraclepack-op-mcp
-    
-    oraclepack-op-mcp
-    
-*   If the underlying issue is that the oracle **browser** run is sometimes incomplete/truncated (so the file is written but missing sections), the right “wait” knob is on the oracle side, not oraclepack’s verifier. The oracle CLI exposes `--browser-timeout` / `--browser-input-timeout` and `--wait` (for background API runs), and notes browser mode is more fragile than API. [GitHub](https://github.com/steipete/oracle?utm_source=chatgpt.com)
-    
-
-Most direct fixes:
-
-1.  Make the LLM output include all required sections whenever the prompt includes “Answer format” (so it satisfies the existing verifier).
-    
-    oraclepack-op-mcp
-    
-2.  If you intentionally only want “Direct answer”, change oraclepack’s verification logic to accept a “direct answer only” contract for that step (right now, single-output steps ignore filename hints and only use the “Answer format” heuristic).
-    
-    oraclepack-op-mcp
-    
-3.  If you’re seeing intermittent truncation in browser mode, increase oracle’s `--browser-timeout` (and/or switch to API engine where possible). [GitHub](https://github.com/steipete/oracle?utm_source=chatgpt.com)
-
----
-
-## You asked:
-
-Because we may have broken down the way we send packs into smaller chunks so that outputs are not cut short. How can we set the validator as optional so that we can verify further?
-
----
-
-## ChatGPT Replied:
-
-Thought for 6m 44s
-
-The failure is not a “too fast to validate” timing issue in oraclepack; it is a content/contract mismatch.
-
-Oraclepack’s runner does this sequence per step: run the step command, then (if enabled) immediately open the `--write-output` file(s) and check that they contain specific required section tokens. If any token is missing, the step is treated as failed (and it may re-run the step, depending on `--output-retries`).
-
-oraclepack-op-mcp
-
-Why your step 01 fails in the screenshot
-
-1.  Your step includes an “Answer format” clause in the prompt. Oraclepack uses that to decide that output verification is required.
-    
-    oraclepack-op-mcp
-    
-2.  When verification is required and there is exactly one `--write-output` target, oraclepack requires the output file to contain all of these normalized tokens:
-    
-
-*   `direct answer`
-    
-*   `risks unknowns`
-    
-*   `next smallest concrete experiment`
-    
-*   `if evidence is insufficient`
-    
-    oraclepack-op-mcp
-    
-
-3.  The screenshot indicates the output file was written, but it didn’t contain one or more of those required sections, so verification failed and oraclepack re-ran the step once (default `--output-retries=1`).
-    
-    oraclepack-op-mcp
-    
-
-Should you “add a longer wait time”?  
-Oraclepack does not currently “wait then validate”; it validates immediately after the step returns. The built-in mitigation is retries (which re-runs the whole step), not a delay.
-
-oraclepack-op-mcp
-
-  
-Given the re-run also failed, this points to “output doesn’t include required sections” (likely due to your chunking change), not a race.
-
-How to make the validator optional right now (no code changes)  
-Output verification is already optional via the run command flag:
-
-*   `--output-verify` (default `true`)
-    
-*   `--output-retries` (default `1`)
-    
-    oraclepack-op-mcp
-    
-
-So you can run:
-
-    oraclepack run <pack.md> --output-verify=false
-    
-
-This bypasses the post-step output section checks entirely. The runner explicitly returns success after the step executes when `OutputVerify` is false.
-
-oraclepack-op-mcp
-
-If your goal is “chunked outputs without failing,” the better fix is to align chunking with the verifier  
-Oraclepack already supports splitting output across multiple `--write-output` files, and in that case it relaxes expectations to one token per file based on filename suffixes: `-direct-answer`, `-risks-unknowns`, `-next-experiment`, `-missing-evidence`.
-
-oraclepack-op-mcp
-
-Practically: instead of writing all sections into one file per step (which forces all tokens), write each section into its own file and name them with those suffixes. Then oraclepack will only require (e.g.) “direct answer” to appear in the `*-direct-answer*` file, etc.
-
-oraclepack-op-mcp
-
-How to “verify further later” (what’s missing today, and the cleanest addition)  
-If you run with `--output-verify=false`, oraclepack will mark steps as succeeded, and a later `--resume` run will skip those steps and won’t re-check outputs (because verification is tied to step execution in `runStepWithOutputVerification`).
-
-oraclepack-op-mcp
-
-If you want “run now, verify later” as a first-class workflow, the smallest product change is to add a new command that only validates outputs without executing steps, e.g.:
-
-*   `oraclepack verify-outputs <pack.md>`
-    
-    *   For each step: compute `pack.StepOutputExpectations(step)` and run `pack.ValidateOutputFile(path, requiredTokens)`
-        
-    *   Print failures and exit non-zero if any are missing.
-        
-
-This directly reuses the same expectation logic and token normalization already used during execution.
-
----
-
-## You asked:
-
-oracle-pack-2026-01-09.md
-
-File
-
-verify the issue for us. here's the pack we ran to get the error
-
----
-
-## ChatGPT Replied:
-
-Thought for 5m 25s
-
-The failure is not “too quick to validate.” It’s failing because oraclepack’s validator is doing a content check on the `--write-output` file, and step 01’s output file does not contain the required section tokens.
-
-Why it fails (grounded in your pack + oraclepack code)
-
-1.  Your step 01 prompt contains the literal phrase `Answer format:` and lists 4 required sections.
-    
-    oracle-pack-2026-01-09
-    
-2.  oraclepack treats the presence of “answer format” in the step code as a signal to require _all four_ tokens in the output file:
-    
-    *   `direct answer`
-        
-    *   `risks unknowns`
-        
-    *   `next smallest concrete experiment`
-        
-    *   `if evidence is insufficient`
-        
-        oraclepack-op-mcp
-        
-3.  For steps with a single `--write-output`, oraclepack reads the output file and checks (after normalization) that all required tokens appear. If any are missing, you get `output verification failed for step 01`.
-    
-    oraclepack-op-mcp
-    
-4.  `oracle --write-output <path>` saves only the final answer content. So if the model response only includes the “Direct answer” section (as your screenshot suggests), the other tokens never appear in the file and validation fails.
-    
-
-So: increasing a “wait time” won’t fix it, because the validator isn’t racing the write; it’s rejecting the contents that were written.
-
-How to confirm in your repo (fastest verification)
-
-Open the file oracle wrote:
-
-    sed -n '1,200p' docs/oracle-questions-2026-01-09/01-contracts-interfaces-surface.md
-    
-
-Then check for the required tokens (case/punctuation don’t matter; oraclepack normalizes):
-
+        # One opening and one closing fence expected, and it must be a bash fence.
+        errors.append(f"expected no other code fences; found {len(any_fence)} total fences")
+
+    # Extract bash block content if possible
+    bash_block = ""
+    m = re.search(r"```bash\s*\n(?P<body>[\s\S]*?)\n```\s*", text)
+    if m:
+        bash_block = m.group("body")
+
+    # Validate step headers inside bash fence
 [TRUNCATED]
 ```
 

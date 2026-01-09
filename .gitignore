@@ -26,7 +26,8 @@ venv
 dist/
 oraclepack
 oraclepack.exe
-#.tickets/
+.tickets/raw-exports
+
 #
 .archived/
 public/

@@ -194,6 +194,62 @@ Signature: 8a477f597d28d172789f06886806bc55
 #	https://bford.info/cachedir/spec.html
 ```
 
+oraclepack-mcp-server/oraclepack_mcp_server.egg-info/PKG-INFO
+```
+Metadata-Version: 2.4
+Name: oraclepack-mcp-server
+Version: 0.1.0
+Summary: MCP wrapper for oraclepack CLI
+Author: Oraclepack Contributor
+Requires-Python: >=3.10
+Requires-Dist: mcp[cli]>=0.1.0
+Requires-Dist: pydantic-settings>=2.0.0
+Requires-Dist: pydantic>=2.0.0
+```
+
+oraclepack-mcp-server/oraclepack_mcp_server.egg-info/SOURCES.txt
+```
+README.md
+pyproject.toml
+oraclepack_mcp_server/__init__.py
+oraclepack_mcp_server/__main__.py
+oraclepack_mcp_server/config.py
+oraclepack_mcp_server/oraclepack_cli.py
+oraclepack_mcp_server/security.py
+oraclepack_mcp_server/server.py
+oraclepack_mcp_server/taskify.py
+oraclepack_mcp_server.egg-info/PKG-INFO
+oraclepack_mcp_server.egg-info/SOURCES.txt
+oraclepack_mcp_server.egg-info/dependency_links.txt
+oraclepack_mcp_server.egg-info/entry_points.txt
+oraclepack_mcp_server.egg-info/requires.txt
+oraclepack_mcp_server.egg-info/top_level.txt
+tests/test_config.py
+```
+
+oraclepack-mcp-server/oraclepack_mcp_server.egg-info/dependency_links.txt
+```
+
+```
+
+oraclepack-mcp-server/oraclepack_mcp_server.egg-info/entry_points.txt
+```
+[console_scripts]
+oraclepack-mcp = oraclepack_mcp_server.__main__:main
+```
+
+oraclepack-mcp-server/oraclepack_mcp_server.egg-info/requires.txt
+```
+mcp[cli]>=0.1.0
+pydantic-settings>=2.0.0
+pydantic>=2.0.0
+```
+
+oraclepack-mcp-server/oraclepack_mcp_server.egg-info/top_level.txt
+```
+oraclepack_mcp_server
+```
+
 oraclepack-mcp-server/oraclepack_mcp_server/__init__.py
 ```
 ```
@@ -730,62 +786,6 @@ This pack contains {len(steps)} steps: {', '.join(steps)}.
 ## Security Note
 Execution tools require `ORACLEPACK_ENABLE_EXEC=1` in the server environment.
 """
-```
-
-oraclepack-mcp-server/oraclepack_mcp_server.egg-info/PKG-INFO
-```
-Metadata-Version: 2.4
-Name: oraclepack-mcp-server
-Version: 0.1.0
-Summary: MCP wrapper for oraclepack CLI
-Author: Oraclepack Contributor
-Requires-Python: >=3.10
-Requires-Dist: mcp[cli]>=0.1.0
-Requires-Dist: pydantic-settings>=2.0.0
-Requires-Dist: pydantic>=2.0.0
-```
-
-oraclepack-mcp-server/oraclepack_mcp_server.egg-info/SOURCES.txt
-```
-README.md
-pyproject.toml
-oraclepack_mcp_server/__init__.py
-oraclepack_mcp_server/__main__.py
-oraclepack_mcp_server/config.py
-oraclepack_mcp_server/oraclepack_cli.py
-oraclepack_mcp_server/security.py
-oraclepack_mcp_server/server.py
-oraclepack_mcp_server/taskify.py
-oraclepack_mcp_server.egg-info/PKG-INFO
-oraclepack_mcp_server.egg-info/SOURCES.txt
-oraclepack_mcp_server.egg-info/dependency_links.txt
-oraclepack_mcp_server.egg-info/entry_points.txt
-oraclepack_mcp_server.egg-info/requires.txt
-oraclepack_mcp_server.egg-info/top_level.txt
-tests/test_config.py
-```
-
-oraclepack-mcp-server/oraclepack_mcp_server.egg-info/dependency_links.txt
-```
-
-```
-
-oraclepack-mcp-server/oraclepack_mcp_server.egg-info/entry_points.txt
-```
-[console_scripts]
-oraclepack-mcp = oraclepack_mcp_server.__main__:main
-```
-
-oraclepack-mcp-server/oraclepack_mcp_server.egg-info/requires.txt
-```
-mcp[cli]>=0.1.0
-pydantic-settings>=2.0.0
-pydantic>=2.0.0
-```
-
-oraclepack-mcp-server/oraclepack_mcp_server.egg-info/top_level.txt
-```
-oraclepack_mcp_server
 ```
 
 oraclepack-mcp-server/tests/test_cli.py
@@ -2095,263 +2095,6 @@ func TestExitCode(t *testing.T) {
 }
 ```
 
-internal/foundation/atomic.go
-```
-package foundation
-
-import (
-	"fmt"
-	"os"
-)
-
-// WriteAtomic writes data to path atomically by writing to a temp file and renaming.
-func WriteAtomic(path string, data []byte, perm os.FileMode) error {
-	tempPath := path + ".tmp"
-	if err := os.WriteFile(tempPath, data, perm); err != nil {
-		return fmt.Errorf("write temp file: %w", err)
-	}
-	if err := os.Rename(tempPath, path); err != nil {
-		_ = os.Remove(tempPath)
-		return fmt.Errorf("rename temp file: %w", err)
-	}
-	return nil
-}
-```
-
-internal/foundation/atomic_test.go
-```
-package foundation
-
-import (
-	"os"
-	"path/filepath"
-	"testing"
-)
-
-func TestWriteAtomic(t *testing.T) {
-	dir := t.TempDir()
-	path := filepath.Join(dir, "out.json")
-	if err := WriteAtomic(path, []byte("hello"), 0644); err != nil {
-		t.Fatalf("WriteAtomic: %v", err)
-	}
-	data, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatalf("read: %v", err)
-	}
-	if string(data) != "hello" {
-		t.Fatalf("unexpected contents: %q", string(data))
-	}
-}
-```
-
-internal/foundation/clock.go
-```
-package foundation
-
-import "time"
-
-// Clock abstracts time for deterministic testing.
-type Clock interface {
-	Now() time.Time
-}
-
-// RealClock uses the system clock.
-type RealClock struct{}
-
-// Now returns the current time.
-func (RealClock) Now() time.Time { return time.Now() }
-
-// MockClock returns a fixed time that can be advanced.
-type MockClock struct {
-	current time.Time
-}
-
-// NewMockClock initializes a mock clock with a starting time.
-func NewMockClock(start time.Time) *MockClock {
-	return &MockClock{current: start}
-}
-
-// Now returns the mock time.
-func (m *MockClock) Now() time.Time { return m.current }
-
-// Advance moves the mock time forward.
-func (m *MockClock) Advance(d time.Duration) {
-	m.current = m.current.Add(d)
-}
-```
-
-internal/foundation/clock_test.go
-```
-package foundation
-
-import (
-	"testing"
-	"time"
-)
-
-func TestMockClock(t *testing.T) {
-	start := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
-	m := NewMockClock(start)
-	if !m.Now().Equal(start) {
-		t.Fatalf("expected %v, got %v", start, m.Now())
-	}
-	m.Advance(2 * time.Hour)
-	want := start.Add(2 * time.Hour)
-	if !m.Now().Equal(want) {
-		t.Fatalf("expected %v, got %v", want, m.Now())
-	}
-}
-```
-
-internal/foundation/config.go
-```
-package foundation
-
-import (
-	"encoding/json"
-	"fmt"
-	"os"
-	"strconv"
-)
-
-// Config holds runtime settings that can be loaded from JSON and environment variables.
-// Env values always take precedence over JSON values.
-type Config struct {
-	Name      string  `json:"name" env:"ORACLEPACK_NAME"`
-	Retries   int     `json:"retries" env:"ORACLEPACK_RETRIES"`
-	Enabled   bool    `json:"enabled" env:"ORACLEPACK_ENABLED"`
-	Threshold float64 `json:"threshold" env:"ORACLEPACK_THRESHOLD"`
-}
-
-// LoadConfig loads configuration from a JSON file and then applies environment overrides.
-// If path is empty, JSON loading is skipped and only env overrides are applied.
-func LoadConfig(path string) (Config, error) {
-	var cfg Config
-	if path != "" {
-		data, err := os.ReadFile(path)
-		if err != nil {
-			return Config{}, fmt.Errorf("read config: %w", err)
-		}
-		if err := json.Unmarshal(data, &cfg); err != nil {
-			return Config{}, fmt.Errorf("parse config: %w", err)
-		}
-	}
-
-	if v, ok := os.LookupEnv("ORACLEPACK_NAME"); ok {
-		cfg.Name = v
-	}
-	if v, ok := os.LookupEnv("ORACLEPACK_RETRIES"); ok {
-		parsed, err := strconv.Atoi(v)
-		if err != nil {
-			return Config{}, fmt.Errorf("parse ORACLEPACK_RETRIES: %w", err)
-		}
-		cfg.Retries = parsed
-	}
-	if v, ok := os.LookupEnv("ORACLEPACK_ENABLED"); ok {
-		parsed, err := strconv.ParseBool(v)
-		if err != nil {
-			return Config{}, fmt.Errorf("parse ORACLEPACK_ENABLED: %w", err)
-		}
-		cfg.Enabled = parsed
-	}
-	if v, ok := os.LookupEnv("ORACLEPACK_THRESHOLD"); ok {
-		parsed, err := strconv.ParseFloat(v, 64)
-		if err != nil {
-			return Config{}, fmt.Errorf("parse ORACLEPACK_THRESHOLD: %w", err)
-		}
-		cfg.Threshold = parsed
-	}
-
-	return cfg, nil
-}
-```
-
-internal/foundation/config_test.go
-```
-package foundation
-
-import (
-	"os"
-	"path/filepath"
-	"testing"
-)
-
-func TestLoadConfigEnvOverrides(t *testing.T) {
-	t.Setenv("ORACLEPACK_NAME", "env-name")
-	t.Setenv("ORACLEPACK_RETRIES", "5")
-	t.Setenv("ORACLEPACK_ENABLED", "true")
-	t.Setenv("ORACLEPACK_THRESHOLD", "2.5")
-
-	dir := t.TempDir()
-	path := filepath.Join(dir, "config.json")
-	if err := os.WriteFile(path, []byte(`{"name":"json-name","retries":1,"enabled":false,"threshold":1.0}`), 0644); err != nil {
-		t.Fatalf("write json: %v", err)
-	}
-
-	cfg, err := LoadConfig(path)
-	if err != nil {
-		t.Fatalf("LoadConfig: %v", err)
-	}
-
-	if cfg.Name != "env-name" || cfg.Retries != 5 || cfg.Enabled != true || cfg.Threshold != 2.5 {
-		t.Fatalf("env overrides not applied: %+v", cfg)
-	}
-}
-
-func TestLoadConfigJSONOnly(t *testing.T) {
-	dir := t.TempDir()
-	path := filepath.Join(dir, "config.json")
-	if err := os.WriteFile(path, []byte(`{"name":"json-name","retries":3,"enabled":true,"threshold":4.25}`), 0644); err != nil {
-		t.Fatalf("write json: %v", err)
-	}
-
-	cfg, err := LoadConfig(path)
-	if err != nil {
-		t.Fatalf("LoadConfig: %v", err)
-	}
-
-	if cfg.Name != "json-name" || cfg.Retries != 3 || cfg.Enabled != true || cfg.Threshold != 4.25 {
-		t.Fatalf("json load mismatch: %+v", cfg)
-	}
-}
-```
-
-internal/foundation/errors.go
-```
-package foundation
-
-import "errors"
-
-var (
-	// ErrMissingBinary is returned when a required binary is not found on PATH.
-	ErrMissingBinary = errors.New("missing binary")
-	// ErrArtifactMissing is returned when an expected artifact is absent.
-	ErrArtifactMissing = errors.New("artifact missing")
-)
-```
-
-internal/foundation/errors_test.go
-```
-package foundation
-
-import (
-	"errors"
-	"testing"
-)
-
-func TestCommonErrors(t *testing.T) {
-	if ErrMissingBinary == nil || ErrArtifactMissing == nil {
-		t.Fatal("expected error variables to be initialized")
-	}
-	if !errors.Is(ErrMissingBinary, ErrMissingBinary) {
-		t.Fatal("errors.Is failed for ErrMissingBinary")
-	}
-	if !errors.Is(ErrArtifactMissing, ErrArtifactMissing) {
-		t.Fatal("errors.Is failed for ErrArtifactMissing")
-	}
-}
-```
-
 internal/exec/flags.go
 ```
 package exec
@@ -3326,6 +3069,263 @@ func (w *LineWriter) Close() error {
 // MultiWriter handles multiple writers efficiently.
 func MultiWriter(writers ...io.Writer) io.Writer {
 	return io.MultiWriter(writers...)
+}
+```
+
+internal/foundation/atomic.go
+```
+package foundation
+
+import (
+	"fmt"
+	"os"
+)
+
+// WriteAtomic writes data to path atomically by writing to a temp file and renaming.
+func WriteAtomic(path string, data []byte, perm os.FileMode) error {
+	tempPath := path + ".tmp"
+	if err := os.WriteFile(tempPath, data, perm); err != nil {
+		return fmt.Errorf("write temp file: %w", err)
+	}
+	if err := os.Rename(tempPath, path); err != nil {
+		_ = os.Remove(tempPath)
+		return fmt.Errorf("rename temp file: %w", err)
+	}
+	return nil
+}
+```
+
+internal/foundation/atomic_test.go
+```
+package foundation
+
+import (
+	"os"
+	"path/filepath"
+	"testing"
+)
+
+func TestWriteAtomic(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "out.json")
+	if err := WriteAtomic(path, []byte("hello"), 0644); err != nil {
+		t.Fatalf("WriteAtomic: %v", err)
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read: %v", err)
+	}
+	if string(data) != "hello" {
+		t.Fatalf("unexpected contents: %q", string(data))
+	}
+}
+```
+
+internal/foundation/clock.go
+```
+package foundation
+
+import "time"
+
+// Clock abstracts time for deterministic testing.
+type Clock interface {
+	Now() time.Time
+}
+
+// RealClock uses the system clock.
+type RealClock struct{}
+
+// Now returns the current time.
+func (RealClock) Now() time.Time { return time.Now() }
+
+// MockClock returns a fixed time that can be advanced.
+type MockClock struct {
+	current time.Time
+}
+
+// NewMockClock initializes a mock clock with a starting time.
+func NewMockClock(start time.Time) *MockClock {
+	return &MockClock{current: start}
+}
+
+// Now returns the mock time.
+func (m *MockClock) Now() time.Time { return m.current }
+
+// Advance moves the mock time forward.
+func (m *MockClock) Advance(d time.Duration) {
+	m.current = m.current.Add(d)
+}
+```
+
+internal/foundation/clock_test.go
+```
+package foundation
+
+import (
+	"testing"
+	"time"
+)
+
+func TestMockClock(t *testing.T) {
+	start := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+	m := NewMockClock(start)
+	if !m.Now().Equal(start) {
+		t.Fatalf("expected %v, got %v", start, m.Now())
+	}
+	m.Advance(2 * time.Hour)
+	want := start.Add(2 * time.Hour)
+	if !m.Now().Equal(want) {
+		t.Fatalf("expected %v, got %v", want, m.Now())
+	}
+}
+```
+
+internal/foundation/config.go
+```
+package foundation
+
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+	"strconv"
+)
+
+// Config holds runtime settings that can be loaded from JSON and environment variables.
+// Env values always take precedence over JSON values.
+type Config struct {
+	Name      string  `json:"name" env:"ORACLEPACK_NAME"`
+	Retries   int     `json:"retries" env:"ORACLEPACK_RETRIES"`
+	Enabled   bool    `json:"enabled" env:"ORACLEPACK_ENABLED"`
+	Threshold float64 `json:"threshold" env:"ORACLEPACK_THRESHOLD"`
+}
+
+// LoadConfig loads configuration from a JSON file and then applies environment overrides.
+// If path is empty, JSON loading is skipped and only env overrides are applied.
+func LoadConfig(path string) (Config, error) {
+	var cfg Config
+	if path != "" {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return Config{}, fmt.Errorf("read config: %w", err)
+		}
+		if err := json.Unmarshal(data, &cfg); err != nil {
+			return Config{}, fmt.Errorf("parse config: %w", err)
+		}
+	}
+
+	if v, ok := os.LookupEnv("ORACLEPACK_NAME"); ok {
+		cfg.Name = v
+	}
+	if v, ok := os.LookupEnv("ORACLEPACK_RETRIES"); ok {
+		parsed, err := strconv.Atoi(v)
+		if err != nil {
+			return Config{}, fmt.Errorf("parse ORACLEPACK_RETRIES: %w", err)
+		}
+		cfg.Retries = parsed
+	}
+	if v, ok := os.LookupEnv("ORACLEPACK_ENABLED"); ok {
+		parsed, err := strconv.ParseBool(v)
+		if err != nil {
+			return Config{}, fmt.Errorf("parse ORACLEPACK_ENABLED: %w", err)
+		}
+		cfg.Enabled = parsed
+	}
+	if v, ok := os.LookupEnv("ORACLEPACK_THRESHOLD"); ok {
+		parsed, err := strconv.ParseFloat(v, 64)
+		if err != nil {
+			return Config{}, fmt.Errorf("parse ORACLEPACK_THRESHOLD: %w", err)
+		}
+		cfg.Threshold = parsed
+	}
+
+	return cfg, nil
+}
+```
+
+internal/foundation/config_test.go
+```
+package foundation
+
+import (
+	"os"
+	"path/filepath"
+	"testing"
+)
+
+func TestLoadConfigEnvOverrides(t *testing.T) {
+	t.Setenv("ORACLEPACK_NAME", "env-name")
+	t.Setenv("ORACLEPACK_RETRIES", "5")
+	t.Setenv("ORACLEPACK_ENABLED", "true")
+	t.Setenv("ORACLEPACK_THRESHOLD", "2.5")
+
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.json")
+	if err := os.WriteFile(path, []byte(`{"name":"json-name","retries":1,"enabled":false,"threshold":1.0}`), 0644); err != nil {
+		t.Fatalf("write json: %v", err)
+	}
+
+	cfg, err := LoadConfig(path)
+	if err != nil {
+		t.Fatalf("LoadConfig: %v", err)
+	}
+
+	if cfg.Name != "env-name" || cfg.Retries != 5 || cfg.Enabled != true || cfg.Threshold != 2.5 {
+		t.Fatalf("env overrides not applied: %+v", cfg)
+	}
+}
+
+func TestLoadConfigJSONOnly(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.json")
+	if err := os.WriteFile(path, []byte(`{"name":"json-name","retries":3,"enabled":true,"threshold":4.25}`), 0644); err != nil {
+		t.Fatalf("write json: %v", err)
+	}
+
+	cfg, err := LoadConfig(path)
+	if err != nil {
+		t.Fatalf("LoadConfig: %v", err)
+	}
+
+	if cfg.Name != "json-name" || cfg.Retries != 3 || cfg.Enabled != true || cfg.Threshold != 4.25 {
+		t.Fatalf("json load mismatch: %+v", cfg)
+	}
+}
+```
+
+internal/foundation/errors.go
+```
+package foundation
+
+import "errors"
+
+var (
+	// ErrMissingBinary is returned when a required binary is not found on PATH.
+	ErrMissingBinary = errors.New("missing binary")
+	// ErrArtifactMissing is returned when an expected artifact is absent.
+	ErrArtifactMissing = errors.New("artifact missing")
+)
+```
+
+internal/foundation/errors_test.go
+```
+package foundation
+
+import (
+	"errors"
+	"testing"
+)
+
+func TestCommonErrors(t *testing.T) {
+	if ErrMissingBinary == nil || ErrArtifactMissing == nil {
+		t.Fatal("expected error variables to be initialized")
+	}
+	if !errors.Is(ErrMissingBinary, ErrMissingBinary) {
+		t.Fatal("errors.Is failed for ErrMissingBinary")
+	}
+	if !errors.Is(ErrArtifactMissing, ErrArtifactMissing) {
+		t.Fatal("errors.Is failed for ErrArtifactMissing")
+	}
 }
 ```
 
