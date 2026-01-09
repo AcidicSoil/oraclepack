@@ -19,6 +19,7 @@ type RunState struct {
 	SchemaVersion int                   `json:"schema_version"`
 	PackHash      string                `json:"pack_hash"`
 	StartTime     time.Time             `json:"start_time"`
+	CurrentStep   int                   `json:"current_step,omitempty"`
 	StepStatuses  map[string]StepStatus `json:"step_statuses"`
 	ROIThreshold  float64               `json:"roi_threshold,omitempty"`
 	ROIMode       string                `json:"roi_mode,omitempty"`

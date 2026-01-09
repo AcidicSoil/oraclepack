@@ -15,6 +15,7 @@ var (
 	// Updated regex to support ")", " —", and " -" separators
 	stepHeaderRegex = regexp.MustCompile(`^#\s*(\d{2})(?:\)|[\s]+[—-])`)
 	roiRegex        = regexp.MustCompile(`ROI=(\d+(\.\d+)?)`)
+	impactRegex     = regexp.MustCompile(`^#\s*Impact:\s*(.+)$`)
 	outDirRegex    = regexp.MustCompile(`(?m)^out_dir=["']?([^"'\s]+)["']?`)
 	writeOutputRegex = regexp.MustCompile(`(?m)--write-output`)
 )
@@ -41,6 +42,7 @@ func Parse(content []byte) (*Pack, error) {
 		if len(headerMatch) > 1 {
 			inSteps = true
 			if currentStep != nil {
+				applyStepMetadata(currentStep)
 				pack.Steps = append(pack.Steps, *currentStep)
 			}
 			num, _ := strconv.Atoi(headerMatch[1])
@@ -85,6 +87,7 @@ func Parse(content []byte) (*Pack, error) {
 	}
 
 	if currentStep != nil {
+		applyStepMetadata(currentStep)
 		pack.Steps = append(pack.Steps, *currentStep)
 	}
 
@@ -111,6 +114,9 @@ func (p *Pack) Validate() error {
 	if len(p.Steps) == 0 {
 		return fmt.Errorf("%w: at least one step is required", errors.ErrInvalidPack)
 	}
+	if len(p.Steps) != 20 {
+		return fmt.Errorf("%w: expected exactly 20 steps, got %d", errors.ErrInvalidPack, len(p.Steps))
+	}
 
 	seen := make(map[int]bool)
 	for i, step := range p.Steps {
@@ -129,4 +135,30 @@ func (p *Pack) Validate() error {
 	}
 
 	return nil
+}
+
+func applyStepMetadata(step *Step) {
+	if step == nil {
+		return
+	}
+	lines := strings.Split(step.Code, "\n")
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "" || !strings.HasPrefix(trimmed, "#") {
+			continue
+		}
+		if step.ROI == 0 {
+			if strings.HasPrefix(trimmed, "# ROI:") {
+				val := strings.TrimSpace(strings.TrimPrefix(trimmed, "# ROI:"))
+				if parsed, err := strconv.ParseFloat(val, 64); err == nil {
+					step.ROI = parsed
+				}
+			}
+		}
+		if step.Impact == "" {
+			if m := impactRegex.FindStringSubmatch(trimmed); len(m) > 1 {
+				step.Impact = strings.TrimSpace(m[1])
+			}
+		}
+	}
 }

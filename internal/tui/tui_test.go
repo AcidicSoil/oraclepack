@@ -18,7 +18,7 @@ func TestInitAutoRun(t *testing.T) {
 	s := &state.RunState{}
 
 	// Test case 1: autoRun = true
-	modelAuto := NewModel(p, r, s, "", 0, "over", true)
+	modelAuto := NewModel(p, r, s, "", 0, "over", true, false, 0)
 	cmdAuto := modelAuto.Init()
 	
 	if cmdAuto == nil {
@@ -27,7 +27,7 @@ func TestInitAutoRun(t *testing.T) {
 	// Note: We can't easily assert the content of a Batch command in a unit test.
 
 	// Test case 2: autoRun = false
-	modelManual := NewModel(p, r, s, "", 0, "over", false)
+	modelManual := NewModel(p, r, s, "", 0, "over", false, false, 0)
 	// Even with autoRun false, we have textinput.Blink, so Init is not nil.
 	cmdManual := modelManual.Init()
 	if cmdManual == nil {

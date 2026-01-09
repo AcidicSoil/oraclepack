@@ -1,11 +1,13 @@
 package pack
 
 import (
+	"strconv"
 	"strings"
 	"testing"
 )
 
 func TestParse(t *testing.T) {
+	steps := buildSteps(20, "echo")
 	content := []byte(`
 # My Pack
 Some description.
@@ -14,11 +16,7 @@ Some description.
 out_dir="dist"
 --write-output
 
-# 01)
-echo "hello"
-
-# 02)
-echo "world"
+` + steps + `
 ` + "```" + `
 `)
 
@@ -35,8 +33,8 @@ echo "world"
 		t.Errorf("expected WriteOutput true, got false")
 	}
 
-	if len(p.Steps) != 2 {
-		t.Errorf("expected 2 steps, got %d", len(p.Steps))
+	if len(p.Steps) != 20 {
+		t.Errorf("expected 20 steps, got %d", len(p.Steps))
 	}
 
 	if p.Steps[0].ID != "01" || p.Steps[0].Number != 1 {
@@ -126,6 +124,7 @@ echo "default"
 }
 
 func TestValidateErrors(t *testing.T) {
+	base := buildStepSlice(20)
 	tests := []struct {
 		name    string
 		pack    *Pack
@@ -139,20 +138,33 @@ func TestValidateErrors(t *testing.T) {
 		{
 			"duplicate steps",
 			&Pack{
-				Steps: []Step{
-					{Number: 1, ID: "01"},
-					{Number: 1, ID: "01"},
-				},
+				Steps: func() []Step {
+					steps := append([]Step(nil), base...)
+					steps[1].Number = steps[0].Number
+					steps[1].ID = steps[0].ID
+					return steps
+				}(),
 			},
 			"duplicate step number 1",
 		},
 		{
-			"non-sequential",
+			"wrong step count",
 			&Pack{
 				Steps: []Step{
 					{Number: 1, ID: "01"},
-					{Number: 3, ID: "03"},
 				},
+			},
+			"expected exactly 20 steps",
+		},
+		{
+			"non-sequential",
+			&Pack{
+				Steps: func() []Step {
+					steps := append([]Step(nil), base...)
+					steps[1].Number = 3
+					steps[1].ID = "03"
+					return steps
+				}(),
 			},
 			"steps must be sequential starting from 1",
 		},
@@ -172,4 +184,31 @@ func TestValidateErrors(t *testing.T) {
 
 func contains(s, substr string) bool {
 	return len(s) >= len(substr) && (s == substr || (len(substr) > 0 && (s[:len(substr)] == substr || contains(s[1:], substr))))
+}
+
+func buildSteps(count int, cmd string) string {
+	var b strings.Builder
+	for i := 1; i <= count; i++ {
+		b.WriteString("# ")
+		if i < 10 {
+			b.WriteString("0")
+		}
+		b.WriteString(strconv.Itoa(i))
+		b.WriteString(")\n")
+		b.WriteString(cmd)
+		b.WriteString("\n\n")
+	}
+	return b.String()
+}
+
+func buildStepSlice(count int) []Step {
+	steps := make([]Step, 0, count)
+	for i := 1; i <= count; i++ {
+		id := strconv.Itoa(i)
+		if i < 10 {
+			id = "0" + id
+		}
+		steps = append(steps, Step{Number: i, ID: id})
+	}
+	return steps
 }

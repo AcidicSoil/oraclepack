@@ -21,4 +21,5 @@ type Step struct {
 	Code         string  // The bash code
 	OriginalLine string  // The header line, e.g., "# 01)"
 	ROI          float64 // Return on Investment value extracted from header
+	Impact       string  // Optional impact metadata extracted from step comments
 }

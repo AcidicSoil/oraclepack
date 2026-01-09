@@ -2,7 +2,7 @@ package cli
 
 import (
 	"context"
-	"os"
+	"fmt"
 	"path/filepath"
 	"strings"
 
@@ -60,7 +60,16 @@ var runCmd = &cobra.Command{
 		}
 
 		if noTUI {
-			return a.RunPlain(context.Background(), os.Stdout)
+			out := cmd.OutOrStdout()
+			fmt.Fprintf(out, "[Selected] %s\n", packPath)
+			fmt.Fprintln(out, "[Ready] Parsed and validated pack")
+			err := a.RunPlain(context.Background(), out)
+			if err != nil {
+				fmt.Fprintf(out, "[Completed] Failed: %v\n", err)
+				return err
+			}
+			fmt.Fprintln(out, "[Completed] Success")
+			return nil
 		}
 
 		m := tui.NewModel(a.Pack, a.Runner, a.State, cfg.StatePath, cfg.ROIThreshold, cfg.ROIMode, runAll, cfg.OutputVerify, cfg.OutputRetries)

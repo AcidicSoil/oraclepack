@@ -2,10 +2,8 @@ package app
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -42,6 +40,7 @@ func (a *App) RunPlain(ctx context.Context, out io.Writer) error {
 	}
 
 	for _, step := range a.Pack.Steps {
+		a.State.CurrentStep = step.Number
 		// Filter by ROI
 		if a.Config.ROIThreshold > 0 {
 			if a.Config.ROIMode == "under" {
@@ -167,15 +166,14 @@ func (a *App) recordWarnings() {
 
 func (a *App) saveState() {
 	if a.Config.StatePath != "" {
-		_ = state.SaveStateAtomic(a.Config.StatePath, a.State)
+		_ = state.WriteState(a.Config.StatePath, a.State)
 	}
 }
 
 func (a *App) finalize(out io.Writer) {
 	if a.Config.ReportPath != "" {
 		rep := report.GenerateReport(a.State, filepath.Base(a.Config.PackPath))
-		data, _ := json.MarshalIndent(rep, "", "  ")
-		_ = os.WriteFile(a.Config.ReportPath, data, 0644)
+		_ = report.WriteReport(a.Config.ReportPath, rep)
 		fmt.Fprintf(out, "\nReport written to %s\n", a.Config.ReportPath)
 	}
 }

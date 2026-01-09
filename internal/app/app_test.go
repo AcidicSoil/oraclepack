@@ -3,18 +3,17 @@ package app
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"os"
 	"testing"
 )
 
 func TestApp_RunPlain(t *testing.T) {
+	steps := buildSteps(20, "echo")
 	packContent := `
 # Test Pack
 ` + "```" + `bash
-# 01)
-echo "step 1"
-# 02)
-echo "step 2"
+` + steps + `
 ` + "```" + `
 `
 	packFile := "test.md"
@@ -62,4 +61,19 @@ echo "step 2"
 
 func contains(s, substr string) bool {
 	return len(s) >= len(substr) && (s == substr || (len(substr) > 0 && (s[:len(substr)] == substr || contains(s[1:], substr))))
+}
+
+func buildSteps(count int, cmd string) string {
+	var b bytes.Buffer
+	for i := 1; i <= count; i++ {
+		if i < 10 {
+			b.WriteString("# 0")
+		} else {
+			b.WriteString("# ")
+		}
+		b.WriteString(fmt.Sprintf("%d)\n", i))
+		b.WriteString(cmd)
+		b.WriteString(fmt.Sprintf(" \"step %d\"\n", i))
+	}
+	return b.String()
 }

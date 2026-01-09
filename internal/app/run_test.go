@@ -4,20 +4,17 @@ import (
 	"bytes"
 	"context"
 	"os"
+	"strconv"
 	"strings"
 	"testing"
 )
 
 func TestApp_RunPlain_ROI(t *testing.T) {
+	steps := buildROISteps()
 	packContent := `
 # ROI Test Pack
 ` + "```" + `bash
-# 01) ROI=5.0
-echo "high"
-# 02) ROI=3.3
-echo "threshold"
-# 03) ROI=1.0
-echo "low"
+` + steps + `
 ` + "```" + `
 `
 	packFile := "roi_test.md"
@@ -83,4 +80,37 @@ echo "low"
 			t.Error("expected Step 03 (1.0) to run")
 		}
 	})
+}
+
+func buildROISteps() string {
+	var b strings.Builder
+	for i := 1; i <= 20; i++ {
+		id := i
+		if id < 10 {
+			b.WriteString("# 0")
+		} else {
+			b.WriteString("# ")
+		}
+		b.WriteString(strconv.Itoa(id))
+		if i == 1 {
+			b.WriteString(") ROI=5.0\n")
+			b.WriteString("echo \"high\"\n\n")
+			continue
+		}
+		if i == 2 {
+			b.WriteString(") ROI=3.3\n")
+			b.WriteString("echo \"threshold\"\n\n")
+			continue
+		}
+		if i == 3 {
+			b.WriteString(") ROI=1.0\n")
+			b.WriteString("echo \"low\"\n\n")
+			continue
+		}
+		b.WriteString(")\n")
+		b.WriteString("echo \"step ")
+		b.WriteString(strconv.Itoa(id))
+		b.WriteString("\"\n\n")
+	}
+	return b.String()
 }

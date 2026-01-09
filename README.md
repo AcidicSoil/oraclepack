@@ -164,6 +164,13 @@ oraclepack list examples/setup-project.md
 oraclepack validate examples/setup-project.md
 ```
 
+## ⚙️ Execution Semantics
+
+- Packs are executed as literal shell scripts via `bash -lc`, so your login shell config and PATH are respected.
+- Supported tool prefixes in steps: `oracle`, `tm`, `task-master`, `codex`, `gemini`.
+- For Codex automation, use non-interactive `codex exec` in pack steps.
+- Artifact gates can validate expected outputs (missing tools are skipped; missing artifacts after a tool runs are treated as failures).
+
 ### CLI Flags (run)
 
 ```bash

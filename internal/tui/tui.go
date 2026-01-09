@@ -520,12 +520,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			if m.runAll {
 				m.currentIdx++
-				if m.currentIdx < len(m.list.Items()) {
-					m.list.Select(m.currentIdx)
-					i := m.list.Items()[m.currentIdx].(item)
-					m.logLines = append(m.logLines, fmt.Sprintf("\n--- Starting Step %d/%d ---\n", m.currentIdx+1, len(m.list.Items())))
-					return m, m.runStep(i.id)
-				} else {
+					if m.currentIdx < len(m.list.Items()) {
+						m.list.Select(m.currentIdx)
+						i := m.list.Items()[m.currentIdx].(item)
+						m.logLines = append(m.logLines, fmt.Sprintf("\n--- Starting Step %d/%d ---\n", m.currentIdx+1, len(m.list.Items())))
+						return m, tea.Batch(m.runStep(i.id), m.waitForLogs(), m.spinner.Tick)
+					} else {
 					m.logLines = append(m.logLines, "\n🏁 ALL STEPS COMPLETED")
 					m.running = false
 					m.runAll = false
