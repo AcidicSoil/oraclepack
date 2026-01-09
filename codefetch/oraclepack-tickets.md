@@ -23,6 +23,7 @@ Project Structure:
     ├── PRD-TUI
     │   ├── Oraclepack TUI Integration.md
     │   └── PRD-generator URL routing.md
+    ├── Oraclepack CLI MCP Parity.md
     ├── Oraclepack File Storage.md
     ├── Oraclepack Schema Approach.md
     ├── Oraclepack bash fix.md
@@ -31,6 +32,261 @@ Project Structure:
 </filetree>
 
 <source_code>
+.tickets/Oraclepack CLI MCP Parity.md
+```
+Parent Ticket:
+
+* Title: Oraclepack CLI/MCP parity with grouped-pack skills and reliable artifact generation
+* Summary: Tighten `oraclepack` validation and execution context so generated packs run without common failures (pack shape drift, workdir/path drift, oracle CLI flag drift). Add MCP passthrough for key run flags, add preflight checks, align pack templates with `out_dir`, and add a first-class `oraclepack generate` surface (wrapper first, native generator later) matching grouped-pack skill outputs.
+* Source:
+
+  * Link/ID: Not provided
+  * Original ticket excerpt (≤25 words) capturing the overall theme: “get our oraclepack CLI/MCP up to date so artifacts … run through oraclepack without any errors”
+* Global Constraints:
+
+  * Packs must have exactly one ` ```bash … ``` ` fence and no other code fences.
+  * Packs must have exactly 20 steps (01..20) with correct step header format.
+  * Generation should be deterministic (e.g., lexicographic discovery) per described grouping rules.
+* Global Environment:
+
+  * Unknown
+* Global Evidence:
+
+  * References to: `internal/pack/parser.go` / `pack.Validate()`, `app.Config.WorkDir`, `ExtractOracleInvocations`, `ValidateOverrides`, MCP tool `oraclepack_run_pack`.
+  * Commands mentioned: `oraclepack validate`, `oraclepack list`, `oraclepack run --no-tui --yes --run-all`, `oracle … --dry-run summary`, `python3 scripts/validate_pack.py`.
+
+Split Plan:
+
+* Coverage Map:
+
+  * “Make `oraclepack validate` enforce … ‘strict pack shape’ …” → T1
+  * “In `internal/pack/parser.go` (or `pack.Validate()`), count … fences …” → T1
+  * “there isn’t exactly one ` ```bash … ``` ` block …” → T1
+  * “any other code fences exist …” → T1
+  * “Fix workdir determinism … missing `-f` files …” → T2
+  * “Add a persistent `--work-dir` flag … `app.Config.WorkDir`.” → T2
+  * “Default behavior when `--work-dir` is omitted:” → T2
+  * “auto-detect repo root from `packPath` … set WorkDir …” → T2
+  * “In the MCP server, extend `oraclepack_run_pack` to accept …” → T3
+  * “Expose `--oracle-bin` (and optionally `--out-dir`) through MCP” → T3
+  * “Add MCP tool params: … `oracle_bin` … `out_dir` … `work_dir` …” → T3
+  * “Append `--oracle-bin …` / `--out-dir …` / `--work-dir …` …” → T3
+  * “Add preflight checks that match how the packs fail …” → T4
+  * “Missing attachment file preflight … verify every `-f <path>` exists …” → T4
+  * “Oracle flag drift preflight … `ValidateOverrides` …” → T5
+  * “Wire this into `oraclepack run` … `--preflight-oracle` …” → T5
+  * “Extract invocations (already implemented).” → T5
+  * “Inject flags safely (already implemented).” → T5
+  * “Execute `--dry-run summary` and block …” → T5
+  * “Align pack templates with … `out_dir` model …” → T6
+  * “In the pack prelude … include `out_dir="<resolved default>"` …” → T6
+  * “Use `--write-output "$out_dir/…"` and `mkdir -p "$out_dir"`.” → T6
+  * “Minimum validation pipeline to prevent regressions …” → T10
+  * “Generation-time … `python3 scripts/validate_pack.py …`” → T10
+  * “Oraclepack-level: `oraclepack validate …`” → T10
+  * “Parse sanity: `oraclepack list …` prints 20 …” → T10
+  * “Execution smoke … stub `oracle` via `--oracle-bin` …” → T10
+  * “Add a new CLI command …” → T7
+  * “`oraclepack generate tickets-grouped …`” → T7
+  * “`oraclepack generate codebase-grouped …`” → T7
+  * “Implementation: … shell out … generate_grouped_packs.py” → T7
+  * “After generation, call `oraclepack validate` …” → T7
+  * “Embed the exact templates … into the `oraclepack` binary …” → T8
+  * “Port the deterministic grouping rules … `internal/generate/*` …” → T8
+  * “discover files deterministically …” → T8
+  * “group by subdir + infer loose files …” → T8
+  * “split oversized groups into ‘part N’ packs” → T8
+  * “Render packs … fail on unresolved placeholders …” → T8
+  * “Validate with the existing pack parser/validator constraints:” → T8
+  * “parser requires a ` ```bash ... ``` ` code block … ROI …” → T8
+  * “generator should always emit exactly 20 steps … one bash fence …” → T8
+  * “CLI shape: add `oraclepack generate` via Cobra … flags …” → T7
+  * “MCP: expose generation as tools …” → T9
+  * “`oraclepack_generate_tickets_grouped(…) -> {packs…, manifest…}`” → T9
+  * “`oraclepack_generate_codebase_grouped(…) -> {packs…, manifest…}`” → T9
+  * “What the generator must output … `out_dir/packs/*.md` … `_groups.json` …” → T7
+  * “Each pack must remain runner-ingestible …” → T7
+  * “Minimal acceptance test (proves parity) … generate … validate/list … run …” → T10
+  * Standalone “...” truncation markers in the source text → Info-only
+* Dependencies:
+
+  * T3 depends on T2 because MCP `work_dir` passthrough requires a working CLI `--work-dir` behavior.
+  * T4 depends on T2 because attachment existence is checked relative to the resolved WorkDir.
+  * T7 depends on T1 because generation “fail fast” relies on strict `oraclepack validate` shape enforcement.
+  * T9 depends on T7 because MCP generation can initially delegate to the CLI `oraclepack generate` surface.
+  * T10 depends on T7 because the parity acceptance flow starts from `oraclepack generate …`.
+* Split Tickets:
+
+````ticket T1
+T# Title: Enforce strict pack-shape validation in `oraclepack validate`
+Type: chore
+Target Area: `oraclepack validate`; `internal/pack/parser.go` and/or `pack.Validate()`
+Summary:
+  Tighten pack validation to match the grouped-pack skill contract by enforcing code-fence invariants. This prevents “shape drift” (extra fences, wrong fence language) from reaching execution. The goal is early, actionable failure during `oraclepack validate`.
+In Scope:
+  - Count all triple-backtick fences during validation.
+  - Fail validation if there is not exactly one ` ```bash … ``` ` block.
+  - Fail validation if any other code fences exist.
+Out of Scope:
+  - Not provided
+Current Behavior (Actual):
+  - Parser extracts a bash block via regex and parses steps via header regex, but does not inherently guarantee “exactly one code fence and no other fences.”
+Expected Behavior:
+  - `oraclepack validate` rejects packs that contain multiple fences, non-bash fences, or missing the single required `bash` fence.
+Reproduction Steps:
+  - Not provided
+Requirements / Constraints:
+  - Enforce “exactly one `bash` fence and no other fences.”
+Evidence:
+  - References: “pack parser extracts the bash block via a regex … doesn’t inherently guarantee ‘exactly one code fence and no other fences.’”
+Open Items / Unknowns:
+  - Exact location of current validation entrypoint (whether `internal/pack/parser.go` or `pack.Validate()` is canonical) not provided.
+Risks / Dependencies:
+  - Not provided
+Acceptance Criteria:
+  - `oraclepack validate` fails when a pack has 0 ` ```bash ` fences.
+  - `oraclepack validate` fails when a pack has 2+ code fences.
+  - `oraclepack validate` fails when a non-bash code fence exists alongside the bash fence.
+  - `oraclepack validate` passes when exactly one ` ```bash … ``` ` fence exists and no other code fences exist.
+Priority & Severity (if inferable from input text):
+  - Priority: Not provided
+  - Severity: Not provided
+Source:
+  - “Make `oraclepack validate` enforce … ‘strict pack shape’…”
+  - “count all triple-backtick fences and fail if …”
+  - “there isn’t exactly one ` ```bash … ``` ` block …”
+````
+
+```ticket T2
+T# Title: Make `oraclepack run` workdir deterministic for relative `-f` paths
+Type: bug
+Target Area: `oraclepack run`; CLI config `app.Config.WorkDir`; repo-root detection from `packPath`
+Summary:
+  Fix failures caused by running packs from the wrong working directory, which breaks relative `-f` attachments. Add a persistent `--work-dir` flag and a default workdir inference strategy when the flag is omitted. This makes pack execution consistent regardless of where the pack file lives.
+In Scope:
+  - Add a persistent CLI `--work-dir` flag.
+  - Plumb `--work-dir` into `app.Config.WorkDir`.
+  - Default behavior when omitted: auto-detect repo root from `packPath` and set WorkDir to that root (not the pack’s directory).
+Out of Scope:
+  - MCP server tool signature changes (handled separately).
+Current Behavior (Actual):
+  - `oraclepack run` hardcodes `WorkDir: "."`, causing missing `-f` files when packs reference repo-root-relative files from other working directories.
+Expected Behavior:
+  - Running a pack resolves relative paths consistently under the inferred repo root, unless `--work-dir` is explicitly provided.
+Reproduction Steps:
+  - Not provided
+Requirements / Constraints:
+  - Default must “auto-detect repo root from `packPath` … and set WorkDir to that root.”
+Evidence:
+  - “Fix workdir determinism … missing `-f` files”
+  - “`oraclepack run` currently hardcodes `WorkDir: "."`…”
+Open Items / Unknowns:
+  - Exact repo-root detection signals (e.g., `.git/`, `go.mod`, etc.) are referenced but truncated in the source text.
+Risks / Dependencies:
+  - Not provided
+Acceptance Criteria:
+  - CLI exposes `--work-dir` and it sets the runner workdir.
+  - When `--work-dir` is omitted, WorkDir is inferred from `packPath` and is not the pack’s directory.
+  - Packs referencing repo-root-relative `-f` attachments do not fail solely due to execution from a different current directory.
+Priority & Severity (if inferable from input text):
+  - Priority: Not provided
+  - Severity: Not provided
+Source:
+  - “Fix workdir determinism …”
+  - “Add a persistent `--work-dir` flag … `app.Config.WorkDir`.”
+  - “auto-detect repo root from `packPath` … set WorkDir …”
+```
+
+```ticket T3
+T# Title: Expose run flags through MCP: `work_dir`, `oracle_bin`, `out_dir`
+Type: enhancement
+Target Area: MCP server (FastMCP); tool `oraclepack_run_pack`; CLI invocation wiring
+Summary:
+  The MCP wrapper must pass through key execution-context flags so packs run reliably in MCP environments (where `oracle` may not be on PATH and workdir may differ). Extend the MCP tool signature to accept `work_dir`, `oracle_bin`, and `out_dir`, and forward them to the CLI invocation.
+In Scope:
+  - Extend MCP `oraclepack_run_pack` tool to accept `work_dir`.
+  - Add MCP tool params: `oracle_bin: Optional[str]`, `out_dir: Optional[str]`, `work_dir: Optional[str]`.
+  - Append `--oracle-bin <path>` / `--out-dir <dir>` / `--work-dir <dir>` when calling the CLI.
+Out of Scope:
+  - Implementing CLI semantics for `--work-dir` (handled in T2).
+Current Behavior (Actual):
+  - MCP wrapper only passes `run … --no-tui [--yes] [--run-all]` and does not expose `--oracle-bin` / `--out-dir` / `--work-dir`, causing failures when `oracle` is not on PATH or workdir differs.
+Expected Behavior:
+  - MCP can run packs with explicit oracle binary, output directory, and working directory controls.
+Reproduction Steps:
+  - Not provided
+Requirements / Constraints:
+  - MCP signature changes must follow the FastMCP tool-parameter pattern (per source text).
+Evidence:
+  - “The MCP wrapper doesn’t expose it today; if `oracle` isn’t on PATH … runs will fail …”
+  - “extend `oraclepack_run_pack` to accept `work_dir` …”
+Open Items / Unknowns:
+  - Exact MCP server file/module containing `oraclepack_run_pack` definition not provided.
+Risks / Dependencies:
+  - Depends on T2 for `--work-dir` behavior to exist in CLI.
+Acceptance Criteria:
+  - MCP tool `oraclepack_run_pack` accepts `work_dir`, `oracle_bin`, and `out_dir` parameters.
+  - MCP invocation forwards those parameters to the CLI as `--work-dir`, `--oracle-bin`, and `--out-dir`.
+  - Running via MCP does not require `oracle` to be on PATH when `oracle_bin` is supplied.
+Priority & Severity (if inferable from input text):
+  - Priority: Not provided
+  - Severity: Not provided
+Source:
+  - “Expose `--oracle-bin` (and optionally `--out-dir`) through MCP”
+  - “Add MCP tool params: `oracle_bin … out_dir … work_dir …`”
+  - “Append `--oracle-bin …` / `--out-dir …` / `--work-dir …` …”
+```
+
+```ticket T4
+T# Title: Add preflight to fail fast on missing `-f` attachment files
+Type: enhancement
+Target Area: `oraclepack run` preflight; oracle invocation scanning via `ExtractOracleInvocations`; path resolution via WorkDir
+Summary:
+  Add a preflight check that detects missing attachment files referenced by `oracle … -f <path>` before executing steps. This turns late runtime failures into early, actionable errors that identify the step number and missing path. The check must resolve paths relative to the resolved WorkDir.
+In Scope:
+  - Before execution, scan each step’s code for oracle invocations.
+  - For each invocation, verify every `-f <path>` exists relative to the resolved WorkDir.
+  - Fail fast with an error like “step XX references missing file Y.”
+Out of Scope:
+  - Oracle CLI argument validation (handled in T5).
+Current Behavior (Actual):
+  - Missing attachments surface as runtime failures when `oracle` attempts to open `-f` inputs.
+Expected Behavior:
+  - Missing `-f` files are detected prior to running the step, with explicit step attribution.
+Reproduction Steps:
+  - Not provided
+Requirements / Constraints:
+  - Must use the resolved WorkDir for existence checks.
+Evidence:
+  - “Missing attachment file preflight … verify every `-f <path>` exists … fail fast with ‘step XX references missing file Y.’”
+Open Items / Unknowns:
+  - Exact set of oracle invocations and how `ExtractOracleInvocations` represents `-f` arguments not provided.
+Risks / Dependencies:
+  - Depends on T2 for deterministic WorkDir resolution.
+Acceptance Criteria:
+  - If any step contains an oracle invocation with `-f <nonexistent>`, `oraclepack run` fails before executing steps and identifies the step number and missing path.
+  - If all `-f` paths exist, the preflight does not block execution.
+Priority & Severity (if inferable from input text):
+  - Priority: Not provided
+  - Severity: Not provided
+Source:
+  - “4a) ‘Missing attachment file’ preflight … verify every `-f <path>` exists …”
+  - “fail fast with ‘step XX references missing file Y.’”
+```
+
+```ticket T5
+T# Title: Add optional `--preflight-oracle` gate using `--dry-run summary` to catch oracle flag drift
+Type: enhancement
+Target Area: `oraclepack run`; override validation via `ValidateOverrides`; invoking `oracle … --dry-run summary`
+Summary:
+  Add an optional preflight gate (`oraclepack run --preflight-oracle`) that validates extracted oracle invocations against the upstream `oracle` CLI using `--dry-run summary`. This catches flag/argument drift early, before spending time on full runs. The gate uses existing extraction and flag injection capabilities described as “already implemented.”
+In Scope:
+  - Add `oraclepack run --preflight-oracle` optional gate.
+  - Extract invocations (noted as already implemented).
+  - Inject flags safely (noted as already implemented).
+[TRUNCATED]
+```
+
 .tickets/Oraclepack File Storage.md
 ```
 Parent Ticket:
@@ -1349,23 +1605,6 @@ Summary:
 In Scope:
 - Add a wizard step: “ChatGPT URL”.
 - Reuse the existing URL picker/store UI model (URLPickerModel) to choose a URL.
-- Store the selection into `pendingOverrides.ChatGPTURL`.
-- Ensure per-step targeting continues to work via `ApplyToSteps`, so only selected steps get the override.
-
-Out of Scope:
-- Not provided
-
-Current Behavior (Actual):
-- Overrides Wizard “currently picks flags + target steps, but doesn’t let you pick a ChatGPT URL to apply for those targeted steps.”
-
-Expected Behavior:
-- Overrides Wizard allows selecting a ChatGPT URL override and applying it only to selected steps.
-
-Reproduction Steps:
-- Not provided
-
-Requirements / Constraints:
-- Must integrate with existing `RuntimeOverrides` structure (supports `ChatGPTURL` and `ApplyToSteps`).
 [TRUNCATED]
 ```
 
@@ -2203,21 +2442,6 @@ Out of Scope:
 - Not provided
 
 Current Behavior (Actual):
-- Special logic targets only lines that start with `oracle`: detects invocations, injects flags into `oracle …`, and validates overrides using `oracle --dry-run summary` (as described in ticket text).
-
-Expected Behavior:
-- The system can detect/inject overrides for additional tool prefixes listed above.
-- Overrides configuration is tool-specific (per-tool override sets).
-
-Reproduction Steps:
-- Not provided
-
-Requirements / Constraints:
-- Must preserve the existing oracle behavior while extending to additional command prefixes.
-
-Evidence:
-- “special logic only for lines that start with `oracle`… detects… injects… overrides validation”
-- “Generalize… to a small registry of command prefixes (`oracle`, `codex`, `gemini`, `task-master`, `tm`)”
 [TRUNCATED]
 ```
 
@@ -2744,25 +2968,6 @@ In Scope:
 
 Out of Scope:
 - Implement-mode executor dispatch itself (handled in T3)
-- Any new validation semantics beyond “oracle --dry-run summary” analogy (not provided)
-
-Current Behavior (Actual):
-- Special logic only for lines that start with `oracle`:
-  - Invocation detection via regex anchored to literal `oracle`
-  - Flag injection only into `oracle …` lines
-  - Overrides validation runs `oracle --dry-run summary` only for detected oracle invocations
-
-Expected Behavior:
-- oraclepack recognizes multiple command prefixes for the purposes of overrides/flag handling and (where applicable) validation hooks, without breaking existing oracle behavior.
-
-Reproduction Steps:
-- Not provided
-
-Requirements / Constraints:
-- Must not regress oracle detection/injection/validation behavior.
-- Registry-based handling for additional tool prefixes as listed in the ticket text.
-
-Evidence:
 [TRUNCATED]
 ```
 
@@ -3015,16 +3220,1125 @@ Acceptance Criteria:
   - `.oraclepack/ticketify/codex-verify.md` or `.oraclepack/ticketify/gemini-review.json`
   exists (as configured by the updated pack).
 - After running Step 16, `.oraclepack/ticketify/PR.md` exists.
-- If `codex` is not available on PATH, Step 10 and any Codex-based Step 11 behavior performs the documented skip behavior (no hard crash beyond what the step defines).
-- If `gemini` is not available on PATH, Step 09/16 and any Gemini-based Step 11 behavior performs the documented skip behavior.
+[TRUNCATED]
+```
 
+.tickets/mcp/Expose Oraclepack as MCP.md
+```
+Parent Ticket:
+
+* Title: Expose oraclepack as MCP tools (with Taskify Stage-2/Stage-3 helpers)
+* Summary: Provide an MCP server that exposes `oraclepack` CLI capabilities (validate/list/run) plus helper tools for Stage-2 detection/validation and Stage-3 action-pack validation/execution/artifact summarization, with secure-by-default controls (allowlisted filesystem roots, execution gating, timeouts, truncation) and support for stdio + streamable-http transports.
+* Source:
+
+  * Link/ID (if present) or “Not provided”: /mnt/data/MCP tools for Oraclepack.md
+  * Original ticket excerpt (≤25 words) capturing the overall theme: “Expose `oraclepack` … as **MCP tools**, so an agent can … run packs … validate Stage-2 … validate Stage-3 … summarize artifacts.”
+* Global Constraints:
+
+  * Support MCP transports: “stdio” and “streamable-http”.
+  * Security defaults: “deny-by-default execution”, “allowlisted roots”, “stdout/stderr truncation and timeouts”.
+* Global Environment:
+
+  * Unknown
+* Global Evidence:
+
+  * MCP tool list and env var config list.
+  * Reference implementation structure (README/requirements and Python modules).
+
+Split Plan:
+
+* Coverage Map:
+
+  * “Expose `oraclepack` (validate/list/run) … as **MCP tools**” → T1
+  * “run packs non-interactively (`--no-tui --yes --run-all`)” → T5
+  * “validate Stage-2 outputs (01-*.md..20-*.md)” → T4
+  * “validate Stage-3 Action Packs (single ```bash fence, step headers…)” → T7
+  * “summarize Stage-3 artifacts (`_actions.json`, PRD, Task Master outputs, etc.)” → T7
+  * “Tools: oraclepack_validate_pack / oraclepack_list_steps / oraclepack_run_pack …” → T5
+  * “Tools: oraclepack_read_file …” → T5
+  * “Tools: … taskify_detect_stage2 / taskify_validate_stage2 …” → T5
+  * “Tools: … taskify_validate_action_pack / taskify_artifacts_summary …” → T5
+  * “Tools: … taskify_run_action_pack …” → T5
+  * “Transports: stdio … streamable-http …” → T6
+  * “Tool annotations: readOnlyHint / destructiveHint / openWorldHint …” → T6
+  * “Security defaults: ORACLEPACK_ENABLE_EXEC=1 gating …” → T2
+  * “Security defaults: allowlisted filesystem roots …” → T2
+  * “Security defaults: truncation and timeouts …” → T3
+  * “Env vars: ORACLEPACK_ALLOWED_ROOTS / BIN / WORKDIR / ENABLE_EXEC / CHARACTER_LIMIT / MAX_READ_BYTES” → T2
+  * “Typical Stage-3 usage: detect/validate → validate action pack → run → summarize” → Info-only
+  * “Reference implementation tree (README, requirements.txt, modules list)” → Info-only
+  * Links to MCP specs / python-sdk repo mentioned → Info-only
+* Dependencies:
+
+  * T5 depends on T2 because server tools must enforce allowed roots and execution gating.
+  * T5 depends on T3 because `oraclepack_*run*` tools need subprocess execution with timeouts/truncation.
+  * T5 depends on T4 because `oraclepack_taskify_*stage2*` tools call Stage-2 detection/validation.
+  * T5 depends on T7 because `oraclepack_taskify_*action_pack*` tools call action-pack validation/summarization helpers.
+  * T6 depends on T5 because annotations/transport-hardening apply to the MCP server surface.
+* Split Tickets:
+
+```ticket T1
+T# Title: Scaffold oraclepack MCP server project (README + packaging entrypoints)
+Type: chore
+Target Area: oraclepack-mcp-server repo scaffolding (README.md, requirements.txt, __init__.py, __main__.py)
+Summary:
+- Create the MCP server project structure that exposes `oraclepack` + Taskify helpers as MCP tools, including installation and run instructions and the tool list.
+- Ensure the package has an executable entrypoint to start the MCP server with selectable transport.
+In Scope:
+- Create/maintain project tree with:
+  - README describing purpose, install, configuration env vars, run modes, tools list, and typical Stage-3 usage.
+  - requirements.txt listing dependencies.
+  - Python package layout with `oraclepack_mcp_server/__init__.py` and `oraclepack_mcp_server/__main__.py`.
+- CLI args in `__main__.py` to accept `--transport` with choices `stdio` and `streamable-http`.
+Out of Scope:
+- Implementing tool logic (handled in other tickets).
+Current Behavior (Actual):
+- Not provided.
+Expected Behavior:
+- A runnable package that starts an MCP server with a chosen transport.
+Reproduction Steps:
+- Not provided.
+Requirements / Constraints:
+- Must support `--transport` choices: `stdio`, `streamable-http`.
+Evidence:
+- Project tree and entrypoint snippet showing `choices=["stdio", "streamable-http"]`. :contentReference[oaicite:26]{index=26}
+Open Items / Unknowns:
+- Exact repository root / packaging approach (pip package vs repo-local module): Not provided.
+Risks / Dependencies:
+- Not provided.
+Acceptance Criteria:
+- [ ] Repository includes README.md, requirements.txt, and `oraclepack_mcp_server` package directory.
+- [ ] Running `python -m oraclepack_mcp_server --transport stdio` is supported (starts server process).
+- [ ] Running `python -m oraclepack_mcp_server --transport streamable-http` is supported (starts server process).
 Priority & Severity (if inferable from input text):
 - Priority: Not provided
 - Severity: Not provided
-
 Source:
-- “Steps 08–20… placeholders/notes… don’t dispatch Codex/Gemini… unless… contains the actual `codex` / `gemini` commands.”
-- “Best insertion points… placeholder steps… (09–13 and 16).”
+- “oraclepack-mcp-server (MCP wrapper for oraclepack + taskify helpers) … tree … README.md … requirements.txt … __main__.py” :contentReference[oaicite:27]{index=27}
+- “choices=[‘stdio’, ‘streamable-http’] … mcp.run(transport=args.transport)” :contentReference[oaicite:28]{index=28}
+```
+
+```ticket T2
+T# Title: Implement config + filesystem security controls (allowed roots, exec gating, max read bytes)
+Type: chore
+Target Area: oraclepack_mcp_server/config.py and oraclepack_mcp_server/security.py
+Summary:
+- Implement secure-by-default configuration for the MCP server, driven by environment variables, including allowlisted filesystem roots and explicit execution enablement.
+- Provide safe path resolution under allowed roots and bounded file reads for tool operations.
+In Scope:
+- Env-driven config including:
+  - `ORACLEPACK_ALLOWED_ROOTS` (colon-separated roots)
+  - `ORACLEPACK_BIN`
+  - `ORACLEPACK_WORKDIR`
+  - `ORACLEPACK_ENABLE_EXEC`
+  - `ORACLEPACK_CHARACTER_LIMIT`
+  - `ORACLEPACK_MAX_READ_BYTES`
+- Path allowlisting:
+  - Resolve requested file paths and ensure they live under at least one allowed root.
+  - Raise an explicit “path not allowed” error on violation.
+- Safe file reads:
+  - Read text/bytes with max size enforcement and “truncated” indicator.
+Out of Scope:
+- Subprocess execution and output truncation (handled in T3).
+Current Behavior (Actual):
+- Not provided.
+Expected Behavior:
+- Server loads config from env and enforces filesystem access boundaries for read tools.
+Reproduction Steps:
+- Not provided.
+Requirements / Constraints:
+- Execution must be deny-by-default unless `ORACLEPACK_ENABLE_EXEC=1`.
+- Filesystem access must be restricted to allowlisted roots.
+Evidence:
+- Env var list and semantics. :contentReference[oaicite:29]{index=29}
+- Security guidance: “deny-by-default execution … allowlisted roots”. :contentReference[oaicite:30]{index=30}
+Open Items / Unknowns:
+- Whether Windows path separator support is required for `ORACLEPACK_ALLOWED_ROOTS`: Not provided.
+Risks / Dependencies:
+- Not provided.
+Acceptance Criteria:
+- [ ] Config loader reads the listed env vars and applies defaults as documented.
+- [ ] Path resolution rejects paths outside allowed roots.
+- [ ] File reads enforce max bytes and indicate truncation.
+- [ ] Exec gating flag is available for run tools to check.
+Priority & Severity (if inferable from input text):
+- Priority: Not provided
+- Severity: Not provided
+Source:
+- “Environment variables: ORACLEPACK_ALLOWED_ROOTS … ORACLEPACK_ENABLE_EXEC … ORACLEPACK_MAX_READ_BYTES …” :contentReference[oaicite:31]{index=31}
+- “Hard deny-by-default execution … Restrict filesystem access to allowlisted roots …” :contentReference[oaicite:32]{index=32}
+```
+
+```ticket T3
+T# Title: Implement oraclepack subprocess runner with timeouts and stdout/stderr truncation
+Type: chore
+Target Area: oraclepack_mcp_server/oraclepack_cli.py (subprocess execution)
+Summary:
+- Provide a subprocess wrapper to invoke the `oraclepack` CLI with a hard timeout and bounded stdout/stderr capture to prevent wedging the MCP server.
+- Return structured results including exit code, duration, and truncation indicators.
+In Scope:
+- Async subprocess execution wrapper (create subprocess, capture stdout/stderr).
+- Timeout behavior:
+  - Kill process on timeout and return an explicit “Timed out after {timeout}s” error result.
+- Character-limit truncation for stdout/stderr based on configured limit.
+Out of Scope:
+- MCP tool registration (handled in T5).
+Current Behavior (Actual):
+- Not provided.
+Expected Behavior:
+- Running oraclepack commands yields deterministic, bounded outputs suitable for returning via MCP tools.
+Reproduction Steps:
+- Not provided.
+Requirements / Constraints:
+- Must enforce “stdout/stderr truncation and timeouts”.
+Evidence:
+- Guidance: “Enforce stdout/stderr truncation and timeouts …”. :contentReference[oaicite:33]{index=33}
+- Runner timeout error example snippet. :contentReference[oaicite:34]{index=34}
+Open Items / Unknowns:
+- Default timeout values per tool beyond examples (3600/7200) are not provided outside snippets.
+Risks / Dependencies:
+- Not provided.
+Acceptance Criteria:
+- [ ] Runner returns: ok, exit_code, duration_s, stdout, stderr, stdout_truncated, stderr_truncated.
+- [ ] Timeout produces exit_code=124 (or equivalent) and includes a timeout message.
+- [ ] Outputs are truncated to configured character limit and flags are set accordingly.
+Priority & Severity (if inferable from input text):
+- Priority: Not provided
+- Severity: Not provided
+Source:
+- “Enforce stdout/stderr truncation and timeouts so a pack can’t wedge the server process.” :contentReference[oaicite:35]{index=35}
+- “Timed out after {timeout_s}s: …” return structure snippet. :contentReference[oaicite:36]{index=36}
+```
+
+```ticket T4
+T# Title: Implement Taskify Stage-2 detection and validation (01-*.md..20-*.md + single-pack form)
+Type: chore
+Target Area: oraclepack_mcp_server/taskify.py (Stage-2 detection + validation)
+Summary:
+- Implement deterministic detection of Stage-2 outputs for agents, supporting both directory-form outputs (01-*.md..20-*.md) and a single-pack input file form.
+- Provide validation that ensures exactly one match per prefix 01..20 and returns missing/ambiguous details.
+In Scope:
+- `validate_stage2_dir(out_dir)`:
+  - For each prefix 01..20, glob `{pfx}-*.md`
+  - Return missing patterns and ambiguous prefix matches.
+- `detect_stage2(stage2_path, repo_root)`:
+  - Support explicit dir path.
+  - Support explicit file path with out_dir rules:
+    - If under `docs/oracle-questions-YYYY-MM-DD/…`, use sibling `oracle-out` under that docs subtree; else default `repo_root/oracle-out`.
+  - Support “auto” discovery (best-effort, deterministic ordering), including checking `repo_root/oracle-out`.
+Out of Scope:
+- Stage-3 action pack validation (handled in T7).
+Current Behavior (Actual):
+- Not provided.
+Expected Behavior:
+- Agents can resolve and validate Stage-2 outputs deterministically for downstream Stage-3 workflows.
+Reproduction Steps:
+- Not provided.
+Requirements / Constraints:
+- “Detect Stage-2 outputs (dir-form 01-*.md..20-*.md OR single-pack form)”.
+- “Validate Stage-2 outputs (exactly one match per prefix 01..20)”.
+Evidence:
+- Requirements text for Stage-2 detection/validation. :contentReference[oaicite:37]{index=37}
+- Validation logic snippet for 01..20 and ambiguous/missing. :contentReference[oaicite:38]{index=38}
+- Out-dir rule snippet referencing `docs/oracle-questions-YYYY-MM-DD/…` → `oracle-out`. :contentReference[oaicite:39]{index=39}
+Open Items / Unknowns:
+- Full “auto discovery” search order beyond checking `repo_root/oracle-out`: Not provided in visible excerpts.
+Risks / Dependencies:
+- Not provided.
+Acceptance Criteria:
+- [ ] Validation returns ok=false with `missing` when any prefix has no matches.
+- [ ] Validation returns ok=false with `ambiguous` when any prefix has >1 match.
+- [ ] Validation returns ok=true only when exactly one match exists for every prefix 01..20.
+- [ ] Detection supports explicit dir and explicit file resolution and produces an `out_dir`.
+- [ ] Detection supports “auto” and returns deterministic results for the same filesystem state.
+Priority & Severity (if inferable from input text):
+- Priority: Not provided
+- Severity: Not provided
+Source:
+- “Detect Stage-2 outputs (dir-form 01-*.md..20-*.md OR single-pack form) … Validate … exactly one match per prefix 01..20.” :contentReference[oaicite:40]{index=40}
+- “out_dir rules … if under docs/oracle-questions-YYYY-MM-DD/ … then …/oracle-out else oracle-out” :contentReference[oaicite:41]{index=41}
+```
+
+```ticket T5
+T# Title: Implement MCP tools for oraclepack and taskify helper operations
+Type: enhancement
+Target Area: oraclepack_mcp_server/server.py (MCP tool registration + schemas + formatting)
+Summary:
+- Implement the MCP server surface that maps `oraclepack` CLI operations and Taskify helper functions into callable MCP tools.
+- Provide consistent response formatting (markdown/json) and ensure run tools respect execution gating.
+In Scope:
+- Tool schemas/inputs covering:
+  - `oraclepack_validate_pack`
+  - `oraclepack_list_steps`
+  - `oraclepack_run_pack` (gated)
+  - `oraclepack_read_file`
+  - `oraclepack_taskify_detect_stage2`
+  - `oraclepack_taskify_validate_stage2`
+  - `oraclepack_taskify_validate_action_pack`
+  - `oraclepack_taskify_artifacts_summary`
+  - `oraclepack_taskify_run_action_pack` (gated)
+- Response formatting:
+  - Support JSON and Markdown result formats (including stdout/stderr blocks and truncation notes).
+- CLI arg mapping for oraclepack operations (including references to flags like `--no-tui`, `--out-dir`, `--oracle-bin` as inputs or internal argv composition).
+- Ensure `ORACLEPACK_ENABLE_EXEC=1` gating is enforced for run tools.
+Out of Scope:
+- Implementing the underlying Stage-2 detection/validation logic (T4) and Stage-3 validation/summary logic (T7), except wiring them in.
+Current Behavior (Actual):
+- Not provided.
+Expected Behavior:
+- MCP clients can invoke oraclepack and taskify workflows end-to-end via tools and receive bounded, formatted results.
+Reproduction Steps:
+- Not provided.
+Requirements / Constraints:
+- Must expose the tool list as stated.
+- Run tools must be disabled by default unless enabled via env flag.
+Evidence:
+- Tool list and gating note. :contentReference[oaicite:42]{index=42}
+- Server schema snippets (e.g., ReadFileInput, Taskify*Input, timeout defaults). :contentReference[oaicite:43]{index=43}
+Open Items / Unknowns:
+- Exact argument surface for `oraclepack_validate_pack` / `oraclepack_list_steps` (flags and required params) is not fully specified in excerpts.
+Risks / Dependencies:
+- Depends on config/security/runner/taskify modules existing and being wired correctly.
+Acceptance Criteria:
+- [ ] All tools listed in the parent ticket are registered and callable.
+- [ ] `oraclepack_read_file` enforces allowed roots and max read bytes.
+- [ ] `oraclepack_run_pack` and `oraclepack_taskify_run_action_pack` refuse execution unless `ORACLEPACK_ENABLE_EXEC=1`.
+- [ ] Response formatter supports markdown and json outputs and includes truncation indicators.
+Priority & Severity (if inferable from input text):
+- Priority: Not provided
+- Severity: Not provided
+Source:
+- “Tools — oraclepack_validate_pack … oraclepack_taskify_run_action_pack (requires ORACLEPACK_ENABLE_EXEC=1)” :contentReference[oaicite:44]{index=44}
+- “Map … oraclepack CLI capabilities (validate/list/run + flags like --no-tui, --out-dir, --oracle-bin) into MCP tools” :contentReference[oaicite:45]{index=45}
+```
+
+```ticket T6
+T# Title: Add MCP transport hardening guidance + tool UX annotations (readOnly/destructive/openWorld)
+Type: enhancement
+Target Area: MCP server transport configuration and tool metadata (server.py / deployment guidance)
+Summary:
+[TRUNCATED]
+```
+
+.tickets/mcp/MCP Server for Oraclepack.md
+```
+Title:
+
+* Add MCP server that exposes `oraclepack` + Taskify Stage-2/Stage-3 helpers as tools for agents
+
+Summary:
+
+* Agents need real-time access to `oraclepack` capabilities via MCP so they can validate, inspect, and run packs, then consume Taskify artifacts produced by the `oracle_pack_and_taskify-skills.md` workflow.
+* Implement a secure-by-default Python MCP server that wraps the `oraclepack` CLI and adds deterministic helpers for Stage-2 detection/validation and Stage-3 Action Pack validation/execution + artifact summarization.
+
+Background / Context:
+
+* Request: “give access to agents/assistants the following oraclepack tool as a MCP tool… so they can perform actions using the artifacts generated from `oracle_pack_and_taskify-skills.md` … in real time.”
+* Proposed reference implementation (from the conversation) is a Python project named `oraclepack-mcp-server` using FastMCP (MCP Python SDK), supporting `stdio` and `streamable-http` transports.
+* Stage-2 outputs are expected to be 20 markdown files matching `01-*.md` … `20-*.md`; Stage-2 “single-pack form” needs out-dir resolution rules when the pack lives under `docs/oracle-questions-YYYY-MM-DD/...`.
+
+Current Behavior (Actual):
+
+* No MCP tool surface is available for `oraclepack` and Taskify workflows (agents cannot call validated tools to run/inspect packs and artifacts). (per user)
+
+Expected Behavior:
+
+* Agents can use MCP tools to:
+
+  * Validate and inspect packs.
+  * Run packs non-interactively to generate artifacts.
+  * Detect/validate Stage-2 outputs and validate Stage-3 Action Packs before execution.
+  * Summarize Stage-3 artifacts for immediate downstream consumption.
+
+Requirements:
+
+* MCP server implementation
+
+  * Provide a Python MCP server project structure (e.g., `oraclepack-mcp-server/` with `oraclepack_mcp_server/` package).
+  * Support transports:
+
+    * `stdio`
+    * `streamable-http`
+* Tool surface (MCP tools)
+
+  * `oraclepack_validate_pack`
+  * `oraclepack_list_steps`
+  * `oraclepack_run_pack` (execution gated)
+  * `oraclepack_read_file`
+  * `oraclepack_taskify_detect_stage2`
+  * `oraclepack_taskify_validate_stage2`
+  * `oraclepack_taskify_validate_action_pack`
+  * `oraclepack_taskify_artifacts_summary`
+  * `oraclepack_taskify_run_action_pack` (execution gated)
+* Execution + safety controls
+
+  * Deny-by-default execution; require `ORACLEPACK_ENABLE_EXEC=1` to enable “run” tools.
+  * Restrict filesystem reads to allowlisted roots via `ORACLEPACK_ALLOWED_ROOTS` (colon-separated); block paths outside allowed roots.
+  * Enforce timeouts and truncate stdout/stderr (`ORACLEPACK_CHARACTER_LIMIT`) and cap file read sizes (`ORACLEPACK_MAX_READ_BYTES`).
+* Stage-2 reliability helpers
+
+  * Validate Stage-2 directory contains exactly one match per prefix `01`..`20` (missing/ambiguous detection).
+  * Deterministic Stage-2 detection:
+
+    * Accept explicit dir or file.
+    * If file is under `docs/oracle-questions-YYYY-MM-DD/...`, set out-dir to `docs/oracle-questions-YYYY-MM-DD/oracle-out`; otherwise default `repo_root/oracle-out`.
+* Stage-3 reliability helpers
+
+  * Validate Action Pack structure constraints before executing (e.g., “single ```bash fence, step headers”).
+  * Summarize produced artifacts (examples cited: `_actions.json`, PRD path, Task Master outputs).
+* Agent UX metadata
+
+  * Apply MCP tool annotations:
+
+    * validate/list/read: `readOnlyHint: true`
+    * run: `destructiveHint: true`, `openWorldHint: true`
+
+Out of Scope:
+
+* Not provided.
+
+Reproduction Steps:
+
+* Not provided.
+
+Environment:
+
+* Language/runtime: Python (MCP server), wraps external `oraclepack` CLI.
+* OS: Unknown
+* Deployment: Unknown (local stdio vs HTTP service)
+* MCP SDK version: Unknown (example uses `mcp>=1.0.0`, `pydantic>=2.0.0`).
+
+Evidence:
+
+* Conversation transcript + proposed reference implementation: `/mnt/data/MCP tools for Oraclepack.md`.
+* Proposed env vars and tool list (deny-by-default exec, allowed roots, transports).
+* Stage-2 directory validation (`01-*.md..20-*.md`) and Stage-2 out-dir resolution logic for `docs/oracle-questions-YYYY-MM-DD`.
+
+Decisions / Agreements:
+
+* Use a Python MCP server (FastMCP / MCP Python SDK) to expose `oraclepack` CLI + Taskify helpers.
+* Support both `stdio` and `streamable-http` transports.
+* Default-secure posture: execution gated by `ORACLEPACK_ENABLE_EXEC`, filesystem access constrained by allowlisted roots, truncation + timeout enforced.
+
+Open Items / Unknowns:
+
+* Where this MCP server should live (same repo as `oraclepack` vs separate repo) is not provided.
+* Authentication / origin validation requirements for `streamable-http` deployment are mentioned conceptually but concrete requirements are not provided.
+* Exact definition of “artifacts summary” contents/format beyond examples (`_actions.json`, PRD, Task Master outputs) is not provided.
+* Whether `oraclepack_run_pack` must always use `--no-tui --yes --run-all` vs configurable flags is not provided (example suggests non-interactive flags).
+
+Risks / Dependencies:
+
+* Dependency on external `oraclepack` binary path/config (`ORACLEPACK_BIN`) and correct working directory (`ORACLEPACK_WORKDIR`).
+* Security risk if exec is enabled without strict path/root controls and timeouts; mitigations are required as above.
+* Stage-2 ambiguity risk when multiple `NN-*.md` match the same prefix; must report ambiguity deterministically and fail validation.
+
+Acceptance Criteria:
+
+* [ ] MCP server starts successfully in both `stdio` and `streamable-http` modes.
+* [ ] All listed tools are exposed with the documented names.
+* [ ] When `ORACLEPACK_ENABLE_EXEC!=1`, run tools refuse to execute and return a clear error; validate/list/read tools still work.
+* [ ] `oraclepack_read_file` rejects paths outside `ORACLEPACK_ALLOWED_ROOTS`.
+* [ ] Stage-2 validation enforces exactly one file per prefix `01`..`20` and returns `missing` and `ambiguous` sets when invalid.
+* [ ] Stage-2 detection resolves out-dir correctly for both:
+
+  * explicit dir inputs
+  * single-pack file under `docs/oracle-questions-YYYY-MM-DD/...` → `docs/oracle-questions-YYYY-MM-DD/oracle-out`
+  * otherwise default `repo_root/oracle-out`.
+* [ ] stdout/stderr truncation and timeouts are enforced on CLI subprocess execution.
+* [ ] Tool annotations are applied as specified for read-only vs destructive tools.
+
+Priority & Severity (if inferable from text):
+
+* Not provided.
+
+Labels (optional):
+
+* enhancement
+* mcp
+* oraclepack
+* cli-wrapper
+* taskify
+* security
+* tooling
+```
+
+.tickets/mcp/gaps-still-not-covered.md
+```
+## Gaps still not covered in the current oraclepack MCP proposal
+
+### Transport + deployment correctness
+
+* **`--transport streamable-http` is wired to the wrong FastMCP transport.** The proposal claims `transport="sse"` “maps to streamable-http”, but FastMCP supports Streamable HTTP explicitly and documents SSE as being superseded.  ([GitHub][1])
+* **No production-grade HTTP hardening (auth, TLS posture, DNS-rebinding mitigations).** MCP security guidance explicitly warns about local HTTP servers (SSE/Streamable HTTP) without auth and recommends stdio or authenticated IPC/HTTP with mitigations. ([Model Context Protocol][2])
+* **Dependency is unpinned despite a high-severity DNS rebinding advisory in the Python SDK.** The proposal uses `mcp[cli]>=0.1.0` (no minimum safe version). The advisory indicates affected versions and a patched release.  ([GitHub][3])
+
+### Security model gaps (filesystem + execution)
+
+* **Symlink escape is not addressed.** `validate_path()` normalizes with `abspath/normpath` and then `safe_read_file()` opens the path; this pattern typically allows “inside-root symlink → outside-root target” unless you resolve and check the realpath. No test covers symlink traversal.
+* **Execution is only gated by a boolean env flag, without least-privilege scoping.** The server exposes “run pack” as open-world/destructive when enabled, but does not add per-tool scoping, allowlists, or authorization flows for HTTP mode.  ([Model Context Protocol][2])
+
+### Parity gaps vs oraclepack TUI/runner workflows
+
+* **No URL/project selection tooling exposed.** The TUI has explicit URL store + picker plumbing (the thing you need for “choose PRD-generator project URL”), but MCP doesn’t expose tools to list/select/manage those URLs.
+* **No runtime overrides wizard parity.** The TUI supports an overrides flow (per-step flag add/remove, targeting, validation), but MCP doesn’t expose “get overrides / set overrides / validate overrides / apply and run”.
+* **No structured access to run state/report artifacts.** MCP returns raw stdout/stderr strings and truncates them; it doesn’t provide first-class tools/resources for reading the oraclepack state/report outputs as structured objects.
+
+### Execution control + UX gaps for agents
+
+* **No step-level execution controls.** The MCP API offers `oraclepack_run_pack(... run_all=True)` but does not provide “run step N”, “run subset”, “resume”, “re-run failed only”, etc.
+* **No streaming logs / cancellation.** `run_oraclepack()` waits for completion, then returns (with truncation). There’s no incremental progress, no cancellation hook, and timeout uses a hard kill only.
+
+### Validation gaps (especially for “ticket-action-pack.md” style artifacts)
+
+* **Action-pack validation in MCP is weaker than your existing validator script.** The MCP `validate_action_pack` logic is comparatively minimal, while the repo’s `validate-action-pack.sh` encodes stricter structural rules; MCP does not currently match those guardrails.
+
+### Capability gaps (authoring/editing)
+
+* **No “write/update pack” capability.** The server can read/list/validate/run packs, but cannot create/edit packs or write back transformed artifacts (which is often needed for “tickets → pack” workflows).
+
+[1]: https://github.com/modelcontextprotocol/python-sdk?utm_source=chatgpt.com "GitHub - modelcontextprotocol/python-sdk: The official Python SDK for Model Context Protocol servers and clients"
+[2]: https://modelcontextprotocol.io/specification/2025-11-25/basic/security_best_practices?utm_source=chatgpt.com "Security Best Practices - Model Context Protocol"
+[3]: https://github.com/advisories/GHSA-9h52-p55h-vw2f?utm_source=chatgpt.com "Model Context Protocol (MCP) Python SDK does not enable DNS rebinding protection by default · CVE-2025-66416 · GitHub Advisory Database · GitHub"
+```
+
+.tickets/mcp/gaps_part2-mcp-builder.md
+```
+## Still needed to make “oraclepack as an MCP tool” production-ready
+
+### 1) Fix transport + deployment mode choice (local vs remote)
+
+* **Use the correct Streamable HTTP transport string** (`transport="streamable-http"`) and stop treating SSE as the Streamable HTTP equivalent. The Python SDK’s examples use `mcp.run(transport="streamable-http")`. ([GitHub][1])
+* If you intend to run this as a **remote** MCP server (for multi-client / “real time” usage), implement the Streamable HTTP security requirements:
+
+  * validate `Origin` header (DNS rebinding protection)
+  * bind to `127.0.0.1` when local
+  * require authentication ([Model Context Protocol][2])
+* If you intend “agents/assistants” to run it **locally**, default to **stdio** and keep Streamable HTTP optional. (The MCP spec defines stdio + Streamable HTTP as the standard transports.) ([Model Context Protocol][2])
+
+### 2) Bring `oraclepack_run_pack` up to parity with the Go CLI flags
+
+Your current MCP tool only exposes `yes` and `run_all`.
+But the CLI supports additional run-time controls (at least `--resume`, `--stop-on-fail`, ROI threshold/mode, plus the persistent `--oracle-bin` and `--out-dir`).
+To avoid capability gaps (and ad-hoc “extra args” escape hatches), expose these explicitly in the tool schema.
+
+### 3) Make Stage-2 auto-discovery match the **oraclepack-taskify** contract
+
+The Stage 3 skill is strict about:
+
+* deterministic discovery (lexicographic / ISO-date ordering; no mtimes)
+* directory-form must contain **exactly one** `01-*.md` … `20-*.md`, else fail fast with explicit errors
+  Also, the Action Pack template itself searches locations including `docs/oracle-out` and `docs/oracle-questions-*/…`.
+  So the MCP-side “detect stage2” logic should:
+* search the same ordered locations
+* validate a candidate before returning it (not “first directory that exists”)
+* prefer newest by lexicographic rules when multiple date-stamped runs exist
+
+### 4) Tighten Action Pack validation to exactly match the skill’s validator
+
+The skill’s validator requires:
+
+* **exactly one** ```bash fence and **no other** fences
+* sequential `# NN)` step headers inside the bash block
+  If your Python validator is looser than `validate-action-pack.sh`, you’ll get drift (packs “validate” in MCP but fail in real usage).
+
+### 5) Add “artifact-first” read tools for Stage-3 outputs (so assistants can act in real time)
+
+Stage 3 produces canonical machine/human artifacts like:
+
+* `<out_dir>/_actions.json`, `<out_dir>/_actions.md`
+* `.taskmaster/docs/oracle-actions-prd.md`
+* `<out_dir>/tm-complexity.json`
+  To enable “agents/assistants” to use them immediately, add read-only tools like:
+* list latest runs / outputs (by stable ordering)
+* read + parse `_actions.json` (return structured JSON, not only text)
+* read Task Master outputs (tasks.json location(s) you expect)
+
+### 6) Operational hardening (especially if exec is enabled)
+
+You already gate execution behind an env flag (`ORACLEPACK_ENABLE_EXEC`).
+Still needed:
+
+* enforce allowed roots not just for reads, but also for **where packs are allowed to write** (at minimum, validate/normalize `out_dir`)
+* timeouts + output truncation + concurrency limits (oraclepack can run arbitrary bash steps)
+* clear error taxonomy in tool responses (so clients can recover deterministically)
+
+### 7) Client onboarding configs (so assistants can actually connect)
+
+Depending on the target clients:
+
+* **Codex**: document config via `~/.codex/config.toml` and/or `codex mcp` commands. ([OpenAI Developers][3])
+* **Inspector**: document using the inspector to test/debug and export server configs (`mcp.json`). ([GitHub][4])
+* **ChatGPT / Responses API remote MCP** (if that’s a goal): document remote server URL + auth patterns. ([OpenAI Platform][5])
+
+### 8) Acceptance tests that lock the contracts
+
+Minimum tests to prevent regressions:
+
+* Stage-2 detection test matrix (oracle-out, docs/oracle-out, docs/oracle-questions-*/…, single-pack form)
+* Action Pack validator parity with `validate-action-pack.sh`
+* run-pack flag mapping correctness (`--resume`, ROI options, `--out-dir`, etc.)
+
+---
+
+## Minimum set to ship safely
+
+1. Correct Streamable HTTP wiring (`transport="streamable-http"`) + security requirements if remote ([GitHub][1])
+2. Expand `oraclepack_run_pack` to match the CLI surface
+3. Stage-2 detection + Action Pack validation exactly match the oraclepack-taskify skill scripts
+4. Add read tools for `_actions.json` / PRD / Task Master outputs so agents can “use artifacts in real time”
+
+[1]: https://github.com/modelcontextprotocol/python-sdk "GitHub - modelcontextprotocol/python-sdk: The official Python SDK for Model Context Protocol servers and clients"
+[2]: https://modelcontextprotocol.io/specification/2025-06-18/basic/transports "Transports - Model Context Protocol"
+[3]: https://developers.openai.com/codex/mcp/?utm_source=chatgpt.com "Model Context Protocol"
+[4]: https://github.com/modelcontextprotocol/inspector "GitHub - modelcontextprotocol/inspector: Visual testing tool for MCP servers"
+[5]: https://platform.openai.com/docs/guides/tools-connectors-mcp?utm_source=chatgpt.com "Connectors and MCP servers | OpenAI API"
+```
+
+.tickets/mcp/oraclepack-MCP.md
+```
+## MCP surface for `oraclepack` (so agents can act on Taskify artifacts)
+
+### What to expose as MCP tools
+
+Map the existing `oraclepack` CLI capabilities (validate/list/run + flags like `--no-tui`, `--out-dir`, `--oracle-bin`) into MCP tools so an agent can run packs non-interactively and then inspect the resulting state/report/artifacts.
+
+Add a small “taskify helper” layer to make the **Stage-2 → Stage-3** workflow deterministic for agents:
+
+* **Detect Stage-2 outputs** (dir-form `01-*.md..20-*.md` OR single-pack form) using the ordered resolver rules described in your skill.
+* **Validate Stage-2 outputs** (exactly one match per prefix 01..20).
+* **Validate Stage-3 Action Pack** structure constraints (single ```bash fence, step headers `# NN)`, etc.) before executing anything.
+* **Summarize Stage-3 artifacts** (e.g., `_actions.json`, `_actions.md`, PRD path, `tm-complexity.json`, pipelines doc) so agents can immediately consume them.
+
+### Transport choices (real-time vs local)
+
+* **stdio** is simplest for local agent runtimes; it requires MCP messages only on stdout (logs must go to stderr). ([Model Context Protocol][1])
+* **Streamable HTTP** is better for “real-time” multi-client usage; implement Origin validation and bind to localhost + auth to avoid DNS rebinding and local-network abuse. ([Model Context Protocol][1])
+
+### Tool UX metadata (important for agents)
+
+Use MCP **tool annotations** so clients can correctly present approval UX:
+
+* mark validate/list/read tools as `readOnlyHint: true`
+* mark run tools as `destructiveHint: true`, `openWorldHint: true` (they can touch filesystem, run processes, etc.) ([Model Context Protocol][2])
+
+### Security defaults (recommended)
+
+* Hard **deny-by-default execution**: require an env flag (e.g. `ORACLEPACK_ENABLE_EXEC=1`) to enable “run” tools.
+* Restrict filesystem access to **allowlisted roots** to avoid path traversal and accidental exfiltration of secrets.
+* Enforce stdout/stderr truncation and timeouts so a pack can’t wedge the server process.
+
+## Reference implementation
+
+I provided a complete, drop-in **Python MCP server** (FastMCP from the official MCP Python SDK) that exposes:
+
+* `oraclepack_validate_pack`, `oraclepack_list_steps`, `oraclepack_run_pack`
+* `oraclepack_taskify_detect_stage2`, `oraclepack_taskify_validate_stage2`
+* `oraclepack_taskify_validate_action_pack`, `oraclepack_taskify_artifacts_summary`
+* `oraclepack_taskify_run_action_pack`
+
+It supports **stdio** and **streamable-http** transports per the official SDK. ([GitHub][3])
+
+The full multi-file project is in the canvas titled **“oraclepack-mcp-server”**.
+
+[1]: https://modelcontextprotocol.io/specification/2025-03-26/basic/transports "Transports - Model Context Protocol"
+[2]: https://modelcontextprotocol.io/legacy/concepts/tools "Tools - Model Context Protocol"
+[3]: https://github.com/modelcontextprotocol/python-sdk "GitHub - modelcontextprotocol/python-sdk: The official Python SDK for Model Context Protocol servers and clients"
+```
+
+.tickets/mcp/oraclepack_mcp_server.md
+```
+# oraclepack-mcp-server (MCP wrapper for oraclepack + taskify helpers)
+
+## tree
+
+```text
+oraclepack-mcp-server/
+  README.md
+  requirements.txt
+  oraclepack_mcp_server/
+    __init__.py
+    __main__.py
+    config.py
+    security.py
+    oraclepack_cli.py
+    taskify.py
+    server.py
+```
+
+---
+
+```md
+<!-- path: oraclepack-mcp-server/README.md -->
+# oraclepack-mcp-server
+
+Expose `oraclepack` (validate/list/run) plus a few Stage-3 (oraclepack-taskify) helpers as **MCP tools**, so an agent can:
+- validate and inspect packs
+- run packs non-interactively (`--no-tui --yes --run-all`) to produce artifacts
+- validate Stage-2 outputs (01-*.md..20-*.md)
+- validate Stage-3 Action Packs (single ```bash fence, step headers, etc.)
+- summarize Stage-3 artifacts (`_actions.json`, PRD, Task Master outputs, etc.)
+
+## Install
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+## Configure (recommended)
+
+Environment variables:
+
+- `ORACLEPACK_ALLOWED_ROOTS` (default: current working directory)
+  - Colon-separated list of allowed filesystem roots the server may read from.
+  - Example: `ORACLEPACK_ALLOWED_ROOTS=/repo:/tmp/oracle-out`
+- `ORACLEPACK_BIN` (default: `oraclepack`) – path to the oraclepack CLI
+- `ORACLEPACK_WORKDIR` (default: current working directory)
+  - Where packs are executed from (important for relative paths).
+- `ORACLEPACK_ENABLE_EXEC` (default: `0`)
+  - Must be `1` to enable `oraclepack_run_pack` and `oraclepack_taskify_run_action_pack`.
+- `ORACLEPACK_CHARACTER_LIMIT` (default: `25000`) – truncate large stdout/stderr
+- `ORACLEPACK_MAX_READ_BYTES` (default: `500000`) – max bytes read from a file
+
+## Run (stdio)
+
+```bash
+# Stdio transport is the simplest local integration.
+python -m oraclepack_mcp_server --transport stdio
+```
+
+## Run (Streamable HTTP)
+
+```bash
+python -m oraclepack_mcp_server --transport streamable-http
+```
+
+## Tools
+
+- `oraclepack_validate_pack`
+- `oraclepack_list_steps`
+- `oraclepack_run_pack` (requires `ORACLEPACK_ENABLE_EXEC=1`)
+- `oraclepack_read_file`
+- `oraclepack_taskify_detect_stage2`
+- `oraclepack_taskify_validate_stage2`
+- `oraclepack_taskify_validate_action_pack`
+- `oraclepack_taskify_artifacts_summary`
+- `oraclepack_taskify_run_action_pack` (requires `ORACLEPACK_ENABLE_EXEC=1`)
+
+## Typical Stage-3 usage
+
+1) Detect/validate Stage-2 outputs (directory or single-pack)
+2) Validate the Action Pack markdown
+3) Run the Action Pack via `oraclepack run ...`
+4) Summarize produced artifacts
+```
+
+```txt
+# path: oraclepack-mcp-server/requirements.txt
+mcp>=1.0.0
+pydantic>=2.0.0
+```
+
+```python
+# path: oraclepack-mcp-server/oraclepack_mcp_server/__init__.py
+__all__ = []
+```
+
+```python
+# path: oraclepack-mcp-server/oraclepack_mcp_server/config.py
+from __future__ import annotations
+
+import os
+from dataclasses import dataclass
+from pathlib import Path
+
+
+def _truthy(value: str | None) -> bool:
+    if value is None:
+        return False
+    return value.strip().lower() in {"1", "true", "yes", "y", "on"}
+
+
+@dataclass(frozen=True)
+class ServerConfig:
+    allowed_roots: tuple[Path, ...]
+    oraclepack_bin: str
+    workdir: Path
+    enable_exec: bool
+    character_limit: int
+    max_read_bytes: int
+
+
+def load_config() -> ServerConfig:
+    # Allowed roots: colon-separated. Default to CWD.
+    roots_raw = os.environ.get("ORACLEPACK_ALLOWED_ROOTS")
+    if roots_raw:
+        roots = tuple(Path(p).expanduser().resolve() for p in roots_raw.split(":") if p.strip())
+    else:
+        roots = (Path.cwd().resolve(),)
+
+    oraclepack_bin = os.environ.get("ORACLEPACK_BIN", "oraclepack")
+    workdir = Path(os.environ.get("ORACLEPACK_WORKDIR", str(Path.cwd()))).expanduser().resolve()
+
+    enable_exec = _truthy(os.environ.get("ORACLEPACK_ENABLE_EXEC", "0"))
+
+    character_limit = int(os.environ.get("ORACLEPACK_CHARACTER_LIMIT", "25000"))
+    max_read_bytes = int(os.environ.get("ORACLEPACK_MAX_READ_BYTES", "500000"))
+
+    return ServerConfig(
+        allowed_roots=roots,
+        oraclepack_bin=oraclepack_bin,
+        workdir=workdir,
+        enable_exec=enable_exec,
+        character_limit=character_limit,
+        max_read_bytes=max_read_bytes,
+    )
+```
+
+```python
+# path: oraclepack-mcp-server/oraclepack_mcp_server/security.py
+from __future__ import annotations
+
+from pathlib import Path
+
+
+class PathNotAllowedError(ValueError):
+    pass
+
+
+def resolve_under_roots(path: Path, allowed_roots: tuple[Path, ...]) -> Path:
+    """Resolve a path and enforce it lives under at least one allowed root."""
+    p = path.expanduser().resolve()
+
+    for root in allowed_roots:
+        r = root.expanduser().resolve()
+        try:
+            p.relative_to(r)
+            return p
+        except ValueError:
+            continue
+
+    raise PathNotAllowedError(
+        f"Path not allowed (outside allowed roots). path={p} roots={[str(r) for r in allowed_roots]}"
+    )
+
+
+def safe_read_text(path: Path, max_bytes: int) -> tuple[str, bool]:
+    """Read up to max_bytes from a file as UTF-8 (replace errors)."""
+    data = path.read_bytes()
+    truncated = False
+    if len(data) > max_bytes:
+        data = data[:max_bytes]
+        truncated = True
+    return data.decode("utf-8", errors="replace"), truncated
+
+
+def safe_read_bytes(path: Path, max_bytes: int) -> tuple[bytes, bool]:
+    data = path.read_bytes()
+    truncated = False
+    if len(data) > max_bytes:
+        data = data[:max_bytes]
+        truncated = True
+    return data, truncated
+```
+
+```python
+# path: oraclepack-mcp-server/oraclepack_mcp_server/oraclepack_cli.py
+from __future__ import annotations
+
+import asyncio
+import os
+import time
+from dataclasses import dataclass
+from pathlib import Path
+
+
+@dataclass
+class CmdResult:
+    ok: bool
+    exit_code: int
+    duration_s: float
+    stdout: str
+    stderr: str
+    stdout_truncated: bool
+    stderr_truncated: bool
+
+
+def _truncate(s: str, limit: int) -> tuple[str, bool]:
+    if limit <= 0:
+        return s, False
+    if len(s) <= limit:
+        return s, False
+    return s[:limit], True
+
+
+async def run_cmd(
+    argv: list[str],
+    cwd: Path,
+    timeout_s: int,
+    env: dict[str, str] | None,
+    character_limit: int,
+) -> CmdResult:
+    start = time.time()
+
+    proc = await asyncio.create_subprocess_exec(
+        *argv,
+        cwd=str(cwd),
+        env=(os.environ | (env or {})),
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+
+    try:
+        out_b, err_b = await asyncio.wait_for(proc.communicate(), timeout=timeout_s)
+    except asyncio.TimeoutError:
+        proc.kill()
+        await proc.communicate()
+        duration = time.time() - start
+        return CmdResult(
+            ok=False,
+            exit_code=124,
+            duration_s=duration,
+            stdout="",
+            stderr=f"Timed out after {timeout_s}s: {' '.join(argv)}",
+            stdout_truncated=False,
+            stderr_truncated=False,
+        )
+
+    duration = time.time() - start
+    out = out_b.decode("utf-8", errors="replace") if out_b else ""
+    err = err_b.decode("utf-8", errors="replace") if err_b else ""
+
+    out, out_tr = _truncate(out, character_limit)
+    err, err_tr = _truncate(err, character_limit)
+
+    exit_code = proc.returncode if proc.returncode is not None else 1
+    return CmdResult(
+        ok=(exit_code == 0),
+        exit_code=exit_code,
+        duration_s=duration,
+        stdout=out,
+        stderr=err,
+        stdout_truncated=out_tr,
+        stderr_truncated=err_tr,
+    )
+```
+
+```python
+# path: oraclepack-mcp-server/oraclepack_mcp_server/taskify.py
+from __future__ import annotations
+
+import re
+from dataclasses import dataclass
+from datetime import date
+from pathlib import Path
+
+
+@dataclass
+class Stage2Resolution:
+    kind: str  # "dir" | "file"
+    stage2_path: Path
+    out_dir: Path
+    notes: list[str]
+
+
+PREFIXES = [f"{i:02d}" for i in range(1, 21)]
+
+
+def _is_iso_date(s: str) -> bool:
+    # Minimal heuristic for YYYY-MM-DD
+    return bool(re.fullmatch(r"\d{4}-\d{2}-\d{2}", s))
+
+
+def validate_stage2_dir(out_dir: Path) -> dict:
+    missing: list[str] = []
+    ambiguous: dict[str, list[str]] = {}
+    selected: dict[str, str] = {}
+
+    for pfx in PREFIXES:
+        matches = sorted(out_dir.glob(f"{pfx}-*.md"))
+        if len(matches) == 0:
+            missing.append(f"{pfx}-*.md")
+        elif len(matches) > 1:
+            ambiguous[pfx] = [m.name for m in matches]
+        else:
+            selected[pfx] = matches[0].name
+
+    ok = (not missing) and (not ambiguous)
+    return {
+        "ok": ok,
+        "out_dir": str(out_dir),
+        "selected": selected,
+        "missing": missing,
+        "ambiguous": ambiguous,
+    }
+
+
+def _lexi_newest(paths: list[Path]) -> Path | None:
+    # Deterministic: lexicographic max
+    return sorted(paths, key=lambda p: p.name)[-1] if paths else None
+
+
+def detect_stage2(stage2_path: str, repo_root: Path) -> Stage2Resolution:
+    notes: list[str] = []
+
+    if stage2_path != "auto":
+        p = (repo_root / stage2_path).expanduser()
+        if p.exists() and p.is_dir():
+            return Stage2Resolution(kind="dir", stage2_path=p.resolve(), out_dir=p.resolve(), notes=["explicit dir"])
+        if p.exists() and p.is_file():
+            # out_dir rules from skill: if under docs/oracle-questions-YYYY-MM-DD/ then parent/oracle-out else oracle-out
+            p_res = p.resolve()
+            out = repo_root / "oracle-out"
+            parts = list(p_res.parts)
+            if "docs" in parts:
+                try:
+                    idx = parts.index("docs")
+                    # docs/oracle-questions-YYYY-MM-DD/.../oracle-pack-YYYY-MM-DD.md
+                    if idx + 1 < len(parts) and parts[idx + 1].startswith("oracle-questions-"):
+                        out = Path(*parts[: idx + 2]) / "oracle-out"
+                except ValueError:
+                    pass
+            return Stage2Resolution(kind="file", stage2_path=p_res, out_dir=out.resolve(), notes=["explicit file"])
+        raise FileNotFoundError(f"stage2_path not found: {p}")
+
+    # auto discovery (best-effort, deterministic ordering)
+    searched: list[str] = []
+
+    # 1) repo_root/oracle-out
+    candidate = repo_root / "oracle-out"
+    searched.append(str(candidate))
+    if candidate.is_dir():
+        v = validate_stage2_dir(candidate)
+        if v["ok"]:
+            notes.append("auto: selected repo_root/oracle-out")
+            return Stage2Resolution(kind="dir", stage2_path=candidate.resolve(), out_dir=candidate.resolve(), notes=notes)
+
+    # 2) docs/oracle-questions-YYYY-MM-DD/oracle-out (newest by lexicographic date suffix)
+    docs = repo_root / "docs"
+    if docs.is_dir():
+        qdirs = [p for p in docs.glob("oracle-questions-*") if p.is_dir()]
+        # deterministic: sort by name and take newest
+        newest_q = _lexi_newest(qdirs)
+        if newest_q:
+            candidate = newest_q / "oracle-out"
+            searched.append(str(candidate))
+            if candidate.is_dir():
+                v = validate_stage2_dir(candidate)
+                if v["ok"]:
+                    notes.append(f"auto: selected {candidate}")
+                    return Stage2Resolution(kind="dir", stage2_path=candidate.resolve(), out_dir=candidate.resolve(), notes=notes)
+
+    # 3) single-pack form (newer): look for docs/oracle-pack-*.md or docs/oraclepacks/oracle-pack-*.md
+    file_candidates: list[Path] = []
+    if docs.is_dir():
+        file_candidates += list(docs.glob("oracle-pack-*.md"))
+        file_candidates += list((docs / "oraclepacks").glob("oracle-pack-*.md"))
+        file_candidates += list(docs.glob("oracle-questions-*/oraclepacks/oracle-pack-*.md"))
+
+    newest_file = _lexi_newest(sorted([p for p in file_candidates if p.is_file()], key=lambda p: p.name))
+    if newest_file:
+        notes.append(f"auto: selected single-pack {newest_file}")
+        out = repo_root / "oracle-out"
+        # If under docs/oracle-questions-YYYY-MM-DD/..., default out_dir there.
+        if "docs" in newest_file.parts:
+            try:
+                idx = newest_file.parts.index("docs")
+                if idx + 1 < len(newest_file.parts) and newest_file.parts[idx + 1].startswith("oracle-questions-"):
+                    out = Path(*newest_file.parts[: idx + 2]) / "oracle-out"
+            except ValueError:
+                pass
+        return Stage2Resolution(kind="file", stage2_path=newest_file.resolve(), out_dir=out.resolve(), notes=notes)
+
+    raise FileNotFoundError(
+        "stage2_path=auto could not resolve Stage-2 outputs. Searched:\n- " + "\n- ".join(searched)
+    )
+
+
+def validate_action_pack(pack_path: Path) -> dict:
+    text = pack_path.read_text(encoding="utf-8", errors="replace")
+
+    bash_fence = re.findall(r"(?m)^\s*```bash\s*$", text)
+    any_fence = re.findall(r"(?m)^\s*```\s*", text)
+
+    errors: list[str] = []
+    if len(bash_fence) != 1:
+        errors.append(f"expected exactly one ```bash fence; found {len(bash_fence)}")
+    if len(any_fence) != 2:
+        # One opening and one closing fence expected, and it must be a bash fence.
+        errors.append(f"expected no other code fences; found {len(any_fence)} total fences")
+
+    # Extract bash block content if possible
+    bash_block = ""
+    m = re.search(r"```bash\s*\n(?P<body>[\s\S]*?)\n```\s*", text)
+    if m:
+        bash_block = m.group("body")
+
+    # Validate step headers inside bash fence
+    step_headers = re.findall(r"(?m)^\s*#\s*(\d{2})\)\s+.*$", bash_block)
+    if not step_headers:
+        errors.append("no step headers found inside the bash fence (expected lines like '# 01) ...')")
+    else:
+        # Ensure they start at 01 and are strictly increasing by 1.
+        nums = [int(x) for x in step_headers]
+        if nums[0] != 1:
+            errors.append(f"first step must be 01; got {nums[0]:02d}")
+        for prev, cur in zip(nums, nums[1:]):
+            if cur != prev + 1:
+                errors.append(f"step numbers must be sequential; got {prev:02d} then {cur:02d}")
+
+    return {
+        "ok": len(errors) == 0,
+        "pack_path": str(pack_path),
+        "step_count": len(step_headers),
+        "errors": errors,
+    }
+
+
+def default_pack_path(today: date | None = None) -> str:
+    d = today or date.today()
+    return f"docs/oracle-actions-pack-{d.isoformat()}.md"
+```
+
+```python
+# path: oraclepack-mcp-server/oraclepack_mcp_server/server.py
+from __future__ import annotations
+
+import json
+from enum import Enum
+from pathlib import Path
+from typing import Any
+
+from pydantic import BaseModel, Field
+from mcp.server.fastmcp import FastMCP
+
+from .config import load_config
+from .security import resolve_under_roots, safe_read_text, PathNotAllowedError
+from .oraclepack_cli import run_cmd
+from .taskify import detect_stage2, validate_stage2_dir, validate_action_pack
+
+
+class ResponseFormat(str, Enum):
+    markdown = "markdown"
+    json = "json"
+
+
+class PackPathInput(BaseModel):
+    pack_path: str = Field(..., description="Path to the pack markdown file")
+    response_format: ResponseFormat = Field(default=ResponseFormat.markdown)
+
+
+class RunPackInput(BaseModel):
+    pack_path: str = Field(..., description="Path to the pack markdown file")
+    out_dir: str | None = Field(default=None, description="Output directory for step execution (passes --out-dir).")
+
+    no_tui: bool = Field(default=True, description="If true, pass --no-tui")
+    yes: bool = Field(default=True, description="If true, pass --yes")
+    run_all: bool = Field(default=True, description="If true, pass --run-all")
+
+    resume: bool = Field(default=False, description="If true, pass --resume")
 [TRUNCATED]
 ```
 
@@ -4171,1155 +5485,6 @@ Labels (optional):
 * go
 
 ---
-```
-
-.tickets/mcp/Expose Oraclepack as MCP.md
-```
-Parent Ticket:
-
-* Title: Expose oraclepack as MCP tools (with Taskify Stage-2/Stage-3 helpers)
-* Summary: Provide an MCP server that exposes `oraclepack` CLI capabilities (validate/list/run) plus helper tools for Stage-2 detection/validation and Stage-3 action-pack validation/execution/artifact summarization, with secure-by-default controls (allowlisted filesystem roots, execution gating, timeouts, truncation) and support for stdio + streamable-http transports.
-* Source:
-
-  * Link/ID (if present) or “Not provided”: /mnt/data/MCP tools for Oraclepack.md
-  * Original ticket excerpt (≤25 words) capturing the overall theme: “Expose `oraclepack` … as **MCP tools**, so an agent can … run packs … validate Stage-2 … validate Stage-3 … summarize artifacts.”
-* Global Constraints:
-
-  * Support MCP transports: “stdio” and “streamable-http”.
-  * Security defaults: “deny-by-default execution”, “allowlisted roots”, “stdout/stderr truncation and timeouts”.
-* Global Environment:
-
-  * Unknown
-* Global Evidence:
-
-  * MCP tool list and env var config list.
-  * Reference implementation structure (README/requirements and Python modules).
-
-Split Plan:
-
-* Coverage Map:
-
-  * “Expose `oraclepack` (validate/list/run) … as **MCP tools**” → T1
-  * “run packs non-interactively (`--no-tui --yes --run-all`)” → T5
-  * “validate Stage-2 outputs (01-*.md..20-*.md)” → T4
-  * “validate Stage-3 Action Packs (single ```bash fence, step headers…)” → T7
-  * “summarize Stage-3 artifacts (`_actions.json`, PRD, Task Master outputs, etc.)” → T7
-  * “Tools: oraclepack_validate_pack / oraclepack_list_steps / oraclepack_run_pack …” → T5
-  * “Tools: oraclepack_read_file …” → T5
-  * “Tools: … taskify_detect_stage2 / taskify_validate_stage2 …” → T5
-  * “Tools: … taskify_validate_action_pack / taskify_artifacts_summary …” → T5
-  * “Tools: … taskify_run_action_pack …” → T5
-  * “Transports: stdio … streamable-http …” → T6
-  * “Tool annotations: readOnlyHint / destructiveHint / openWorldHint …” → T6
-  * “Security defaults: ORACLEPACK_ENABLE_EXEC=1 gating …” → T2
-  * “Security defaults: allowlisted filesystem roots …” → T2
-  * “Security defaults: truncation and timeouts …” → T3
-  * “Env vars: ORACLEPACK_ALLOWED_ROOTS / BIN / WORKDIR / ENABLE_EXEC / CHARACTER_LIMIT / MAX_READ_BYTES” → T2
-  * “Typical Stage-3 usage: detect/validate → validate action pack → run → summarize” → Info-only
-  * “Reference implementation tree (README, requirements.txt, modules list)” → Info-only
-  * Links to MCP specs / python-sdk repo mentioned → Info-only
-* Dependencies:
-
-  * T5 depends on T2 because server tools must enforce allowed roots and execution gating.
-  * T5 depends on T3 because `oraclepack_*run*` tools need subprocess execution with timeouts/truncation.
-  * T5 depends on T4 because `oraclepack_taskify_*stage2*` tools call Stage-2 detection/validation.
-  * T5 depends on T7 because `oraclepack_taskify_*action_pack*` tools call action-pack validation/summarization helpers.
-  * T6 depends on T5 because annotations/transport-hardening apply to the MCP server surface.
-* Split Tickets:
-
-```ticket T1
-T# Title: Scaffold oraclepack MCP server project (README + packaging entrypoints)
-Type: chore
-Target Area: oraclepack-mcp-server repo scaffolding (README.md, requirements.txt, __init__.py, __main__.py)
-Summary:
-- Create the MCP server project structure that exposes `oraclepack` + Taskify helpers as MCP tools, including installation and run instructions and the tool list.
-- Ensure the package has an executable entrypoint to start the MCP server with selectable transport.
-In Scope:
-- Create/maintain project tree with:
-  - README describing purpose, install, configuration env vars, run modes, tools list, and typical Stage-3 usage.
-  - requirements.txt listing dependencies.
-  - Python package layout with `oraclepack_mcp_server/__init__.py` and `oraclepack_mcp_server/__main__.py`.
-- CLI args in `__main__.py` to accept `--transport` with choices `stdio` and `streamable-http`.
-Out of Scope:
-- Implementing tool logic (handled in other tickets).
-Current Behavior (Actual):
-- Not provided.
-Expected Behavior:
-- A runnable package that starts an MCP server with a chosen transport.
-Reproduction Steps:
-- Not provided.
-Requirements / Constraints:
-- Must support `--transport` choices: `stdio`, `streamable-http`.
-Evidence:
-- Project tree and entrypoint snippet showing `choices=["stdio", "streamable-http"]`. :contentReference[oaicite:26]{index=26}
-Open Items / Unknowns:
-- Exact repository root / packaging approach (pip package vs repo-local module): Not provided.
-Risks / Dependencies:
-- Not provided.
-Acceptance Criteria:
-- [ ] Repository includes README.md, requirements.txt, and `oraclepack_mcp_server` package directory.
-- [ ] Running `python -m oraclepack_mcp_server --transport stdio` is supported (starts server process).
-- [ ] Running `python -m oraclepack_mcp_server --transport streamable-http` is supported (starts server process).
-Priority & Severity (if inferable from input text):
-- Priority: Not provided
-- Severity: Not provided
-Source:
-- “oraclepack-mcp-server (MCP wrapper for oraclepack + taskify helpers) … tree … README.md … requirements.txt … __main__.py” :contentReference[oaicite:27]{index=27}
-- “choices=[‘stdio’, ‘streamable-http’] … mcp.run(transport=args.transport)” :contentReference[oaicite:28]{index=28}
-```
-
-```ticket T2
-T# Title: Implement config + filesystem security controls (allowed roots, exec gating, max read bytes)
-Type: chore
-Target Area: oraclepack_mcp_server/config.py and oraclepack_mcp_server/security.py
-Summary:
-- Implement secure-by-default configuration for the MCP server, driven by environment variables, including allowlisted filesystem roots and explicit execution enablement.
-- Provide safe path resolution under allowed roots and bounded file reads for tool operations.
-In Scope:
-- Env-driven config including:
-  - `ORACLEPACK_ALLOWED_ROOTS` (colon-separated roots)
-  - `ORACLEPACK_BIN`
-  - `ORACLEPACK_WORKDIR`
-  - `ORACLEPACK_ENABLE_EXEC`
-  - `ORACLEPACK_CHARACTER_LIMIT`
-  - `ORACLEPACK_MAX_READ_BYTES`
-- Path allowlisting:
-  - Resolve requested file paths and ensure they live under at least one allowed root.
-  - Raise an explicit “path not allowed” error on violation.
-- Safe file reads:
-  - Read text/bytes with max size enforcement and “truncated” indicator.
-Out of Scope:
-- Subprocess execution and output truncation (handled in T3).
-Current Behavior (Actual):
-- Not provided.
-Expected Behavior:
-- Server loads config from env and enforces filesystem access boundaries for read tools.
-Reproduction Steps:
-- Not provided.
-Requirements / Constraints:
-- Execution must be deny-by-default unless `ORACLEPACK_ENABLE_EXEC=1`.
-- Filesystem access must be restricted to allowlisted roots.
-Evidence:
-- Env var list and semantics. :contentReference[oaicite:29]{index=29}
-- Security guidance: “deny-by-default execution … allowlisted roots”. :contentReference[oaicite:30]{index=30}
-Open Items / Unknowns:
-- Whether Windows path separator support is required for `ORACLEPACK_ALLOWED_ROOTS`: Not provided.
-Risks / Dependencies:
-- Not provided.
-Acceptance Criteria:
-- [ ] Config loader reads the listed env vars and applies defaults as documented.
-- [ ] Path resolution rejects paths outside allowed roots.
-- [ ] File reads enforce max bytes and indicate truncation.
-- [ ] Exec gating flag is available for run tools to check.
-Priority & Severity (if inferable from input text):
-- Priority: Not provided
-- Severity: Not provided
-Source:
-- “Environment variables: ORACLEPACK_ALLOWED_ROOTS … ORACLEPACK_ENABLE_EXEC … ORACLEPACK_MAX_READ_BYTES …” :contentReference[oaicite:31]{index=31}
-- “Hard deny-by-default execution … Restrict filesystem access to allowlisted roots …” :contentReference[oaicite:32]{index=32}
-```
-
-```ticket T3
-T# Title: Implement oraclepack subprocess runner with timeouts and stdout/stderr truncation
-Type: chore
-Target Area: oraclepack_mcp_server/oraclepack_cli.py (subprocess execution)
-Summary:
-- Provide a subprocess wrapper to invoke the `oraclepack` CLI with a hard timeout and bounded stdout/stderr capture to prevent wedging the MCP server.
-- Return structured results including exit code, duration, and truncation indicators.
-In Scope:
-- Async subprocess execution wrapper (create subprocess, capture stdout/stderr).
-- Timeout behavior:
-  - Kill process on timeout and return an explicit “Timed out after {timeout}s” error result.
-- Character-limit truncation for stdout/stderr based on configured limit.
-Out of Scope:
-- MCP tool registration (handled in T5).
-Current Behavior (Actual):
-- Not provided.
-Expected Behavior:
-- Running oraclepack commands yields deterministic, bounded outputs suitable for returning via MCP tools.
-Reproduction Steps:
-- Not provided.
-Requirements / Constraints:
-- Must enforce “stdout/stderr truncation and timeouts”.
-Evidence:
-- Guidance: “Enforce stdout/stderr truncation and timeouts …”. :contentReference[oaicite:33]{index=33}
-- Runner timeout error example snippet. :contentReference[oaicite:34]{index=34}
-Open Items / Unknowns:
-- Default timeout values per tool beyond examples (3600/7200) are not provided outside snippets.
-Risks / Dependencies:
-- Not provided.
-Acceptance Criteria:
-- [ ] Runner returns: ok, exit_code, duration_s, stdout, stderr, stdout_truncated, stderr_truncated.
-- [ ] Timeout produces exit_code=124 (or equivalent) and includes a timeout message.
-- [ ] Outputs are truncated to configured character limit and flags are set accordingly.
-Priority & Severity (if inferable from input text):
-- Priority: Not provided
-- Severity: Not provided
-Source:
-- “Enforce stdout/stderr truncation and timeouts so a pack can’t wedge the server process.” :contentReference[oaicite:35]{index=35}
-- “Timed out after {timeout_s}s: …” return structure snippet. :contentReference[oaicite:36]{index=36}
-```
-
-```ticket T4
-T# Title: Implement Taskify Stage-2 detection and validation (01-*.md..20-*.md + single-pack form)
-Type: chore
-Target Area: oraclepack_mcp_server/taskify.py (Stage-2 detection + validation)
-Summary:
-- Implement deterministic detection of Stage-2 outputs for agents, supporting both directory-form outputs (01-*.md..20-*.md) and a single-pack input file form.
-- Provide validation that ensures exactly one match per prefix 01..20 and returns missing/ambiguous details.
-In Scope:
-- `validate_stage2_dir(out_dir)`:
-  - For each prefix 01..20, glob `{pfx}-*.md`
-  - Return missing patterns and ambiguous prefix matches.
-- `detect_stage2(stage2_path, repo_root)`:
-  - Support explicit dir path.
-  - Support explicit file path with out_dir rules:
-    - If under `docs/oracle-questions-YYYY-MM-DD/…`, use sibling `oracle-out` under that docs subtree; else default `repo_root/oracle-out`.
-  - Support “auto” discovery (best-effort, deterministic ordering), including checking `repo_root/oracle-out`.
-Out of Scope:
-- Stage-3 action pack validation (handled in T7).
-Current Behavior (Actual):
-- Not provided.
-Expected Behavior:
-- Agents can resolve and validate Stage-2 outputs deterministically for downstream Stage-3 workflows.
-Reproduction Steps:
-- Not provided.
-Requirements / Constraints:
-- “Detect Stage-2 outputs (dir-form 01-*.md..20-*.md OR single-pack form)”.
-- “Validate Stage-2 outputs (exactly one match per prefix 01..20)”.
-Evidence:
-- Requirements text for Stage-2 detection/validation. :contentReference[oaicite:37]{index=37}
-- Validation logic snippet for 01..20 and ambiguous/missing. :contentReference[oaicite:38]{index=38}
-- Out-dir rule snippet referencing `docs/oracle-questions-YYYY-MM-DD/…` → `oracle-out`. :contentReference[oaicite:39]{index=39}
-Open Items / Unknowns:
-- Full “auto discovery” search order beyond checking `repo_root/oracle-out`: Not provided in visible excerpts.
-Risks / Dependencies:
-- Not provided.
-Acceptance Criteria:
-- [ ] Validation returns ok=false with `missing` when any prefix has no matches.
-- [ ] Validation returns ok=false with `ambiguous` when any prefix has >1 match.
-- [ ] Validation returns ok=true only when exactly one match exists for every prefix 01..20.
-- [ ] Detection supports explicit dir and explicit file resolution and produces an `out_dir`.
-- [ ] Detection supports “auto” and returns deterministic results for the same filesystem state.
-Priority & Severity (if inferable from input text):
-- Priority: Not provided
-- Severity: Not provided
-Source:
-- “Detect Stage-2 outputs (dir-form 01-*.md..20-*.md OR single-pack form) … Validate … exactly one match per prefix 01..20.” :contentReference[oaicite:40]{index=40}
-- “out_dir rules … if under docs/oracle-questions-YYYY-MM-DD/ … then …/oracle-out else oracle-out” :contentReference[oaicite:41]{index=41}
-```
-
-```ticket T5
-T# Title: Implement MCP tools for oraclepack and taskify helper operations
-Type: enhancement
-Target Area: oraclepack_mcp_server/server.py (MCP tool registration + schemas + formatting)
-Summary:
-- Implement the MCP server surface that maps `oraclepack` CLI operations and Taskify helper functions into callable MCP tools.
-- Provide consistent response formatting (markdown/json) and ensure run tools respect execution gating.
-In Scope:
-- Tool schemas/inputs covering:
-  - `oraclepack_validate_pack`
-  - `oraclepack_list_steps`
-  - `oraclepack_run_pack` (gated)
-  - `oraclepack_read_file`
-  - `oraclepack_taskify_detect_stage2`
-  - `oraclepack_taskify_validate_stage2`
-  - `oraclepack_taskify_validate_action_pack`
-  - `oraclepack_taskify_artifacts_summary`
-  - `oraclepack_taskify_run_action_pack` (gated)
-- Response formatting:
-  - Support JSON and Markdown result formats (including stdout/stderr blocks and truncation notes).
-- CLI arg mapping for oraclepack operations (including references to flags like `--no-tui`, `--out-dir`, `--oracle-bin` as inputs or internal argv composition).
-- Ensure `ORACLEPACK_ENABLE_EXEC=1` gating is enforced for run tools.
-Out of Scope:
-- Implementing the underlying Stage-2 detection/validation logic (T4) and Stage-3 validation/summary logic (T7), except wiring them in.
-Current Behavior (Actual):
-- Not provided.
-Expected Behavior:
-- MCP clients can invoke oraclepack and taskify workflows end-to-end via tools and receive bounded, formatted results.
-Reproduction Steps:
-- Not provided.
-Requirements / Constraints:
-- Must expose the tool list as stated.
-- Run tools must be disabled by default unless enabled via env flag.
-Evidence:
-- Tool list and gating note. :contentReference[oaicite:42]{index=42}
-- Server schema snippets (e.g., ReadFileInput, Taskify*Input, timeout defaults). :contentReference[oaicite:43]{index=43}
-Open Items / Unknowns:
-- Exact argument surface for `oraclepack_validate_pack` / `oraclepack_list_steps` (flags and required params) is not fully specified in excerpts.
-Risks / Dependencies:
-- Depends on config/security/runner/taskify modules existing and being wired correctly.
-Acceptance Criteria:
-- [ ] All tools listed in the parent ticket are registered and callable.
-- [ ] `oraclepack_read_file` enforces allowed roots and max read bytes.
-- [ ] `oraclepack_run_pack` and `oraclepack_taskify_run_action_pack` refuse execution unless `ORACLEPACK_ENABLE_EXEC=1`.
-- [ ] Response formatter supports markdown and json outputs and includes truncation indicators.
-Priority & Severity (if inferable from input text):
-- Priority: Not provided
-- Severity: Not provided
-Source:
-- “Tools — oraclepack_validate_pack … oraclepack_taskify_run_action_pack (requires ORACLEPACK_ENABLE_EXEC=1)” :contentReference[oaicite:44]{index=44}
-- “Map … oraclepack CLI capabilities (validate/list/run + flags like --no-tui, --out-dir, --oracle-bin) into MCP tools” :contentReference[oaicite:45]{index=45}
-```
-
-```ticket T6
-T# Title: Add MCP transport hardening guidance + tool UX annotations (readOnly/destructive/openWorld)
-Type: enhancement
-Target Area: MCP server transport configuration and tool metadata (server.py / deployment guidance)
-Summary:
-- Ensure the MCP server supports stdio and streamable-http in a way suitable for “real-time” usage, including the recommended security posture for HTTP transport.
-- Add MCP tool annotations so clients can present appropriate approval UX for read-only vs execution tools.
-In Scope:
-- Transport support considerations:
-  - stdio: ensure logs go to stderr (per guidance in ticket text).
-  - streamable-http: implement recommended protections (“Origin validation”, “bind to localhost + auth”).
-- Tool annotations:
-  - Mark validate/list/read tools as `readOnlyHint: true`.
-  - Mark run tools as `destructiveHint: true` and `openWorldHint: true`.
-Out of Scope:
-- Implementing tool business logic (T5).
-Current Behavior (Actual):
-- Not provided.
-Expected Behavior:
-[TRUNCATED]
-```
-
-.tickets/mcp/MCP Server for Oraclepack.md
-```
-Title:
-
-* Add MCP server that exposes `oraclepack` + Taskify Stage-2/Stage-3 helpers as tools for agents
-
-Summary:
-
-* Agents need real-time access to `oraclepack` capabilities via MCP so they can validate, inspect, and run packs, then consume Taskify artifacts produced by the `oracle_pack_and_taskify-skills.md` workflow.
-* Implement a secure-by-default Python MCP server that wraps the `oraclepack` CLI and adds deterministic helpers for Stage-2 detection/validation and Stage-3 Action Pack validation/execution + artifact summarization.
-
-Background / Context:
-
-* Request: “give access to agents/assistants the following oraclepack tool as a MCP tool… so they can perform actions using the artifacts generated from `oracle_pack_and_taskify-skills.md` … in real time.”
-* Proposed reference implementation (from the conversation) is a Python project named `oraclepack-mcp-server` using FastMCP (MCP Python SDK), supporting `stdio` and `streamable-http` transports.
-* Stage-2 outputs are expected to be 20 markdown files matching `01-*.md` … `20-*.md`; Stage-2 “single-pack form” needs out-dir resolution rules when the pack lives under `docs/oracle-questions-YYYY-MM-DD/...`.
-
-Current Behavior (Actual):
-
-* No MCP tool surface is available for `oraclepack` and Taskify workflows (agents cannot call validated tools to run/inspect packs and artifacts). (per user)
-
-Expected Behavior:
-
-* Agents can use MCP tools to:
-
-  * Validate and inspect packs.
-  * Run packs non-interactively to generate artifacts.
-  * Detect/validate Stage-2 outputs and validate Stage-3 Action Packs before execution.
-  * Summarize Stage-3 artifacts for immediate downstream consumption.
-
-Requirements:
-
-* MCP server implementation
-
-  * Provide a Python MCP server project structure (e.g., `oraclepack-mcp-server/` with `oraclepack_mcp_server/` package).
-  * Support transports:
-
-    * `stdio`
-    * `streamable-http`
-* Tool surface (MCP tools)
-
-  * `oraclepack_validate_pack`
-  * `oraclepack_list_steps`
-  * `oraclepack_run_pack` (execution gated)
-  * `oraclepack_read_file`
-  * `oraclepack_taskify_detect_stage2`
-  * `oraclepack_taskify_validate_stage2`
-  * `oraclepack_taskify_validate_action_pack`
-  * `oraclepack_taskify_artifacts_summary`
-  * `oraclepack_taskify_run_action_pack` (execution gated)
-* Execution + safety controls
-
-  * Deny-by-default execution; require `ORACLEPACK_ENABLE_EXEC=1` to enable “run” tools.
-  * Restrict filesystem reads to allowlisted roots via `ORACLEPACK_ALLOWED_ROOTS` (colon-separated); block paths outside allowed roots.
-  * Enforce timeouts and truncate stdout/stderr (`ORACLEPACK_CHARACTER_LIMIT`) and cap file read sizes (`ORACLEPACK_MAX_READ_BYTES`).
-* Stage-2 reliability helpers
-
-  * Validate Stage-2 directory contains exactly one match per prefix `01`..`20` (missing/ambiguous detection).
-  * Deterministic Stage-2 detection:
-
-    * Accept explicit dir or file.
-    * If file is under `docs/oracle-questions-YYYY-MM-DD/...`, set out-dir to `docs/oracle-questions-YYYY-MM-DD/oracle-out`; otherwise default `repo_root/oracle-out`.
-* Stage-3 reliability helpers
-
-  * Validate Action Pack structure constraints before executing (e.g., “single ```bash fence, step headers”).
-  * Summarize produced artifacts (examples cited: `_actions.json`, PRD path, Task Master outputs).
-* Agent UX metadata
-
-  * Apply MCP tool annotations:
-
-    * validate/list/read: `readOnlyHint: true`
-    * run: `destructiveHint: true`, `openWorldHint: true`
-
-Out of Scope:
-
-* Not provided.
-
-Reproduction Steps:
-
-* Not provided.
-
-Environment:
-
-* Language/runtime: Python (MCP server), wraps external `oraclepack` CLI.
-* OS: Unknown
-* Deployment: Unknown (local stdio vs HTTP service)
-* MCP SDK version: Unknown (example uses `mcp>=1.0.0`, `pydantic>=2.0.0`).
-
-Evidence:
-
-* Conversation transcript + proposed reference implementation: `/mnt/data/MCP tools for Oraclepack.md`.
-* Proposed env vars and tool list (deny-by-default exec, allowed roots, transports).
-* Stage-2 directory validation (`01-*.md..20-*.md`) and Stage-2 out-dir resolution logic for `docs/oracle-questions-YYYY-MM-DD`.
-
-Decisions / Agreements:
-
-* Use a Python MCP server (FastMCP / MCP Python SDK) to expose `oraclepack` CLI + Taskify helpers.
-* Support both `stdio` and `streamable-http` transports.
-* Default-secure posture: execution gated by `ORACLEPACK_ENABLE_EXEC`, filesystem access constrained by allowlisted roots, truncation + timeout enforced.
-
-Open Items / Unknowns:
-
-* Where this MCP server should live (same repo as `oraclepack` vs separate repo) is not provided.
-* Authentication / origin validation requirements for `streamable-http` deployment are mentioned conceptually but concrete requirements are not provided.
-* Exact definition of “artifacts summary” contents/format beyond examples (`_actions.json`, PRD, Task Master outputs) is not provided.
-* Whether `oraclepack_run_pack` must always use `--no-tui --yes --run-all` vs configurable flags is not provided (example suggests non-interactive flags).
-
-Risks / Dependencies:
-
-* Dependency on external `oraclepack` binary path/config (`ORACLEPACK_BIN`) and correct working directory (`ORACLEPACK_WORKDIR`).
-* Security risk if exec is enabled without strict path/root controls and timeouts; mitigations are required as above.
-* Stage-2 ambiguity risk when multiple `NN-*.md` match the same prefix; must report ambiguity deterministically and fail validation.
-
-Acceptance Criteria:
-
-* [ ] MCP server starts successfully in both `stdio` and `streamable-http` modes.
-* [ ] All listed tools are exposed with the documented names.
-* [ ] When `ORACLEPACK_ENABLE_EXEC!=1`, run tools refuse to execute and return a clear error; validate/list/read tools still work.
-* [ ] `oraclepack_read_file` rejects paths outside `ORACLEPACK_ALLOWED_ROOTS`.
-* [ ] Stage-2 validation enforces exactly one file per prefix `01`..`20` and returns `missing` and `ambiguous` sets when invalid.
-* [ ] Stage-2 detection resolves out-dir correctly for both:
-
-  * explicit dir inputs
-  * single-pack file under `docs/oracle-questions-YYYY-MM-DD/...` → `docs/oracle-questions-YYYY-MM-DD/oracle-out`
-  * otherwise default `repo_root/oracle-out`.
-* [ ] stdout/stderr truncation and timeouts are enforced on CLI subprocess execution.
-* [ ] Tool annotations are applied as specified for read-only vs destructive tools.
-
-Priority & Severity (if inferable from text):
-
-* Not provided.
-
-Labels (optional):
-
-* enhancement
-* mcp
-* oraclepack
-* cli-wrapper
-* taskify
-* security
-* tooling
-```
-
-.tickets/mcp/gaps-still-not-covered.md
-```
-## Gaps still not covered in the current oraclepack MCP proposal
-
-### Transport + deployment correctness
-
-* **`--transport streamable-http` is wired to the wrong FastMCP transport.** The proposal claims `transport="sse"` “maps to streamable-http”, but FastMCP supports Streamable HTTP explicitly and documents SSE as being superseded.  ([GitHub][1])
-* **No production-grade HTTP hardening (auth, TLS posture, DNS-rebinding mitigations).** MCP security guidance explicitly warns about local HTTP servers (SSE/Streamable HTTP) without auth and recommends stdio or authenticated IPC/HTTP with mitigations. ([Model Context Protocol][2])
-* **Dependency is unpinned despite a high-severity DNS rebinding advisory in the Python SDK.** The proposal uses `mcp[cli]>=0.1.0` (no minimum safe version). The advisory indicates affected versions and a patched release.  ([GitHub][3])
-
-### Security model gaps (filesystem + execution)
-
-* **Symlink escape is not addressed.** `validate_path()` normalizes with `abspath/normpath` and then `safe_read_file()` opens the path; this pattern typically allows “inside-root symlink → outside-root target” unless you resolve and check the realpath. No test covers symlink traversal.
-* **Execution is only gated by a boolean env flag, without least-privilege scoping.** The server exposes “run pack” as open-world/destructive when enabled, but does not add per-tool scoping, allowlists, or authorization flows for HTTP mode.  ([Model Context Protocol][2])
-
-### Parity gaps vs oraclepack TUI/runner workflows
-
-* **No URL/project selection tooling exposed.** The TUI has explicit URL store + picker plumbing (the thing you need for “choose PRD-generator project URL”), but MCP doesn’t expose tools to list/select/manage those URLs.
-* **No runtime overrides wizard parity.** The TUI supports an overrides flow (per-step flag add/remove, targeting, validation), but MCP doesn’t expose “get overrides / set overrides / validate overrides / apply and run”.
-* **No structured access to run state/report artifacts.** MCP returns raw stdout/stderr strings and truncates them; it doesn’t provide first-class tools/resources for reading the oraclepack state/report outputs as structured objects.
-
-### Execution control + UX gaps for agents
-
-* **No step-level execution controls.** The MCP API offers `oraclepack_run_pack(... run_all=True)` but does not provide “run step N”, “run subset”, “resume”, “re-run failed only”, etc.
-* **No streaming logs / cancellation.** `run_oraclepack()` waits for completion, then returns (with truncation). There’s no incremental progress, no cancellation hook, and timeout uses a hard kill only.
-
-### Validation gaps (especially for “ticket-action-pack.md” style artifacts)
-
-* **Action-pack validation in MCP is weaker than your existing validator script.** The MCP `validate_action_pack` logic is comparatively minimal, while the repo’s `validate-action-pack.sh` encodes stricter structural rules; MCP does not currently match those guardrails.
-
-### Capability gaps (authoring/editing)
-
-* **No “write/update pack” capability.** The server can read/list/validate/run packs, but cannot create/edit packs or write back transformed artifacts (which is often needed for “tickets → pack” workflows).
-
-[1]: https://github.com/modelcontextprotocol/python-sdk?utm_source=chatgpt.com "GitHub - modelcontextprotocol/python-sdk: The official Python SDK for Model Context Protocol servers and clients"
-[2]: https://modelcontextprotocol.io/specification/2025-11-25/basic/security_best_practices?utm_source=chatgpt.com "Security Best Practices - Model Context Protocol"
-[3]: https://github.com/advisories/GHSA-9h52-p55h-vw2f?utm_source=chatgpt.com "Model Context Protocol (MCP) Python SDK does not enable DNS rebinding protection by default · CVE-2025-66416 · GitHub Advisory Database · GitHub"
-```
-
-.tickets/mcp/gaps_part2-mcp-builder.md
-```
-## Still needed to make “oraclepack as an MCP tool” production-ready
-
-### 1) Fix transport + deployment mode choice (local vs remote)
-
-* **Use the correct Streamable HTTP transport string** (`transport="streamable-http"`) and stop treating SSE as the Streamable HTTP equivalent. The Python SDK’s examples use `mcp.run(transport="streamable-http")`. ([GitHub][1])
-* If you intend to run this as a **remote** MCP server (for multi-client / “real time” usage), implement the Streamable HTTP security requirements:
-
-  * validate `Origin` header (DNS rebinding protection)
-  * bind to `127.0.0.1` when local
-  * require authentication ([Model Context Protocol][2])
-* If you intend “agents/assistants” to run it **locally**, default to **stdio** and keep Streamable HTTP optional. (The MCP spec defines stdio + Streamable HTTP as the standard transports.) ([Model Context Protocol][2])
-
-### 2) Bring `oraclepack_run_pack` up to parity with the Go CLI flags
-
-Your current MCP tool only exposes `yes` and `run_all`.
-But the CLI supports additional run-time controls (at least `--resume`, `--stop-on-fail`, ROI threshold/mode, plus the persistent `--oracle-bin` and `--out-dir`).
-To avoid capability gaps (and ad-hoc “extra args” escape hatches), expose these explicitly in the tool schema.
-
-### 3) Make Stage-2 auto-discovery match the **oraclepack-taskify** contract
-
-The Stage 3 skill is strict about:
-
-* deterministic discovery (lexicographic / ISO-date ordering; no mtimes)
-* directory-form must contain **exactly one** `01-*.md` … `20-*.md`, else fail fast with explicit errors
-  Also, the Action Pack template itself searches locations including `docs/oracle-out` and `docs/oracle-questions-*/…`.
-  So the MCP-side “detect stage2” logic should:
-* search the same ordered locations
-* validate a candidate before returning it (not “first directory that exists”)
-* prefer newest by lexicographic rules when multiple date-stamped runs exist
-
-### 4) Tighten Action Pack validation to exactly match the skill’s validator
-
-The skill’s validator requires:
-
-* **exactly one** ```bash fence and **no other** fences
-* sequential `# NN)` step headers inside the bash block
-  If your Python validator is looser than `validate-action-pack.sh`, you’ll get drift (packs “validate” in MCP but fail in real usage).
-
-### 5) Add “artifact-first” read tools for Stage-3 outputs (so assistants can act in real time)
-
-Stage 3 produces canonical machine/human artifacts like:
-
-* `<out_dir>/_actions.json`, `<out_dir>/_actions.md`
-* `.taskmaster/docs/oracle-actions-prd.md`
-* `<out_dir>/tm-complexity.json`
-  To enable “agents/assistants” to use them immediately, add read-only tools like:
-* list latest runs / outputs (by stable ordering)
-* read + parse `_actions.json` (return structured JSON, not only text)
-* read Task Master outputs (tasks.json location(s) you expect)
-
-### 6) Operational hardening (especially if exec is enabled)
-
-You already gate execution behind an env flag (`ORACLEPACK_ENABLE_EXEC`).
-Still needed:
-
-* enforce allowed roots not just for reads, but also for **where packs are allowed to write** (at minimum, validate/normalize `out_dir`)
-* timeouts + output truncation + concurrency limits (oraclepack can run arbitrary bash steps)
-* clear error taxonomy in tool responses (so clients can recover deterministically)
-
-### 7) Client onboarding configs (so assistants can actually connect)
-
-Depending on the target clients:
-
-* **Codex**: document config via `~/.codex/config.toml` and/or `codex mcp` commands. ([OpenAI Developers][3])
-* **Inspector**: document using the inspector to test/debug and export server configs (`mcp.json`). ([GitHub][4])
-* **ChatGPT / Responses API remote MCP** (if that’s a goal): document remote server URL + auth patterns. ([OpenAI Platform][5])
-
-### 8) Acceptance tests that lock the contracts
-
-Minimum tests to prevent regressions:
-
-* Stage-2 detection test matrix (oracle-out, docs/oracle-out, docs/oracle-questions-*/…, single-pack form)
-* Action Pack validator parity with `validate-action-pack.sh`
-* run-pack flag mapping correctness (`--resume`, ROI options, `--out-dir`, etc.)
-
----
-
-## Minimum set to ship safely
-
-1. Correct Streamable HTTP wiring (`transport="streamable-http"`) + security requirements if remote ([GitHub][1])
-2. Expand `oraclepack_run_pack` to match the CLI surface
-3. Stage-2 detection + Action Pack validation exactly match the oraclepack-taskify skill scripts
-4. Add read tools for `_actions.json` / PRD / Task Master outputs so agents can “use artifacts in real time”
-
-[1]: https://github.com/modelcontextprotocol/python-sdk "GitHub - modelcontextprotocol/python-sdk: The official Python SDK for Model Context Protocol servers and clients"
-[2]: https://modelcontextprotocol.io/specification/2025-06-18/basic/transports "Transports - Model Context Protocol"
-[3]: https://developers.openai.com/codex/mcp/?utm_source=chatgpt.com "Model Context Protocol"
-[4]: https://github.com/modelcontextprotocol/inspector "GitHub - modelcontextprotocol/inspector: Visual testing tool for MCP servers"
-[5]: https://platform.openai.com/docs/guides/tools-connectors-mcp?utm_source=chatgpt.com "Connectors and MCP servers | OpenAI API"
-```
-
-.tickets/mcp/oraclepack-MCP.md
-```
-## MCP surface for `oraclepack` (so agents can act on Taskify artifacts)
-
-### What to expose as MCP tools
-
-Map the existing `oraclepack` CLI capabilities (validate/list/run + flags like `--no-tui`, `--out-dir`, `--oracle-bin`) into MCP tools so an agent can run packs non-interactively and then inspect the resulting state/report/artifacts.
-
-Add a small “taskify helper” layer to make the **Stage-2 → Stage-3** workflow deterministic for agents:
-
-* **Detect Stage-2 outputs** (dir-form `01-*.md..20-*.md` OR single-pack form) using the ordered resolver rules described in your skill.
-* **Validate Stage-2 outputs** (exactly one match per prefix 01..20).
-* **Validate Stage-3 Action Pack** structure constraints (single ```bash fence, step headers `# NN)`, etc.) before executing anything.
-* **Summarize Stage-3 artifacts** (e.g., `_actions.json`, `_actions.md`, PRD path, `tm-complexity.json`, pipelines doc) so agents can immediately consume them.
-
-### Transport choices (real-time vs local)
-
-* **stdio** is simplest for local agent runtimes; it requires MCP messages only on stdout (logs must go to stderr). ([Model Context Protocol][1])
-* **Streamable HTTP** is better for “real-time” multi-client usage; implement Origin validation and bind to localhost + auth to avoid DNS rebinding and local-network abuse. ([Model Context Protocol][1])
-
-### Tool UX metadata (important for agents)
-
-Use MCP **tool annotations** so clients can correctly present approval UX:
-
-* mark validate/list/read tools as `readOnlyHint: true`
-* mark run tools as `destructiveHint: true`, `openWorldHint: true` (they can touch filesystem, run processes, etc.) ([Model Context Protocol][2])
-
-### Security defaults (recommended)
-
-* Hard **deny-by-default execution**: require an env flag (e.g. `ORACLEPACK_ENABLE_EXEC=1`) to enable “run” tools.
-* Restrict filesystem access to **allowlisted roots** to avoid path traversal and accidental exfiltration of secrets.
-* Enforce stdout/stderr truncation and timeouts so a pack can’t wedge the server process.
-
-## Reference implementation
-
-I provided a complete, drop-in **Python MCP server** (FastMCP from the official MCP Python SDK) that exposes:
-
-* `oraclepack_validate_pack`, `oraclepack_list_steps`, `oraclepack_run_pack`
-* `oraclepack_taskify_detect_stage2`, `oraclepack_taskify_validate_stage2`
-* `oraclepack_taskify_validate_action_pack`, `oraclepack_taskify_artifacts_summary`
-* `oraclepack_taskify_run_action_pack`
-
-It supports **stdio** and **streamable-http** transports per the official SDK. ([GitHub][3])
-
-The full multi-file project is in the canvas titled **“oraclepack-mcp-server”**.
-
-[1]: https://modelcontextprotocol.io/specification/2025-03-26/basic/transports "Transports - Model Context Protocol"
-[2]: https://modelcontextprotocol.io/legacy/concepts/tools "Tools - Model Context Protocol"
-[3]: https://github.com/modelcontextprotocol/python-sdk "GitHub - modelcontextprotocol/python-sdk: The official Python SDK for Model Context Protocol servers and clients"
-```
-
-.tickets/mcp/oraclepack_mcp_server.md
-```
-# oraclepack-mcp-server (MCP wrapper for oraclepack + taskify helpers)
-
-## tree
-
-```text
-oraclepack-mcp-server/
-  README.md
-  requirements.txt
-  oraclepack_mcp_server/
-    __init__.py
-    __main__.py
-    config.py
-    security.py
-    oraclepack_cli.py
-    taskify.py
-    server.py
-```
-
----
-
-```md
-<!-- path: oraclepack-mcp-server/README.md -->
-# oraclepack-mcp-server
-
-Expose `oraclepack` (validate/list/run) plus a few Stage-3 (oraclepack-taskify) helpers as **MCP tools**, so an agent can:
-- validate and inspect packs
-- run packs non-interactively (`--no-tui --yes --run-all`) to produce artifacts
-- validate Stage-2 outputs (01-*.md..20-*.md)
-- validate Stage-3 Action Packs (single ```bash fence, step headers, etc.)
-- summarize Stage-3 artifacts (`_actions.json`, PRD, Task Master outputs, etc.)
-
-## Install
-
-```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
-
-## Configure (recommended)
-
-Environment variables:
-
-- `ORACLEPACK_ALLOWED_ROOTS` (default: current working directory)
-  - Colon-separated list of allowed filesystem roots the server may read from.
-  - Example: `ORACLEPACK_ALLOWED_ROOTS=/repo:/tmp/oracle-out`
-- `ORACLEPACK_BIN` (default: `oraclepack`) – path to the oraclepack CLI
-- `ORACLEPACK_WORKDIR` (default: current working directory)
-  - Where packs are executed from (important for relative paths).
-- `ORACLEPACK_ENABLE_EXEC` (default: `0`)
-  - Must be `1` to enable `oraclepack_run_pack` and `oraclepack_taskify_run_action_pack`.
-- `ORACLEPACK_CHARACTER_LIMIT` (default: `25000`) – truncate large stdout/stderr
-- `ORACLEPACK_MAX_READ_BYTES` (default: `500000`) – max bytes read from a file
-
-## Run (stdio)
-
-```bash
-# Stdio transport is the simplest local integration.
-python -m oraclepack_mcp_server --transport stdio
-```
-
-## Run (Streamable HTTP)
-
-```bash
-python -m oraclepack_mcp_server --transport streamable-http
-```
-
-## Tools
-
-- `oraclepack_validate_pack`
-- `oraclepack_list_steps`
-- `oraclepack_run_pack` (requires `ORACLEPACK_ENABLE_EXEC=1`)
-- `oraclepack_read_file`
-- `oraclepack_taskify_detect_stage2`
-- `oraclepack_taskify_validate_stage2`
-- `oraclepack_taskify_validate_action_pack`
-- `oraclepack_taskify_artifacts_summary`
-- `oraclepack_taskify_run_action_pack` (requires `ORACLEPACK_ENABLE_EXEC=1`)
-
-## Typical Stage-3 usage
-
-1) Detect/validate Stage-2 outputs (directory or single-pack)
-2) Validate the Action Pack markdown
-3) Run the Action Pack via `oraclepack run ...`
-4) Summarize produced artifacts
-```
-
-```txt
-# path: oraclepack-mcp-server/requirements.txt
-mcp>=1.0.0
-pydantic>=2.0.0
-```
-
-```python
-# path: oraclepack-mcp-server/oraclepack_mcp_server/__init__.py
-__all__ = []
-```
-
-```python
-# path: oraclepack-mcp-server/oraclepack_mcp_server/config.py
-from __future__ import annotations
-
-import os
-from dataclasses import dataclass
-from pathlib import Path
-
-
-def _truthy(value: str | None) -> bool:
-    if value is None:
-        return False
-    return value.strip().lower() in {"1", "true", "yes", "y", "on"}
-
-
-@dataclass(frozen=True)
-class ServerConfig:
-    allowed_roots: tuple[Path, ...]
-    oraclepack_bin: str
-    workdir: Path
-    enable_exec: bool
-    character_limit: int
-    max_read_bytes: int
-
-
-def load_config() -> ServerConfig:
-    # Allowed roots: colon-separated. Default to CWD.
-    roots_raw = os.environ.get("ORACLEPACK_ALLOWED_ROOTS")
-    if roots_raw:
-        roots = tuple(Path(p).expanduser().resolve() for p in roots_raw.split(":") if p.strip())
-    else:
-        roots = (Path.cwd().resolve(),)
-
-    oraclepack_bin = os.environ.get("ORACLEPACK_BIN", "oraclepack")
-    workdir = Path(os.environ.get("ORACLEPACK_WORKDIR", str(Path.cwd()))).expanduser().resolve()
-
-    enable_exec = _truthy(os.environ.get("ORACLEPACK_ENABLE_EXEC", "0"))
-
-    character_limit = int(os.environ.get("ORACLEPACK_CHARACTER_LIMIT", "25000"))
-    max_read_bytes = int(os.environ.get("ORACLEPACK_MAX_READ_BYTES", "500000"))
-
-    return ServerConfig(
-        allowed_roots=roots,
-        oraclepack_bin=oraclepack_bin,
-        workdir=workdir,
-        enable_exec=enable_exec,
-        character_limit=character_limit,
-        max_read_bytes=max_read_bytes,
-    )
-```
-
-```python
-# path: oraclepack-mcp-server/oraclepack_mcp_server/security.py
-from __future__ import annotations
-
-from pathlib import Path
-
-
-class PathNotAllowedError(ValueError):
-    pass
-
-
-def resolve_under_roots(path: Path, allowed_roots: tuple[Path, ...]) -> Path:
-    """Resolve a path and enforce it lives under at least one allowed root."""
-    p = path.expanduser().resolve()
-
-    for root in allowed_roots:
-        r = root.expanduser().resolve()
-        try:
-            p.relative_to(r)
-            return p
-        except ValueError:
-            continue
-
-    raise PathNotAllowedError(
-        f"Path not allowed (outside allowed roots). path={p} roots={[str(r) for r in allowed_roots]}"
-    )
-
-
-def safe_read_text(path: Path, max_bytes: int) -> tuple[str, bool]:
-    """Read up to max_bytes from a file as UTF-8 (replace errors)."""
-    data = path.read_bytes()
-    truncated = False
-    if len(data) > max_bytes:
-        data = data[:max_bytes]
-        truncated = True
-    return data.decode("utf-8", errors="replace"), truncated
-
-
-def safe_read_bytes(path: Path, max_bytes: int) -> tuple[bytes, bool]:
-    data = path.read_bytes()
-    truncated = False
-    if len(data) > max_bytes:
-        data = data[:max_bytes]
-        truncated = True
-    return data, truncated
-```
-
-```python
-# path: oraclepack-mcp-server/oraclepack_mcp_server/oraclepack_cli.py
-from __future__ import annotations
-
-import asyncio
-import os
-import time
-from dataclasses import dataclass
-from pathlib import Path
-
-
-@dataclass
-class CmdResult:
-    ok: bool
-    exit_code: int
-    duration_s: float
-    stdout: str
-    stderr: str
-    stdout_truncated: bool
-    stderr_truncated: bool
-
-
-def _truncate(s: str, limit: int) -> tuple[str, bool]:
-    if limit <= 0:
-        return s, False
-    if len(s) <= limit:
-        return s, False
-    return s[:limit], True
-
-
-async def run_cmd(
-    argv: list[str],
-    cwd: Path,
-    timeout_s: int,
-    env: dict[str, str] | None,
-    character_limit: int,
-) -> CmdResult:
-    start = time.time()
-
-    proc = await asyncio.create_subprocess_exec(
-        *argv,
-        cwd=str(cwd),
-        env=(os.environ | (env or {})),
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-    )
-
-    try:
-        out_b, err_b = await asyncio.wait_for(proc.communicate(), timeout=timeout_s)
-    except asyncio.TimeoutError:
-        proc.kill()
-        await proc.communicate()
-        duration = time.time() - start
-        return CmdResult(
-            ok=False,
-            exit_code=124,
-            duration_s=duration,
-            stdout="",
-            stderr=f"Timed out after {timeout_s}s: {' '.join(argv)}",
-            stdout_truncated=False,
-            stderr_truncated=False,
-        )
-
-    duration = time.time() - start
-    out = out_b.decode("utf-8", errors="replace") if out_b else ""
-    err = err_b.decode("utf-8", errors="replace") if err_b else ""
-
-    out, out_tr = _truncate(out, character_limit)
-    err, err_tr = _truncate(err, character_limit)
-
-    exit_code = proc.returncode if proc.returncode is not None else 1
-    return CmdResult(
-        ok=(exit_code == 0),
-        exit_code=exit_code,
-        duration_s=duration,
-        stdout=out,
-        stderr=err,
-        stdout_truncated=out_tr,
-        stderr_truncated=err_tr,
-    )
-```
-
-```python
-# path: oraclepack-mcp-server/oraclepack_mcp_server/taskify.py
-from __future__ import annotations
-
-import re
-from dataclasses import dataclass
-from datetime import date
-from pathlib import Path
-
-
-@dataclass
-class Stage2Resolution:
-    kind: str  # "dir" | "file"
-    stage2_path: Path
-    out_dir: Path
-    notes: list[str]
-
-
-PREFIXES = [f"{i:02d}" for i in range(1, 21)]
-
-
-def _is_iso_date(s: str) -> bool:
-    # Minimal heuristic for YYYY-MM-DD
-    return bool(re.fullmatch(r"\d{4}-\d{2}-\d{2}", s))
-
-
-def validate_stage2_dir(out_dir: Path) -> dict:
-    missing: list[str] = []
-    ambiguous: dict[str, list[str]] = {}
-    selected: dict[str, str] = {}
-
-    for pfx in PREFIXES:
-        matches = sorted(out_dir.glob(f"{pfx}-*.md"))
-        if len(matches) == 0:
-            missing.append(f"{pfx}-*.md")
-        elif len(matches) > 1:
-            ambiguous[pfx] = [m.name for m in matches]
-        else:
-            selected[pfx] = matches[0].name
-
-    ok = (not missing) and (not ambiguous)
-    return {
-        "ok": ok,
-        "out_dir": str(out_dir),
-        "selected": selected,
-        "missing": missing,
-        "ambiguous": ambiguous,
-    }
-
-
-def _lexi_newest(paths: list[Path]) -> Path | None:
-    # Deterministic: lexicographic max
-    return sorted(paths, key=lambda p: p.name)[-1] if paths else None
-
-
-def detect_stage2(stage2_path: str, repo_root: Path) -> Stage2Resolution:
-    notes: list[str] = []
-
-    if stage2_path != "auto":
-        p = (repo_root / stage2_path).expanduser()
-        if p.exists() and p.is_dir():
-            return Stage2Resolution(kind="dir", stage2_path=p.resolve(), out_dir=p.resolve(), notes=["explicit dir"])
-        if p.exists() and p.is_file():
-            # out_dir rules from skill: if under docs/oracle-questions-YYYY-MM-DD/ then parent/oracle-out else oracle-out
-            p_res = p.resolve()
-            out = repo_root / "oracle-out"
-            parts = list(p_res.parts)
-            if "docs" in parts:
-                try:
-                    idx = parts.index("docs")
-                    # docs/oracle-questions-YYYY-MM-DD/.../oracle-pack-YYYY-MM-DD.md
-                    if idx + 1 < len(parts) and parts[idx + 1].startswith("oracle-questions-"):
-                        out = Path(*parts[: idx + 2]) / "oracle-out"
-                except ValueError:
-                    pass
-            return Stage2Resolution(kind="file", stage2_path=p_res, out_dir=out.resolve(), notes=["explicit file"])
-        raise FileNotFoundError(f"stage2_path not found: {p}")
-
-    # auto discovery (best-effort, deterministic ordering)
-    searched: list[str] = []
-
-    # 1) repo_root/oracle-out
-    candidate = repo_root / "oracle-out"
-    searched.append(str(candidate))
-    if candidate.is_dir():
-        v = validate_stage2_dir(candidate)
-        if v["ok"]:
-            notes.append("auto: selected repo_root/oracle-out")
-            return Stage2Resolution(kind="dir", stage2_path=candidate.resolve(), out_dir=candidate.resolve(), notes=notes)
-
-    # 2) docs/oracle-questions-YYYY-MM-DD/oracle-out (newest by lexicographic date suffix)
-    docs = repo_root / "docs"
-    if docs.is_dir():
-        qdirs = [p for p in docs.glob("oracle-questions-*") if p.is_dir()]
-        # deterministic: sort by name and take newest
-        newest_q = _lexi_newest(qdirs)
-        if newest_q:
-            candidate = newest_q / "oracle-out"
-            searched.append(str(candidate))
-            if candidate.is_dir():
-                v = validate_stage2_dir(candidate)
-                if v["ok"]:
-                    notes.append(f"auto: selected {candidate}")
-                    return Stage2Resolution(kind="dir", stage2_path=candidate.resolve(), out_dir=candidate.resolve(), notes=notes)
-
-    # 3) single-pack form (newer): look for docs/oracle-pack-*.md or docs/oraclepacks/oracle-pack-*.md
-    file_candidates: list[Path] = []
-    if docs.is_dir():
-        file_candidates += list(docs.glob("oracle-pack-*.md"))
-        file_candidates += list((docs / "oraclepacks").glob("oracle-pack-*.md"))
-        file_candidates += list(docs.glob("oracle-questions-*/oraclepacks/oracle-pack-*.md"))
-
-    newest_file = _lexi_newest(sorted([p for p in file_candidates if p.is_file()], key=lambda p: p.name))
-    if newest_file:
-        notes.append(f"auto: selected single-pack {newest_file}")
-        out = repo_root / "oracle-out"
-        # If under docs/oracle-questions-YYYY-MM-DD/..., default out_dir there.
-        if "docs" in newest_file.parts:
-            try:
-                idx = newest_file.parts.index("docs")
-                if idx + 1 < len(newest_file.parts) and newest_file.parts[idx + 1].startswith("oracle-questions-"):
-                    out = Path(*newest_file.parts[: idx + 2]) / "oracle-out"
-            except ValueError:
-                pass
-        return Stage2Resolution(kind="file", stage2_path=newest_file.resolve(), out_dir=out.resolve(), notes=notes)
-
-    raise FileNotFoundError(
-        "stage2_path=auto could not resolve Stage-2 outputs. Searched:\n- " + "\n- ".join(searched)
-    )
-
-
-def validate_action_pack(pack_path: Path) -> dict:
-    text = pack_path.read_text(encoding="utf-8", errors="replace")
-
-    bash_fence = re.findall(r"(?m)^\s*```bash\s*$", text)
-    any_fence = re.findall(r"(?m)^\s*```\s*", text)
-
-    errors: list[str] = []
-    if len(bash_fence) != 1:
-        errors.append(f"expected exactly one ```bash fence; found {len(bash_fence)}")
-    if len(any_fence) != 2:
-        # One opening and one closing fence expected, and it must be a bash fence.
-        errors.append(f"expected no other code fences; found {len(any_fence)} total fences")
-
-    # Extract bash block content if possible
-    bash_block = ""
-    m = re.search(r"```bash\s*\n(?P<body>[\s\S]*?)\n```\s*", text)
-    if m:
-        bash_block = m.group("body")
-
-    # Validate step headers inside bash fence
-    step_headers = re.findall(r"(?m)^\s*#\s*(\d{2})\)\s+.*$", bash_block)
-    if not step_headers:
-        errors.append("no step headers found inside the bash fence (expected lines like '# 01) ...')")
-    else:
-        # Ensure they start at 01 and are strictly increasing by 1.
-        nums = [int(x) for x in step_headers]
-        if nums[0] != 1:
-            errors.append(f"first step must be 01; got {nums[0]:02d}")
-        for prev, cur in zip(nums, nums[1:]):
-            if cur != prev + 1:
-                errors.append(f"step numbers must be sequential; got {prev:02d} then {cur:02d}")
-
-    return {
-        "ok": len(errors) == 0,
-        "pack_path": str(pack_path),
-        "step_count": len(step_headers),
-        "errors": errors,
-    }
-
-
-def default_pack_path(today: date | None = None) -> str:
-    d = today or date.today()
-    return f"docs/oracle-actions-pack-{d.isoformat()}.md"
-```
-
-```python
-# path: oraclepack-mcp-server/oraclepack_mcp_server/server.py
-from __future__ import annotations
-
-import json
-from enum import Enum
-from pathlib import Path
-from typing import Any
-
-from pydantic import BaseModel, Field
-from mcp.server.fastmcp import FastMCP
-
-from .config import load_config
-from .security import resolve_under_roots, safe_read_text, PathNotAllowedError
-from .oraclepack_cli import run_cmd
-from .taskify import detect_stage2, validate_stage2_dir, validate_action_pack
-
-
-class ResponseFormat(str, Enum):
-    markdown = "markdown"
-    json = "json"
-
-
-class PackPathInput(BaseModel):
-    pack_path: str = Field(..., description="Path to the pack markdown file")
-    response_format: ResponseFormat = Field(default=ResponseFormat.markdown)
-
-
-class RunPackInput(BaseModel):
-    pack_path: str = Field(..., description="Path to the pack markdown file")
-    out_dir: str | None = Field(default=None, description="Output directory for step execution (passes --out-dir).")
-
-    no_tui: bool = Field(default=True, description="If true, pass --no-tui")
-    yes: bool = Field(default=True, description="If true, pass --yes")
-    run_all: bool = Field(default=True, description="If true, pass --run-all")
-
-    resume: bool = Field(default=False, description="If true, pass --resume")
-    stop_on_fail: bool = Field(default=True, description="If true, pass --stop-on-fail (default true)")
-
-    roi_threshold: float = Field(default=0.0, description="Pass --roi-threshold")
-    roi_mode: str = Field(default="over", description="Pass --roi-mode ('over' or 'under')")
-
-    timeout_s: int = Field(default=3600, description="Hard timeout for the oraclepack process")
-    response_format: ResponseFormat = Field(default=ResponseFormat.markdown)
-
-
-class ReadFileInput(BaseModel):
-    path: str = Field(..., description="Path to a file within ORACLEPACK_ALLOWED_ROOTS")
-    max_bytes: int | None = Field(default=None, description="Override max bytes read")
-    response_format: ResponseFormat = Field(default=ResponseFormat.markdown)
-
-
-class TaskifyDetectStage2Input(BaseModel):
-[TRUNCATED]
 ```
 
 </source_code>

@@ -3,7 +3,7 @@
     "codefetch": "^2.2.0"
   },
   "scripts": {
-    "code": "pnpm code:t && pnpm code:op && pnpm code:opt",
+    "code": "pnpm code:t && pnpm code:op && pnpm code:opt && pnpm code:docs",
     "code:tui": "codefetch -t 5 --include-dir cmd,internal -o oraclepack-tui.md --max-tokens 50000 --token-limiter truncated",
     "code:all": "codefetch -t 5 -o oraclepack-all.md",
     "code:temp": "codefetch -t 5 --include-dir .rules -o rules.md --max-tokens 50000",
@@ -12,6 +12,7 @@
     "code:op": "codefetch -t 5 --include-files \"skills/**/oracle*\",\"skills/**/oracle*/**/*\" -o oracle_SKILLS_and_PROMPTS.md --max-tokens 75000",
     "code:t": "codefetch -t 5 --include-dir .tickets -o oraclepack-tickets.md --max-tokens 50000 --token-limiter truncated",
     "code:opt": "codefetch -t 5 --include-dir oraclepack-mcp-server,internal,cmd -o oraclepack-op-mcp.md --max-tokens 75000 --token-limiter truncated",
-    "scri": "bash scripts/codefetch_skill.sh"
+    "scri": "bash scripts/codefetch_skill.sh",
+    "code:docs": "codefetch -t 5 --include-dir docs -o oraclepack-question-responses.md --max-tokens 50000 --token-limiter truncated"
   }
 }

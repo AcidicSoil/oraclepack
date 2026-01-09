@@ -7,8 +7,10 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
+	"github.com/user/oraclepack/internal/pack"
 	"github.com/user/oraclepack/internal/report"
 	"github.com/user/oraclepack/internal/state"
 )
@@ -73,7 +75,7 @@ func (a *App) RunPlain(ctx context.Context, out io.Writer) error {
 		a.saveState()
 
 		// Execute
-		err := a.Runner.RunStep(ctx, &step, out)
+		err := a.runStepWithOutputVerification(ctx, &step, out)
 		a.recordWarnings()
 
 		status.EndedAt = time.Now()
@@ -97,6 +99,49 @@ func (a *App) RunPlain(ctx context.Context, out io.Writer) error {
 	}
 
 	a.finalize(out)
+	return nil
+}
+
+func (a *App) runStepWithOutputVerification(ctx context.Context, step *pack.Step, out io.Writer) error {
+	retries := a.Config.OutputRetries
+	if retries < 0 {
+		retries = 0
+	}
+	for attempt := 0; attempt <= retries; attempt++ {
+		err := a.Runner.RunStep(ctx, step, out)
+		if err != nil {
+			return err
+		}
+		if !a.Config.OutputVerify {
+			return nil
+		}
+		expectations := pack.StepOutputExpectations(step)
+		if len(expectations) == 0 {
+			return nil
+		}
+		var failures []string
+		for path, required := range expectations {
+			ok, missing, err := pack.ValidateOutputFile(path, required)
+			if err != nil {
+				return fmt.Errorf("output verification failed for step %s: %w", step.ID, err)
+			}
+			if !ok {
+				failures = append(failures, fmt.Sprintf("%s missing: %s", path, strings.Join(missing, ", ")))
+			}
+		}
+		if len(failures) == 0 {
+			return nil
+		}
+		if attempt == retries {
+			return fmt.Errorf(
+				"output verification failed for step %s: %s",
+				step.ID,
+				strings.Join(failures, "; "),
+			)
+		}
+		fmt.Fprintf(out, "⚠ output verification failed for step %s (%s); re-running (%d/%d)...\n",
+			step.ID, strings.Join(failures, "; "), attempt+1, retries)
+	}
 	return nil
 }
 

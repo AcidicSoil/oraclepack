@@ -31,6 +31,7 @@ Project Structure:
 │   │   ├── merge_test.go
 │   │   └── types.go
 │   ├── pack
+│   │   ├── output_check.go
 │   │   ├── parser.go
 │   │   ├── parser_test.go
 │   │   └── types.go
@@ -148,62 +149,6 @@ Signature: 8a477f597d28d172789f06886806bc55
 # This file is a cache directory tag created by pytest.
 # For information about cache directory tags, see:
 #	https://bford.info/cachedir/spec.html
-```
-
-oraclepack-mcp-server/oraclepack_mcp_server.egg-info/PKG-INFO
-```
-Metadata-Version: 2.4
-Name: oraclepack-mcp-server
-Version: 0.1.0
-Summary: MCP wrapper for oraclepack CLI
-Author: Oraclepack Contributor
-Requires-Python: >=3.10
-Requires-Dist: mcp[cli]>=0.1.0
-Requires-Dist: pydantic-settings>=2.0.0
-Requires-Dist: pydantic>=2.0.0
-```
-
-oraclepack-mcp-server/oraclepack_mcp_server.egg-info/SOURCES.txt
-```
-README.md
-pyproject.toml
-oraclepack_mcp_server/__init__.py
-oraclepack_mcp_server/__main__.py
-oraclepack_mcp_server/config.py
-oraclepack_mcp_server/oraclepack_cli.py
-oraclepack_mcp_server/security.py
-oraclepack_mcp_server/server.py
-oraclepack_mcp_server/taskify.py
-oraclepack_mcp_server.egg-info/PKG-INFO
-oraclepack_mcp_server.egg-info/SOURCES.txt
-oraclepack_mcp_server.egg-info/dependency_links.txt
-oraclepack_mcp_server.egg-info/entry_points.txt
-oraclepack_mcp_server.egg-info/requires.txt
-oraclepack_mcp_server.egg-info/top_level.txt
-tests/test_config.py
-```
-
-oraclepack-mcp-server/oraclepack_mcp_server.egg-info/dependency_links.txt
-```
-
-```
-
-oraclepack-mcp-server/oraclepack_mcp_server.egg-info/entry_points.txt
-```
-[console_scripts]
-oraclepack-mcp = oraclepack_mcp_server.__main__:main
-```
-
-oraclepack-mcp-server/oraclepack_mcp_server.egg-info/requires.txt
-```
-mcp[cli]>=0.1.0
-pydantic-settings>=2.0.0
-pydantic>=2.0.0
-```
-
-oraclepack-mcp-server/oraclepack_mcp_server.egg-info/top_level.txt
-```
-oraclepack_mcp_server
 ```
 
 oraclepack-mcp-server/oraclepack_mcp_server/__init__.py
@@ -791,6 +736,62 @@ Execution tools require `ORACLEPACK_ENABLE_EXEC=1` in the server environment.
 """
 ```
 
+oraclepack-mcp-server/oraclepack_mcp_server.egg-info/PKG-INFO
+```
+Metadata-Version: 2.4
+Name: oraclepack-mcp-server
+Version: 0.1.0
+Summary: MCP wrapper for oraclepack CLI
+Author: Oraclepack Contributor
+Requires-Python: >=3.10
+Requires-Dist: mcp[cli]>=0.1.0
+Requires-Dist: pydantic-settings>=2.0.0
+Requires-Dist: pydantic>=2.0.0
+```
+
+oraclepack-mcp-server/oraclepack_mcp_server.egg-info/SOURCES.txt
+```
+README.md
+pyproject.toml
+oraclepack_mcp_server/__init__.py
+oraclepack_mcp_server/__main__.py
+oraclepack_mcp_server/config.py
+oraclepack_mcp_server/oraclepack_cli.py
+oraclepack_mcp_server/security.py
+oraclepack_mcp_server/server.py
+oraclepack_mcp_server/taskify.py
+oraclepack_mcp_server.egg-info/PKG-INFO
+oraclepack_mcp_server.egg-info/SOURCES.txt
+oraclepack_mcp_server.egg-info/dependency_links.txt
+oraclepack_mcp_server.egg-info/entry_points.txt
+oraclepack_mcp_server.egg-info/requires.txt
+oraclepack_mcp_server.egg-info/top_level.txt
+tests/test_config.py
+```
+
+oraclepack-mcp-server/oraclepack_mcp_server.egg-info/dependency_links.txt
+```
+
+```
+
+oraclepack-mcp-server/oraclepack_mcp_server.egg-info/entry_points.txt
+```
+[console_scripts]
+oraclepack-mcp = oraclepack_mcp_server.__main__:main
+```
+
+oraclepack-mcp-server/oraclepack_mcp_server.egg-info/requires.txt
+```
+mcp[cli]>=0.1.0
+pydantic-settings>=2.0.0
+pydantic>=2.0.0
+```
+
+oraclepack-mcp-server/oraclepack_mcp_server.egg-info/top_level.txt
+```
+oraclepack_mcp_server
+```
+
 oraclepack-mcp-server/tests/test_cli.py
 ```
 import asyncio
@@ -1143,248 +1144,6 @@ oraclepack-mcp-server/.pytest_cache/v/cache/nodeids
 ]
 ```
 
-internal/cli/cmds.go
-```
-package cli
-
-import (
-	"fmt"
-
-	"github.com/spf13/cobra"
-	"github.com/user/oraclepack/internal/app"
-)
-
-var validateCmd = &cobra.Command{
-	Use:   "validate [pack.md]",
-	Short: "Validate an oracle pack",
-	Args:  cobra.ExactArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg := app.Config{PackPath: args[0]}
-		a := app.New(cfg)
-		if err := a.LoadPack(); err != nil {
-			return err
-		}
-		fmt.Println("Pack is valid.")
-		return nil
-	},
-}
-
-var listCmd = &cobra.Command{
-	Use:   "list [pack.md]",
-	Short: "List steps in an oracle pack",
-	Args:  cobra.ExactArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg := app.Config{PackPath: args[0]}
-		a := app.New(cfg)
-		if err := a.LoadPack(); err != nil {
-			return err
-		}
-		for _, s := range a.Pack.Steps {
-			fmt.Printf("%s: %s\n", s.ID, s.OriginalLine)
-		}
-		return nil
-	},
-}
-
-func init() {
-	rootCmd.AddCommand(validateCmd)
-	rootCmd.AddCommand(listCmd)
-}
-```
-
-internal/cli/root.go
-```
-package cli
-
-import (
-	"fmt"
-	"os"
-
-	"github.com/spf13/cobra"
-	"github.com/user/oraclepack/internal/errors"
-)
-
-var (
-	noTUI     bool
-	oracleBin string
-	outDir    string
-)
-
-var rootCmd = &cobra.Command{
-	Use:   "oraclepack",
-	Short: "Oracle Pack Runner",
-	Long:  `A polished TUI-driven runner for oracle-based interactive bash steps.`,
-}
-
-// Execute adds all child commands to the root command and sets flags appropriately.
-func Execute() {
-	if err := rootCmd.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(errors.ExitCode(err))
-	}
-}
-
-func init() {
-	rootCmd.PersistentFlags().BoolVar(&noTUI, "no-tui", false, "Disable the TUI and run in plain terminal mode")
-	rootCmd.PersistentFlags().StringVar(&oracleBin, "oracle-bin", "oracle", "Path to the oracle binary")
-	rootCmd.PersistentFlags().StringVarP(&outDir, "out-dir", "o", "", "Output directory for step execution")
-}
-```
-
-internal/cli/run.go
-```
-package cli
-
-import (
-	"context"
-	"os"
-	"path/filepath"
-	"strings"
-
-	"github.com/spf13/cobra"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/user/oraclepack/internal/app"
-	"github.com/user/oraclepack/internal/tui"
-)
-
-var (
-	yes          bool
-	resume       bool
-	stopOnFail   bool
-	roiThreshold float64
-	roiMode      string
-	runAll       bool
-)
-
-var runCmd = &cobra.Command{
-	Use:   "run [pack.md]",
-	Short: "Run an oracle pack",
-	Args:  cobra.ExactArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		packPath := args[0]
-		
-		// Setup paths
-		base := strings.TrimSuffix(filepath.Base(packPath), filepath.Ext(packPath))
-		statePath := base + ".state.json"
-		reportPath := base + ".report.json"
-
-		cfg := app.Config{
-			PackPath:     packPath,
-			StatePath:    statePath,
-			ReportPath:   reportPath,
-			Resume:       resume,
-			StopOnFail:   stopOnFail,
-			WorkDir:      ".",
-			OutDir:       outDir,
-			ROIThreshold: roiThreshold,
-			ROIMode:      roiMode,
-		}
-
-		a := app.New(cfg)
-		// Prepare the application (loads pack, resolves out_dir, provisions env)
-		if err := a.Prepare(); err != nil {
-			return err
-		}
-		
-		if err := a.LoadState(); err != nil {
-			return err
-		}
-
-		if noTUI {
-			return a.RunPlain(context.Background(), os.Stdout)
-		}
-
-		m := tui.NewModel(a.Pack, a.Runner, a.State, cfg.StatePath, cfg.ROIThreshold, cfg.ROIMode, runAll)
-		p := tea.NewProgram(m, tea.WithAltScreen())
-		_, err := p.Run()
-		return err
-	},
-}
-
-func init() {
-	runCmd.Flags().BoolVarP(&yes, "yes", "y", false, "Auto-approve all steps")
-	runCmd.Flags().BoolVar(&resume, "resume", false, "Resume from last successful step")
-	runCmd.Flags().BoolVar(&stopOnFail, "stop-on-fail", true, "Stop execution if a step fails")
-	runCmd.Flags().Float64Var(&roiThreshold, "roi-threshold", 0.0, "Filter steps by ROI threshold")
-	runCmd.Flags().StringVar(&roiMode, "roi-mode", "over", "ROI filter mode ('over' or 'under')")
-	runCmd.Flags().BoolVar(&runAll, "run-all", false, "Automatically run all steps sequentially on start")
-	rootCmd.AddCommand(runCmd)
-}
-```
-
-internal/errors/errors.go
-```
-package errors
-
-import (
-	"errors"
-)
-
-var (
-	// ErrInvalidPack is returned when the Markdown pack is malformed.
-	ErrInvalidPack = errors.New("invalid pack structure")
-	// ErrExecutionFailed is returned when a shell command fails.
-	ErrExecutionFailed = errors.New("execution failed")
-	// ErrConfigInvalid is returned when CLI flags or environment variables are incorrect.
-	ErrConfigInvalid = errors.New("invalid configuration")
-)
-
-// ExitCode returns the appropriate exit code for a given error.
-func ExitCode(err error) int {
-	if err == nil {
-		return 0
-	}
-
-	if errors.Is(err, ErrConfigInvalid) {
-		return 2
-	}
-
-	if errors.Is(err, ErrInvalidPack) {
-		return 3
-	}
-
-	if errors.Is(err, ErrExecutionFailed) {
-		return 4
-	}
-
-	return 1 // Generic error
-}
-```
-
-internal/errors/errors_test.go
-```
-package errors
-
-import (
-	"errors"
-	"fmt"
-	"testing"
-)
-
-func TestExitCode(t *testing.T) {
-	tests := []struct {
-		name     string
-		err      error
-		expected int
-	}{
-		{"nil error", nil, 0},
-		{"generic error", errors.New("generic"), 1},
-		{"invalid pack", ErrInvalidPack, 3},
-		{"execution failed", ErrExecutionFailed, 4},
-		{"config invalid", ErrConfigInvalid, 2},
-		{"wrapped invalid pack", fmt.Errorf("wrap: %w", ErrInvalidPack), 3},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := ExitCode(tt.err); got != tt.expected {
-				t.Errorf("ExitCode() = %v, want %v", got, tt.expected)
-			}
-		})
-	}
-}
-```
-
 internal/app/app.go
 ```
 package app
@@ -1400,18 +1159,20 @@ import (
 
 // Config holds application-wide configuration.
 type Config struct {
-	PackPath     string
-	StatePath    string
-	ReportPath   string
-	StopOnFail   bool
-	Resume       bool
-	Verbose      bool
-	DryRun       bool
-	OracleFlags  []string
-	WorkDir      string
-	OutDir       string // CLI override for output directory
-	ROIThreshold float64
-	ROIMode      string // "over" or "under"
+	PackPath      string
+	StatePath     string
+	ReportPath    string
+	StopOnFail    bool
+	Resume        bool
+	Verbose       bool
+	DryRun        bool
+	OracleFlags   []string
+	WorkDir       string
+	OutDir        string // CLI override for output directory
+	ROIThreshold  float64
+	ROIMode       string // "over" or "under"
+	OutputVerify  bool
+	OutputRetries int
 }
 
 // App orchestrates the execution flow.
@@ -1497,8 +1258,8 @@ func (a *App) Prepare() error {
 	// Update Runner
 	// We do NOT set WorkDir to outDir, so execution happens in the project root.
 	// This preserves relative path resolution for -f flags.
-	// a.Runner.WorkDir = outDir 
-	
+	// a.Runner.WorkDir = outDir
+
 	// Add out_dir to Env so scripts can reference it
 	a.Runner.Env = append(a.Runner.Env, fmt.Sprintf("out_dir=%s", outDir))
 
@@ -1586,8 +1347,10 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
+	"github.com/user/oraclepack/internal/pack"
 	"github.com/user/oraclepack/internal/report"
 	"github.com/user/oraclepack/internal/state"
 )
@@ -1652,7 +1415,7 @@ func (a *App) RunPlain(ctx context.Context, out io.Writer) error {
 		a.saveState()
 
 		// Execute
-		err := a.Runner.RunStep(ctx, &step, out)
+		err := a.runStepWithOutputVerification(ctx, &step, out)
 		a.recordWarnings()
 
 		status.EndedAt = time.Now()
@@ -1676,6 +1439,49 @@ func (a *App) RunPlain(ctx context.Context, out io.Writer) error {
 	}
 
 	a.finalize(out)
+	return nil
+}
+
+func (a *App) runStepWithOutputVerification(ctx context.Context, step *pack.Step, out io.Writer) error {
+	retries := a.Config.OutputRetries
+	if retries < 0 {
+		retries = 0
+	}
+	for attempt := 0; attempt <= retries; attempt++ {
+		err := a.Runner.RunStep(ctx, step, out)
+		if err != nil {
+			return err
+		}
+		if !a.Config.OutputVerify {
+			return nil
+		}
+		expectations := pack.StepOutputExpectations(step)
+		if len(expectations) == 0 {
+			return nil
+		}
+		var failures []string
+		for path, required := range expectations {
+			ok, missing, err := pack.ValidateOutputFile(path, required)
+			if err != nil {
+				return fmt.Errorf("output verification failed for step %s: %w", step.ID, err)
+			}
+			if !ok {
+				failures = append(failures, fmt.Sprintf("%s missing: %s", path, strings.Join(missing, ", ")))
+			}
+		}
+		if len(failures) == 0 {
+			return nil
+		}
+		if attempt == retries {
+			return fmt.Errorf(
+				"output verification failed for step %s: %s",
+				step.ID,
+				strings.Join(failures, "; "),
+			)
+		}
+		fmt.Fprintf(out, "⚠ output verification failed for step %s (%s); re-running (%d/%d)...\n",
+			step.ID, strings.Join(failures, "; "), attempt+1, retries)
+	}
 	return nil
 }
 
@@ -1805,446 +1611,250 @@ echo "low"
 }
 ```
 
-internal/pack/parser.go
+internal/cli/cmds.go
 ```
-package pack
+package cli
 
 import (
-	"bufio"
 	"fmt"
-	"regexp"
-	"strconv"
-	"strings"
 
+	"github.com/spf13/cobra"
+	"github.com/user/oraclepack/internal/app"
+)
+
+var validateCmd = &cobra.Command{
+	Use:   "validate [pack.md]",
+	Short: "Validate an oracle pack",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		cfg := app.Config{PackPath: args[0]}
+		a := app.New(cfg)
+		if err := a.LoadPack(); err != nil {
+			return err
+		}
+		fmt.Println("Pack is valid.")
+		return nil
+	},
+}
+
+var listCmd = &cobra.Command{
+	Use:   "list [pack.md]",
+	Short: "List steps in an oracle pack",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		cfg := app.Config{PackPath: args[0]}
+		a := app.New(cfg)
+		if err := a.LoadPack(); err != nil {
+			return err
+		}
+		for _, s := range a.Pack.Steps {
+			fmt.Printf("%s: %s\n", s.ID, s.OriginalLine)
+		}
+		return nil
+	},
+}
+
+func init() {
+	rootCmd.AddCommand(validateCmd)
+	rootCmd.AddCommand(listCmd)
+}
+```
+
+internal/cli/root.go
+```
+package cli
+
+import (
+	"fmt"
+	"os"
+
+	"github.com/spf13/cobra"
 	"github.com/user/oraclepack/internal/errors"
 )
 
 var (
-	bashFenceRegex = regexp.MustCompile("(?s)```bash\n(.*?)\n```")
-	// Updated regex to support ")", " —", and " -" separators
-	stepHeaderRegex = regexp.MustCompile(`^#\s*(\d{2})(?:\)|[\s]+[—-])`)
-	roiRegex        = regexp.MustCompile(`ROI=(\d+(\.\d+)?)`)
-	outDirRegex    = regexp.MustCompile(`(?m)^out_dir=["']?([^"'\s]+)["']?`)
-	writeOutputRegex = regexp.MustCompile(`(?m)--write-output`)
+	noTUI     bool
+	oracleBin string
+	outDir    string
 )
 
-// Parse reads a Markdown content and returns a Pack.
-func Parse(content []byte) (*Pack, error) {
-	match := bashFenceRegex.FindSubmatch(content)
-	if match == nil || len(match) < 2 {
-		return nil, fmt.Errorf("%w: no bash code block found", errors.ErrInvalidPack)
-	}
-
-	bashCode := string(match[1])
-	pack := &Pack{}
-	
-	scanner := bufio.NewScanner(strings.NewReader(bashCode))
-	var currentStep *Step
-	var preludeLines []string
-	var inSteps bool
-
-	for scanner.Scan() {
-		line := scanner.Text()
-		headerMatch := stepHeaderRegex.FindStringSubmatch(strings.TrimSpace(line))
-
-		if len(headerMatch) > 1 {
-			inSteps = true
-			if currentStep != nil {
-				pack.Steps = append(pack.Steps, *currentStep)
-			}
-			num, _ := strconv.Atoi(headerMatch[1])
-			
-			// Extract ROI if present
-			var roi float64
-			cleanedLine := line
-			roiMatch := roiRegex.FindStringSubmatch(line)
-			if len(roiMatch) > 1 {
-				val, err := strconv.ParseFloat(roiMatch[1], 64)
-				if err == nil {
-					roi = val
-					// Remove ROI tag from display title, but keep original line intact?
-					// The task says "strip from Step.Title". Step struct currently has `OriginalLine`.
-					// I'll assume OriginalLine is what is displayed, or I should add a Title field.
-					// Looking at Step struct: ID, Number, Code, OriginalLine.
-					// I'll remove it from OriginalLine for now or add a Title field.
-					// The existing TUI uses OriginalLine as description. 
-					// Let's clean OriginalLine for display purposes or add a dedicated Title field.
-					// Adding a dedicated Title field seems cleaner but requires struct change.
-					// For now, I'll strip it from OriginalLine to match the prompt requirement "cleaner UI display".
-					cleanedLine = strings.Replace(cleanedLine, roiMatch[0], "", 1)
-					cleanedLine = strings.TrimSpace(cleanedLine)
-					// Fix any double spaces or trailing separators if needed, but simple replace is a good start.
-				}
-			}
-
-			currentStep = &Step{
-				ID:           headerMatch[1],
-				Number:       num,
-				OriginalLine: cleanedLine,
-				ROI:          roi,
-			}
-			continue
-		}
-
-		if inSteps {
-			currentStep.Code += line + "\n"
-		} else {
-			preludeLines = append(preludeLines, line)
-		}
-	}
-
-	if currentStep != nil {
-		pack.Steps = append(pack.Steps, *currentStep)
-	}
-
-	pack.Prelude.Code = strings.Join(preludeLines, "\n")
-	pack.DeriveMetadata()
-
-	return pack, nil
+var rootCmd = &cobra.Command{
+	Use:   "oraclepack",
+	Short: "Oracle Pack Runner",
+	Long:  `A polished TUI-driven runner for oracle-based interactive bash steps.`,
 }
 
-// DeriveMetadata extracts configuration from the prelude.
-func (p *Pack) DeriveMetadata() {
-	outDirMatch := outDirRegex.FindStringSubmatch(p.Prelude.Code)
-	if len(outDirMatch) > 1 {
-		p.OutDir = outDirMatch[1]
-	}
-
-	if writeOutputRegex.MatchString(p.Prelude.Code) {
-		p.WriteOutput = true
+// Execute adds all child commands to the root command and sets flags appropriately.
+func Execute() {
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(errors.ExitCode(err))
 	}
 }
 
-// Validate checks if the pack follows all rules.
-func (p *Pack) Validate() error {
-	if len(p.Steps) == 0 {
-		return fmt.Errorf("%w: at least one step is required", errors.ErrInvalidPack)
-	}
-
-	seen := make(map[int]bool)
-	for i, step := range p.Steps {
-		if step.Number <= 0 {
-			return fmt.Errorf("%w: invalid step number %d", errors.ErrInvalidPack, step.Number)
-		}
-		if seen[step.Number] {
-			return fmt.Errorf("%w: duplicate step number %d", errors.ErrInvalidPack, step.Number)
-		}
-		seen[step.Number] = true
-
-		// Optional: Ensure sequential starting from 1
-		if step.Number != i+1 {
-			return fmt.Errorf("%w: steps must be sequential starting from 1 (expected %d, got %d)", errors.ErrInvalidPack, i+1, step.Number)
-		}
-	}
-
-	return nil
+func init() {
+	rootCmd.PersistentFlags().BoolVar(&noTUI, "no-tui", false, "Disable the TUI and run in plain terminal mode")
+	rootCmd.PersistentFlags().StringVar(&oracleBin, "oracle-bin", "oracle", "Path to the oracle binary")
+	rootCmd.PersistentFlags().StringVarP(&outDir, "out-dir", "o", "", "Output directory for step execution")
 }
 ```
 
-internal/pack/parser_test.go
+internal/cli/run.go
 ```
-package pack
+package cli
 
 import (
+	"context"
+	"os"
+	"path/filepath"
 	"strings"
-	"testing"
+
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/spf13/cobra"
+	"github.com/user/oraclepack/internal/app"
+	"github.com/user/oraclepack/internal/tui"
 )
-
-func TestParse(t *testing.T) {
-	content := []byte(`
-# My Pack
-Some description.
-
-` + "```" + `bash
-out_dir="dist"
---write-output
-
-# 01)
-echo "hello"
-
-# 02)
-echo "world"
-` + "```" + `
-`)
-
-	p, err := Parse(content)
-	if err != nil {
-		t.Fatalf("Parse failed: %v", err)
-	}
-
-	if p.OutDir != "dist" {
-		t.Errorf("expected OutDir dist, got %s", p.OutDir)
-	}
-
-	if !p.WriteOutput {
-		t.Errorf("expected WriteOutput true, got false")
-	}
-
-	if len(p.Steps) != 2 {
-		t.Errorf("expected 2 steps, got %d", len(p.Steps))
-	}
-
-	if p.Steps[0].ID != "01" || p.Steps[0].Number != 1 {
-		t.Errorf("step 1 mismatch: %+v", p.Steps[0])
-	}
-
-	if err := p.Validate(); err != nil {
-		t.Errorf("Validate failed: %v", err)
-	}
-}
-
-func TestParseVariants(t *testing.T) {
-	tests := []struct {
-		name    string
-		content string
-	}{
-		{
-			"em dash",
-			`
-` + "```" + `bash
-# 01 — ROI=...
-echo "step 1"
-` + "```" + `
-`,
-		},
-		{
-			"hyphen",
-			`
-` + "```" + `bash
-# 01 - ROI=...
-echo "step 1"
-` + "```" + `
-`,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			p, err := Parse([]byte(tt.content))
-			if err != nil {
-				t.Fatalf("Parse failed: %v", err)
-			}
-			if len(p.Steps) != 1 {
-				t.Errorf("expected 1 step, got %d", len(p.Steps))
-			}
-		})
-	}
-}
-
-func TestParseROI(t *testing.T) {
-	content := []byte(`
-` + "```" + `bash
-# 01) ROI=4.5 clean me
-echo "high value"
-
-# 02) ROI=0.5
-echo "low value"
-
-# 03) No ROI
-echo "default"
-` + "```" + `
-`)
-
-	p, err := Parse(content)
-	if err != nil {
-		t.Fatalf("Parse failed: %v", err)
-	}
-
-	if len(p.Steps) != 3 {
-		t.Fatalf("expected 3 steps, got %d", len(p.Steps))
-	}
-
-	if p.Steps[0].ROI != 4.5 {
-		t.Errorf("step 1 ROI mismatch: expected 4.5, got %f", p.Steps[0].ROI)
-	}
-	if strings.Contains(p.Steps[0].OriginalLine, "ROI=4.5") {
-		t.Errorf("step 1 title was not cleaned: %q", p.Steps[0].OriginalLine)
-	}
-
-	if p.Steps[1].ROI != 0.5 {
-		t.Errorf("step 2 ROI mismatch: expected 0.5, got %f", p.Steps[1].ROI)
-	}
-
-	if p.Steps[2].ROI != 0.0 {
-		t.Errorf("step 3 ROI mismatch: expected 0.0, got %f", p.Steps[2].ROI)
-	}
-}
-
-func TestValidateErrors(t *testing.T) {
-	tests := []struct {
-		name    string
-		pack    *Pack
-		wantErr string
-	}{
-		{
-			"no steps",
-			&Pack{},
-			"at least one step is required",
-		},
-		{
-			"duplicate steps",
-			&Pack{
-				Steps: []Step{
-					{Number: 1, ID: "01"},
-					{Number: 1, ID: "01"},
-				},
-			},
-			"duplicate step number 1",
-		},
-		{
-			"non-sequential",
-			&Pack{
-				Steps: []Step{
-					{Number: 1, ID: "01"},
-					{Number: 3, ID: "03"},
-				},
-			},
-			"steps must be sequential starting from 1",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := tt.pack.Validate()
-			if err == nil {
-				t.Error("expected error, got nil")
-			} else if !contains(err.Error(), tt.wantErr) {
-				t.Errorf("expected error containing %q, got %q", tt.wantErr, err.Error())
-			}
-		})
-	}
-}
-
-func contains(s, substr string) bool {
-	return len(s) >= len(substr) && (s == substr || (len(substr) > 0 && (s[:len(substr)] == substr || contains(s[1:], substr))))
-}
-```
-
-internal/pack/types.go
-```
-package pack
-
-// Pack represents a parsed oracle pack.
-type Pack struct {
-	Prelude     Prelude
-	Steps       []Step
-	Source      string
-	OutDir      string
-	WriteOutput bool
-}
-
-// Prelude contains the shell code that runs before any steps.
-type Prelude struct {
-	Code string
-}
-
-// Step represents an individual executable step within the pack.
-type Step struct {
-	ID           string  // e.g., "01"
-	Number       int     // e.g., 1
-	Code         string  // The bash code
-	OriginalLine string  // The header line, e.g., "# 01)"
-	ROI          float64 // Return on Investment value extracted from header
-}
-```
-
-internal/render/render.go
-```
-package render
-
-import (
-	"sync"
-
-	"github.com/charmbracelet/glamour"
-	"github.com/user/oraclepack/internal/pack"
-)
-
-const (
-	DefaultStyle = "dark"
-	DefaultWidth = 80
-)
-
-type rendererKey struct {
-	width int
-	style string
-}
 
 var (
-	rendererMu    sync.Mutex
-	rendererCache = map[rendererKey]*glamour.TermRenderer{}
+	yes           bool
+	resume        bool
+	stopOnFail    bool
+	roiThreshold  float64
+	roiMode       string
+	runAll        bool
+	outputVerify  bool
+	outputRetries int
 )
 
-// RenderMarkdown renders markdown text as ANSI-styled text.
-func RenderMarkdown(text string, width int, style string) (string, error) {
-	if width <= 0 {
-		width = DefaultWidth
-	}
-	if style == "" {
-		style = DefaultStyle
-	}
+var runCmd = &cobra.Command{
+	Use:   "run [pack.md]",
+	Short: "Run an oracle pack",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		packPath := args[0]
 
-	r, err := rendererFor(width, style)
-	if err != nil {
-		return "", err
-	}
+		// Setup paths
+		base := strings.TrimSuffix(filepath.Base(packPath), filepath.Ext(packPath))
+		statePath := base + ".state.json"
+		reportPath := base + ".report.json"
 
-	return r.Render(text)
+		cfg := app.Config{
+			PackPath:      packPath,
+			StatePath:     statePath,
+			ReportPath:    reportPath,
+			Resume:        resume,
+			StopOnFail:    stopOnFail,
+			WorkDir:       ".",
+			OutDir:        outDir,
+			ROIThreshold:  roiThreshold,
+			ROIMode:       roiMode,
+			OutputVerify:  outputVerify,
+			OutputRetries: outputRetries,
+		}
+
+		a := app.New(cfg)
+		// Prepare the application (loads pack, resolves out_dir, provisions env)
+		if err := a.Prepare(); err != nil {
+			return err
+		}
+
+		if err := a.LoadState(); err != nil {
+			return err
+		}
+
+		if noTUI {
+			return a.RunPlain(context.Background(), os.Stdout)
+		}
+
+		m := tui.NewModel(a.Pack, a.Runner, a.State, cfg.StatePath, cfg.ROIThreshold, cfg.ROIMode, runAll, cfg.OutputVerify, cfg.OutputRetries)
+		p := tea.NewProgram(m, tea.WithAltScreen())
+		_, err := p.Run()
+		return err
+	},
 }
 
-// RenderStepCode renders a step's code block for preview.
-func RenderStepCode(s pack.Step, width int, style string) (string, error) {
-	md := "```bash\n" + s.Code + "\n```"
-	return RenderMarkdown(md, width, style)
-}
-
-func rendererFor(width int, style string) (*glamour.TermRenderer, error) {
-	key := rendererKey{width: width, style: style}
-
-	rendererMu.Lock()
-	r := rendererCache[key]
-	rendererMu.Unlock()
-	if r != nil {
-		return r, nil
-	}
-
-	opts := []glamour.TermRendererOption{glamour.WithWordWrap(width)}
-	if style == "auto" {
-		opts = append(opts, glamour.WithAutoStyle())
-	} else {
-		opts = append(opts, glamour.WithStandardStyle(style))
-	}
-
-	r, err := glamour.NewTermRenderer(opts...)
-	if err != nil {
-		return nil, err
-	}
-
-	rendererMu.Lock()
-	rendererCache[key] = r
-	rendererMu.Unlock()
-	return r, nil
+func init() {
+	runCmd.Flags().BoolVarP(&yes, "yes", "y", false, "Auto-approve all steps")
+	runCmd.Flags().BoolVar(&resume, "resume", false, "Resume from last successful step")
+	runCmd.Flags().BoolVar(&stopOnFail, "stop-on-fail", true, "Stop execution if a step fails")
+	runCmd.Flags().Float64Var(&roiThreshold, "roi-threshold", 0.0, "Filter steps by ROI threshold")
+	runCmd.Flags().StringVar(&roiMode, "roi-mode", "over", "ROI filter mode ('over' or 'under')")
+	runCmd.Flags().BoolVar(&runAll, "run-all", false, "Automatically run all steps sequentially on start")
+	runCmd.Flags().BoolVar(&outputVerify, "output-verify", true, "Verify --write-output files contain required answer sections")
+	runCmd.Flags().IntVar(&outputRetries, "output-retries", 1, "Retries for output verification failures")
+	rootCmd.AddCommand(runCmd)
 }
 ```
 
-internal/render/render_test.go
+internal/errors/errors.go
 ```
-package render
+package errors
 
 import (
-	"strings"
+	"errors"
+)
+
+var (
+	// ErrInvalidPack is returned when the Markdown pack is malformed.
+	ErrInvalidPack = errors.New("invalid pack structure")
+	// ErrExecutionFailed is returned when a shell command fails.
+	ErrExecutionFailed = errors.New("execution failed")
+	// ErrConfigInvalid is returned when CLI flags or environment variables are incorrect.
+	ErrConfigInvalid = errors.New("invalid configuration")
+)
+
+// ExitCode returns the appropriate exit code for a given error.
+func ExitCode(err error) int {
+	if err == nil {
+		return 0
+	}
+
+	if errors.Is(err, ErrConfigInvalid) {
+		return 2
+	}
+
+	if errors.Is(err, ErrInvalidPack) {
+		return 3
+	}
+
+	if errors.Is(err, ErrExecutionFailed) {
+		return 4
+	}
+
+	return 1 // Generic error
+}
+```
+
+internal/errors/errors_test.go
+```
+package errors
+
+import (
+	"errors"
+	"fmt"
 	"testing"
 )
 
-func TestRenderMarkdown(t *testing.T) {
-	text := "# Hello\n**bold**"
-	got, err := RenderMarkdown(text, 40, DefaultStyle)
-	if err != nil {
-		t.Fatalf("RenderMarkdown failed: %v", err)
+func TestExitCode(t *testing.T) {
+	tests := []struct {
+		name     string
+		err      error
+		expected int
+	}{
+		{"nil error", nil, 0},
+		{"generic error", errors.New("generic"), 1},
+		{"invalid pack", ErrInvalidPack, 3},
+		{"execution failed", ErrExecutionFailed, 4},
+		{"config invalid", ErrConfigInvalid, 2},
+		{"wrapped invalid pack", fmt.Errorf("wrap: %w", ErrInvalidPack), 3},
 	}
 
-	// ANSI escape codes start with \x1b[
-	if !strings.Contains(got, "\x1b[") {
-		t.Errorf("expected ANSI codes in output, got: %q", got)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := ExitCode(tt.err); got != tt.expected {
+				t.Errorf("ExitCode() = %v, want %v", got, tt.expected)
+			}
+		})
 	}
 }
 ```
@@ -3361,6 +2971,552 @@ type RuntimeOverrides struct {
 	RemovedFlags []string        // Flags to remove (e.g., "--json")
 	ChatGPTURL   string          // Optional URL to inject via --chatgpt-url
 	ApplyToSteps map[string]bool // Set of step IDs to apply overrides to. If empty, applies to none.
+}
+```
+
+internal/pack/output_check.go
+```
+package pack
+
+import (
+	"os"
+	"regexp"
+	"strings"
+)
+
+var writeOutputPathRegex = regexp.MustCompile(`(?m)--write-output\s+"([^"]+)"`)
+
+// StepOutputExpectations returns a map of output paths to required tokens.
+// If no validation is needed, it returns nil.
+func StepOutputExpectations(step *Step) map[string][]string {
+	paths := ExtractWriteOutputPaths(step.Code)
+	if len(paths) == 0 {
+		return nil
+	}
+	if len(paths) == 1 {
+		tokens := expectedAnswerTokens(step.Code)
+		if len(tokens) == 0 {
+			return nil
+		}
+		return map[string][]string{paths[0]: tokens}
+	}
+
+	out := map[string][]string{}
+	for _, path := range paths {
+		switch {
+		case strings.Contains(path, "-direct-answer"):
+			out[path] = []string{"direct answer"}
+		case strings.Contains(path, "-risks-unknowns"):
+			out[path] = []string{"risks unknowns"}
+		case strings.Contains(path, "-next-experiment"):
+			out[path] = []string{"next smallest concrete experiment"}
+		case strings.Contains(path, "-missing-evidence"):
+			out[path] = []string{"missing file path pattern"}
+		}
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
+}
+
+// ExtractWriteOutputPaths returns all --write-output paths found in the step code.
+func ExtractWriteOutputPaths(code string) []string {
+	matches := writeOutputPathRegex.FindAllStringSubmatch(code, -1)
+	if len(matches) == 0 {
+		return nil
+	}
+	paths := make([]string, 0, len(matches))
+	for _, m := range matches {
+		if len(m) >= 2 {
+			paths = append(paths, m[1])
+		}
+	}
+	return paths
+}
+
+// ValidateOutputFile checks whether the output file contains the required answer sections.
+// It returns ok=false with missing tokens when validation fails.
+func ValidateOutputFile(path string, requiredTokens []string) (bool, []string, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return false, nil, err
+	}
+	normalized := normalizeText(string(data))
+	var missing []string
+	for _, tok := range requiredTokens {
+		if !strings.Contains(normalized, tok) {
+			missing = append(missing, tok)
+		}
+	}
+	if len(missing) > 0 {
+		return false, missing, nil
+	}
+	return true, nil, nil
+}
+
+func expectedAnswerTokens(code string) []string {
+	lower := strings.ToLower(code)
+	if !strings.Contains(lower, "answer format") {
+		return nil
+	}
+	return []string{
+		"direct answer",
+		"risks unknowns",
+		"next smallest concrete experiment",
+		"if evidence is insufficient",
+	}
+}
+
+func normalizeText(s string) string {
+	s = strings.ToLower(s)
+	s = regexp.MustCompile(`[^a-z0-9]+`).ReplaceAllString(s, " ")
+	s = strings.TrimSpace(s)
+	return s
+}
+```
+
+internal/pack/parser.go
+```
+package pack
+
+import (
+	"bufio"
+	"fmt"
+	"regexp"
+	"strconv"
+	"strings"
+
+	"github.com/user/oraclepack/internal/errors"
+)
+
+var (
+	bashFenceRegex = regexp.MustCompile("(?s)```bash\n(.*?)\n```")
+	// Updated regex to support ")", " —", and " -" separators
+	stepHeaderRegex = regexp.MustCompile(`^#\s*(\d{2})(?:\)|[\s]+[—-])`)
+	roiRegex        = regexp.MustCompile(`ROI=(\d+(\.\d+)?)`)
+	outDirRegex    = regexp.MustCompile(`(?m)^out_dir=["']?([^"'\s]+)["']?`)
+	writeOutputRegex = regexp.MustCompile(`(?m)--write-output`)
+)
+
+// Parse reads a Markdown content and returns a Pack.
+func Parse(content []byte) (*Pack, error) {
+	match := bashFenceRegex.FindSubmatch(content)
+	if match == nil || len(match) < 2 {
+		return nil, fmt.Errorf("%w: no bash code block found", errors.ErrInvalidPack)
+	}
+
+	bashCode := string(match[1])
+	pack := &Pack{}
+	
+	scanner := bufio.NewScanner(strings.NewReader(bashCode))
+	var currentStep *Step
+	var preludeLines []string
+	var inSteps bool
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		headerMatch := stepHeaderRegex.FindStringSubmatch(strings.TrimSpace(line))
+
+		if len(headerMatch) > 1 {
+			inSteps = true
+			if currentStep != nil {
+				pack.Steps = append(pack.Steps, *currentStep)
+			}
+			num, _ := strconv.Atoi(headerMatch[1])
+			
+			// Extract ROI if present
+			var roi float64
+			cleanedLine := line
+			roiMatch := roiRegex.FindStringSubmatch(line)
+			if len(roiMatch) > 1 {
+				val, err := strconv.ParseFloat(roiMatch[1], 64)
+				if err == nil {
+					roi = val
+					// Remove ROI tag from display title, but keep original line intact?
+					// The task says "strip from Step.Title". Step struct currently has `OriginalLine`.
+					// I'll assume OriginalLine is what is displayed, or I should add a Title field.
+					// Looking at Step struct: ID, Number, Code, OriginalLine.
+					// I'll remove it from OriginalLine for now or add a Title field.
+					// The existing TUI uses OriginalLine as description. 
+					// Let's clean OriginalLine for display purposes or add a dedicated Title field.
+					// Adding a dedicated Title field seems cleaner but requires struct change.
+					// For now, I'll strip it from OriginalLine to match the prompt requirement "cleaner UI display".
+					cleanedLine = strings.Replace(cleanedLine, roiMatch[0], "", 1)
+					cleanedLine = strings.TrimSpace(cleanedLine)
+					// Fix any double spaces or trailing separators if needed, but simple replace is a good start.
+				}
+			}
+
+			currentStep = &Step{
+				ID:           headerMatch[1],
+				Number:       num,
+				OriginalLine: cleanedLine,
+				ROI:          roi,
+			}
+			continue
+		}
+
+		if inSteps {
+			currentStep.Code += line + "\n"
+		} else {
+			preludeLines = append(preludeLines, line)
+		}
+	}
+
+	if currentStep != nil {
+		pack.Steps = append(pack.Steps, *currentStep)
+	}
+
+	pack.Prelude.Code = strings.Join(preludeLines, "\n")
+	pack.DeriveMetadata()
+
+	return pack, nil
+}
+
+// DeriveMetadata extracts configuration from the prelude.
+func (p *Pack) DeriveMetadata() {
+	outDirMatch := outDirRegex.FindStringSubmatch(p.Prelude.Code)
+	if len(outDirMatch) > 1 {
+		p.OutDir = outDirMatch[1]
+	}
+
+	if writeOutputRegex.MatchString(p.Prelude.Code) {
+		p.WriteOutput = true
+	}
+}
+
+// Validate checks if the pack follows all rules.
+func (p *Pack) Validate() error {
+	if len(p.Steps) == 0 {
+		return fmt.Errorf("%w: at least one step is required", errors.ErrInvalidPack)
+	}
+
+	seen := make(map[int]bool)
+	for i, step := range p.Steps {
+		if step.Number <= 0 {
+			return fmt.Errorf("%w: invalid step number %d", errors.ErrInvalidPack, step.Number)
+		}
+		if seen[step.Number] {
+			return fmt.Errorf("%w: duplicate step number %d", errors.ErrInvalidPack, step.Number)
+		}
+		seen[step.Number] = true
+
+		// Optional: Ensure sequential starting from 1
+		if step.Number != i+1 {
+			return fmt.Errorf("%w: steps must be sequential starting from 1 (expected %d, got %d)", errors.ErrInvalidPack, i+1, step.Number)
+		}
+	}
+
+	return nil
+}
+```
+
+internal/pack/parser_test.go
+```
+package pack
+
+import (
+	"strings"
+	"testing"
+)
+
+func TestParse(t *testing.T) {
+	content := []byte(`
+# My Pack
+Some description.
+
+` + "```" + `bash
+out_dir="dist"
+--write-output
+
+# 01)
+echo "hello"
+
+# 02)
+echo "world"
+` + "```" + `
+`)
+
+	p, err := Parse(content)
+	if err != nil {
+		t.Fatalf("Parse failed: %v", err)
+	}
+
+	if p.OutDir != "dist" {
+		t.Errorf("expected OutDir dist, got %s", p.OutDir)
+	}
+
+	if !p.WriteOutput {
+		t.Errorf("expected WriteOutput true, got false")
+	}
+
+	if len(p.Steps) != 2 {
+		t.Errorf("expected 2 steps, got %d", len(p.Steps))
+	}
+
+	if p.Steps[0].ID != "01" || p.Steps[0].Number != 1 {
+		t.Errorf("step 1 mismatch: %+v", p.Steps[0])
+	}
+
+	if err := p.Validate(); err != nil {
+		t.Errorf("Validate failed: %v", err)
+	}
+}
+
+func TestParseVariants(t *testing.T) {
+	tests := []struct {
+		name    string
+		content string
+	}{
+		{
+			"em dash",
+			`
+` + "```" + `bash
+# 01 — ROI=...
+echo "step 1"
+` + "```" + `
+`,
+		},
+		{
+			"hyphen",
+			`
+` + "```" + `bash
+# 01 - ROI=...
+echo "step 1"
+` + "```" + `
+`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			p, err := Parse([]byte(tt.content))
+			if err != nil {
+				t.Fatalf("Parse failed: %v", err)
+			}
+			if len(p.Steps) != 1 {
+				t.Errorf("expected 1 step, got %d", len(p.Steps))
+			}
+		})
+	}
+}
+
+func TestParseROI(t *testing.T) {
+	content := []byte(`
+` + "```" + `bash
+# 01) ROI=4.5 clean me
+echo "high value"
+
+# 02) ROI=0.5
+echo "low value"
+
+# 03) No ROI
+echo "default"
+` + "```" + `
+`)
+
+	p, err := Parse(content)
+	if err != nil {
+		t.Fatalf("Parse failed: %v", err)
+	}
+
+	if len(p.Steps) != 3 {
+		t.Fatalf("expected 3 steps, got %d", len(p.Steps))
+	}
+
+	if p.Steps[0].ROI != 4.5 {
+		t.Errorf("step 1 ROI mismatch: expected 4.5, got %f", p.Steps[0].ROI)
+	}
+	if strings.Contains(p.Steps[0].OriginalLine, "ROI=4.5") {
+		t.Errorf("step 1 title was not cleaned: %q", p.Steps[0].OriginalLine)
+	}
+
+	if p.Steps[1].ROI != 0.5 {
+		t.Errorf("step 2 ROI mismatch: expected 0.5, got %f", p.Steps[1].ROI)
+	}
+
+	if p.Steps[2].ROI != 0.0 {
+		t.Errorf("step 3 ROI mismatch: expected 0.0, got %f", p.Steps[2].ROI)
+	}
+}
+
+func TestValidateErrors(t *testing.T) {
+	tests := []struct {
+		name    string
+		pack    *Pack
+		wantErr string
+	}{
+		{
+			"no steps",
+			&Pack{},
+			"at least one step is required",
+		},
+		{
+			"duplicate steps",
+			&Pack{
+				Steps: []Step{
+					{Number: 1, ID: "01"},
+					{Number: 1, ID: "01"},
+				},
+			},
+			"duplicate step number 1",
+		},
+		{
+			"non-sequential",
+			&Pack{
+				Steps: []Step{
+					{Number: 1, ID: "01"},
+					{Number: 3, ID: "03"},
+				},
+			},
+			"steps must be sequential starting from 1",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.pack.Validate()
+			if err == nil {
+				t.Error("expected error, got nil")
+			} else if !contains(err.Error(), tt.wantErr) {
+				t.Errorf("expected error containing %q, got %q", tt.wantErr, err.Error())
+			}
+		})
+	}
+}
+
+func contains(s, substr string) bool {
+	return len(s) >= len(substr) && (s == substr || (len(substr) > 0 && (s[:len(substr)] == substr || contains(s[1:], substr))))
+}
+```
+
+internal/pack/types.go
+```
+package pack
+
+// Pack represents a parsed oracle pack.
+type Pack struct {
+	Prelude     Prelude
+	Steps       []Step
+	Source      string
+	OutDir      string
+	WriteOutput bool
+}
+
+// Prelude contains the shell code that runs before any steps.
+type Prelude struct {
+	Code string
+}
+
+// Step represents an individual executable step within the pack.
+type Step struct {
+	ID           string  // e.g., "01"
+	Number       int     // e.g., 1
+	Code         string  // The bash code
+	OriginalLine string  // The header line, e.g., "# 01)"
+	ROI          float64 // Return on Investment value extracted from header
+}
+```
+
+internal/render/render.go
+```
+package render
+
+import (
+	"sync"
+
+	"github.com/charmbracelet/glamour"
+	"github.com/user/oraclepack/internal/pack"
+)
+
+const (
+	DefaultStyle = "dark"
+	DefaultWidth = 80
+)
+
+type rendererKey struct {
+	width int
+	style string
+}
+
+var (
+	rendererMu    sync.Mutex
+	rendererCache = map[rendererKey]*glamour.TermRenderer{}
+)
+
+// RenderMarkdown renders markdown text as ANSI-styled text.
+func RenderMarkdown(text string, width int, style string) (string, error) {
+	if width <= 0 {
+		width = DefaultWidth
+	}
+	if style == "" {
+		style = DefaultStyle
+	}
+
+	r, err := rendererFor(width, style)
+	if err != nil {
+		return "", err
+	}
+
+	return r.Render(text)
+}
+
+// RenderStepCode renders a step's code block for preview.
+func RenderStepCode(s pack.Step, width int, style string) (string, error) {
+	md := "```bash\n" + s.Code + "\n```"
+	return RenderMarkdown(md, width, style)
+}
+
+func rendererFor(width int, style string) (*glamour.TermRenderer, error) {
+	key := rendererKey{width: width, style: style}
+
+	rendererMu.Lock()
+	r := rendererCache[key]
+	rendererMu.Unlock()
+	if r != nil {
+		return r, nil
+	}
+
+	opts := []glamour.TermRendererOption{glamour.WithWordWrap(width)}
+	if style == "auto" {
+		opts = append(opts, glamour.WithAutoStyle())
+	} else {
+		opts = append(opts, glamour.WithStandardStyle(style))
+	}
+
+	r, err := glamour.NewTermRenderer(opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	rendererMu.Lock()
+	rendererCache[key] = r
+	rendererMu.Unlock()
+	return r, nil
+}
+```
+
+internal/render/render_test.go
+```
+package render
+
+import (
+	"strings"
+	"testing"
+)
+
+func TestRenderMarkdown(t *testing.T) {
+	text := "# Hello\n**bold**"
+	got, err := RenderMarkdown(text, 40, DefaultStyle)
+	if err != nil {
+		t.Fatalf("RenderMarkdown failed: %v", err)
+	}
+
+	// ANSI escape codes start with \x1b[
+	if !strings.Contains(got, "\x1b[") {
+		t.Errorf("expected ANSI codes in output, got: %q", got)
+	}
 }
 ```
 
@@ -4613,13 +4769,15 @@ type Model struct {
 	overridesFlow    OverridesFlowModel
 	appliedOverrides *overrides.RuntimeOverrides
 	chatGPTURL       string
+	outputVerify     bool
+	outputRetries    int
 
 	err      error
 	logLines []string
 	logChan  chan string
 }
 
-func NewModel(p *pack.Pack, r *exec.Runner, s *state.RunState, statePath string, roiThreshold float64, roiMode string, autoRun bool) Model {
+func NewModel(p *pack.Pack, r *exec.Runner, s *state.RunState, statePath string, roiThreshold float64, roiMode string, autoRun bool, outputVerify bool, outputRetries int) Model {
 	if s != nil {
 		if s.ROIThreshold > 0 {
 			roiThreshold = s.ROIThreshold
@@ -4683,6 +4841,8 @@ func NewModel(p *pack.Pack, r *exec.Runner, s *state.RunState, statePath string,
 		overridesFlow: NewOverridesFlowModel(p.Steps, r.OracleFlags, RunnerOptionsFromRunner(r)),
 		chatGPTURL:    resolvedURL,
 		previewWrap:   true,
+		outputVerify:  outputVerify,
+		outputRetries: outputRetries,
 	}
 	m.urlInput.SetValue(resolvedURL)
 	m.urlInput.Blur()
@@ -4851,9 +5011,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			case "r":
 				// Rerun selected step (if we have one selected in list)
-				// Or rerun the whole sequence if that was the context?
-				// Requirement says "rerun a step ('r')". Assuming selected step.
-				// We need to transition to ViewSteps logic or trigger run directly.
 [TRUNCATED]
 ```
 
@@ -5233,11 +5390,6 @@ func (m URLPickerModel) updateEdit(msg tea.Msg) (URLPickerModel, tea.Cmd) {
 func (m *URLPickerModel) saveEdit(name, url string) {
 	scope := m.editScope
 	if scope == "" {
-		scope = urlScopeProject
-	}
-
-	// remove from other store if scope changed
-	m.removeByName(name, urlScopeProject)
 [TRUNCATED]
 ```
 

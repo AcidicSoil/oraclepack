@@ -75,13 +75,15 @@ type Model struct {
 	overridesFlow    OverridesFlowModel
 	appliedOverrides *overrides.RuntimeOverrides
 	chatGPTURL       string
+	outputVerify     bool
+	outputRetries    int
 
 	err      error
 	logLines []string
 	logChan  chan string
 }
 
-func NewModel(p *pack.Pack, r *exec.Runner, s *state.RunState, statePath string, roiThreshold float64, roiMode string, autoRun bool) Model {
+func NewModel(p *pack.Pack, r *exec.Runner, s *state.RunState, statePath string, roiThreshold float64, roiMode string, autoRun bool, outputVerify bool, outputRetries int) Model {
 	if s != nil {
 		if s.ROIThreshold > 0 {
 			roiThreshold = s.ROIThreshold
@@ -145,6 +147,8 @@ func NewModel(p *pack.Pack, r *exec.Runner, s *state.RunState, statePath string,
 		overridesFlow: NewOverridesFlowModel(p.Steps, r.OracleFlags, RunnerOptionsFromRunner(r)),
 		chatGPTURL:    resolvedURL,
 		previewWrap:   true,
+		outputVerify:  outputVerify,
+		outputRetries: outputRetries,
 	}
 	m.urlInput.SetValue(resolvedURL)
 	m.urlInput.Blur()
@@ -901,15 +905,52 @@ func (m Model) runStep(id string) tea.Cmd {
 			return FinishedMsg{Err: fmt.Errorf("step not found"), ID: id}
 		}
 
-		lw := &exec.LineWriter{
-			Callback: func(line string) {
-				m.logChan <- line
-			},
+		maxRetries := m.outputRetries
+		if maxRetries < 0 {
+			maxRetries = 0
 		}
 
-		err := m.runner.RunStep(context.Background(), step, lw)
-		lw.Close()
-		return FinishedMsg{Err: err, ID: id}
+		for attempt := 0; attempt <= maxRetries; attempt++ {
+			lw := &exec.LineWriter{
+				Callback: func(line string) {
+					m.logChan <- line
+				},
+			}
+			err := m.runner.RunStep(context.Background(), step, lw)
+			lw.Close()
+			if err != nil {
+				return FinishedMsg{Err: err, ID: id}
+			}
+
+			if !m.outputVerify {
+				return FinishedMsg{Err: nil, ID: id}
+			}
+
+			expectations := pack.StepOutputExpectations(step)
+			if len(expectations) == 0 {
+				return FinishedMsg{Err: nil, ID: id}
+			}
+
+			var failures []string
+			for path, required := range expectations {
+				ok, missing, err := pack.ValidateOutputFile(path, required)
+				if err != nil {
+					return FinishedMsg{Err: fmt.Errorf("output verification failed for step %s: %w", step.ID, err), ID: id}
+				}
+				if !ok {
+					failures = append(failures, fmt.Sprintf("%s missing: %s", path, strings.Join(missing, ", ")))
+				}
+			}
+			if len(failures) == 0 {
+				return FinishedMsg{Err: nil, ID: id}
+			}
+			if attempt == maxRetries {
+				return FinishedMsg{Err: fmt.Errorf("output verification failed for step %s: %s", step.ID, strings.Join(failures, "; ")), ID: id}
+			}
+			m.logChan <- fmt.Sprintf("⚠ output verification failed for step %s (%s); re-running (%d/%d)...", step.ID, strings.Join(failures, "; "), attempt+1, maxRetries)
+		}
+
+		return FinishedMsg{Err: nil, ID: id}
 	}
 }
 

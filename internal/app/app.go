@@ -11,18 +11,20 @@ import (
 
 // Config holds application-wide configuration.
 type Config struct {
-	PackPath     string
-	StatePath    string
-	ReportPath   string
-	StopOnFail   bool
-	Resume       bool
-	Verbose      bool
-	DryRun       bool
-	OracleFlags  []string
-	WorkDir      string
-	OutDir       string // CLI override for output directory
-	ROIThreshold float64
-	ROIMode      string // "over" or "under"
+	PackPath      string
+	StatePath     string
+	ReportPath    string
+	StopOnFail    bool
+	Resume        bool
+	Verbose       bool
+	DryRun        bool
+	OracleFlags   []string
+	WorkDir       string
+	OutDir        string // CLI override for output directory
+	ROIThreshold  float64
+	ROIMode       string // "over" or "under"
+	OutputVerify  bool
+	OutputRetries int
 }
 
 // App orchestrates the execution flow.
@@ -108,8 +110,8 @@ func (a *App) Prepare() error {
 	// Update Runner
 	// We do NOT set WorkDir to outDir, so execution happens in the project root.
 	// This preserves relative path resolution for -f flags.
-	// a.Runner.WorkDir = outDir 
-	
+	// a.Runner.WorkDir = outDir
+
 	// Add out_dir to Env so scripts can reference it
 	a.Runner.Env = append(a.Runner.Env, fmt.Sprintf("out_dir=%s", outDir))
 

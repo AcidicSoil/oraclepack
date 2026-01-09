@@ -31,6 +31,7 @@ Project Structure:
     │   ├── merge_test.go
     │   └── types.go
     ├── pack
+    │   ├── output_check.go
     │   ├── parser.go
     │   ├── parser_test.go
     │   └── types.go
@@ -78,18 +79,20 @@ import (
 
 // Config holds application-wide configuration.
 type Config struct {
-	PackPath     string
-	StatePath    string
-	ReportPath   string
-	StopOnFail   bool
-	Resume       bool
-	Verbose      bool
-	DryRun       bool
-	OracleFlags  []string
-	WorkDir      string
-	OutDir       string // CLI override for output directory
-	ROIThreshold float64
-	ROIMode      string // "over" or "under"
+	PackPath      string
+	StatePath     string
+	ReportPath    string
+	StopOnFail    bool
+	Resume        bool
+	Verbose       bool
+	DryRun        bool
+	OracleFlags   []string
+	WorkDir       string
+	OutDir        string // CLI override for output directory
+	ROIThreshold  float64
+	ROIMode       string // "over" or "under"
+	OutputVerify  bool
+	OutputRetries int
 }
 
 // App orchestrates the execution flow.
@@ -175,8 +178,8 @@ func (a *App) Prepare() error {
 	// Update Runner
 	// We do NOT set WorkDir to outDir, so execution happens in the project root.
 	// This preserves relative path resolution for -f flags.
-	// a.Runner.WorkDir = outDir 
-	
+	// a.Runner.WorkDir = outDir
+
 	// Add out_dir to Env so scripts can reference it
 	a.Runner.Env = append(a.Runner.Env, fmt.Sprintf("out_dir=%s", outDir))
 
@@ -264,8 +267,10 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
+	"github.com/user/oraclepack/internal/pack"
 	"github.com/user/oraclepack/internal/report"
 	"github.com/user/oraclepack/internal/state"
 )
@@ -330,7 +335,7 @@ func (a *App) RunPlain(ctx context.Context, out io.Writer) error {
 		a.saveState()
 
 		// Execute
-		err := a.Runner.RunStep(ctx, &step, out)
+		err := a.runStepWithOutputVerification(ctx, &step, out)
 		a.recordWarnings()
 
 		status.EndedAt = time.Now()
@@ -354,6 +359,49 @@ func (a *App) RunPlain(ctx context.Context, out io.Writer) error {
 	}
 
 	a.finalize(out)
+	return nil
+}
+
+func (a *App) runStepWithOutputVerification(ctx context.Context, step *pack.Step, out io.Writer) error {
+	retries := a.Config.OutputRetries
+	if retries < 0 {
+		retries = 0
+	}
+	for attempt := 0; attempt <= retries; attempt++ {
+		err := a.Runner.RunStep(ctx, step, out)
+		if err != nil {
+			return err
+		}
+		if !a.Config.OutputVerify {
+			return nil
+		}
+		expectations := pack.StepOutputExpectations(step)
+		if len(expectations) == 0 {
+			return nil
+		}
+		var failures []string
+		for path, required := range expectations {
+			ok, missing, err := pack.ValidateOutputFile(path, required)
+			if err != nil {
+				return fmt.Errorf("output verification failed for step %s: %w", step.ID, err)
+			}
+			if !ok {
+				failures = append(failures, fmt.Sprintf("%s missing: %s", path, strings.Join(missing, ", ")))
+			}
+		}
+		if len(failures) == 0 {
+			return nil
+		}
+		if attempt == retries {
+			return fmt.Errorf(
+				"output verification failed for step %s: %s",
+				step.ID,
+				strings.Join(failures, "; "),
+			)
+		}
+		fmt.Fprintf(out, "⚠ output verification failed for step %s (%s); re-running (%d/%d)...\n",
+			step.ID, strings.Join(failures, "; "), attempt+1, retries)
+	}
 	return nil
 }
 
@@ -581,19 +629,21 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/spf13/cobra"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/spf13/cobra"
 	"github.com/user/oraclepack/internal/app"
 	"github.com/user/oraclepack/internal/tui"
 )
 
 var (
-	yes          bool
-	resume       bool
-	stopOnFail   bool
-	roiThreshold float64
-	roiMode      string
-	runAll       bool
+	yes           bool
+	resume        bool
+	stopOnFail    bool
+	roiThreshold  float64
+	roiMode       string
+	runAll        bool
+	outputVerify  bool
+	outputRetries int
 )
 
 var runCmd = &cobra.Command{
@@ -602,22 +652,24 @@ var runCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		packPath := args[0]
-		
+
 		// Setup paths
 		base := strings.TrimSuffix(filepath.Base(packPath), filepath.Ext(packPath))
 		statePath := base + ".state.json"
 		reportPath := base + ".report.json"
 
 		cfg := app.Config{
-			PackPath:     packPath,
-			StatePath:    statePath,
-			ReportPath:   reportPath,
-			Resume:       resume,
-			StopOnFail:   stopOnFail,
-			WorkDir:      ".",
-			OutDir:       outDir,
-			ROIThreshold: roiThreshold,
-			ROIMode:      roiMode,
+			PackPath:      packPath,
+			StatePath:     statePath,
+			ReportPath:    reportPath,
+			Resume:        resume,
+			StopOnFail:    stopOnFail,
+			WorkDir:       ".",
+			OutDir:        outDir,
+			ROIThreshold:  roiThreshold,
+			ROIMode:       roiMode,
+			OutputVerify:  outputVerify,
+			OutputRetries: outputRetries,
 		}
 
 		a := app.New(cfg)
@@ -625,7 +677,7 @@ var runCmd = &cobra.Command{
 		if err := a.Prepare(); err != nil {
 			return err
 		}
-		
+
 		if err := a.LoadState(); err != nil {
 			return err
 		}
@@ -634,7 +686,7 @@ var runCmd = &cobra.Command{
 			return a.RunPlain(context.Background(), os.Stdout)
 		}
 
-		m := tui.NewModel(a.Pack, a.Runner, a.State, cfg.StatePath, cfg.ROIThreshold, cfg.ROIMode, runAll)
+		m := tui.NewModel(a.Pack, a.Runner, a.State, cfg.StatePath, cfg.ROIThreshold, cfg.ROIMode, runAll, cfg.OutputVerify, cfg.OutputRetries)
 		p := tea.NewProgram(m, tea.WithAltScreen())
 		_, err := p.Run()
 		return err
@@ -648,6 +700,8 @@ func init() {
 	runCmd.Flags().Float64Var(&roiThreshold, "roi-threshold", 0.0, "Filter steps by ROI threshold")
 	runCmd.Flags().StringVar(&roiMode, "roi-mode", "over", "ROI filter mode ('over' or 'under')")
 	runCmd.Flags().BoolVar(&runAll, "run-all", false, "Automatically run all steps sequentially on start")
+	runCmd.Flags().BoolVar(&outputVerify, "output-verify", true, "Verify --write-output files contain required answer sections")
+	runCmd.Flags().IntVar(&outputRetries, "output-retries", 1, "Retries for output verification failures")
 	rootCmd.AddCommand(runCmd)
 }
 ```
@@ -1837,6 +1891,108 @@ type RuntimeOverrides struct {
 	RemovedFlags []string        // Flags to remove (e.g., "--json")
 	ChatGPTURL   string          // Optional URL to inject via --chatgpt-url
 	ApplyToSteps map[string]bool // Set of step IDs to apply overrides to. If empty, applies to none.
+}
+```
+
+internal/pack/output_check.go
+```
+package pack
+
+import (
+	"os"
+	"regexp"
+	"strings"
+)
+
+var writeOutputPathRegex = regexp.MustCompile(`(?m)--write-output\s+"([^"]+)"`)
+
+// StepOutputExpectations returns a map of output paths to required tokens.
+// If no validation is needed, it returns nil.
+func StepOutputExpectations(step *Step) map[string][]string {
+	paths := ExtractWriteOutputPaths(step.Code)
+	if len(paths) == 0 {
+		return nil
+	}
+	if len(paths) == 1 {
+		tokens := expectedAnswerTokens(step.Code)
+		if len(tokens) == 0 {
+			return nil
+		}
+		return map[string][]string{paths[0]: tokens}
+	}
+
+	out := map[string][]string{}
+	for _, path := range paths {
+		switch {
+		case strings.Contains(path, "-direct-answer"):
+			out[path] = []string{"direct answer"}
+		case strings.Contains(path, "-risks-unknowns"):
+			out[path] = []string{"risks unknowns"}
+		case strings.Contains(path, "-next-experiment"):
+			out[path] = []string{"next smallest concrete experiment"}
+		case strings.Contains(path, "-missing-evidence"):
+			out[path] = []string{"missing file path pattern"}
+		}
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
+}
+
+// ExtractWriteOutputPaths returns all --write-output paths found in the step code.
+func ExtractWriteOutputPaths(code string) []string {
+	matches := writeOutputPathRegex.FindAllStringSubmatch(code, -1)
+	if len(matches) == 0 {
+		return nil
+	}
+	paths := make([]string, 0, len(matches))
+	for _, m := range matches {
+		if len(m) >= 2 {
+			paths = append(paths, m[1])
+		}
+	}
+	return paths
+}
+
+// ValidateOutputFile checks whether the output file contains the required answer sections.
+// It returns ok=false with missing tokens when validation fails.
+func ValidateOutputFile(path string, requiredTokens []string) (bool, []string, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return false, nil, err
+	}
+	normalized := normalizeText(string(data))
+	var missing []string
+	for _, tok := range requiredTokens {
+		if !strings.Contains(normalized, tok) {
+			missing = append(missing, tok)
+		}
+	}
+	if len(missing) > 0 {
+		return false, missing, nil
+	}
+	return true, nil, nil
+}
+
+func expectedAnswerTokens(code string) []string {
+	lower := strings.ToLower(code)
+	if !strings.Contains(lower, "answer format") {
+		return nil
+	}
+	return []string{
+		"direct answer",
+		"risks unknowns",
+		"next smallest concrete experiment",
+		"if evidence is insufficient",
+	}
+}
+
+func normalizeText(s string) string {
+	s = strings.ToLower(s)
+	s = regexp.MustCompile(`[^a-z0-9]+`).ReplaceAllString(s, " ")
+	s = strings.TrimSpace(s)
+	return s
 }
 ```
 
@@ -3533,13 +3689,15 @@ type Model struct {
 	overridesFlow    OverridesFlowModel
 	appliedOverrides *overrides.RuntimeOverrides
 	chatGPTURL       string
+	outputVerify     bool
+	outputRetries    int
 
 	err      error
 	logLines []string
 	logChan  chan string
 }
 
-func NewModel(p *pack.Pack, r *exec.Runner, s *state.RunState, statePath string, roiThreshold float64, roiMode string, autoRun bool) Model {
+func NewModel(p *pack.Pack, r *exec.Runner, s *state.RunState, statePath string, roiThreshold float64, roiMode string, autoRun bool, outputVerify bool, outputRetries int) Model {
 	if s != nil {
 		if s.ROIThreshold > 0 {
 			roiThreshold = s.ROIThreshold
@@ -3603,6 +3761,8 @@ func NewModel(p *pack.Pack, r *exec.Runner, s *state.RunState, statePath string,
 		overridesFlow: NewOverridesFlowModel(p.Steps, r.OracleFlags, RunnerOptionsFromRunner(r)),
 		chatGPTURL:    resolvedURL,
 		previewWrap:   true,
+		outputVerify:  outputVerify,
+		outputRetries: outputRetries,
 	}
 	m.urlInput.SetValue(resolvedURL)
 	m.urlInput.Blur()
@@ -3771,9 +3931,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			case "r":
 				// Rerun selected step (if we have one selected in list)
-				// Or rerun the whole sequence if that was the context?
-				// Requirement says "rerun a step ('r')". Assuming selected step.
-				// We need to transition to ViewSteps logic or trigger run directly.
 [TRUNCATED]
 ```
 
@@ -4151,13 +4308,6 @@ func (m URLPickerModel) updateEdit(msg tea.Msg) (URLPickerModel, tea.Cmd) {
 }
 
 func (m *URLPickerModel) saveEdit(name, url string) {
-	scope := m.editScope
-	if scope == "" {
-		scope = urlScopeProject
-	}
-
-	// remove from other store if scope changed
-	m.removeByName(name, urlScopeProject)
 [TRUNCATED]
 ```
 
