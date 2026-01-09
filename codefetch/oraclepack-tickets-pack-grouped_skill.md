@@ -20,6 +20,7 @@ Project Structure:
 
 <source_code>
 skills/oraclepack-tickets-pack-grouped/SKILL.md
+
 ```
 ---
 name: oraclepack-tickets-pack-grouped
@@ -74,8 +75,10 @@ Notes:
 2) Ask user if custom args are needed (numbered picker):
 
 ```
+
 1) Use defaults (no args)
 2) Provide custom args
+
 ```
 
 If `2`, ask for KEY=value args and run with those; otherwise run with defaults.
@@ -89,17 +92,19 @@ python3 /home/user/.codex/skills/oraclepack-tickets-pack-grouped/scripts/generat
 ```
 
 Outputs:
+
 - `{{out_dir}}/packs/*.md` (one pack per group/part)
 - `{{out_dir}}/_groups.json` (group -> ticket list)
 
-4) Size control (mandatory; fail fast):
+1) Size control (mandatory; fail fast):
+
 - Run `oracle --dry-run summary --files-report ...` for the **largest** group pack (or each pack if unsure).
 - Enforce caps:
   - browser: ≤ 60,000 tokens total input per step
   - api: ≤ 180,000 tokens total input per step
 - If exceeded, reduce via `group_max_files` or use explicit `ticket_paths`.
 
-5) Validate every pack (mandatory):
+1) Validate every pack (mandatory):
 
 ```bash
 python3 /home/user/.codex/skills/oraclepack-tickets-pack-grouped/scripts/validate_pack.py <pack.md>
@@ -140,16 +145,19 @@ python3 /home/user/.codex/skills/oraclepack-tickets-pack-grouped/scripts/validat
 ## Output contract
 
 Each pack MUST:
+
 - Have exactly one `bash` fence
 - Have exactly 20 steps (01..20)
 - Include ROI header tokens
 - Include `--write-output` with a group-specific `out_dir`
 - Attach tickets directly via `${ticket_args[@]}`
 - End with Coverage check outside the bash fence
+
 ```
 
 skills/oraclepack-tickets-pack-grouped/references/attachment-minimization.md
 ```
+
 # Attachment minimization rules (Grouped Tickets Stage 1 — Direct Attach)
 
 Objective: keep each group pack focused and portable.
@@ -176,6 +184,7 @@ Objective: keep each group pack focused and portable.
 
 skills/oraclepack-tickets-pack-grouped/references/ticket-grouping.md
 ```
+
 # Ticket grouping (deterministic, inferred)
 
 Objective: split tickets into focused topic/domain groups and generate one pack per group.
@@ -199,11 +208,13 @@ Objective: split tickets into focused topic/domain groups and generate one pack 
 ## Deterministic grouping rules
 
 1) Collect tickets:
+
 - If `ticket_paths` is non-empty: split on commas, trim whitespace, use exactly that list.
 - Else: glob `ticket_root/ticket_glob`.
 - Always sort lexicographically by path string.
 
-2) Detect possible duplicates (if `dedupe_mode != off`):
+1) Detect possible duplicates (if `dedupe_mode != off`):
+
 - Signature: filename stem + first heading + first `dedupe_body_chars` chars.
 - Compute `jaccard` + `overlap` between tickets.
 - Duplicate edge rule:
@@ -214,11 +225,13 @@ Objective: split tickets into focused topic/domain groups and generate one pack 
   - delta if unique token ratio >= `dedupe_delta_min` OR heading differs materially.
   - redundant otherwise.
 
-3) Seed groups by subdir:
+1) Seed groups by subdir:
+
 - For any path under `ticket_root/<group>/...`, assign to group `<group>`.
 - Tickets directly under `ticket_root/` are "loose".
 
-4) Infer loose tickets into groups (if any groups exist):
+1) Infer loose tickets into groups (if any groups exist):
+
 - Build a token set for each group from:
   - group name tokens
   - ticket filenames (stem tokens)
@@ -227,16 +240,19 @@ Objective: split tickets into focused topic/domain groups and generate one pack 
 - If `max_score >= group_min_score`, assign to the best group (stable tie-break by group name).
 - Otherwise, assign to `misc`.
 
-5) If no groups exist:
+1) If no groups exist:
+
 - Put all tickets into a single group named `root`.
 
-6) Merge duplicates into primary group:
+1) Merge duplicates into primary group:
+
 - `report`: attach all tickets in the cluster to the canonical’s group.
 - `prune`: attach canonical + delta only; drop redundant from attachments.
 - `merge`: create `out_dir/_ticket_merges/cluster-XXXX.md` and attach only the merged file.
 - Emit `_dupes_possible.json`, `_duplicates.json`, and `_dedupe_plan.json`.
 
-7) Split oversized groups:
+1) Split oversized groups:
+
 - If a group exceeds `group_max_files` or `group_max_chars`, split into parts (1..N)
   in sorted order, chunked deterministically.
 
@@ -247,13 +263,16 @@ Hard rule: do not use mtimes, file sizes, or external ML services.
 - `_groups.json`: mapping of group -> list of ticket paths (lexicographic order)
 - Pack file per group (and part), each self-contained and direct-attach
 - `manifest.json`: groups with pack path + attached vs original ticket lists
+
 ```
 
 skills/oraclepack-tickets-pack-grouped/references/tickets-pack-template-bundle.md
 ```
+
 # Oracle Pack — {{codebase_name}} (Tickets Stage 1)
 
 ## Parsed args
+
 - codebase_name: {{codebase_name}}
 - out_dir: {{out_dir}}
 - oracle_cmd: {{oracle_cmd}}
@@ -266,6 +285,7 @@ skills/oraclepack-tickets-pack-grouped/references/tickets-pack-template-bundle.m
 - mode: {{mode}}
 
 Notes (contract):
+
 - Exactly one fenced `bash` block in this document.
 - No other ``` fences anywhere.
 - Exactly 20 steps, numbered 01..20 in order.
@@ -806,21 +826,22 @@ PROMPT
 
 ## Coverage check
 
-*   contracts/interfaces: OK
-*   invariants: OK
-*   caching/state: OK
-*   background jobs: OK
-*   observability: OK
-*   permissions: OK
-*   migrations: OK
-*   UX flows: OK
-*   failure modes: OK
-*   feature flags: OK
+- contracts/interfaces: OK
+- invariants: OK
+- caching/state: OK
+- background jobs: OK
+- observability: OK
+- permissions: OK
+- migrations: OK
+- UX flows: OK
+- failure modes: OK
+- feature flags: OK
 
 ```
 ```
 
 skills/oraclepack-tickets-pack-grouped/references/tickets-pack-template.md
+
 ```
 # Oracle Pack — {{codebase_name}} (Grouped Tickets Stage 1 — Direct Attach)
 
@@ -2116,6 +2137,7 @@ PROMPT
 ```
 
 ## Coverage check
+
 - contracts/interfaces: OK
 - invariants: OK
 - caching/state: OK
@@ -2126,12 +2148,14 @@ PROMPT
 - UX flows: OK
 - failure modes: OK
 - feature flags: OK
+
 ```
 
 skills/oraclepack-tickets-pack-grouped/scripts/generate_grouped_packs.py
 ```
-#!/usr/bin/env python3
-from __future__ import annotations
+
+# !/usr/bin/env python3
+from **future** import annotations
 
 import datetime as _dt
 import math
@@ -2147,7 +2171,6 @@ STOPWORDS = {
     "ticket", "tickets", "oraclepack", "oracle", "pack", "packs",
 }
 
-
 def _parse_kv_args(argv: List[str]) -> Dict[str, str]:
     args: Dict[str, str] = {}
     for raw in argv:
@@ -2157,10 +2180,8 @@ def _parse_kv_args(argv: List[str]) -> Dict[str, str]:
         args[k.strip()] = v.strip()
     return args
 
-
 def _today() -> str:
-    return _dt.date.today().isoformat()
-
+    return_dt.date.today().isoformat()
 
 def _slugify(s: str) -> str:
     s = s.strip().lower()
@@ -2168,20 +2189,17 @@ def _slugify(s: str) -> str:
     s = re.sub(r"-+", "-", s).strip("-")
     return s or "group"
 
-
 def _tokenize(text: str) -> List[str]:
     text = text.lower()
     text = re.sub(r"[^a-z0-9]+", " ", text)
     toks = [t for t in text.split() if len(t) >= 3 and t not in STOPWORDS]
     return toks
 
-
 def _normalize_title(text: str) -> str:
     text = text.strip().lower()
     text = re.sub(r"[^a-z0-9]+", " ", text)
     text = re.sub(r"\s+", " ", text).strip()
     return text
-
 
 def _read_heading(path: Path) -> str:
     try:
@@ -2192,7 +2210,6 @@ def _read_heading(path: Path) -> str:
         return ""
     return ""
 
-
 def _collect_ticket_paths(ticket_root: str, ticket_glob: str, ticket_paths: str) -> List[Path]:
     if ticket_paths:
         parts = [p.strip() for p in ticket_paths.split(",") if p.strip()]
@@ -2201,7 +2218,6 @@ def _collect_ticket_paths(ticket_root: str, ticket_glob: str, ticket_paths: str)
     if not root.exists():
         return []
     return [Path(p) for p in root.glob(ticket_glob)]
-
 
 def _read_signature(path: Path, max_lines: int = 40) -> Tuple[str, str]:
     heading = ""
@@ -2218,13 +2234,11 @@ def _read_signature(path: Path, max_lines: int = 40) -> Tuple[str, str]:
         pass
     return heading, " ".join(lines)
 
-
 def _read_text(path: Path) -> str:
     try:
         return path.read_text(encoding="utf-8", errors="replace")
     except FileNotFoundError:
         return ""
-
 
 def _group_by_subdir(paths: Iterable[Path], ticket_root: str) -> Tuple[Dict[str, List[Path]], List[Path]]:
     root = Path(ticket_root)
@@ -2243,7 +2257,6 @@ def _group_by_subdir(paths: Iterable[Path], ticket_root: str) -> Tuple[Dict[str,
             loose.append(p)
     return groups, loose
 
-
 def _group_tokens(group_name: str, paths: Iterable[Path]) -> set:
     tokens = set(_tokenize(group_name))
     for p in paths:
@@ -2251,24 +2264,21 @@ def _group_tokens(group_name: str, paths: Iterable[Path]) -> set:
         tokens.update(_tokenize(_read_heading(p)))
     return tokens
 
-
 def _ticket_tokens(p: Path) -> set:
     toks = set(_tokenize(p.stem))
-    heading, snippet = _read_signature(p)
+    heading, snippet =_read_signature(p)
     toks.update(_tokenize(heading))
     toks.update(_tokenize(snippet))
     return toks
 
-
 def _signature_tokens(p: Path, body_chars: int) -> set:
-    heading = _read_heading(p)
-    body = _read_text(p)
+    heading =_read_heading(p)
+    body =_read_text(p)
     body = body[:body_chars]
     toks = set(_tokenize(p.stem))
     toks.update(_tokenize(heading))
     toks.update(_tokenize(body))
     return toks
-
 
 def _jaccard(a: set, b: set) -> float:
     if not a or not b:
@@ -2276,7 +2286,6 @@ def _jaccard(a: set, b: set) -> float:
     inter = a.intersection(b)
     union = a.union(b)
     return float(len(inter)) / float(len(union))
-
 
 def _overlap(a: set, b: set) -> float:
     if not a or not b:
@@ -2286,7 +2295,6 @@ def _overlap(a: set, b: set) -> float:
     if denom == 0:
         return 0.0
     return float(len(inter)) / float(denom)
-
 
 def _clusters_from_edges(nodes: List[str], edges: Dict[str, List[str]]) -> List[List[str]]:
     seen = set()
@@ -2307,7 +2315,6 @@ def _clusters_from_edges(nodes: List[str], edges: Dict[str, List[str]]) -> List[
         clusters.append(sorted(comp))
     return clusters
 
-
 def _dedupe_clusters(
     paths: List[Path],
     body_chars: int,
@@ -2321,7 +2328,7 @@ def _dedupe_clusters(
     titles: Dict[str, str] = {}
     for p in paths:
         key = str(p)
-        tokens[key] = _signature_tokens(p, body_chars)
+        tokens[key] =_signature_tokens(p, body_chars)
         sizes[key] = len(_read_text(p))
         titles[key] = _normalize_title(_read_heading(p))
 
@@ -2373,7 +2380,6 @@ def _dedupe_clusters(
 
     return clusters, dup_map, cluster_meta, pair_scores
 
-
 def _infer_groups(
     groups: Dict[str, List[Path]],
     loose: List[Path],
@@ -2398,12 +2404,10 @@ def _infer_groups(
             groups.setdefault("misc", []).append(p)
     return groups
 
-
 def _chunk(paths: List[Path], size: int) -> List[List[Path]]:
     if size <= 0:
         return [paths]
     return [paths[i : i + size] for i in range(0, len(paths), size)]
-
 
 def _chunk_by_limits(
     paths: List[Path],
@@ -2430,7 +2434,6 @@ def _chunk_by_limits(
         chunks.append(cur)
     return chunks
 
-
 def _render_template(template: str, mapping: Dict[str, str]) -> str:
     out = template
     for key, val in mapping.items():
@@ -2439,7 +2442,6 @@ def _render_template(template: str, mapping: Dict[str, str]) -> str:
     if unresolved:
         raise ValueError(f"Unresolved template placeholders: {unresolved}")
     return out
-
 
 def _write_merge_file(
     out_dir: Path,
@@ -2497,7 +2499,6 @@ def _write_merge_file(
 
     path.write_text("\n".join(lines), encoding="utf-8")
     return path
-
 
 def main() -> int:
     if len(sys.argv) == 1:
@@ -2726,13 +2727,14 @@ def main() -> int:
     print(f"[OK] wrote grouping map: {base_out / '_groups.json'}")
     return 0
 
-
-if __name__ == "__main__":
+if **name** == "**main**":
     raise SystemExit(main())
+
 ```
 
 skills/oraclepack-tickets-pack-grouped/scripts/lint_attachments.py
 ```
+
 import argparse
 import re
 import sys
@@ -2740,19 +2742,16 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Tuple
 
-
 @dataclass
 class Step:
     n: str
     lines: List[str]
-
 
 def _read_text(path: Path) -> str:
     try:
         return path.read_text(encoding="utf-8")
     except UnicodeDecodeError:
         return path.read_text(encoding="utf-8", errors="replace")
-
 
 def _extract_bash_fence(lines: List[str]) -> List[str]:
     fence_idxs = [i for i, ln in enumerate(lines) if ln.startswith("```")]
@@ -2764,7 +2763,6 @@ def _extract_bash_fence(lines: List[str]) -> List[str]:
     if lines[close_i].rstrip("\n") != "```":
         raise ValueError("Closing fence must be exactly ```.")
     return [ln.rstrip("\n") for ln in lines[open_i + 1 : close_i]]
-
 
 def _parse_steps(fence_lines: List[str]) -> List[Step]:
     header_re = re.compile(r"^#\s*(\d{2})\)\s+")
@@ -2783,12 +2781,11 @@ def _parse_steps(fence_lines: List[str]) -> List[Step]:
         steps.append(Step(n=n, lines=fence_lines[start_i:end_i]))
     return steps
 
-
 def lint(path: Path) -> None:
     raw = _read_text(path)
     lines = raw.splitlines(True)
     fence = _extract_bash_fence(lines)
-    steps = _parse_steps(fence)
+    steps =_parse_steps(fence)
 
     errors: List[str] = []
     for step in steps:
@@ -2817,7 +2814,6 @@ def lint(path: Path) -> None:
 
     print("[OK] Direct-ticket lint passed.")
 
-
 def main() -> None:
     p = argparse.ArgumentParser(description="Lint ticket-driven Stage-1 packs (direct-ticket mode).")
     p.add_argument("pack_path", help="Path to the Markdown pack file")
@@ -2830,22 +2826,22 @@ def main() -> None:
 
     lint(path)
 
-
-if __name__ == "__main__":
+if **name** == "**main**":
     main()
+
 ```
 
 skills/oraclepack-tickets-pack-grouped/scripts/render_group_packs.py
 ```
-#!/usr/bin/env python3
-from __future__ import annotations
+
+# !/usr/bin/env python3
+from **future** import annotations
 
 import argparse
 import json
 import re
 from pathlib import Path
 from typing import Dict
-
 
 def _render_template(template: str, mapping: Dict[str, str]) -> str:
     out = template
@@ -2855,7 +2851,6 @@ def _render_template(template: str, mapping: Dict[str, str]) -> str:
     if unresolved:
         raise ValueError(f"Unresolved template placeholders: {unresolved}")
     return out
-
 
 def main() -> int:
     if len(sys.argv) == 1:
@@ -2921,15 +2916,16 @@ def main() -> int:
     manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True), encoding="utf-8")
     return 0
 
-
-if __name__ == "__main__":
+if **name** == "**main**":
     raise SystemExit(main())
+
 ```
 
 skills/oraclepack-tickets-pack-grouped/scripts/shard_tickets.py
 ```
-#!/usr/bin/env python3
-from __future__ import annotations
+
+# !/usr/bin/env python3
+from **future** import annotations
 
 import argparse
 import json
@@ -2947,7 +2943,6 @@ STOPWORDS = {
 
 SECTION_KEYS = {"summary", "acceptance", "criteria", "background", "context"}
 
-
 @dataclass
 class Ticket:
     path: Path
@@ -2955,19 +2950,16 @@ class Ticket:
     tokens: List[str]
     vector: List[float]
 
-
 def _tokenize(text: str) -> List[str]:
     text = text.lower()
     text = re.sub(r"[^a-z0-9]+", " ", text)
     return [t for t in text.split() if len(t) >= 3 and t not in STOPWORDS]
-
 
 def _read_text(path: Path) -> str:
     try:
         return path.read_text(encoding="utf-8", errors="replace")
     except FileNotFoundError:
         return ""
-
 
 def _extract_repr(text: str, stem: str, max_chars: int) -> str:
     lines = text.splitlines()
@@ -2989,7 +2981,6 @@ def _extract_repr(text: str, stem: str, max_chars: int) -> str:
     body = " ".join(sections)
     base = " ".join([stem, heading, body])
     return base[:max_chars]
-
 
 def _tfidf_vectors(texts: List[str]) -> Tuple[List[List[float]], List[str]]:
     docs = [
@@ -3030,32 +3021,29 @@ def _tfidf_vectors(texts: List[str]) -> Tuple[List[List[float]], List[str]]:
         inv_vocab[idx] = tok
     return vectors, inv_vocab
 
-
 def _cosine(a: List[float], b: List[float]) -> float:
     return sum(x * y for x, y in zip(a, b))
-
 
 def _centroid(vectors: List[List[float]]) -> List[float]:
     if not vectors:
         return []
     dim = len(vectors[0])
-    out = [0.0] * dim
+    out = [0.0] *dim
     for v in vectors:
         for i, val in enumerate(v):
             out[i] += val
     n = float(len(vectors)) or 1.0
     out = [v / n for v in out]
-    norm = math.sqrt(sum(v * v for v in out)) or 1.0
+    norm = math.sqrt(sum(v* v for v in out)) or 1.0
     return [v / norm for v in out]
-
 
 def _kmeans_split(vectors: List[List[float]], k: int, iters: int = 10) -> List[List[int]]:
     if k <= 1:
         return [list(range(len(vectors)))]
     # deterministic init: first k vectors
     centroids = [vectors[i][:] for i in range(k)]
-    for _ in range(iters):
-        clusters = [[] for _ in range(k)]
+    for _in range(iters):
+        clusters = [[] for_ in range(k)]
         for idx, v in enumerate(vectors):
             best = 0
             best_score = -1.0
@@ -3073,7 +3061,6 @@ def _kmeans_split(vectors: List[List[float]], k: int, iters: int = 10) -> List[L
                 new_centroids.append(centroids[len(new_centroids)])
         centroids = new_centroids
     return clusters
-
 
 def main() -> int:
     if len(sys.argv) == 1:
@@ -3230,27 +3217,30 @@ def main() -> int:
     (out_dir / "manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True), encoding="utf-8")
     return 0
 
-
-if __name__ == "__main__":
+if **name** == "**main**":
     raise SystemExit(main())
+
 ```
 
 skills/oraclepack-tickets-pack-grouped/scripts/validate_pack.py
 ```
+
 from pathlib import Path
 import runpy
 
-COMMON = Path(__file__).resolve().parents[2] / "oraclepack-tickets-pack-common" / "scripts" / "validate_pack.py"
+COMMON = Path(**file**).resolve().parents[2] / "oraclepack-tickets-pack-common" / "scripts" / "validate_pack.py"
 if not COMMON.exists():
     raise SystemExit(f"[ERROR] Shared validator not found: {COMMON}")
 
-runpy.run_path(str(COMMON), run_name="__main__")
+runpy.run_path(str(COMMON), run_name="**main**")
+
 ```
 
 skills/oraclepack-tickets-pack-grouped/scripts/validate_shards.py
 ```
-#!/usr/bin/env python3
-from __future__ import annotations
+
+# !/usr/bin/env python3
+from **future** import annotations
 
 import argparse
 import json
@@ -3258,13 +3248,11 @@ import subprocess
 from pathlib import Path
 from typing import Dict
 
-
 def _read_text(path: Path) -> str:
     try:
         return path.read_text(encoding="utf-8", errors="replace")
     except FileNotFoundError:
         return ""
-
 
 def main() -> int:
     if len(sys.argv) == 1:
@@ -3329,9 +3317,9 @@ def main() -> int:
     print("[OK] Sharded packs manifest validated.")
     return 0
 
-
-if __name__ == "__main__":
+if **name** == "**main**":
     raise SystemExit(main())
+
 ```
 
 </source_code>
