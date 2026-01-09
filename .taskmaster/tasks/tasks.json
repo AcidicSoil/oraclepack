@@ -3347,5 +3347,541 @@
       "updated": "2026-01-09T02:41:01.537Z",
       "description": "Tasks for prd-oraclepack-2026-01-09 context"
     }
+  },
+  "feature-action-pack-artifact-gates-headless-steps": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Establish Foundation Layer and Common Primitives",
+        "description": "Implement core utilities for configuration, file system abstraction, and custom error handling to be used across all internal modules.",
+        "details": "Create 'internal/foundation' package. Define 'Config' struct to hold run-time settings. Implement 'atomic' file writing using 'os.Rename' to prevent corruption. Define specific error types such as 'ErrMissingBinary' and 'ErrArtifactMissing'. Include a clock interface for testing time-dependent state transitions. Technology: Go standard library (os, path/filepath, errors).",
+        "testStrategy": "Unit tests for atomic write semantics (writing to temp file and renaming). Table-driven tests for config parsing from environment variables and JSON files.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement Configuration Management System",
+            "description": "Create the logic for loading application settings from both JSON files and environment variables.",
+            "dependencies": [],
+            "details": "Define a Config struct in 'internal/foundation'. Implement a loader function that prioritizes environment variables over JSON file values using the Go standard library.",
+            "status": "pending",
+            "testStrategy": "Table-driven tests to verify override precedence and parsing accuracy for different data types."
+          },
+          {
+            "id": 2,
+            "title": "Implement Atomic File System Operations",
+            "description": "Develop a utility to write files safely using a temporary file and atomic rename to prevent data corruption.",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement a WriteAtomic function in 'internal/foundation' that writes to a .tmp file using os.Create, then calls os.Rename to replace the target destination.",
+            "status": "pending",
+            "testStrategy": "Unit tests ensuring that a file is only updated if the write succeeds, and verifying the existence of the final file."
+          },
+          {
+            "id": 3,
+            "title": "Define Common Error Types and Clock Interface",
+            "description": "Create specialized error definitions and a clock interface for reliable time-based state transitions and testing.",
+            "dependencies": [
+              1
+            ],
+            "details": "Define ErrMissingBinary and ErrArtifactMissing using errors.New. Implement a Clock interface with a RealClock and MockClock for deterministic testing of time logic.",
+            "status": "pending",
+            "testStrategy": "Mock clock verification tests to ensure state transitions occur at expected intervals. Unit tests for custom error type comparisons."
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Implement Shell Runner with Login Shell Semantics",
+        "description": "Create a runner that executes commands via 'bash -lc' to ensure environment variables and PATH are correctly loaded as per Action Pack requirements.",
+        "details": "Implement 'internal/shell' package. Use 'os/exec' to invoke '/bin/bash' with args ['-lc', cmd]. Capture Stdout, Stderr, and ExitCode. Add a helper 'DetectBinary(name string) (string, bool)' that uses 'exec.LookPath' to check for tool availability on the host system. Ensure login-shell behavior matches standard developer environments.",
+        "testStrategy": "Integration test executing 'bash -lc \"echo $PATH\"' to verify login profile loading. Test 'DetectBinary' with known system binaries (e.g., 'ls') and fake binaries.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement Shell Command Execution Wrapper",
+            "description": "Develop the core functionality to execute shell commands using 'bash -lc' to ensure login shell semantics and environment loading.",
+            "dependencies": [],
+            "details": "Implement a runner in the 'internal/shell' package that utilizes 'os/exec' to invoke '/bin/bash' with arguments ['-lc', cmd]. The implementation must properly capture and route Stdout and Stderr, and correctly return the process ExitCode.",
+            "status": "pending",
+            "testStrategy": "Integration test executing 'bash -lc \"echo $PATH\"' to verify that login profiles are loaded and output is captured correctly."
+          },
+          {
+            "id": 2,
+            "title": "Implement Binary Detection Utility",
+            "description": "Create a helper function to check for the presence and location of required binaries on the host system's PATH.",
+            "dependencies": [],
+            "details": "Implement 'DetectBinary(name string) (string, bool)' within 'internal/shell' using 'exec.LookPath'. This function must return the full filesystem path to the binary and a boolean indicating if it was successfully found.",
+            "status": "pending",
+            "testStrategy": "Unit tests verifying detection of known system binaries (e.g., 'ls') and confirming false results for random, non-existent binary names."
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Develop Action Pack Document Parser",
+        "description": "Implement a parser to convert Markdown-based Action Packs into structured Go models, strictly enforcing the 20-step contract.",
+        "details": "Implement 'internal/pack' package. Use a Markdown parser (like 'github.com/yuin/goldmark') or specialized regex to extract the single fenced 'bash' block. Map steps to a 'Step' struct containing ID, Shell command, and Metadata (ROI, impact, etc.). Validate that the pack contains exactly 20 steps.",
+        "testStrategy": "Unit tests with golden Markdown fixtures. Test edge cases like empty steps, malformed metadata headers, and multiple code blocks (ensure only the primary 'bash' block is used).",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement Markdown Fenced Code Block Extractor",
+            "description": "Develop the logic to isolate and extract the content within the primary bash fenced code block from an Action Pack Markdown file.",
+            "dependencies": [],
+            "details": "Utilize 'github.com/yuin/goldmark' to parse the Markdown document. Navigate the AST to find the first 'bash' language fenced code block. Extract its raw text content for further processing, ensuring handling of cases with multiple blocks by selecting the primary instruction set.",
+            "status": "pending",
+            "testStrategy": "Unit tests with Markdown fixtures containing multiple code blocks, ensuring only the bash-labeled block is extracted."
+          },
+          {
+            "id": 2,
+            "title": "Parse Step Metadata and Shell Commands",
+            "description": "Convert extracted bash block content into a slice of structured Go 'Step' models, parsing ROI and Impact metadata.",
+            "dependencies": [
+              1
+            ],
+            "details": "Tokenize the bash block by lines. Use regex to extract metadata stored in comments (e.g., '# ROI:', '# Impact:'). Map these values along with the raw shell command to a 'Step' struct. Ensure IDs are correctly parsed from the step headers.",
+            "status": "pending",
+            "testStrategy": "Table-driven tests using mocked step strings to verify that Shell commands and Metadata fields are correctly populated."
+          },
+          {
+            "id": 3,
+            "title": "Implement 20-Step Contract Validation Logic",
+            "description": "Create a validator to strictly enforce the requirement that every Action Pack must contain exactly 20 steps.",
+            "dependencies": [
+              2
+            ],
+            "details": "Within the 'internal/pack' package, implement a validation function that checks the length of the parsed Step slice. If the count is not exactly 20, or if Step IDs are not sequential (1-20), return a custom error. This ensures the parser adheres to the rigid document contract.",
+            "status": "pending",
+            "testStrategy": "Unit tests using Golden Markdown files with 19, 20, and 21 steps to verify the validation boundaries."
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Implement State and Report Persistence",
+        "description": "Create the persistence layer for tracking run progress and generating the final execution report in JSON format.",
+        "details": "Implement 'internal/state' package. Define 'RunState' (current step, per-step results) and 'RunReport' (summary, gates, failures). Implement 'WriteState' and 'WriteReport' to output 'ticket-action-pack.state.json' and 'ticket-action-pack.report.json'. Ensure status transitions (Selected -> Running -> Succeeded|Failed|Skipped) are handled atomically.",
+        "testStrategy": "Round-trip JSON serialization/deserialization tests. Verify that partial runs can be resumed by reading the state file.",
+        "priority": "medium",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Define JSON Schemas and Structures for State and Reports",
+            "description": "Define the Golang structs and JSON mapping for RunState and RunReport entities in the internal/state package.",
+            "dependencies": [],
+            "details": "Create the RunState struct to track the current step index and per-step result history. Define the RunReport struct to encapsulate the final summary, artifact gate outcomes, and failure logs. Ensure all structures have appropriate JSON tags for 'ticket-action-pack.state.json' and 'ticket-action-pack.report.json'.",
+            "status": "pending",
+            "testStrategy": "Perform round-trip serialization and deserialization unit tests to ensure no data is lost during JSON conversion."
+          },
+          {
+            "id": 2,
+            "title": "Implement Atomic File I/O and Resumption Logic",
+            "description": "Develop the file-handling logic to write state updates safely and allow the engine to resume from existing state files.",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement WriteState and WriteReport functions that use a 'write-then-rename' pattern to ensure atomic file updates. Add a LoadState function to parse the existing state file, enabling the execution engine to skip previously completed steps and maintain status transitions.",
+            "status": "pending",
+            "testStrategy": "Integration tests to simulate process interruption and verify that the system can resume execution from the last saved step in the state file."
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Define Tool Registry and Capabilities",
+        "description": "Establish a registry of supported tools (oracle, tm, codex, gemini) and their specific invocation requirements.",
+        "details": "Implement 'internal/tools' package. Create 'ToolKind' enum. Define metadata for each tool, including non-interactive flag recommendations (e.g., 'codex exec' for Codex). Provide a presence-check interface that wraps shell binary detection.",
+        "testStrategy": "Unit tests to ensure 'ToolKind' mappings are correct and that recommended flags for 'codex' match PRD requirements for headless execution.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Define ToolKind Enum and Metadata Registry",
+            "description": "Create the internal/tools package to house the ToolKind enum and a registry that maps tools to their specific CLI flags and metadata.",
+            "dependencies": [],
+            "details": "Implement the ToolKind type using Go iota constants for oracle, tm, codex, and gemini. Create a ToolRegistry structure that maps these constants to metadata, specifically ensuring 'codex' is associated with the 'exec' subcommand for headless operation. Define the interface for binary presence detection.",
+            "status": "pending",
+            "testStrategy": "Unit tests to verify that ToolKind constants map to the correct string identifiers and that the metadata registry returns the expected execution flags for each tool."
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Implement Multi-Tool Command Dispatcher",
+        "description": "Expand command detection beyond the 'oracle' prefix to include 'tm', 'task-master', 'codex', and 'gemini'.",
+        "details": "Implement 'internal/dispatch' package. Replace existing regex-based detection with a flexible classifier: '^(\\s*)(oracle|tm|task-master|codex|gemini)\\b'. Map detected prefixes to 'ToolKind'. Preserve existing override/validation logic for 'oracle' commands while preparing hooks for other tools.",
+        "testStrategy": "Table-driven tests with a variety of command strings (with/without leading whitespace, different tools). Assert that 'oracle' behavior is unchanged.",
+        "priority": "high",
+        "dependencies": [
+          3,
+          5
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Develop Regex-Based Command Classifier",
+            "description": "Implement the core logic to detect tool prefixes and map them to ToolKind enums.",
+            "dependencies": [],
+            "details": "Create the 'internal/dispatch' package. Implement a classifier using the regex '^(\\s*)(oracle|tm|task-master|codex|gemini)\\b'. Map these to a ToolKind type and ensure the classifier returns both the tool type and the stripped command body.",
+            "status": "pending",
+            "testStrategy": "Table-driven unit tests in 'internal/dispatch' with various strings: with/without spaces, all supported tool names, and unsupported prefixes to ensure correct mapping and error handling."
+          },
+          {
+            "id": 2,
+            "title": "Integrate Dispatcher into Oracle Command Pipeline",
+            "description": "Replace the legacy oracle detection with the new dispatcher while maintaining existing validation rules.",
+            "dependencies": [
+              1
+            ],
+            "details": "Update the execution engine to call the dispatch classifier. Maintain existing override/validation logic specifically for the 'oracle' ToolKind. Prepare the pipeline architecture to handle diverse tool behaviors based on the detected ToolKind.",
+            "status": "pending",
+            "testStrategy": "Functional testing of the oracle pipeline to confirm no regressions. Verify that 'tm' or 'codex' prefixes are correctly parsed and passed to the next stage of execution."
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Define Action Pack Artifact Contract",
+        "description": "Specify and implement the validation gates for required output artifacts in the '.oraclepack/ticketify/' directory.",
+        "details": "Implement 'internal/artifacts' package. Define 'ArtifactContract' as a list of file paths (next.json, codex-implement.md, codex-verify.md, PR.md). Implement 'EvaluateGates' logic to check for file existence and size. Associate specific artifacts with their generating steps (e.g., Step 09 produces 'next.json').",
+        "testStrategy": "Unit tests that simulate file existence in a temporary directory and verify that the 'EvaluateGates' function correctly reports pass/fail/skip.",
+        "priority": "medium",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Define Artifact Path Registry and Step Associations",
+            "description": "Create the 'internal/artifacts' package and define the registry of required files mapped to specific Action Pack steps.",
+            "dependencies": [],
+            "details": "Define 'ArtifactContract' as a data structure containing file paths like next.json, codex-implement.md, codex-verify.md, and PR.md relative to the '.oraclepack/ticketify/' directory. Map these artifacts to their respective producing steps (e.g., Step 09 is associated with next.json).",
+            "status": "pending",
+            "testStrategy": "Unit tests verifying that the registry correctly maps step IDs to the expected set of artifact file paths."
+          },
+          {
+            "id": 2,
+            "title": "Implement EvaluateGates Validation Logic",
+            "description": "Develop the logic to verify the presence and non-emptiness of artifacts in the local filesystem after step execution.",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement the 'EvaluateGates' function in 'internal/artifacts'. This function must check for file existence using 'os.Stat' and ensure file size is greater than zero. It should return 'ErrArtifactMissing' if a required file is absent and handle optional artifact skips based on step metadata.",
+            "status": "pending",
+            "testStrategy": "Table-driven unit tests using temporary directories to simulate missing, empty, and valid files, ensuring the gate logic returns correct pass/fail results."
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "title": "Update Action Pack Markdown Template",
+        "description": "Modify the 'ticket-action-pack.md' template to replace placeholder steps with automated headless logic and artifact guards.",
+        "details": "Implement 'internal/templates' package. Update steps 09-13 and 16. Use 'command -v' guards (e.g., 'command -v codex >/dev/null && codex exec ... || echo \"Skipped: codex missing\"'). Ensure Codex steps use the 'exec' subcommand for non-interactive execution. Maintain the 20-step single-fence contract.",
+        "testStrategy": "Golden-file comparison test for the rendered template. Validate that the rendered Markdown is still parseable by 'internal/pack'.",
+        "priority": "medium",
+        "dependencies": [
+          7
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Update Markdown Template with Shell Guards and Headless Logic",
+            "description": "Modify the 'ticket-action-pack.md' template to update steps 09-13 and 16 with automated logic.",
+            "dependencies": [],
+            "details": "Update the template file in 'internal/templates'. Implement shell guards using 'command -v' for artifact check and tool presence. Transition Codex steps to use 'exec' for headless execution. Ensure all modifications remain within the single bash code block to respect the 20-step contract.",
+            "status": "pending",
+            "testStrategy": "Manual verification of Markdown structure and syntax within the template source."
+          },
+          {
+            "id": 2,
+            "title": "Implement Template Rendering and Validation Tests",
+            "description": "Develop tests to ensure the rendered Markdown template is valid and parseable.",
+            "dependencies": [
+              1
+            ],
+            "details": "Create a testing suite that renders the 'ticket-action-pack.md' with mock data. Perform a golden-file comparison to ensure output consistency. Use the 'internal/pack' parser to validate that the rendered output contains exactly 20 steps and follows the expected schema.",
+            "status": "pending",
+            "testStrategy": "Automated unit tests utilizing golden-file comparisons and integration with the internal/pack parser."
+          }
+        ]
+      },
+      {
+        "id": 9,
+        "title": "Implement Tool Presence Validator",
+        "description": "Develop a validator that checks for the availability of required binaries on the system PATH before execution.",
+        "details": "Implement 'ToolPresenceValidator' within 'internal/validate'. For each step, check if the classified tool's binary exists using 'internal/shell'. If missing, mark the step as 'Skipped' with a detailed reason in the state and report.",
+        "testStrategy": "Integration tests in a controlled environment where specific tools are added or removed from the PATH to verify skip logic.",
+        "priority": "medium",
+        "dependencies": [
+          2,
+          5,
+          6
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Develop core ToolPresenceValidator logic using internal/shell",
+            "description": "Implement the ToolPresenceValidator in the 'internal/validate' package to check for binary availability via system PATH.",
+            "dependencies": [],
+            "details": "Create the ToolPresenceValidator struct and its validation method. Integrate with the 'internal/shell' package to perform 'which' or equivalent checks for the classified tool binary associated with each execution step.",
+            "status": "pending",
+            "testStrategy": "Unit tests using a mocked shell interface to simulate scenarios where binaries are found or missing in the system PATH."
+          },
+          {
+            "id": 2,
+            "title": "Implement step skipping logic and state reporting for missing tools",
+            "description": "Add functionality to mark execution steps as 'Skipped' in the RunState and provide detailed reasons in the RunReport when tools are missing.",
+            "dependencies": [
+              1
+            ],
+            "details": "When a tool is detected as missing by the ToolPresenceValidator, update the step status to 'Skipped'. Ensure the RunState transition is recorded and a message like 'Tool [name] not found on PATH' is added to the RunReport.",
+            "status": "pending",
+            "testStrategy": "Integration tests verifying that 'ticket-action-pack.state.json' correctly records the 'Skipped' status and appropriate failure reasons for missing binaries."
+          }
+        ]
+      },
+      {
+        "id": 10,
+        "title": "Implement Artifact Gate Validator",
+        "description": "Create logic to verify that required artifacts were produced after specific steps are executed.",
+        "details": "Implement 'ArtifactGateValidator' within 'internal/validate'. This validator checks the filesystem against the 'ArtifactContract' defined in 'internal/artifacts'. It should allow 'Skipped' status if the tool was missing, but 'Failed' if the tool ran but didn't produce the file.",
+        "testStrategy": "Unit tests providing mock execution results and verifying the gate outcomes for both missing and present files.",
+        "priority": "medium",
+        "dependencies": [
+          4,
+          7
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement File System Validation Loop for Artifacts",
+            "description": "Develop the core logic to iterate through defined artifact contracts and verify their existence on the local file system.",
+            "dependencies": [],
+            "details": "Create the ArtifactGateValidator in 'internal/validate'. This will use 'os.Stat' to iterate over paths defined in the ArtifactContract from 'internal/artifacts'. It must verify the physical presence of each expected file after a step execution.",
+            "status": "pending",
+            "testStrategy": "Unit tests using temporary directories to verify that the validator correctly identifies existing and missing files on disk."
+          },
+          {
+            "id": 2,
+            "title": "Develop Result Mapping and Status Transition Logic",
+            "description": "Implement the logic that determines whether a step should be marked as Failed or Skipped based on artifact presence and tool status.",
+            "dependencies": [
+              1
+            ],
+            "details": "Map the results of the file system check to state transitions. If the tool binary was missing (from ToolPresenceValidator), the gate allows a 'Skipped' status. If the tool was present but artifacts are missing, the gate must return a 'Failed' status. Integrate these results with the 'internal/state' report structure.",
+            "status": "pending",
+            "testStrategy": "Table-driven unit tests providing mock execution scenarios: (Tool Missing + File Missing = Skipped), (Tool Present + File Present = Succeeded), (Tool Present + File Missing = Failed)."
+          }
+        ]
+      },
+      {
+        "id": 11,
+        "title": "Extend Unified Validation Pipeline",
+        "description": "Integrate new tool-presence and artifact-gate checks into the existing validation workflow, ensuring non-oracle tools are no longer silently excluded.",
+        "details": "In 'internal/validate', compose 'OracleDryRunValidator' (legacy), 'ToolPresenceValidator', and 'ArtifactGateValidator'. Ensure that 'oraclepack validate' command includes all 20 steps in its output, identifying the tool kind for each. Ensure non-oracle steps do not trigger oracle-specific validation logic.",
+        "testStrategy": "Integration tests running validation on a 'mixed' pack (oracle + codex). Assert that both types of steps are present in the validation report.",
+        "priority": "high",
+        "dependencies": [
+          6,
+          9,
+          10
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement Composite Validator Pipeline",
+            "description": "Create a unified validation coordinator in 'internal/validate' to manage the execution of multiple validators.",
+            "dependencies": [],
+            "details": "Develop a 'CompositeValidator' struct that iterates through a list of 'StepValidator' interfaces. It must process each of the 20 steps provided by the parser, sequentially applying ToolPresenceValidator, OracleDryRunValidator, and ArtifactGateValidator. The coordinator should aggregate individual check results into a single comprehensive state for each step.",
+            "status": "pending",
+            "testStrategy": "Unit tests using mock validators to ensure the 'CompositeValidator' invokes all registered checks for every step in an Action Pack."
+          },
+          {
+            "id": 2,
+            "title": "Refactor Validation Report and CLI Formatting",
+            "description": "Update the validation output schema and CLI rendering to include tool-specific metadata and all 20 contract steps.",
+            "dependencies": [
+              1
+            ],
+            "details": "Modify the 'ValidationReport' model to include a 'ToolKind' field for each step. Update the 'oraclepack validate' command logic to ensure it prints all 20 steps defined in the contract, even if they are skipped or represent non-oracle tools. The output must clearly differentiate between legacy oracle tools and standard shell/codex tools.",
+            "status": "pending",
+            "testStrategy": "CLI integration tests using a 'mixed' pack fixture to verify that the terminal output lists 20 entries with correct 'oracle' or 'codex' labels."
+          },
+          {
+            "id": 3,
+            "title": "Implement Tool-Aware Validation Logic",
+            "description": "Add conditional logic to the validation pipeline to bypass legacy oracle checks for non-oracle steps.",
+            "dependencies": [
+              1
+            ],
+            "details": "Update the validation loop to check the 'Step' metadata for the tool type. If a step is identified as a non-oracle tool, the 'OracleDryRunValidator' should be skipped to avoid triggering legacy oracle-specific validation failures. Ensure that 'ToolPresence' and 'ArtifactGate' checks still run for these steps where applicable.",
+            "status": "pending",
+            "testStrategy": "Integration tests running validation on a pack with non-oracle shell steps, asserting that no 'OracleDryRun' errors are raised for those specific indices."
+          }
+        ]
+      },
+      {
+        "id": 12,
+        "title": "Implement Headless Execution Engine",
+        "description": "Develop the core execution logic that iterates through steps, handles skips, and manages state updates in non-interactive mode.",
+        "details": "Create the main runner logic in 'internal/shell/engine.go'. It should: 1. Load Pack. 2. Initialize State. 3. For each step: Classify tool, Check Presence, Execute (or Skip), Record Results, Write State. Ensure execution uses 'bash -lc'. Implement timeouts for shell commands.",
+        "testStrategy": "End-to-end integration test using a mock 20-step pack. Verify that 'Succeeded' and 'Skipped' statuses are correctly recorded in 'ticket-action-pack.state.json'.",
+        "priority": "high",
+        "dependencies": [
+          2,
+          4,
+          6
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement Core Sequential Step Runner",
+            "description": "Build the main iterative loop that processes the list of tasks from the action pack in internal/shell/engine.go.",
+            "dependencies": [],
+            "details": "Create the main Run function. It must load the Pack, initialize the RunState, and iterate through up to 20 steps, calling the dispatcher to classify tools for each command.",
+            "status": "pending",
+            "testStrategy": "Unit test with a mock action pack containing a list of strings to ensure the loop visits every entry in the correct sequence."
+          },
+          {
+            "id": 2,
+            "title": "Implement Execution Timeouts and Signal Handling",
+            "description": "Integrate context-based timeouts and OS signal listeners to ensure commands do not run indefinitely and can be interrupted.",
+            "dependencies": [
+              1
+            ],
+            "details": "Wrap command execution in 'bash -lc' using os/exec. Implement context.WithTimeout for each step and trap SIGINT/SIGTERM to ensure the engine shuts down gracefully while saving the current state.",
+            "status": "pending",
+            "testStrategy": "Integration test using a 'sleep' command that exceeds a configured timeout to verify the engine kills the process and marks it as Failed."
+          },
+          {
+            "id": 3,
+            "title": "Integrate Atomic State and Report Updates",
+            "description": "Connect the execution loop to the state persistence layer to track run progress in real-time.",
+            "dependencies": [
+              1
+            ],
+            "details": "Invoke the 'internal/state' package's WriteState method before and after every step execution. Ensure status transitions to 'Running', then to 'Succeeded', 'Failed', or 'Skipped' are recorded in the JSON state file.",
+            "status": "pending",
+            "testStrategy": "Verify the 'ticket-action-pack.state.json' file content after each step in a multi-step run to ensure the 'current_step' index and status match reality."
+          },
+          {
+            "id": 4,
+            "title": "Implement Step Skip and Error Propagation Logic",
+            "description": "Handle tool presence checks and execution errors to determine if a step should be skipped or if the engine should halt.",
+            "dependencies": [
+              1,
+              2,
+              3
+            ],
+            "details": "Incorporate the ToolPresenceValidator. If a tool is missing, mark the step as 'Skipped'. If a shell command returns a non-zero exit code, mark the step as 'Failed' and terminate the execution loop immediately.",
+            "status": "pending",
+            "testStrategy": "Integration test using a pack with one missing tool and one failing command to assert that skip reasons and failure logs are correctly captured."
+          }
+        ]
+      },
+      {
+        "id": 13,
+        "title": "Wire CLI Commands and Journey States",
+        "description": "Update the 'cmd/oraclepack' entry point to expose the new 'validate' and 'run' capabilities with '--no-tui' support.",
+        "details": "Update 'cmd/oraclepack/main.go'. Add 'run --no-tui' flag. Implement journey state rendering (Selected -> Ready -> Running -> Completed). Ensure exit codes are appropriate for CI (0 for success/skip, non-zero for failure). Hook up state/report writing to the CLI execution loop.",
+        "testStrategy": "CLI integration tests using a test harness to invoke the binary and check stdout/stderr and exit codes. Verify the creation of '.state.json' and '.report.json' in the current directory.",
+        "priority": "high",
+        "dependencies": [
+          11,
+          12
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Configure Cobra Commands and --no-tui Flag",
+            "description": "Register the 'validate' and 'run' subcommands in the CLI entry point and implement the '--no-tui' flag logic.",
+            "dependencies": [],
+            "details": "Update 'cmd/oraclepack/main.go' to include 'validate' and 'run' commands using the Cobra library. Add a persistent or local boolean flag '--no-tui' to the 'run' command to bypass the interactive Bubble Tea interface.",
+            "status": "pending",
+            "testStrategy": "Execute the binary with '--help' to confirm new commands/flags exist. Run 'run --no-tui' to ensure it bypasses TUI initialization code."
+          },
+          {
+            "id": 2,
+            "title": "Implement Headless Journey State Rendering",
+            "description": "Create a terminal output formatter that prints execution progress (Selected, Ready, Running, Completed) to stdout when TUI is disabled.",
+            "dependencies": [
+              1
+            ],
+            "details": "Develop a lightweight logging mechanism that monitors the 'RunState'. As the execution loop progresses through steps, print structured text updates (e.g., '[Running] Step 5: Validate Tooling') to provide real-time feedback without full-screen terminal manipulation.",
+            "status": "pending",
+            "testStrategy": "Integration tests capturing stdout during a mock run to verify that each state transition is printed in the correct sequence."
+          },
+          {
+            "id": 3,
+            "title": "Wire Exit Codes and Persistence Hookup",
+            "description": "Ensure the CLI execution loop handles system exit codes correctly and triggers state/report file writing before termination.",
+            "dependencies": [
+              2
+            ],
+            "details": "Integrate the 'internal/state' package into the 'cmd/oraclepack' execution loop. Ensure that 'os.Exit(0)' is called on success/skip and 'os.Exit(1)' (or other non-zero codes) on failure. Guarantee that 'ticket-action-pack.state.json' and 'ticket-action-pack.report.json' are written even on early failure.",
+            "status": "pending",
+            "testStrategy": "Automated CLI harness tests that invoke the binary and assert the exit code value ($?) and the existence/content of the generated JSON files."
+          }
+        ]
+      },
+      {
+        "id": 14,
+        "title": "Publish Documentation for Execution Semantics",
+        "description": "Create user-facing documentation detailing how Action Packs are executed and how to ensure tool compatibility.",
+        "details": "Update README or 'docs/' folder. Explicitly document 'bash -lc' behavior. List supported command prefixes (oracle, tm, task-master, codex, gemini). Provide guidance on 'codex exec' usage for automation and explain how the artifact gate validation prevents broken rollouts.",
+        "testStrategy": "Manual review of documentation for clarity and accuracy against the implemented code. Verify 'help' output in CLI matches docs.",
+        "priority": "low",
+        "dependencies": [
+          13
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Author README and Execution Semantics Documentation",
+            "description": "Develop comprehensive user-facing documentation in the README or docs/ directory that details the 'bash -lc' execution environment, supported command prefixes, and artifact gate logic.",
+            "dependencies": [],
+            "details": "Explain the necessity of 'bash -lc' for environment variable loading. Document the list of supported prefixes: oracle, tm, task-master, codex, and gemini. Provide examples of 'codex exec' for automation and describe how artifact gates ensure rollout integrity.",
+            "status": "pending",
+            "testStrategy": "Manual review for clarity and technical accuracy. Verify that the documented prefixes and execution flags align with the 'internal/shell' and 'internal/validate' implementations."
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "created": "2026-01-09T02:59:21.411Z",
+      "updated": "2026-01-09T03:06:54.915Z",
+      "description": "Tasks for feature-action-pack-artifact-gates-headless-steps context"
+    }
   }
 }

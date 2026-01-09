@@ -1,0 +1,125 @@
+{
+	"meta": {
+		"generatedAt": "2026-01-09T03:09:17.610Z",
+		"tasksAnalyzed": 14,
+		"totalTasks": 14,
+		"analysisCount": 14,
+		"thresholdScore": 4,
+		"projectName": "Task Master",
+		"usedResearch": true
+	},
+	"complexityAnalysis": [
+		{
+			"taskId": 1,
+			"taskTitle": "Establish Foundation Layer and Common Primitives",
+			"complexityScore": 3,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the foundation layer into subtasks for: 1) Configuration management using environment variables and JSON. 2) Atomic file system operations with os.Rename. 3) Custom error types and clock interfaces for testing.",
+			"reasoning": "This task involves setting up boilerplate patterns. While foundational, the technical implementation using Go's standard library is straightforward. The primary challenge is ensuring the patterns are extensible for subsequent modules."
+		},
+		{
+			"taskId": 2,
+			"taskTitle": "Implement Shell Runner with Login Shell Semantics",
+			"complexityScore": 4,
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Create subtasks for: 1) The 'bash -lc' execution wrapper and output capturing. 2) The binary detection utility using exec.LookPath.",
+			"reasoning": "Interfacing with the shell involves handling environment loading and potential cross-platform path issues. Capturing and properly routing stdout/stderr while ensuring login shell semantics requires careful handling of exec.Cmd."
+		},
+		{
+			"taskId": 3,
+			"taskTitle": "Develop Action Pack Document Parser",
+			"complexityScore": 5,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Detail subtasks for: 1) Markdown fenced block extraction. 2) Step metadata parsing (ROI, impact). 3) 20-step contract validation logic.",
+			"reasoning": "Parsing Markdown to extract specific blocks and strictly enforcing a 20-step count introduces edge cases. It requires robust regex or integration with a Markdown library like Goldmark to ensure reliability."
+		},
+		{
+			"taskId": 4,
+			"taskTitle": "Implement State and Report Persistence",
+			"complexityScore": 3,
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Divide into subtasks for: 1) JSON schema definition for state and reports. 2) Atomic file writing and resumption logic.",
+			"reasoning": "Standard data persistence task. The complexity is low, primarily focusing on ensuring data integrity during writes and correct serialization of step statuses."
+		},
+		{
+			"taskId": 5,
+			"taskTitle": "Define Tool Registry and Capabilities",
+			"complexityScore": 2,
+			"recommendedSubtasks": 1,
+			"expansionPrompt": "Create a subtask to define the ToolKind enum and the tool-specific flag mapping registry.",
+			"reasoning": "This is a configuration-heavy task involving defining constants and simple metadata maps. It provides the data for other components but has minimal logic."
+		},
+		{
+			"taskId": 6,
+			"taskTitle": "Implement Multi-Tool Command Dispatcher",
+			"complexityScore": 4,
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Split into subtasks for: 1) Implementing the regex-based command classifier. 2) Integrating the classifier into the existing oracle command pipeline.",
+			"reasoning": "Requires precise regex to distinguish between tool prefixes (oracle vs codex vs tm) while maintaining backward compatibility for existing oracle validation logic."
+		},
+		{
+			"taskId": 7,
+			"taskTitle": "Define Action Pack Artifact Contract",
+			"complexityScore": 3,
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Break into subtasks for: 1) Defining the artifact path registry. 2) Implementing the EvaluateGates file-check logic.",
+			"reasoning": "Mainly involves defining which files are required and implementing a simple existence/size check. Complexity lies in mapping these artifacts back to specific execution steps."
+		},
+		{
+			"taskId": 8,
+			"taskTitle": "Update Action Pack Markdown Template",
+			"complexityScore": 3,
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Separate subtasks for: 1) Modifying the Markdown template steps. 2) Implementing the template rendering and validation test.",
+			"reasoning": "Involves content changes and ensuring that the rendered output remains compatible with the parser. Technical logic is minimal but requires accuracy in shell command guards."
+		},
+		{
+			"taskId": 9,
+			"taskTitle": "Implement Tool Presence Validator",
+			"complexityScore": 3,
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Define subtasks for: 1) The validator logic that utilizes internal/shell. 2) The logic for marking steps as 'Skipped' based on tool absence.",
+			"reasoning": "Orchestrates existing shell logic. The complexity is in correctly updating the state and providing meaningful reasons for skips."
+		},
+		{
+			"taskId": 10,
+			"taskTitle": "Implement Artifact Gate Validator",
+			"complexityScore": 3,
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Divide into: 1) The file system validation loop. 2) Result mapping between artifact presence and step success/failure.",
+			"reasoning": "Similar to the tool presence validator, this task is an orchestration of existing artifact contracts and file system checks."
+		},
+		{
+			"taskId": 11,
+			"taskTitle": "Extend Unified Validation Pipeline",
+			"complexityScore": 5,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Detail subtasks for: 1) Composing multiple validators into a single pipeline. 2) Updating the validation report format. 3) Ensuring non-oracle steps bypass legacy checks.",
+			"reasoning": "High-level integration task. It requires careful handling of how different validators interact and how their aggregate results are presented to the user."
+		},
+		{
+			"taskId": 12,
+			"taskTitle": "Implement Headless Execution Engine",
+			"complexityScore": 7,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Break down into: 1) The core execution loop for 20 steps. 2) Timeout and signal handling logic. 3) State persistence integration within the loop. 4) Error handling and skip logic.",
+			"reasoning": "The core engine is the most complex part of the application. It must manage the lifecycle of a run, handle various failure modes, and ensure the state is always accurate even if interrupted."
+		},
+		{
+			"taskId": 13,
+			"taskTitle": "Wire CLI Commands and Journey States",
+			"complexityScore": 5,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Split into: 1) Cobra command and flag setup for '--no-tui'. 2) Implementation of the journey state UI (Selected, Ready, etc.). 3) CI-compliant exit code management.",
+			"reasoning": "This task involves UX and CLI plumbing. Providing real-time updates on execution progress (journey states) without a TUI requires clear logging and state management."
+		},
+		{
+			"taskId": 14,
+			"taskTitle": "Publish Documentation for Execution Semantics",
+			"complexityScore": 2,
+			"recommendedSubtasks": 1,
+			"expansionPrompt": "Create a subtask for writing the README and internal docs covering tool prefixes and 'bash -lc' behavior.",
+			"reasoning": "This is a documentation-focused task with low technical risk, though it is critical for user adoption and correct usage."
+		}
+	]
+}
