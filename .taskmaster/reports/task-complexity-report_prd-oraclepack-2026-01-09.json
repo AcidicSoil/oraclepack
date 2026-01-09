@@ -1,0 +1,125 @@
+{
+	"meta": {
+		"generatedAt": "2026-01-09T02:44:13.267Z",
+		"tasksAnalyzed": 14,
+		"totalTasks": 14,
+		"analysisCount": 14,
+		"thresholdScore": 5,
+		"projectName": "Task Master",
+		"usedResearch": true
+	},
+	"complexityAnalysis": [
+		{
+			"taskId": 1,
+			"taskTitle": "Define Pack Data Models and Parser",
+			"complexityScore": 3,
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Break Task 1 into: 1) Defining Go structs in `internal/pack/types.go` and 2) Implementing the regex-based Markdown parser in `internal/pack/parser.go` with initial unit tests.",
+			"reasoning": "The models are straightforward (fixed-size array for steps). The parser only needs to extract the first bash fence and split by comments, which is simple regex work."
+		},
+		{
+			"taskId": 2,
+			"taskTitle": "Implement Strict Pack-Shape Validation",
+			"complexityScore": 3,
+			"recommendedSubtasks": 0,
+			"expansionPrompt": "",
+			"reasoning": "This is a pure logic task following Task 1. Validating 20 sequential IDs is a standard iteration over the struct created in the previous task."
+		},
+		{
+			"taskId": 3,
+			"taskTitle": "Bash Safety Lint for Orphaned Flags",
+			"complexityScore": 4,
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Break Task 3 into: 1) Custom regex detection for orphaned flags and 2) Integration of `exec.Command('bash', '-n', ...)` for syntax validation.",
+			"reasoning": "Requires balancing regex accuracy (avoiding false positives in strings) and integrating an external binary (bash) for linting."
+		},
+		{
+			"taskId": 4,
+			"taskTitle": "XDG-Compliant State and Config Management",
+			"complexityScore": 3,
+			"recommendedSubtasks": 0,
+			"expansionPrompt": "",
+			"reasoning": "Go's `os` package handles XDG directory resolution well. The main effort is ensuring the override logic (env vars/flags) is consistent."
+		},
+		{
+			"taskId": 5,
+			"taskTitle": "Deterministic Workdir Resolution Logic",
+			"complexityScore": 3,
+			"recommendedSubtasks": 0,
+			"expansionPrompt": "",
+			"reasoning": "Standard directory climbing logic. It's a common pattern in CLI tools to find the project root."
+		},
+		{
+			"taskId": 6,
+			"taskTitle": "Attachment Preflight Verification",
+			"complexityScore": 4,
+			"recommendedSubtasks": 0,
+			"expansionPrompt": "",
+			"reasoning": "Requires parsing the bash content of each step to find flag patterns, which can be brittle without a full shell parser, but regex usually suffices for this specific use case."
+		},
+		{
+			"taskId": 7,
+			"taskTitle": "Core Step Execution Engine",
+			"complexityScore": 6,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break Task 7 into: 1) Shell command construction for login shells, 2) Stdout/Stderr streaming/capture, and 3) Environment variable propagation logic.",
+			"reasoning": "Interactive login shells (`bash -lc`) introduce environment complexity and potential hanging issues. Handling real-time capture and context cancellation is critical."
+		},
+		{
+			"taskId": 8,
+			"taskTitle": "Deterministic Run Manifests and Reporting",
+			"complexityScore": 4,
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Break Task 8 into: 1) JSON schema definition for manifests and 2) Atomic file writing logic to the StateDir.",
+			"reasoning": "Involves computing hashes and gathering git metadata. Straightforward but requires careful filesystem handling to ensure reports aren't corrupted."
+		},
+		{
+			"taskId": 9,
+			"taskTitle": "Resume and Rerun Semantics",
+			"complexityScore": 5,
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Break Task 9 into: 1) State-loading logic to detect previous runs and 2) Conditional execution logic in the runner orchestrator.",
+			"reasoning": "Complexity arises from the state machine logic—deciding exactly when a step is 'safe' to skip and managing the user overrides for specific steps."
+		},
+		{
+			"taskId": 10,
+			"taskTitle": "Action Pack Artifact Standardization",
+			"complexityScore": 3,
+			"recommendedSubtasks": 0,
+			"expansionPrompt": "",
+			"reasoning": "Mostly a path resolution task. Depends on Task 5 and Task 8, but the implementation is just a specific directory enforcement."
+		},
+		{
+			"taskId": 11,
+			"taskTitle": "Executor Dispatcher for Non-Oracle Tools",
+			"complexityScore": 5,
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Break Task 11 into: 1) Manifest parsing for executor mapping and 2) Dynamic process dispatching with binary existence checks.",
+			"reasoning": "Requires coordinating between the pack steps and an external JSON manifest to determine how to run specific steps, adding a layer of indirection."
+		},
+		{
+			"taskId": 12,
+			"taskTitle": "TUI URL Picker and PRD Micro-pack Flow",
+			"complexityScore": 6,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break Task 12 into: 1) UI updates for the URL selection list, 2) Micro-pack generation logic, and 3) Integration with the core runner for immediate execution.",
+			"reasoning": "TUI work is often more time-consuming than backend logic. Creating a 'one-off' execution flow that doesn't follow the 20-step rule might require refactoring the runner."
+		},
+		{
+			"taskId": 13,
+			"taskTitle": "MCP Run Tool Flag Passthrough",
+			"complexityScore": 4,
+			"recommendedSubtasks": 0,
+			"expansionPrompt": "",
+			"reasoning": "This is cross-language (Python/Go). The Python side needs to be updated to match the new CLI API of the Go binary."
+		},
+		{
+			"taskId": 14,
+			"taskTitle": "Headless CLI URL Overrides",
+			"complexityScore": 2,
+			"recommendedSubtasks": 0,
+			"expansionPrompt": "",
+			"reasoning": "Simple flag addition and conditional check in the main run logic. Very low risk."
+		}
+	]
+}

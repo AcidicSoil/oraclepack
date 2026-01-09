@@ -2601,5 +2601,751 @@
       "description": "Tasks for feat-mcp context",
       "updated": "2026-01-08T02:22:47.922Z"
     }
+  },
+  "prd-oraclepack-2026-01-09": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Define Pack Data Models and Parser",
+        "description": "Establish the core data structures for Packs and Steps in internal/pack and implement the initial Markdown parser.",
+        "details": "Create `types.go` with structs `Pack` (Steps [20]Step, Prelude string) and `Step` (ID string, Content string). Implement `ParsePack(path string)` in `parser.go` to extract the contents of the first triple-backtick bash fence from the Markdown file and split it into raw steps.",
+        "testStrategy": "Unit tests verifying that a valid Markdown file with a single bash fence is correctly loaded into the internal data structures.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Define Core Data Structures in types.go",
+            "description": "Establish the internal Go data structures used to represent a pack and its individual execution steps.",
+            "dependencies": [],
+            "details": "Create the file `internal/pack/types.go`. Define a `Step` struct with `ID` (string) and `Content` (string) fields. Define a `Pack` struct containing `Steps [20]Step` (a fixed-size array of 20 steps) and a `Prelude` string.",
+            "status": "pending",
+            "testStrategy": null
+          },
+          {
+            "id": 2,
+            "title": "Implement Regex-Based Markdown Parser",
+            "description": "Develop the parser logic to extract bash code blocks from Markdown files and partition them into discrete steps.",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement `ParsePack(path string)` in `internal/pack/parser.go`. Use regular expressions to extract the contents of the first triple-backtick bash fence found in the file. Split the fence content into raw steps based on comment markers and populate the `Pack` struct defined in Task 1.",
+            "status": "pending",
+            "testStrategy": "Unit tests using a sample Markdown file fixture containing a valid bash fence to verify the `Pack` struct is correctly populated with the expected strings."
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Implement Strict Pack-Shape Validation",
+        "description": "Enforce the 20-step invariant and single bash fence constraint on pack validation.",
+        "details": "Implement `ValidatePack(pack *Pack)` in `internal/pack/validator.go`. The validator must: 1. Count fences and reject files with > 1 bash fence. 2. Verify exactly 20 steps exist. 3. Ensure steps are numbered sequentially '# 01)' through '# 20)'.",
+        "testStrategy": "Table-driven unit tests with fixtures: one fence with 20 steps (pass), two fences (fail), 19 steps (fail), non-sequential IDs (fail).",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Define Validator Interface and Error Types",
+            "description": "Create the basic structure for pack validation including error definitions.",
+            "dependencies": [],
+            "details": "Create `internal/pack/validator.go`. Define the `ValidatePack(p *Pack) error` function. Include custom error types or constants for `ErrInvalidFenceCount`, `ErrInvalidStepCount`, and `ErrSequenceMismatch` to provide specific feedback.",
+            "status": "pending",
+            "testStrategy": "Verify that the code compiles and the error types are accessible by other packages."
+          },
+          {
+            "id": 2,
+            "title": "Implement Bash Fence Count Validation",
+            "description": "Logic to ensure only a single bash code block exists in the pack.",
+            "dependencies": [
+              1
+            ],
+            "details": "Update `ValidatePack` to check the raw content or the parsed structure of the `Pack`. It must reject any file that contains zero or more than one '```bash' block. This is critical for maintaining the single-entry point invariant.",
+            "status": "pending",
+            "testStrategy": "Unit test with sample strings containing 0, 1, and 2 bash code fences."
+          },
+          {
+            "id": 3,
+            "title": "Implement Step Count Invariant Check",
+            "description": "Verify that the pack contains exactly 20 steps.",
+            "dependencies": [
+              1
+            ],
+            "details": "Within `ValidatePack`, add logic to inspect the `Steps` slice. Return an error if `len(p.Steps) != 20`. This enforces the rigid structure required by the oraclepack execution engine.",
+            "status": "pending",
+            "testStrategy": "Test cases with Pack structs containing 19, 20, and 21 steps respectively."
+          },
+          {
+            "id": 4,
+            "title": "Implement Sequential ID Pattern Validation",
+            "description": "Validate that steps follow the '# 01)' through '# 20)' naming convention.",
+            "dependencies": [
+              1,
+              3
+            ],
+            "details": "Iterate through the steps in the `Pack` struct. For each step at index `i`, verify that its ID string matches the format `# %02d)` where the number is `i+1`. Use `fmt.Sprintf` to generate the expected string and compare.",
+            "status": "pending",
+            "testStrategy": "Test cases with correct sequence, out-of-order IDs, and missing leading zeros (e.g., '# 1)')."
+          },
+          {
+            "id": 5,
+            "title": "Create Table-Driven Validation Test Suite",
+            "description": "Implement a comprehensive test suite in validator_test.go.",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "details": "Create `internal/pack/validator_test.go`. Implement a `TestValidatePack` function using a table-driven approach. Include fixtures for: valid 20-step pack, multiple fences, incorrect step count, and non-sequential step IDs.",
+            "status": "pending",
+            "testStrategy": "Execute 'go test ./internal/pack/...' and ensure coverage includes all branches of the validation logic."
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Bash Safety Lint for Orphaned Flags",
+        "description": "Add a linter to detect lines starting with flags like -p or --prompt that aren't attached to a command.",
+        "details": "Implement a custom detector in `internal/pack/lint.go` that scans step content. It should flag lines matching `^\\s*(-p|--prompt|--attachment|-f)\\s+` that appear after a newline or at the start of a step without a preceding command. Integrate `bash -n` for syntax checking.",
+        "testStrategy": "Unit tests with step snippets containing intentional orphaned flags and ensuring the linter catches them.",
+        "priority": "medium",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement Custom Regex Detector for Orphaned Flags",
+            "description": "Develop a regex-based scanner in internal/pack/lint.go to identify lines starting with specific flags that lack a preceding command.",
+            "dependencies": [],
+            "details": "Define a regex matching ^\\s*(-p|--prompt|--attachment|-f)\\s+ and apply it to each step's content. The detector must identify cases where these flags appear at the start of a string or immediately following a newline without an associated command.",
+            "status": "pending",
+            "testStrategy": "Unit tests in internal/pack/lint_test.go using string snippets with orphaned flags and valid multi-line commands to ensure low false-positive rates."
+          },
+          {
+            "id": 2,
+            "title": "Integrate bash -n Syntax Validation",
+            "description": "Incorporate a secondary validation layer using exec.Command to run 'bash -n' against step contents to catch broader syntax errors.",
+            "dependencies": [
+              1
+            ],
+            "details": "Invoke 'bash -n' by piping the bash fence content to stdin. Capture stderr output from the command and integrate any detected syntax errors into the linter's reporting output within internal/pack/lint.go.",
+            "status": "pending",
+            "testStrategy": "Execute the linter against steps containing intentional syntax errors (e.g., unclosed quotes or brackets) and verify that bash -n errors are captured."
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "XDG-Compliant State and Config Management",
+        "description": "Relocate run state, reports, and configuration storage outside the repository root using XDG standards.",
+        "details": "Implement `internal/state/paths.go` using `os.UserConfigDir()` and `os.UserCacheDir()`. Default state to `~/.cache/oraclepack/runs/`. Add support for `ORACLEPACK_STATE_DIR` env var and `--state-dir` CLI flag to override these defaults.",
+        "testStrategy": "Verify path resolution on different OS environments; ensure no state files are written to the current working directory by default.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement core XDG path resolution in internal/state/paths.go",
+            "description": "Create the internal/state package and implement basic path resolution using Go's os package.",
+            "dependencies": [],
+            "details": "Use os.UserConfigDir() and os.UserCacheDir() to determine base paths. Define GetStateDir() which defaults to the 'oraclepack/runs' subdirectory within the user cache directory.",
+            "status": "pending",
+            "testStrategy": "Unit tests to verify that paths returned match expected XDG directory structures for the target operating systems."
+          },
+          {
+            "id": 2,
+            "title": "Add Environment Variable Override for State Directory",
+            "description": "Implement support for the ORACLEPACK_STATE_DIR environment variable to override default paths.",
+            "dependencies": [
+              1
+            ],
+            "details": "Modify the path resolution logic in internal/state/paths.go to check for the ORACLEPACK_STATE_DIR environment variable before falling back to XDG defaults.",
+            "status": "pending",
+            "testStrategy": "Set the environment variable in a test environment and verify the resolution logic prioritizes it over XDG defaults."
+          },
+          {
+            "id": 3,
+            "title": "Integrate --state-dir CLI flag into the command structure",
+            "description": "Add a global or command-specific flag for --state-dir and pass it to the state management logic.",
+            "dependencies": [
+              2
+            ],
+            "details": "Update the CLI parsing logic (likely in internal/cli) to accept --state-dir. This flag must take the highest priority in the path resolution hierarchy (Flag > Env > Default).",
+            "status": "pending",
+            "testStrategy": "Execution of the CLI with the --state-dir flag and verification that it overrides both defaults and environment variables."
+          },
+          {
+            "id": 4,
+            "title": "Refactor run state and report storage to use the new path system",
+            "description": "Update existing code that writes files to the repository root to use the paths provided by internal/state.",
+            "dependencies": [
+              1,
+              3
+            ],
+            "details": "Identify and update file writing calls for execution state, reports, and metadata to ensure they are written to the resolved state directory instead of the current working directory.",
+            "status": "pending",
+            "testStrategy": "Run a full execution cycle and confirm no new files are created in the project repository; verify they appear in the specified state directory."
+          },
+          {
+            "id": 5,
+            "title": "Ensure automatic directory creation for state and config paths",
+            "description": "Add logic to automatically create the target directories if they do not exist.",
+            "dependencies": [
+              4
+            ],
+            "details": "Implement os.MkdirAll logic within the path resolution or file writing helpers to ensure that the application doesn't fail when the state or config directories are missing.",
+            "status": "pending",
+            "testStrategy": "Delete the state directory and run the tool; verify that the directory structure is automatically re-created without errors."
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Deterministic Workdir Resolution Logic",
+        "description": "Implement the logic to resolve the execution working directory to the repository root if not specified.",
+        "details": "In `internal/exec/workdir.go`, implement a search that climbs the directory tree from the pack's location looking for `.git` or `.oraclepack`. This becomes the default WorkDir unless the `--work-dir` flag is provided.",
+        "testStrategy": "Integration test: run the tool from a subdirectory and verify the resolved workdir matches the project root.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Define ResolveWorkDir function and core structures",
+            "description": "Create the internal/exec/workdir.go file and define the public API for directory resolution.",
+            "dependencies": [],
+            "details": "The function should accept the pack file's path and an optional user-provided work directory string. It should return an absolute path or an error.",
+            "status": "pending",
+            "testStrategy": "Unit test ensuring that a provided override path is converted to an absolute path correctly."
+          },
+          {
+            "id": 2,
+            "title": "Implement directory climbing logic for root markers",
+            "description": "Develop the recursive or iterative search for .git or .oraclepack markers in parent directories.",
+            "dependencies": [
+              1
+            ],
+            "details": "Using os.Stat and filepath.Dir, climb the tree starting from the pack location. If either .git or .oraclepack is found, return that directory. Default to the pack's directory if no root is found before the filesystem root.",
+            "status": "pending",
+            "testStrategy": "Unit test using a temporary filesystem structure with nested directories and markers at different levels."
+          },
+          {
+            "id": 3,
+            "title": "Integrate resolution into the runner execution path",
+            "description": "Update the execution engine to resolve the working directory before running any shell commands.",
+            "dependencies": [
+              2
+            ],
+            "details": "Modify the runner logic (likely in internal/exec) to call the new resolution function. Ensure the resolved directory is set as the 'Dir' attribute for os/exec commands or passed to the shell environment.",
+            "status": "pending",
+            "testStrategy": "Mock the execution environment and verify that the command runner receives the correct working directory path."
+          },
+          {
+            "id": 4,
+            "title": "Connect CLI flags to workdir resolution override",
+            "description": "Ensure the --work-dir flag value is correctly passed to the resolution function as an override.",
+            "dependencies": [
+              3
+            ],
+            "details": "Update the CLI argument parsing logic in the cmd package to capture the --work-dir flag and pass it into the ResolveWorkDir function call within the main execution flow.",
+            "status": "pending",
+            "testStrategy": "CLI integration test running the tool with the --work-dir flag and verifying the output reflects the forced path."
+          },
+          {
+            "id": 5,
+            "title": "Create comprehensive integration tests for workdir resolution",
+            "description": "Implement end-to-end tests covering various repository structures and execution contexts.",
+            "dependencies": [
+              4
+            ],
+            "details": "Tests should cover: execution from project root, execution from deep subdirectory (with .git at root), and execution with an explicit --work-dir flag overriding a .git root.",
+            "status": "pending",
+            "testStrategy": "Integration tests using a temporary directory structure mimicking a real repository and executing the oraclepack binary."
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Attachment Preflight Verification",
+        "description": "Verify all file attachments referenced in pack steps exist before execution begins.",
+        "details": "In `internal/exec/preflight.go`, parse steps for `-f` or `--attachment` flags. Resolve relative paths against the calculated WorkDir. Return a list of missing files if any pre-run checks fail.",
+        "testStrategy": "Run preflight against a pack with a non-existent file reference and verify it returns a descriptive error before executing any steps.",
+        "priority": "medium",
+        "dependencies": [
+          1,
+          5
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Define Attachment Extraction Regex",
+            "description": "Create and verify a regular expression to identify -f and --attachment flags in step content.",
+            "dependencies": [],
+            "details": "In `internal/exec/preflight.go`, implement a regex pattern such as `(?:-f|--attachment)\\s+([^\\s]+)` to extract file paths. The pattern must handle both short and long form flags and ignore surrounding whitespace.",
+            "status": "pending",
+            "testStrategy": "Unit tests with diverse string inputs representing bash command lines with varying attachment flag positions."
+          },
+          {
+            "id": 2,
+            "title": "Implement Path Resolution Logic",
+            "description": "Develop a helper function to resolve extracted attachment paths against the execution WorkDir.",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement a function that takes a raw path string and a `workDir`. Use `filepath.IsAbs` to check if the path is already absolute; otherwise, use `filepath.Join(workDir, path)` and `filepath.Clean` to resolve the final location.",
+            "status": "pending",
+            "testStrategy": "Unit tests verifying resolution of '.', '..', absolute paths, and standard relative paths against a mock WorkDir."
+          },
+          {
+            "id": 3,
+            "title": "Develop Step Attachment Scanner",
+            "description": "Implement the core logic to iterate through all steps and identify missing files.",
+            "dependencies": [
+              2
+            ],
+            "details": "Create a function `checkStepAttachments(steps []pack.Step, workDir string) []string`. It should scan each step using the regex from subtask 1, resolve paths using subtask 2, and use `os.Stat` to check for file existence, returning a list of all missing file paths.",
+            "status": "pending",
+            "testStrategy": "Manual verification with a mock Pack object containing both existing and non-existing file references."
+          },
+          {
+            "id": 4,
+            "title": "Integrate Verification into Preflight Workflow",
+            "description": "Update the existing preflight execution to fail early if attachments are missing.",
+            "dependencies": [
+              3
+            ],
+            "details": "Modify the `Preflight` function in `internal/exec/preflight.go` to invoke the attachment scanner. If the list of missing files is not empty, return a formatted error listing all missing files to prevent the execution engine from starting.",
+            "status": "pending",
+            "testStrategy": "End-to-end test triggering the preflight check with a manifest referencing a missing file and asserting the error output."
+          },
+          {
+            "id": 5,
+            "title": "Add Preflight Attachment Unit Tests",
+            "description": "Ensure robustness of the attachment verification with a dedicated test suite.",
+            "dependencies": [
+              4
+            ],
+            "details": "Create `internal/exec/preflight_test.go`. Include test cases for multiple attachments in a single step, attachments across different steps, and edge cases like file paths containing spaces or special characters.",
+            "status": "pending",
+            "testStrategy": "Run `go test -v ./internal/exec` and ensure all attachment-related test cases pass with high code coverage."
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Core Step Execution Engine",
+        "description": "Implement the runner that executes individual bash steps using an interactive login shell context.",
+        "details": "In `internal/exec/runner.go`, use `os/exec` to run `bash -lc`. Capture stdout/stderr. Ensure environment variables are propagated. Implement `RunStep(ctx, step)` which returns a `StepResult` including exit code and output duration.",
+        "testStrategy": "Execution test with a sample step that outputs a known string and checks environment variables (e.g., 'echo $HOME').",
+        "priority": "high",
+        "dependencies": [
+          1,
+          5
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement Login Shell Command Construction",
+            "description": "Construct the os/exec.Command structure to wrap bash step content within an interactive login shell.",
+            "dependencies": [],
+            "details": "Update internal/exec/runner.go to build a command using 'bash -lc'. The step script content must be properly escaped or passed via standard input to ensure it executes correctly within the login shell environment.",
+            "status": "pending",
+            "testStrategy": "Verify command arguments in a unit test to ensure 'bash', '-l', and '-c' are correctly sequenced and the script payload is preserved."
+          },
+          {
+            "id": 2,
+            "title": "Stdout and Stderr Streaming and Capture",
+            "description": "Implement real-time capture of the process output and calculate execution duration.",
+            "dependencies": [
+              1
+            ],
+            "details": "Attach buffers to the process pipes to capture both stdout and stderr. Use a timer to track the start and end of the execution, populating the duration field in the StepResult object returned by RunStep.",
+            "status": "pending",
+            "testStrategy": "Execute a bash script that writes to both stdout and stderr, then assert that all output is captured in the resulting StepResult."
+          },
+          {
+            "id": 3,
+            "title": "Environment Variable Propagation Logic",
+            "description": "Develop the logic to merge parent environment variables with task-specific variables.",
+            "dependencies": [
+              1
+            ],
+            "details": "Ensure that os.Environ() is combined with any step-specific environment variables. Assign the resulting slice to the Env field of the os/exec.Cmd object to maintain context consistency during execution.",
+            "status": "pending",
+            "testStrategy": "Run a test step that outputs 'env' and check for the presence of both standard system variables and injected custom variables."
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "title": "Deterministic Run Manifests and Reporting",
+        "description": "Generate run.json and steps.json metadata files for every execution run.",
+        "details": "Implement `internal/report/generate.go`. `run.json` should include pack hash, git SHA, and start time. `steps.json` should be an array of objects containing step_id, status (success/failed/skipped), and path to captured logs. Write these to the StateDir.",
+        "testStrategy": "Execute a 2-step pack and verify that the resulting JSON files are correctly formatted and contain valid pack hashes.",
+        "priority": "medium",
+        "dependencies": [
+          4,
+          7
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Define JSON Schemas and Data Structures for Manifests",
+            "description": "Define the Go structures and JSON tags for run.json and steps.json to ensure consistent metadata reporting.",
+            "dependencies": [],
+            "details": "Create 'internal/report/models.go'. Define 'RunReport' with PackHash (string), GitSHA (string), and StartTime (time.Time). Define 'StepReport' with StepID (string), Status (string: success/failed/skipped), and LogPath (string). Ensure all fields have proper json tags.",
+            "status": "pending",
+            "testStrategy": "Unit tests to marshal the structs into JSON and verify the output matches the required schema format."
+          },
+          {
+            "id": 2,
+            "title": "Implement Atomic Writing Logic for Report Generation",
+            "description": "Develop the file-writing logic in generate.go to save manifest files safely to the StateDir.",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement the 'Generate' function in 'internal/report/generate.go'. Use atomic file writing by creating a temporary file in the StateDir and then using os.Rename to replace the target run.json or steps.json. This prevents partial writes or corruption.",
+            "status": "pending",
+            "testStrategy": "Execution test that creates a mock StateDir, calls the generator, and asserts that the resulting files are valid JSON and persist correctly after writing."
+          }
+        ]
+      },
+      {
+        "id": 9,
+        "title": "Resume and Rerun Semantics",
+        "description": "Enable the runner to skip previously successful steps and support targeted reruns.",
+        "details": "Modify the orchestrator to load existing `steps.json` from the StateDir. Logic: if `--rerun all` is not set, skip steps marked as 'success'. Support `--rerun 05,06` to force specific step execution.",
+        "testStrategy": "Simulate a failed run at step 03, then run again without flags and verify steps 01-02 are skipped.",
+        "priority": "medium",
+        "dependencies": [
+          8
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement State Loading and Previous Result Detection",
+            "description": "Develop the logic to read existing execution state from the StateDir to identify completed steps from previous runs.",
+            "dependencies": [],
+            "details": "Create or update functions in the execution package to load and parse 'steps.json' from the StateDir. The system must map these results to the current execution plan by step ID, enabling the orchestrator to differentiate between 'success', 'failure', and 'not-run' states.",
+            "status": "pending",
+            "testStrategy": "Unit test using a mocked StateDir containing a 'steps.json' file to verify that the loader accurately identifies successful versus failed steps."
+          },
+          {
+            "id": 2,
+            "title": "Implement Conditional Step Execution and Rerun Logic",
+            "description": "Integrate logic into the runner orchestrator to skip successful steps or force reruns based on CLI flags.",
+            "dependencies": [
+              1
+            ],
+            "details": "Update the main execution loop in the orchestrator to evaluate the loaded state against CLI flags like '--rerun all' or specific step IDs (e.g., '--rerun 05,06'). If a step is marked as 'success' and no override flag applies, the orchestrator should skip execution and proceed to the next step.",
+            "status": "pending",
+            "testStrategy": "Integration test simulating a failed run at step 03, then performing a second run without flags to verify steps 01-02 are skipped, and a third run with '--rerun 02' to verify step 02 is forced to run."
+          }
+        ]
+      },
+      {
+        "id": 10,
+        "title": "Action Pack Artifact Standardization",
+        "description": "Ensure Action Packs produce standardized artifacts in the .oraclepack/ticketify directory.",
+        "details": "Modify the output logic specifically for Action Packs to ensure files like `_actions.json` and `_tickets_index.json` are written to a fixed sub-directory `.oraclepack/ticketify/` relative to the WorkDir regardless of the pack's location.",
+        "testStrategy": "Run an Action Pack and confirm artifacts are produced in the predictable .oraclepack path.",
+        "priority": "high",
+        "dependencies": [
+          5,
+          8
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Define standard artifact path constants",
+            "description": "Establish the fixed directory and filename constants for Action Pack artifacts.",
+            "dependencies": [],
+            "details": "In a relevant package (e.g., `internal/pack/constants.go`), define constants for the sub-directory name `.oraclepack/ticketify` and the artifact filenames `_actions.json` and `_tickets_index.json`. This ensures consistency across the codebase.",
+            "status": "pending",
+            "testStrategy": "Code review to ensure constants follow project naming conventions."
+          },
+          {
+            "id": 2,
+            "title": "Implement artifact path resolution helper",
+            "description": "Create a utility to resolve absolute paths for Action Pack artifacts relative to the WorkDir.",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement a function in `internal/pack` or `internal/exec` that takes the resolved WorkDir (from Task 5) and joins it with the `.oraclepack/ticketify` subdirectory. It should return absolute paths for the specific artifact files required by Action Packs.",
+            "status": "pending",
+            "testStrategy": "Unit test verifying that given a WorkDir '/repo', the helper returns '/repo/.oraclepack/ticketify/_actions.json'."
+          },
+          {
+            "id": 3,
+            "title": "Ensure artifact directory initialization",
+            "description": "Ensure the .oraclepack/ticketify directory is created before artifact generation.",
+            "dependencies": [
+              2
+            ],
+            "details": "Modify the Action Pack execution setup logic to ensure that `os.MkdirAll` is called on the resolved artifact directory path. This must happen before any JSON writers attempt to create files to prevent path-not-found errors.",
+            "status": "pending",
+            "testStrategy": "Run a mock execution and verify that the directory is created if it was previously missing."
+          },
+          {
+            "id": 4,
+            "title": "Redirect Action Pack JSON output logic",
+            "description": "Update the orchestrator to write _actions.json and _tickets_index.json to the standardized directory.",
+            "dependencies": [
+              3
+            ],
+            "details": "Update the post-execution or artifact-writing phase of the orchestrator. Specifically for Action Packs, use the helper from subtask 2 to determine the output location instead of writing to the current directory or the Pack's source directory.",
+            "status": "pending",
+            "testStrategy": "Execute an Action Pack and check for the presence of the JSON files in the standardized path."
+          },
+          {
+            "id": 5,
+            "title": "Verify artifact standardization in integration tests",
+            "description": "Create an integration test to confirm artifacts are correctly placed regardless of execution context.",
+            "dependencies": [
+              4
+            ],
+            "details": "Add an integration test that runs an Action Pack from a subdirectory with a specified --work-dir. Assert that files are created in `.oraclepack/ticketify/` relative to that work directory, not the execution directory or the pack's home.",
+            "status": "pending",
+            "testStrategy": "Automated integration test using a temporary filesystem to verify file existence at the expected relative path."
+          }
+        ]
+      },
+      {
+        "id": 11,
+        "title": "Executor Dispatcher for Non-Oracle Tools",
+        "description": "Implement the dispatcher to route work to codex, gemini, or tm based on the _actions.json manifest.",
+        "details": "Create `internal/exec/dispatcher.go`. If a step is identified as an action step (e.g., steps 09-13), read `_actions.json`, check the `executor` field, and run the corresponding binary (e.g., `codex implement`). Guard with `command -v` to skip if the tool is missing.",
+        "testStrategy": "Mock 'codex' and 'gemini' binaries and verify the dispatcher correctly calls them when 'executor' is specified in the actions manifest.",
+        "priority": "medium",
+        "dependencies": [
+          7,
+          10
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement Manifest Parsing for Executor Mapping",
+            "description": "Develop the logic to read and parse the _actions.json manifest file to associate steps with specific executors.",
+            "dependencies": [],
+            "details": "Define the ActionManifest struct in internal/exec/dispatcher.go. Implement a function to load the file from the pack directory and return a map that correlates step identifiers (09-13) with executor strings like 'codex' or 'gemini'.",
+            "status": "pending",
+            "testStrategy": "Unit tests using various JSON fixtures to ensure the mapping logic correctly identifies executor fields and handles missing manifest files gracefully."
+          },
+          {
+            "id": 2,
+            "title": "Dynamic Process Execution with Tool Availability Checks",
+            "description": "Develop the core dispatcher function to execute external binaries while verifying tool existence on the system.",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement the command execution logic using the os/exec package. Use exec.LookPath to check if the required executor binary exists in the user's PATH. If missing, the step should be logged as skipped; otherwise, run the tool with appropriate subcommands.",
+            "status": "pending",
+            "testStrategy": "Integration tests using mock binaries in a temporary PATH directory to verify the dispatcher correctly calls the tool or skips execution based on availability."
+          }
+        ]
+      },
+      {
+        "id": 12,
+        "title": "TUI URL Picker and PRD Micro-pack Flow",
+        "description": "Add a ChatGPT URL selection entry for PRD generation in the TUI.",
+        "details": "Update `internal/tui/url_picker.go` to include a 'PRD Generator' option. When selected, it should trigger a single-step execution (micro-pack) that calls oracle with the `tickets_prd.md` context and produces `final_prd.md`.",
+        "testStrategy": "Manual TUI verification to ensure the PRD Generator URL can be selected and saved without affecting the global project URL.",
+        "priority": "low",
+        "dependencies": [
+          1,
+          7
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Add PRD Generator Option to TUI URL Picker",
+            "description": "Modify the TUI URL selection menu to include a dedicated 'PRD Generator' entry.",
+            "dependencies": [],
+            "details": "Update `internal/tui/url_picker.go` to append a new item to the list of available URLs. This item should be identified as a special 'PRD' mode rather than a standard URL string when selected.",
+            "status": "pending",
+            "testStrategy": "Manual verification by launching the TUI and ensuring the 'PRD Generator' option appears and is selectable."
+          },
+          {
+            "id": 2,
+            "title": "Define PRD Micro-pack and Context Logic",
+            "description": "Implement the logic for creating a single-step execution flow for PRD generation.",
+            "dependencies": [
+              1
+            ],
+            "details": "Create a function that constructs a 'Micro-pack' consisting of a single step. This step must be configured to pass the contents of `tickets_prd.md` to the oracle and define `final_prd.md` as the target output file.",
+            "status": "pending",
+            "testStrategy": "Unit test ensuring the micro-pack generator produces the correct oracle parameters and identifies the correct input/output files."
+          },
+          {
+            "id": 3,
+            "title": "Integrate Micro-pack Execution into Core Runner",
+            "description": "Connect the TUI selection to the runner to trigger the PRD generation flow immediately upon selection.",
+            "dependencies": [
+              2
+            ],
+            "details": "Update the execution entry point to detect the 'PRD' selection from the TUI. When detected, it should bypass the standard pack loading logic and execute the PRD micro-pack through the runner.",
+            "status": "pending",
+            "testStrategy": "End-to-end test starting from the TUI selection and verifying that the runner initiates a single-step oracle call with the PRD context."
+          }
+        ]
+      },
+      {
+        "id": 13,
+        "title": "MCP Run Tool Flag Passthrough",
+        "description": "Update the MCP server to support explicit work_dir, out_dir, and oracle_bin parameters.",
+        "details": "Modify `oraclepack-mcp-server/oraclepack_mcp_server/server.py` to accept additional optional arguments in the `oraclepack_run_pack` tool definition. Map these arguments directly to the CLI flags when spawning the process.",
+        "testStrategy": "Use the MCP inspector to call the run tool with an explicit `work_dir` and verify the underlying oraclepack command receives the flag.",
+        "priority": "medium",
+        "dependencies": [
+          5,
+          7
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Define Arguments in MCP Tool Schema",
+            "description": "Update the oraclepack_run_pack tool definition in the MCP server to include new optional parameters.",
+            "dependencies": [],
+            "details": "Modify the @mcp.tool() decorator or call in oraclepack_mcp_server/server.py to add work_dir (string), out_dir (string), and oracle_bin (string) as optional arguments with appropriate descriptions.",
+            "status": "pending",
+            "testStrategy": "Verify the tool schema update by running the MCP server and checking the listed tools via an MCP inspector or client."
+          },
+          {
+            "id": 2,
+            "title": "Update CLI Command Construction Logic",
+            "description": "Modify the internal logic that constructs the shell command to include the new flags if provided.",
+            "dependencies": [
+              1
+            ],
+            "details": "Update the run_pack function in server.py to check for the presence of work_dir, out_dir, and oracle_bin. Append --work-dir, --out-dir, and --oracle-bin flags respectively to the subprocess argument list.",
+            "status": "pending",
+            "testStrategy": "Unit test the command construction logic by mocking subprocess.run and asserting the command list contains the expected flags."
+          },
+          {
+            "id": 3,
+            "title": "Implement Path Validation for MCP Arguments",
+            "description": "Add basic validation for the provided directory and binary paths before spawning the process.",
+            "dependencies": [
+              2
+            ],
+            "details": "Ensure that if work_dir or oracle_bin are provided, they are checked for basic existence or format to provide better error messages through the MCP interface if the paths are invalid.",
+            "status": "pending",
+            "testStrategy": "Invoke the tool with non-existent paths via the MCP inspector and verify that appropriate error messages are returned."
+          },
+          {
+            "id": 4,
+            "title": "Handle Environment and Binary Pathing",
+            "description": "Ensure the oracle_bin parameter correctly overrides the default binary location in the execution environment.",
+            "dependencies": [
+              2
+            ],
+            "details": "Update the execution logic to use the value of oracle_bin as the executable path if provided, otherwise defaulting to the standard 'oraclepack' command in the system PATH.",
+            "status": "pending",
+            "testStrategy": "Run a test where a dummy script is passed as oracle_bin and verify it is the one executed by the MCP server."
+          },
+          {
+            "id": 5,
+            "title": "End-to-End Integration Test with MCP Inspector",
+            "description": "Perform a full manual test using the MCP Inspector to verify that flags are correctly passed to the Go binary.",
+            "dependencies": [
+              3,
+              4
+            ],
+            "details": "Use the mcp-inspector tool to call oraclepack_run_pack with a custom work_dir and out_dir. Verify that the files are generated in the specified out_dir and that the Go binary recognizes the context from work_dir.",
+            "status": "pending",
+            "testStrategy": "Manual verification by inspecting the filesystem output after running the tool via MCP."
+          }
+        ]
+      },
+      {
+        "id": 14,
+        "title": "Headless CLI URL Overrides",
+        "description": "Implement CLI flags to provide ChatGPT URL overrides without entering the TUI.",
+        "details": "Add `--chatgpt-url` and `--chatgpt-url-name` to `internal/cli/run.go`. When present, these values bypass the saved state/config URLs for the duration of the run.",
+        "testStrategy": "Run a pack with `--chatgpt-url-name my-custom-url` and verify the execution metadata reflects the override.",
+        "priority": "low",
+        "dependencies": [
+          4,
+          8
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Define CLI flags for ChatGPT URL overrides in run command",
+            "description": "Add string flags for --chatgpt-url and --chatgpt-url-name to the run command in internal/cli/run.go.",
+            "dependencies": [],
+            "details": "Modify the init() function or the RunCmd definition in internal/cli/run.go. Use Cobra's PersistentFlags() or Flags() method to register 'chatgpt-url' and 'chatgpt-url-name' and bind them to variables available during execution.",
+            "status": "pending",
+            "testStrategy": "Execute 'oraclepack run --help' to ensure the new flags are correctly registered and visible in the help menu."
+          },
+          {
+            "id": 2,
+            "title": "Implement configuration override logic in state management",
+            "description": "Modify the configuration loading logic to accept and prioritize CLI-provided URL overrides.",
+            "dependencies": [
+              1
+            ],
+            "details": "Update the state or configuration loading functions (likely within internal/state/paths.go or a similar configuration handler) to check if the new CLI variables are populated. These should take precedence over values stored in the XDG config files.",
+            "status": "pending",
+            "testStrategy": "Unit test the configuration resolver by providing mock file values and mock CLI values, asserting that CLI values are returned."
+          },
+          {
+            "id": 3,
+            "title": "Inject overrides into the execution context",
+            "description": "Ensure the Pack execution logic uses the overridden URL and name instead of querying user state.",
+            "dependencies": [
+              2
+            ],
+            "details": "In internal/cli/run.go, modify the execution block to pass the CLI flag values into the executor. If the flags are present, bypass the logic that typically fetches the default URL from the saved application state.",
+            "status": "pending",
+            "testStrategy": "Run a Pack with the --chatgpt-url flag and verify via logs or debug output that the executor receives the correct overridden string."
+          },
+          {
+            "id": 4,
+            "title": "Bypass TUI interactions when overrides are provided",
+            "description": "Implement logic to skip interactive URL selection or confirmation if headless flags are set.",
+            "dependencies": [
+              3
+            ],
+            "details": "Ensure that if --chatgpt-url-name or --chatgpt-url is provided, any calls to the Terminal User Interface (TUI) for URL selection are conditionally skipped. This enables fully automated, headless execution.",
+            "status": "pending",
+            "testStrategy": "Invoke the run command with overrides in a non-interactive shell environment and verify the command completes without hanging or requiring input."
+          },
+          {
+            "id": 5,
+            "title": "Include URL source in execution metadata reporting",
+            "description": "Update the run report metadata to reflect that a URL override was used during execution.",
+            "dependencies": [
+              4
+            ],
+            "details": "Modify the run reporting logic to include a field indicating the source of the ChatGPT URL (e.g., 'cli-override' vs 'config'). Ensure the specific URL and name used are captured in the final execution report.",
+            "status": "pending",
+            "testStrategy": "Execute a Pack with overrides and inspect the generated run report or JSON metadata file to confirm the 'Source' field correctly identifies the CLI override."
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "created": "2026-01-09T02:39:06.401Z",
+      "updated": "2026-01-09T02:41:01.537Z",
+      "description": "Tasks for prd-oraclepack-2026-01-09 context"
+    }
   }
 }
