@@ -200,19 +200,19 @@ Acceptance Criteria:
 
 * Running a pack that defines variables in the prelude and references them in steps behaves according to the selected official contract:
 
-    *   If “sourced prelude”: steps can reference prelude-defined variables successfully.
+  * If “sourced prelude”: steps can reference prelude-defined variables successfully.
 
-    *   If “prep-only”: validation or guidance prevents packs from relying on prelude vars (or template guidance is updated and enforced).
+  * If “prep-only”: validation or guidance prevents packs from relying on prelude vars (or template guidance is updated and enforced).
 
         Workflow Improvement Suggestions
 
 * `oraclepack validate` reliably fails on packs with:
 
-    *   multiple `bash` fences,
+  * multiple `bash` fences,
 
-    *   missing/incorrect `# NN)` step headers (per enforced convention),
+  * missing/incorrect `# NN)` step headers (per enforced convention),
 
-    *   other contract-breaking drift conditions.
+  * other contract-breaking drift conditions.
 
         Workflow Improvement Suggestions
 
@@ -222,11 +222,11 @@ Acceptance Criteria:
 
 * `oraclepack chain <pack.md> --mode actions` produces:
 
-    *   `oracle-out/_summary.md`,
+  * `oracle-out/_summary.md`,
 
-    *   `oracle-out/_actions.json` with the specified normalized fields,
+  * `oracle-out/_actions.json` with the specified normalized fields,
 
-    *   `docs/oracle-actions-YYYY-MM-DD.md` suitable for immediate stage-2 execution.
+  * `docs/oracle-actions-YYYY-MM-DD.md` suitable for immediate stage-2 execution.
 
         Workflow Improvement Suggestions
 
