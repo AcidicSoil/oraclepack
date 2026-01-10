@@ -1,10 +1,33 @@
 Risks/unknowns
 
-* Override injection/validation expansion beyond `oracle` is underspecified: which overrides/flags apply to `tm`/`task-master`, `codex`, and `gemini`, and what “validation” means for each tool are not defined; this can easily produce partial/incorrect behavior.
-* Dispatcher intent is ambiguous: tickets do not specify whether the dispatcher should “interpret actions” (semantic dispatch) vs only broaden prefix-based detection to include non-`oracle` commands.
-* User-facing docs/TUI discoverability is unclear: where the “Action Pack execution semantics + failure modes” documentation should live (README vs `oraclepack-tui.md` vs TUI help text) is not specified, risking continued user confusion about what is/ isn’t routed/validated.
-* Action Pack “implement” execution path has key unknowns: where `top_n` is defined/how ranking works, and the exact `<out_dir>/_actions.json` location/structure needed for deterministic dispatch are not provided. 
-* Taskify “agent-mode” surface is incomplete: the tickets don’t specify how `mode=codex|gemini` is selected (CLI flag vs TUI option vs config) or which exact step slot replaces the autopilot entrypoint while keeping the 20-step contract intact. 
-* `ticket-action-pack.md` placeholder replacement is underspecified in places: whether Step 11 defaults to Codex verification, Gemini diff review, or both, and whether Steps 12–13 must change are not defined, increasing the risk of a half-automated pack that still looks “successful” but doesn’t produce expected artifacts. 
-* Operational “skip” contract for missing tools is not defined: tickets require `command -v` guards and “skip” behavior when `codex`/`gemini` are absent, but don’t specify exit codes/status/report semantics, creating inconsistency across CLI/TUI reporting and resume behavior.
-* Runner/TUI behavior gaps remain undefined for reliability: signal handling (SIGINT propagation, atomic state/log flush), the full resume contract (what reruns, how interrupted prelude is treated), and how to avoid UX implying non-existent guarantees for non-`oracle` override/validation are not specified. 
+The tickets do not specify which overrides/flags should apply to each non-oracle tool (tm/task-master, codex, gemini) or what “validation” means for them; implementing anything beyond broadened detection risks incorrect/partial behavior. 
+
+Oraclepack_Compatibility_Issues
+
+“Headless/non-interactive” invocation details for codex/gemini are not specified; interactivity is explicitly called out as a risk (runs can block), and missing binaries on PATH can hard-fail steps without guards/skip semantics. 
+
+Oraclepack_Compatibility_Issues
+
+The intended default for verification is underspecified: Step 11 could be codex exec, Gemini diff review, or both; similarly, whether Steps 12–13 should be modified is not stated. 
+
+Oraclepack_Compatibility_Issues
+
+The user-facing selection surface for taskify “agent-mode” is not specified (CLI flag vs TUI option vs config), and the exact step slot to swap is not specified. 
+
+Oraclepack_Compatibility_Issues
+
+Where the “clarify current execution semantics/failure modes” documentation should live (README vs oraclepack-tui.md vs TUI help text) is not provided, which affects discoverability and backward-compat messaging. 
+
+Oraclepack_Compatibility_Issues
+
+The tickets do not provide exact code locations for the current detection/override-validation machinery (they describe behavior like an oracle-anchored matcher and oracle-only validation, but not file paths), so the scope of required CLI/TUI/internal refactors is uncertain. 
+
+Oraclepack_Compatibility_Issues
+
+Inference: Several on-disk artifact paths are named as expected outputs (e.g., .oraclepack/ticketify/*, ticket-action-pack.state.json, ticket-action-pack.report.json), but the tickets don’t define schemas/versions for these artifacts, increasing drift risk for any downstream tooling that consumes them. 
+
+Oraclepack_Compatibility_Issues
+
+Reproduction steps are not provided across the split tickets, making regression testing of new/changed public behavior (CLI/TUI validation, pack execution outcomes) harder to anchor. 
+
+Oraclepack_Compatibility_Issues

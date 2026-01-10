@@ -1,3 +1,3 @@
 Next smallest concrete experiment
 
-* Run `rg -n --hidden --no-ignore-vcs 'ticket-action-pack\.md|Action Pack|override validation|dry-run summary|\^\(\\\\s\*\)\(oracle\)\\\\b|\btm\b|\btask-master\b|\bcodex\b|\bgemini\b' .`
+* In the oraclepack repo root, locate the current oracle-only detection + validation callsites to scope the minimal dispatcher/validation expansion: `rg -n --hidden --glob '!.git/' -F -e '^(\\s*)(oracle)\\b' -e 'oracle --dry-run summary' -e 'override validation' -e 'injects flags into commands that begin with' .` 

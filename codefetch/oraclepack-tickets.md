@@ -25,9 +25,11 @@ Project Structure:
     │   └── PRD-generator URL routing.md
     ├── Formalize LLM Decision Points.md
     ├── Oraclepack CLI MCP Parity.md
+    ├── Oraclepack CLI Stabilization.md
     ├── Oraclepack File Storage.md
     ├── Oraclepack Parity Automation.md
     ├── Oraclepack Schema Approach.md
+    ├── Oraclepack Skills Integration.md
     ├── Oraclepack bash fix.md
     ├── Oraclepack output verification issues.md
     ├── Oraclepack-CLI-agents.md
@@ -217,27 +219,6 @@ Evidence:
 Open Items / Unknowns:
 - What “gold” mode entails (not provided).
 - Default config values and where they are defined (not provided).
-- Token/byte/file limits used for sizing (not provided).
-Risks / Dependencies:
-- Depends on T1 if adopting the structured decision artifact pattern.
-Acceptance Criteria:
-- DP-01 emits “Selected generator + params”.
-- DP-02 emits “Root paths”.
-- DP-03 emits “Include/exclude patterns”.
-- DP-04 emits a “Loose-ticket policy”.
-- DP-05 emits an “Enforce extra validation gates” decision.
-- DP-06 emits a “Sharding plan”.
-- DP-07 emits “Caps per pack”.
-Priority & Severity (if inferable from input text):
-- Priority: Not provided
-- Severity: Not provided
-Source:
-- “Choose generator mode (tickets-grouped vs codebase-grouped vs gold)”
-- “Select root(s) to scan (ticket_root/code_root)”
-- “Choose max pack size strategy (by tokens/bytes/files)”
-```
-
-```ticket T3
 [TRUNCATED]
 ```
 
@@ -434,21 +415,291 @@ Open Items / Unknowns:
 Risks / Dependencies:
   - Depends on T2 for `--work-dir` behavior to exist in CLI.
 Acceptance Criteria:
-  - MCP tool `oraclepack_run_pack` accepts `work_dir`, `oracle_bin`, and `out_dir` parameters.
-  - MCP invocation forwards those parameters to the CLI as `--work-dir`, `--oracle-bin`, and `--out-dir`.
-  - Running via MCP does not require `oracle` to be on PATH when `oracle_bin` is supplied.
+[TRUNCATED]
+```
+
+.tickets/Oraclepack CLI Stabilization.md
+```
+Parent Ticket:
+
+* Title: Stabilize oraclepack CLI/MCP by versioning and pinning skills
+* Summary: oraclepack CLI/MCP runs against rapidly changing skills without version pinning, compatibility gates, or automated contract tests. Introduce a versioned skill bundle model with manifests, lockfiles, install/update workflows, unified runner paths, MCP tool surfacing, and CI contract tests.
+* Source:
+
+  * Link/ID: Not provided
+  * Original ticket excerpt (≤25 words) capturing the overall theme: “moving target (skills) with no version pinning, no compatibility gates, and no automated contract testing.”
+* Global Constraints:
+
+  * Skill updates should be explicit (“update … explicit, not automatic”).
+  * Skills should run from an immutable installed path per version.
+  * Skill execution should respect an exec safety gate similar to pack execution (`ORACLEPACK_ENABLE_EXEC`).
+* Global Environment:
+
+  * Go CLI: `oraclepack validate`, `oraclepack run`
+  * MCP server shells out to Go CLI
+  * Skills invoked via trailing `KEY=value` args
+  * Existing skill scripts/validators referenced: `generate_grouped_packs.py`, `validate_pack.py`, `lint_attachments.py`
+* Global Evidence:
+
+  * Reference links in ticket:
+
+    * Model Context Protocol tools spec
+    * Semantic Versioning
+    * Python plugin packaging guidance
+
+Split Plan:
+
+* Coverage Map:
+
+  * “integrating skills into the CLI/MCP… does not solve the core failure mode…” → T1
+  * “moving target (skills) with no version pinning, no compatibility gates, and no automated contract testing” → T4
+  * “make skills a versioned, discoverable runtime dependency… compatibility rules and a lockable install” → T1
+  * “Skills already define… trailing `KEY=value` args… deterministic scripts… validators…” → T2
+  * “MCP today shells out… safety gate (`ORACLEPACK_ENABLE_EXEC`)” → T5
+  * “MCP tools… discoverable via `tools/list`… but… need versioning/compatibility” → T5
+  * “Define a skill bundle manifest… `name`, `version`, `oraclepack_requires`, entrypoints, args schema, content hash” → T1
+  * “Add a lockfile… records skill name+version (or git sha), manifest digest, oraclepack CLI version” → T4
+  * “On `oraclepack run` / `oraclepack skill run`, verify… installed skill matches lock (or fetches)… `oraclepack_requires` matches… fail fast…” → T4
+  * “Ship an install/update mechanism… `oraclepack skill list/install/run/update`” → T3
+  * “Skills can be distributed as… GitHub release tarballs… or Python package… entry points” → T3
+  * “Store installed bundles under `~/.oraclepack/skills/<name>/<version>/…`… immutable path” → T3
+  * “Unify execution so CLI and MCP cannot drift… one ‘skill runner’ code path” → T2
+  * “Expose via MCP tools: `oraclepack_skill_list/describe/run`” → T5
+  * “Add contract tests… CI runs… `oraclepack skill run …`… then `oraclepack validate`…” → T6
+  * “Why ‘just integrate’ isn’t sufficient…” → Info-only
+  * “Minimal implementation order…” → Info-only
+  * “If you want, I can draft…” → Info-only
+  * Footnote links [1][2][3] → Info-only (captured in Global Evidence)
+
+* Dependencies:
+
+  * T2 depends on T1 because the runner uses the manifest’s declared entrypoints/metadata.
+  * T3 depends on T1 because install layout/versioning uses `name`/`version` and bundle identity.
+  * T4 depends on T1 because compatibility checks rely on `oraclepack_requires` and manifest digest.
+  * T4 depends on T2 because lock enforcement is exercised by `oraclepack skill run`/run paths.
+  * T5 depends on T2 because MCP tools must call the same runner code path.
+  * T6 depends on T2 because CI contract tests require `oraclepack skill run`.
+
+* Split Tickets:
+
+```ticket T1
+T# Title: Define versioned skill bundle manifest and compatibility contract
+Type: enhancement
+Target Area: Skills packaging / manifest schema
+Summary:
+- Introduce a skill bundle manifest that turns “skills on disk” into a versioned plugin/bundle with an explicit contract.
+- The manifest must capture versioning and compatibility requirements so oraclepack can validate and gate usage over time.
+
+In Scope:
+- Define a skill bundle manifest (per skill or per bundle) including:
+  - `name`, `version`
+  - `oraclepack_requires` (version range)
+  - entrypoints to scripts (`generate`, `validate`, `lint`, etc.)
+  - args schema (even if `KEY=value` remains the internal interface)
+  - content hash (sha256 tree digest) for reproducibility
+
+Out of Scope:
+- Implementing install/update flows
+- Implementing lockfile enforcement
+- MCP tool exposure
+- CI contract tests
+
+Current Behavior (Actual):
+- Skills are effectively “whatever is on disk,” and compatibility is not explicitly declared.
+
+Expected Behavior:
+- Each skill (or bundle) has a manifest that declares version, compatibility (`oraclepack_requires`), runnable entrypoints, argument schema, and a reproducibility hash.
+
+Reproduction Steps:
+- Not provided
+
+Requirements / Constraints:
+- Must support existing `KEY=value` calling convention (schema may exist alongside it).
+- Must include a content hash (sha256 tree digest).
+
+Evidence:
+- References in ticket:
+  - “trailing `KEY=value` args”
+  - “entrypoints to scripts (`generate`, `validate`, `lint`, etc.)”
+  - “content hash (sha256 tree digest)”
+
+Open Items / Unknowns:
+- Manifest location/convention (per skill vs per bundle) not provided.
+- Exact args schema format not provided.
+
+Risks / Dependencies:
+- Not provided
+
+Acceptance Criteria:
+- A manifest schema is specified that includes: `name`, `version`, `oraclepack_requires`, script entrypoints, args schema, and a sha256 tree digest.
+- The manifest contract is sufficient for downstream tickets to enforce compatibility and reproducibility.
+
 Priority & Severity (if inferable from input text):
-  - Priority: Not provided
-  - Severity: Not provided
+- Priority: Not provided
+- Severity: Not provided
+
 Source:
-  - “Expose `--oracle-bin` (and optionally `--out-dir`) through MCP”
-  - “Add MCP tool params: `oracle_bin … out_dir … work_dir …`”
-  - “Append `--oracle-bin …` / `--out-dir …` / `--work-dir …` …”
+- “Define a skill bundle manifest… `name`, `version`… `oraclepack_requires`… entrypoints… args schema… content hash (sha256 tree digest)”
+- “Make ‘skills’ a versioned plugin/bundle, not ‘whatever is on disk’”
+```
+
+```ticket T2
+T# Title: Implement unified skill runner in CLI (`oraclepack skill run`)
+Type: enhancement
+Target Area: oraclepack CLI (skill runner shared code path)
+Summary:
+- Add a single “skill runner” execution path that the CLI uses and that MCP can call to prevent drift between interfaces.
+- The runner should execute the existing deterministic scripts referenced by skills, without rewriting skills.
+
+In Scope:
+- Implement one “skill runner” code path.
+- Add CLI support for: `oraclepack skill run <name> KEY=value...`
+- Ensure the runner executes existing deterministic scripts referenced in the skill.
+
+Out of Scope:
+- Install/update mechanism for distributing skills
+- Lockfile creation/enforcement
+- MCP tool surfacing (covered separately)
+- CI contract tests (covered separately)
+
+Current Behavior (Actual):
+- Skills exist with `KEY=value` invocation and deterministic scripts/validators, but there is no described `oraclepack skill run` runner path.
+
+Expected Behavior:
+- `oraclepack skill run <name> KEY=value...` runs the skill using manifest-declared entrypoints and supports trailing `KEY=value` args.
+
+Reproduction Steps:
+- Not provided
+
+Requirements / Constraints:
+- “executes the existing deterministic scripts referenced in the skill (no rewriting)”
+- Must preserve existing `KEY=value` usage pattern.
+
+Evidence:
+- Script/validator examples referenced: `generate_grouped_packs.py`, `validate_pack.py`, `lint_attachments.py`
+- CLI command shape referenced: `oraclepack skill run <name> KEY=value...`
+
+Open Items / Unknowns:
+- How skills are located/resolved (installed vs local checkout) not provided here (install is a separate ticket).
+
+Risks / Dependencies:
+- Depends on T1 for manifest/entrypoint definitions.
+
+Acceptance Criteria:
+- CLI supports `oraclepack skill run <name> KEY=value...`.
+- Runner executes the deterministic scripts referenced by the skill (no rewriting requirement preserved).
+- A single runner path exists that can be called by both CLI and (later) MCP tools.
+
+Priority & Severity (if inferable from input text):
+- Priority: Not provided
+- Severity: Not provided
+
+Source:
+- “Implement one ‘skill runner’ code path”
+- “Add `oraclepack skill run` that executes the existing deterministic scripts… (no rewriting)”
+- “trailing `KEY=value` args… deterministic scripts… validators”
+```
+
+```ticket T3
+T# Title: Add skill install/update workflow and immutable per-version install cache
+Type: enhancement
+Target Area: oraclepack CLI (skill distribution + local cache)
+Summary:
+- Provide explicit skill install/update commands so oraclepack can remain stable while skills move fast.
+- Ensure installed skills are stored by name/version under an immutable path and executed from that location.
+
+In Scope:
+- Add CLI commands:
+  - `oraclepack skill list`
+  - `oraclepack skill install <name>@<version|gitsha>`
+  - `oraclepack skill update <name>` (explicit, not automatic)
+- Store installed bundles under: `~/.oraclepack/skills/<name>/<version>/…`
+- Ensure skill execution runs from the immutable installed path.
+
+Out of Scope:
+- Lockfile compatibility enforcement (separate ticket)
+- MCP tool exposure (separate ticket)
+- CI contract tests (separate ticket)
+
+Current Behavior (Actual):
+- Not provided (ticket text implies skills are not managed as versioned installs).
+
+Expected Behavior:
+- Skills can be installed and updated explicitly, and executions reference the installed, versioned, immutable location.
+
+Reproduction Steps:
+- Not provided
+
+Requirements / Constraints:
+- Updates must be explicit (“not automatic”).
+- Distribution options mentioned:
+  - GitHub release tarballs, or
+  - Python package with entry points for discovery (approach not specified)
+
+Evidence:
+- Command list in ticket:
+  - `oraclepack skill list/install/run/update`
+- Install path in ticket:
+  - `~/.oraclepack/skills/<name>/<version>/…`
+
+Open Items / Unknowns:
+- Which distribution mechanism(s) must be supported (GitHub tarballs vs Python package entry points) not specified.
+- Whether install supports version only, git sha only, or both beyond the examples is not specified.
+
+Risks / Dependencies:
+- Depends on T1 for `name`/`version` manifest metadata alignment.
+
+Acceptance Criteria:
+- CLI provides `oraclepack skill list`, `oraclepack skill install <name>@…`, and `oraclepack skill update <name>`.
+- Installed skills are stored under `~/.oraclepack/skills/<name>/<version>/…`.
+- Skill runs use the immutable installed path (no “whatever is on disk” execution for installed skills).
+
+Priority & Severity (if inferable from input text):
+- Priority: Not provided
+- Severity: Not provided
+
+Source:
+- “Ship an ‘install/update’ mechanism… `oraclepack skill list/install/run/update`”
+- “Store installed bundles under `~/.oraclepack/skills/<name>/<version>/…` and always run from that immutable path.”
+- “update… (explicit, not automatic)”
 ```
 
 ```ticket T4
-T# Title: Add preflight to fail fast on missing `-f` attachment files
+T# Title: Implement skill lockfile pinning and runtime compatibility enforcement
 Type: enhancement
+Target Area: oraclepack runtime (lockfile + compatibility gates)
+Summary:
+- Eliminate “skills changed under me” failures by pinning skill versions per run and enforcing compatibility at runtime.
+- Introduce a lockfile that records the exact skill version (or git sha), manifest digest, and the oraclepack CLI version.
+
+In Scope:
+- Add lockfile support (example name given: `oraclepack.lock.json`) that records:
+  - skill name + exact version (or git sha)
+  - manifest digest
+  - oraclepack CLI version
+- On `oraclepack run` / `oraclepack skill run`, verify:
+  - installed skill version matches the lock (or fetches it)
+  - `oraclepack_requires` matches the current binary
+  - fail fast with a clear compatibility message when mismatched
+
+Out of Scope:
+- Defining the manifest schema itself (separate ticket)
+- MCP tool exposure (separate ticket)
+- CI contract tests (separate ticket)
+
+Current Behavior (Actual):
+- No version pinning, compatibility gates, or automated contract testing; the runtime can drift as skills change.
+
+Expected Behavior:
+- Runs are reproducible against pinned skill versions/digests and are blocked when compatibility constraints are violated.
+
+Reproduction Steps:
+- Not provided
+
+Requirements / Constraints:
+- Must validate `oraclepack_requires` against current binary.
+- Must provide a clear failure message on mismatch (example included in ticket text).
+
 [TRUNCATED]
 ```
 
@@ -647,17 +898,6 @@ Requirements / Constraints:
 - Global persistence location:
   - Conflicting guidance exists: ticket recommends XDG config dir generally, but also references existing `~/.oraclepack/chatgpt-urls.json` path.
 Evidence:
-- “The TUI ‘ChatGPT URL picker’ then creates `<sameBase>.chatgpt-urls.json`…”
-- “It also defaults edits to project scope…”
-- “Stop producing per-pack `*.chatgpt-urls.json` by default… change … default save scope to global…”
-- “Keep ‘project scope’ as an opt-in… write it to `<repo>/.oraclepack/chatgpt-urls.json`… not `<packName>.chatgpt-urls.json`.”
-Open Items / Unknowns:
-- Whether to keep `~/.oraclepack/chatgpt-urls.json` as the global path or migrate to `$XDG_CONFIG_HOME/...` (both appear in the parent ticket guidance).
-- Exact file/path of the “URL picker” implementation: Not provided
-Risks / Dependencies:
-- Depends on T1 if migrating global storage to XDG config dir.
-Acceptance Criteria:
-- After using the URL picker, no `<packBase>.chatgpt-urls.json` is created near the pack/state/CWD.
 [TRUNCATED]
 ```
 
@@ -848,23 +1088,6 @@ Summary:
   Add tests that fail when upstream oracle changes in ways that could break oraclepack. Include snapshot diffs for help output and a small “golden path” integration fixture that asserts on stable, wrapper-owned artifacts.
 In Scope:
   - Snapshot tests capturing `oracle --help` output and `oracle <critical-subcommand> --help` output for a small set of relied-upon commands, then diff snapshots in CI.
-  - A “golden path” test that runs a small pack fixture to exercise oraclepack integration points (dry-run path; API path if keys exist; browser path optionally skipped in CI as described).
-  - Assertions focus on wrapper-owned artifacts (exit codes, oraclepack report/state schema) rather than upstream human text output.
-Out of Scope:
-  - Automation that updates the pinned upstream version (handled in T5/T6).
-Current Behavior (Actual):
-  - Not provided
-Expected Behavior:
-  - CI provides early signal when upstream oracle help/CLI surface changes.
-  - CI validates at least one end-to-end wrapper “golden path” behavior against the pinned upstream version.
-Reproduction Steps:
-  - Not provided
-Requirements / Constraints:
-  - Tests should target the pinned upstream oracle version (deterministic) rather than “latest”.
-Evidence:
-  - Not provided
-Open Items / Unknowns:
-  - The “critical subcommands” list oraclepack relies on (examples referenced, but exact dependency set not provided).
 [TRUNCATED]
 ```
 
@@ -1085,27 +1308,11 @@ Priority & Severity (if inferable from input text):
 - Severity: Not provided
 Source:
 - “invalid pack structure: no bash code block found”
-- “Pack-level lint (Stage 1) … Exactly one ```bash fence … Exactly 20 steps”
-- “Stage-2 directory contract … Exactly one file per prefix 01-*.md … 20-*.md”
-````
-
-```ticket T4
-T# Title: Add CI validation pipeline for manifest-first workflow (validate → render → oraclepack validate → optional dry-run)
-Type: chore
-Target Area: CI checks / pipeline gating
-Summary:
-- Add CI checks that gate merges/runs on structural correctness by validating the manifest, rendering Markdown deterministically, and validating the rendered pack with oraclepack tooling.
-- This formalizes the “Markdown is compiled artifact” approach and reduces runtime surprises.
-In Scope:
-- CI sequence as described:
-  - validate(manifest.json)
-  - render(pack.md)
-  - oraclepack validate pack.md
-  - optional dry-run checks
-Out of Scope:
-- Not provided
-Current Behavior (Actual):
 [TRUNCATED]
+```
+
+.tickets/Oraclepack Skills Integration.md
+```
 ```
 
 .tickets/Oraclepack bash fix.md
@@ -1282,20 +1489,6 @@ Requirements / Constraints:
 Evidence:
 - The ticket text specifies making validation unavoidable and adding CI/pre-commit gating.
 Open Items / Unknowns:
-- Existing CI/pre-commit tooling and where to hook validation: Unknown / Not provided
-- Exact TUI entrypoints for Run/Rerun: Unknown / Not provided
-Risks / Dependencies:
-- Depends on `oraclepack validate` providing the intended guardrails to justify making it mandatory.
-Acceptance Criteria:
-- `oraclepack run` invokes `validate` before executing pack steps.
-- TUI Run/Rerun paths invoke `validate` before execution (at minimum).
-- CI/pre-commit configuration exists to run `oraclepack validate` on generated/modified packs and fails on validation errors.
-Priority & Severity (if inferable from input text):
-- Priority: Not provided
-- Severity: Not provided
-Source:
-- “Make validate unavoidable in normal use”
-- “Ensure `oraclepack run` always calls `validate` first (or at minimum in TUI ‘Run/Rerun’ paths).”
 [TRUNCATED]
 ```
 
@@ -1475,12 +1668,6 @@ Source:
 ```ticket T4
 T4 Title: Update pack/templates and documentation to avoid validator mismatches and improve reliability in browser mode
 Type: docs
-Target Area: pack authoring guidance (Gold Stage packs), output chunking conventions, oracle CLI invocation guidance
-Summary:
-  The failures are driven by mismatch between what the validator requires (triggered by “Answer format”) and what is actually written to `--write-output`, plus fragility in oracle browser automation runs. Update templates and documentation to (a) ensure outputs include required section tokens when “Answer format” is used, or (b) use multi-file chunking with the documented filename suffixes, and (c) document browser-timeout mitigations and path preconditions for `--write-output`.
-In Scope:
-  - Document that when “Answer format” is present, the validator requires all four tokens in a single-output file unless using chunked outputs.
-  - Provide template guidance for two supported patterns:
 [TRUNCATED]
 ```
 
@@ -1549,11 +1736,6 @@ Below is an “extensive” set of additional, unique LLM decision points you ca
 | DP-54 | Runtime | Observability | Decide incident-style annotation (root cause, repro, next action) on failures | Error logs, outputs | Failure note artifact |
 | DP-55 | Runtime | Observability | Decide what artifacts to persist (manifests, intermediate summaries) | Debug needs | Persist list |
 | DP-56 | Runtime | Packaging | Decide how to shard outputs into “mini-packs” for follow-on runs | Token limits, dependencies | Mini-pack plan |
-| DP-57 | Runtime | Packaging | Decide naming/versioning for generated packs | Date, domain, stability | Pack names + version tags |
-| DP-58 | Runtime | UX | Decide “next best tool call” in MCP (validate vs list vs run vs regenerate) | Current state | Tool invocation [Model Context Protocol+1](https://modelcontextprotocol.io/docs/develop/build-server?utm_source=chatgpt.com) |
-| DP-59 | Runtime | UX | Decide whether to present diffs, file lists, or narrative only | Reviewer preference | Presentation format |
-| DP-60 | Runtime | Learning loop | Decide whether to extract new org heuristics from this run into a reusable profile | Repeated patterns | Proposed profile snippet |
-
 [TRUNCATED]
 ```
 
@@ -1806,21 +1988,7 @@ Evidence:
 - Note about PyPI example supporting `environmentVariables` and `runtimeHint: "uvx"`
 Open Items / Unknowns:
 - Final server identifier/name to use for `mcp-name: ...` (Unknown / Not provided).
-- Which registries/clients are in scope beyond “VS Code / ecosystem” phrasing (Unknown / Not provided).
-Risks / Dependencies:
-- Depends on T1 if the published registry entry targets a PyPI package distribution (as described).
-Acceptance Criteria:
-- A `server.json` exists generated/maintained via `mcp-publisher init` per the described workflow.
-- Documentation includes the stated publishing steps and the PyPI ownership proof requirement (`mcp-name: ...` in README).
-- Documentation notes the described `runtimeHint: "uvx"` alignment for the PyPI stdio example.
-Priority & Severity (if inferable from input text):
-- Priority: Not provided
-- Severity: Not provided
-Source:
-- “publish to the Official MCP Registry (and GitHub MCP Registry)”
-- “publish a `server.json` via `mcp-publisher`”
-- “Prove package ownership … add `mcp-name: ...` to your README”
-```
+[TRUNCATED]
 ```
 
 .tickets/Skills Integration Status.md
@@ -2158,27 +2326,6 @@ Priority & Severity (if inferable from input text):
 
 Source:
 - “Generate a 1-step pack… attach `tickets_prd.md`…”
-- “Create a new file… valid pack… run `oracle` while attaching `tickets_prd.md`.”
-- “Error: invalid pack structure: no bash code block found”
-````
-
-```ticket T4
-T# Title:
-- Add single-shot oracle invocation mode (CLI/TUI) that bypasses pack parsing
-
-Type:
-- enhancement
-
-Target Area:
-- oraclepack CLI + TUI (“single-call” mode)
-
-Summary:
-- Add a new execution path for “simple oracle calls” that does not require a full pack file or pack parsing. The user can select a ChatGPT URL preset, attach files such as `tickets_prd.md`, provide a prompt/template, and run exactly one `oracle` invocation.
-
-In Scope:
-- Implement a new subcommand such as `oraclepack call` (or `oraclepack oracle`) that:
-  - Lets the user pick a ChatGPT URL preset.
-  - Lets the user specify attachments (e.g., `tickets_prd.md`).
 [TRUNCATED]
 ```
 
@@ -2938,16 +3085,6 @@ Type:
 - enhancement
 
 Target Area:
-- Action Pack execution behavior when running non-`oracle` tools (Codex/Gemini), including runner constraints around stdin/TTY
-
-Summary:
-- The ticket notes that oraclepack runs step scripts without attaching stdin/TTY, which can break or hang interactive CLIs.
-- Add guardrails so Action Packs use non-interactive invocation patterns and keep defaults safe (explicitly: do not “yolo” by default).
-
-In Scope:
-- Ensure Codex invocation is non-interactive (ticket references `codex exec …` as the intended entrypoint).
-- Ensure Gemini invocation is non-interactive (ticket references `gemini -p/--prompt` as intended).
-- Apply safety defaults: “Keep safety defaults strict (do not ‘yolo’ by default)” (flag specifics not mandated beyond this phrase).
 [TRUNCATED]
 ```
 
@@ -3382,31 +3519,6 @@ Acceptance Criteria:
 - Implement mode:
   - Reads `<out_dir>/_actions.json`
   - Selects top N via `top_n`
-  - Runs `codex exec …` for `executor=codex`
-  - Runs `gemini -p …` for `executor=gemini`
-- Existing `backlog|pipelines|autopilot` behavior remains unchanged.
-
-Priority & Severity (if inferable from input text):
-- Priority: Not provided
-- Severity: Not provided
-
-Source:
-- “implementation only happens when the Action Pack runs real tool commands”
-- “Add an ‘implement’ mode (or a Step 09)… reads `<out_dir>/_actions.json`… selects the top N… dispatches deterministically”
-```
-
-```ticket T4
-T4 Title:
-- Enforce conservative safety defaults for executor dispatch (no auto-approve “yolo” behavior unless opted-in)
-
-Type:
-- chore
-
-Target Area:
-- Action Pack implement/dispatcher execution path (gemini/codex dispatch configuration)
-
-Summary:
-- The ticket explicitly calls out safety: executor tools may run commands or perform actions; defaults should be conservative.
 [TRUNCATED]
 ```
 
@@ -3606,14 +3718,6 @@ Target Area:
 - `ticket-action-pack.md` (ticketify Action Pack content/template; exact generator location not provided)
 
 Summary:
-- Steps 08–20 are described as placeholders/notes that only echo guidance. Replace specific placeholder steps (explicitly called out: 09–13 and 16) to add end-to-end automation using headless `gemini` and `codex exec`, producing machine-readable and human-readable artifacts under `.oraclepack/ticketify/`.
-
-In Scope:
-- Step 09: Add headless `gemini` selection that writes `.oraclepack/ticketify/next.json`.
-- Step 10: Add non-interactive `codex exec` implementation that consumes `next.json` and writes `.oraclepack/ticketify/codex-implement.md`.
-- Step 11: Add verification automation via `codex exec` and/or Gemini diff review:
-  - `.oraclepack/ticketify/codex-verify.md` and/or `.oraclepack/ticketify/gemini-review.json`.
-- Step 16: Add PR draft automation that writes `.oraclepack/ticketify/PR.md`.
 [TRUNCATED]
 ```
 
@@ -3955,30 +4059,6 @@ Acceptance Criteria:
 
 * Run determinism and traceability:
 
-  * Running a pack produces `.oraclepack/runs/<pack_id>/{run.json,steps.json,outputs/}` with stable `pack_id` and stable output naming.
-
-  * `run.json` includes required metadata fields; `steps.json` includes required per-step fields and statuses.
-
-        Oracle Pack Workflow Analysis
-
-* Resume/rerun:
-
-  * Interrupting a run mid-way and rerunning resumes without re-executing completed steps (validated via output hashes and statuses).
-
-  * `--rerun failed|all|<step list>` behaves as specified.
-
-        Oracle Pack Workflow Analysis
-
-* Concurrency/rate limiting:
-
-  * `--max-parallel N` bounds concurrency; transient failures (e.g., throttling/timeouts) are retried with backoff within a retry budget and recorded in step status.
-
-        Oracle Pack Workflow Analysis
-
-* Caching (if implemented):
-
-  * Rerunning on unchanged inputs (same prompt, same attached file digests, same flags/model) results in zero provider calls and identical outputs.
-
 [TRUNCATED]
 ```
 
@@ -4190,24 +4270,6 @@ Risks / Dependencies:
   - Depends on T1/T2 clarity to accurately describe what each option would deliver.
 Acceptance Criteria:
   - Document lists at least:
-    - “Modify current skill” option (summary, prerequisites, impact).
-    - “Standalone template” option (summary, prerequisites, impact).
-    - Explicit unknowns that block a final choice.
-Priority & Severity (if inferable from input text):
-  - Priority: Not provided
-  - Severity: Not provided
-Source:
-  - “What could we do to our current skill…”
-  - “…what else are our options for this request?”
-```
-
-````ticket T5
-T5 Title: Add examples and validation checks for ticket/.tickets prompt-skill generation
-Type: tests
-Target Area: Examples + validation of generated prompt/skill output
-Summary:
-  - Provide concrete example inputs (ticket and/or .tickets) and the expected generated prompt/skill output shape for validation.
-  - Ensure examples exercise optional fields (missing PAIN-POINT, missing ADDITIONAL-INFORMATION, with/without REFERENCE-FILE).
 [TRUNCATED]
 ```
 
@@ -4929,20 +4991,6 @@ Acceptance Criteria:
 - [ ] Validation returns ok=true only when exactly one match exists for every prefix 01..20.
 - [ ] Detection supports explicit dir and explicit file resolution and produces an `out_dir`.
 - [ ] Detection supports “auto” and returns deterministic results for the same filesystem state.
-Priority & Severity (if inferable from input text):
-- Priority: Not provided
-- Severity: Not provided
-Source:
-- “Detect Stage-2 outputs (dir-form 01-*.md..20-*.md OR single-pack form) … Validate … exactly one match per prefix 01..20.” :contentReference[oaicite:40]{index=40}
-- “out_dir rules … if under docs/oracle-questions-YYYY-MM-DD/ … then …/oracle-out else oracle-out” :contentReference[oaicite:41]{index=41}
-```
-
-```ticket T5
-T# Title: Implement MCP tools for oraclepack and taskify helper operations
-Type: enhancement
-Target Area: oraclepack_mcp_server/server.py (MCP tool registration + schemas + formatting)
-Summary:
-- Implement the MCP server surface that maps `oraclepack` CLI operations and Taskify helper functions into callable MCP tools.
 [TRUNCATED]
 ```
 
@@ -5673,26 +5721,6 @@ def detect_stage2(stage2_path: str, repo_root: Path) -> Stage2Resolution:
             try:
                 idx = newest_file.parts.index("docs")
                 if idx + 1 < len(newest_file.parts) and newest_file.parts[idx + 1].startswith("oracle-questions-"):
-                    out = Path(*newest_file.parts[: idx + 2]) / "oracle-out"
-            except ValueError:
-                pass
-        return Stage2Resolution(kind="file", stage2_path=newest_file.resolve(), out_dir=out.resolve(), notes=notes)
-
-    raise FileNotFoundError(
-        "stage2_path=auto could not resolve Stage-2 outputs. Searched:\n- " + "\n- ".join(searched)
-    )
-
-
-def validate_action_pack(pack_path: Path) -> dict:
-    text = pack_path.read_text(encoding="utf-8", errors="replace")
-
-    bash_fence = re.findall(r"(?m)^\s*```bash\s*$", text)
-    any_fence = re.findall(r"(?m)^\s*```\s*", text)
-
-    errors: list[str] = []
-    if len(bash_fence) != 1:
-        errors.append(f"expected exactly one ```bash fence; found {len(bash_fence)}")
-    if len(any_fence) != 2:
 [TRUNCATED]
 ```
 

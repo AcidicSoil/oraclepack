@@ -209,62 +209,6 @@ Signature: 8a477f597d28d172789f06886806bc55
 #	https://bford.info/cachedir/spec.html
 ```
 
-oraclepack-mcp-server/oraclepack_mcp_server.egg-info/PKG-INFO
-```
-Metadata-Version: 2.4
-Name: oraclepack-mcp-server
-Version: 0.1.0
-Summary: MCP wrapper for oraclepack CLI
-Author: Oraclepack Contributor
-Requires-Python: >=3.10
-Requires-Dist: mcp[cli]>=0.1.0
-Requires-Dist: pydantic-settings>=2.0.0
-Requires-Dist: pydantic>=2.0.0
-```
-
-oraclepack-mcp-server/oraclepack_mcp_server.egg-info/SOURCES.txt
-```
-README.md
-pyproject.toml
-oraclepack_mcp_server/__init__.py
-oraclepack_mcp_server/__main__.py
-oraclepack_mcp_server/config.py
-oraclepack_mcp_server/oraclepack_cli.py
-oraclepack_mcp_server/security.py
-oraclepack_mcp_server/server.py
-oraclepack_mcp_server/taskify.py
-oraclepack_mcp_server.egg-info/PKG-INFO
-oraclepack_mcp_server.egg-info/SOURCES.txt
-oraclepack_mcp_server.egg-info/dependency_links.txt
-oraclepack_mcp_server.egg-info/entry_points.txt
-oraclepack_mcp_server.egg-info/requires.txt
-oraclepack_mcp_server.egg-info/top_level.txt
-tests/test_config.py
-```
-
-oraclepack-mcp-server/oraclepack_mcp_server.egg-info/dependency_links.txt
-```
-
-```
-
-oraclepack-mcp-server/oraclepack_mcp_server.egg-info/entry_points.txt
-```
-[console_scripts]
-oraclepack-mcp = oraclepack_mcp_server.__main__:main
-```
-
-oraclepack-mcp-server/oraclepack_mcp_server.egg-info/requires.txt
-```
-mcp[cli]>=0.1.0
-pydantic-settings>=2.0.0
-pydantic>=2.0.0
-```
-
-oraclepack-mcp-server/oraclepack_mcp_server.egg-info/top_level.txt
-```
-oraclepack_mcp_server
-```
-
 oraclepack-mcp-server/oraclepack_mcp_server/__init__.py
 ```
 ```
@@ -785,6 +729,62 @@ This pack contains {len(steps)} steps: {', '.join(steps)}.
 [TRUNCATED]
 ```
 
+oraclepack-mcp-server/oraclepack_mcp_server.egg-info/PKG-INFO
+```
+Metadata-Version: 2.4
+Name: oraclepack-mcp-server
+Version: 0.1.0
+Summary: MCP wrapper for oraclepack CLI
+Author: Oraclepack Contributor
+Requires-Python: >=3.10
+Requires-Dist: mcp[cli]>=0.1.0
+Requires-Dist: pydantic-settings>=2.0.0
+Requires-Dist: pydantic>=2.0.0
+```
+
+oraclepack-mcp-server/oraclepack_mcp_server.egg-info/SOURCES.txt
+```
+README.md
+pyproject.toml
+oraclepack_mcp_server/__init__.py
+oraclepack_mcp_server/__main__.py
+oraclepack_mcp_server/config.py
+oraclepack_mcp_server/oraclepack_cli.py
+oraclepack_mcp_server/security.py
+oraclepack_mcp_server/server.py
+oraclepack_mcp_server/taskify.py
+oraclepack_mcp_server.egg-info/PKG-INFO
+oraclepack_mcp_server.egg-info/SOURCES.txt
+oraclepack_mcp_server.egg-info/dependency_links.txt
+oraclepack_mcp_server.egg-info/entry_points.txt
+oraclepack_mcp_server.egg-info/requires.txt
+oraclepack_mcp_server.egg-info/top_level.txt
+tests/test_config.py
+```
+
+oraclepack-mcp-server/oraclepack_mcp_server.egg-info/dependency_links.txt
+```
+
+```
+
+oraclepack-mcp-server/oraclepack_mcp_server.egg-info/entry_points.txt
+```
+[console_scripts]
+oraclepack-mcp = oraclepack_mcp_server.__main__:main
+```
+
+oraclepack-mcp-server/oraclepack_mcp_server.egg-info/requires.txt
+```
+mcp[cli]>=0.1.0
+pydantic-settings>=2.0.0
+pydantic>=2.0.0
+```
+
+oraclepack-mcp-server/oraclepack_mcp_server.egg-info/top_level.txt
+```
+oraclepack_mcp_server
+```
+
 oraclepack-mcp-server/tests/test_cli.py
 ```
 import asyncio
@@ -1135,439 +1135,6 @@ oraclepack-mcp-server/.pytest_cache/v/cache/nodeids
   "tests/test_taskify.py::test_validate_stage2_dir_missing",
   "tests/test_taskify.py::test_validate_stage2_dir_ok"
 ]
-```
-
-internal/artifacts/contract.go
-```
-package artifacts
-
-import (
-	"fmt"
-	"os"
-	"path/filepath"
-
-	"github.com/user/oraclepack/internal/foundation"
-)
-
-// Contract maps step IDs to required artifact paths.
-type Contract map[string][]string
-
-// DefaultContract returns the standard artifact contract.
-func DefaultContract() Contract {
-	base := ".oraclepack/ticketify"
-	return Contract{
-		"09": {filepath.Join(base, "next.json")},
-		"10": {filepath.Join(base, "codex-implement.md")},
-		"11": {filepath.Join(base, "codex-verify.md")},
-		"12": {filepath.Join(base, "PR.md")},
-	}
-}
-
-// EvaluateGates checks required artifacts for a given step.
-func EvaluateGates(stepID string, contract Contract) error {
-	paths, ok := contract[stepID]
-	if !ok || len(paths) == 0 {
-		return nil
-	}
-	var missing []string
-	for _, p := range paths {
-		info, err := os.Stat(p)
-		if err != nil || info.IsDir() || info.Size() == 0 {
-			missing = append(missing, p)
-		}
-	}
-	if len(missing) > 0 {
-		return fmt.Errorf("%w: %v", foundation.ErrArtifactMissing, missing)
-	}
-	return nil
-}
-```
-
-internal/artifacts/contract_test.go
-```
-package artifacts
-
-import (
-	"os"
-	"path/filepath"
-	"testing"
-)
-
-func TestEvaluateGates(t *testing.T) {
-	dir := t.TempDir()
-	base := filepath.Join(dir, ".oraclepack", "ticketify")
-	if err := os.MkdirAll(base, 0755); err != nil {
-		t.Fatalf("mkdir: %v", err)
-	}
-	contract := Contract{
-		"09": {filepath.Join(base, "next.json")},
-	}
-
-	// Missing file should error.
-	if err := EvaluateGates("09", contract); err == nil {
-		t.Fatal("expected missing artifact error")
-	}
-
-	// Create file and verify pass.
-	path := filepath.Join(base, "next.json")
-	if err := os.WriteFile(path, []byte("ok"), 0644); err != nil {
-		t.Fatalf("write: %v", err)
-	}
-	if err := EvaluateGates("09", contract); err != nil {
-		t.Fatalf("expected no error, got %v", err)
-	}
-}
-```
-
-internal/cli/cmds.go
-```
-package cli
-
-import (
-	"fmt"
-	"os"
-
-	"github.com/spf13/cobra"
-	"github.com/user/oraclepack/internal/app"
-	"github.com/user/oraclepack/internal/pack"
-	"github.com/user/oraclepack/internal/validate"
-)
-
-var validateCmd = &cobra.Command{
-	Use:   "validate [pack.md]",
-	Short: "Validate an oracle pack",
-	Args:  cobra.ExactArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		out := cmd.OutOrStdout()
-		data, err := os.ReadFile(args[0])
-		if err != nil {
-			return err
-		}
-		p, err := pack.Parse(data)
-		if err != nil {
-			return err
-		}
-		if err := pack.Validate(p); err != nil {
-			return err
-		}
-		findings, warning, err := pack.CheckPackScripts(p)
-		if err != nil {
-			return err
-		}
-		if warning != "" {
-			fmt.Fprintf(out, "Warning: %s\n", warning)
-		}
-		if len(findings) > 0 {
-			for _, finding := range findings {
-				if finding.StepID != "" {
-					fmt.Fprintf(out, "Step %s line %d: %s\n", finding.StepID, finding.Line, finding.Message)
-				} else {
-					fmt.Fprintf(out, "Line %d: %s\n", finding.Line, finding.Message)
-				}
-			}
-			return fmt.Errorf("bash syntax validation failed")
-		}
-		cv := validate.CompositeValidator{}
-		results := cv.ValidatePack(p)
-		fmt.Fprintf(out, "Validated %d steps\n", len(results))
-		for _, r := range results {
-			fmt.Fprintf(out, "Step %s [%s] %s", r.StepID, r.ToolKind.Name(), r.Status)
-			if r.Error != "" {
-				fmt.Fprintf(out, " (%s)", r.Error)
-			}
-			fmt.Fprintln(out)
-		}
-		return nil
-	},
-}
-
-var listCmd = &cobra.Command{
-	Use:   "list [pack.md]",
-	Short: "List steps in an oracle pack",
-	Args:  cobra.ExactArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg := app.Config{PackPath: args[0]}
-		a := app.New(cfg)
-		if err := a.LoadPack(); err != nil {
-			return err
-		}
-		for _, s := range a.Pack.Steps {
-			fmt.Printf("%s: %s\n", s.ID, s.OriginalLine)
-		}
-		return nil
-	},
-}
-
-func init() {
-	rootCmd.AddCommand(validateCmd)
-	rootCmd.AddCommand(listCmd)
-}
-```
-
-internal/cli/root.go
-```
-package cli
-
-import (
-	"fmt"
-	"os"
-
-	"github.com/spf13/cobra"
-	"github.com/user/oraclepack/internal/errors"
-)
-
-var (
-	noTUI     bool
-	oracleBin string
-	outDir    string
-)
-
-var rootCmd = &cobra.Command{
-	Use:   "oraclepack",
-	Short: "Oracle Pack Runner",
-	Long:  `A polished TUI-driven runner for oracle-based interactive bash steps.`,
-}
-
-// Execute adds all child commands to the root command and sets flags appropriately.
-func Execute() {
-	if err := rootCmd.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(errors.ExitCode(err))
-	}
-}
-
-func init() {
-	rootCmd.PersistentFlags().BoolVar(&noTUI, "no-tui", false, "Disable the TUI and run in plain terminal mode")
-	rootCmd.PersistentFlags().StringVar(&oracleBin, "oracle-bin", "oracle", "Path to the oracle binary")
-	rootCmd.PersistentFlags().StringVarP(&outDir, "out-dir", "o", "", "Output directory for step execution")
-}
-```
-
-internal/cli/run.go
-```
-package cli
-
-import (
-	"context"
-	"fmt"
-	"path/filepath"
-	"strings"
-
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/spf13/cobra"
-	"github.com/user/oraclepack/internal/app"
-	"github.com/user/oraclepack/internal/config"
-	"github.com/user/oraclepack/internal/pack"
-	"github.com/user/oraclepack/internal/tui"
-)
-
-var (
-	yes                   bool
-	resume                bool
-	stopOnFail            bool
-	roiThreshold          float64
-	roiMode               string
-	runAll                bool
-	outputVerify          bool
-	outputRetries         int
-	outputRequireHeadings bool
-	outputChunkMode       string
-)
-
-var runCmd = &cobra.Command{
-	Use:   "run [pack.md]",
-	Short: "Run an oracle pack",
-	Args:  cobra.ExactArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		packPath := args[0]
-
-		// Setup paths
-		base := strings.TrimSuffix(filepath.Base(packPath), filepath.Ext(packPath))
-		statePath := base + ".state.json"
-		reportPath := base + ".report.json"
-
-		resolvedVerify, err := config.ResolveOutputVerify(outputVerify, cmd.Flags().Changed("output-verify"))
-		if err != nil {
-			return err
-		}
-		resolvedRetries, err := config.ResolveOutputRetries(outputRetries, cmd.Flags().Changed("output-retries"))
-		if err != nil {
-			return err
-		}
-		resolvedRequireHeadings, err := config.ResolveOutputRequireHeadings(outputRequireHeadings, cmd.Flags().Changed("output-require-headings"))
-		if err != nil {
-			return err
-		}
-		resolvedChunkMode, err := config.ResolveOutputChunkMode(outputChunkMode, cmd.Flags().Changed("output-chunk-mode"))
-		if err != nil {
-			return err
-		}
-
-		cfg := app.Config{
-			PackPath:              packPath,
-			StatePath:             statePath,
-			ReportPath:            reportPath,
-			Resume:                resume,
-			StopOnFail:            stopOnFail,
-			WorkDir:               ".",
-			OutDir:                outDir,
-			ROIThreshold:          roiThreshold,
-			ROIMode:               roiMode,
-			OutputVerify:          resolvedVerify,
-			OutputRetries:         resolvedRetries,
-			OutputRequireHeadings: resolvedRequireHeadings,
-			OutputChunkMode:       resolvedChunkMode,
-		}
-
-		a := app.New(cfg)
-		// Prepare the application (loads pack, resolves out_dir, provisions env)
-		if err := a.Prepare(); err != nil {
-			return err
-		}
-
-		if err := a.LoadState(); err != nil {
-			return err
-		}
-
-		findings, warning, err := pack.CheckPackScripts(a.Pack)
-		if err != nil {
-			return err
-		}
-		if warning != "" {
-			fmt.Fprintf(cmd.OutOrStdout(), "Warning: %s\n", warning)
-		}
-		if len(findings) > 0 {
-			for _, finding := range findings {
-				if finding.StepID != "" {
-					fmt.Fprintf(cmd.OutOrStdout(), "Step %s line %d: %s\n", finding.StepID, finding.Line, finding.Message)
-				} else {
-					fmt.Fprintf(cmd.OutOrStdout(), "Line %d: %s\n", finding.Line, finding.Message)
-				}
-			}
-			return fmt.Errorf("bash syntax validation failed")
-		}
-
-		if noTUI {
-			out := cmd.OutOrStdout()
-			fmt.Fprintf(out, "[Selected] %s\n", packPath)
-			fmt.Fprintln(out, "[Ready] Parsed and validated pack")
-			err := a.RunPlain(context.Background(), out)
-			if err != nil {
-				fmt.Fprintf(out, "[Completed] Failed: %v\n", err)
-				return err
-			}
-			fmt.Fprintln(out, "[Completed] Success")
-			return nil
-		}
-
-		m := tui.NewModel(a.Pack, a.Runner, a.State, cfg.StatePath, cfg.ROIThreshold, cfg.ROIMode, runAll, cfg.OutputVerify, cfg.OutputRetries, cfg.OutputRequireHeadings, cfg.OutputChunkMode)
-		p := tea.NewProgram(m, tea.WithAltScreen())
-		_, err = p.Run()
-		return err
-	},
-}
-
-func init() {
-	runCmd.Flags().BoolVarP(&yes, "yes", "y", false, "Auto-approve all steps")
-	runCmd.Flags().BoolVar(&resume, "resume", false, "Resume from last successful step")
-	runCmd.Flags().BoolVar(&stopOnFail, "stop-on-fail", true, "Stop execution if a step fails")
-	runCmd.Flags().Float64Var(&roiThreshold, "roi-threshold", 0.0, "Filter steps by ROI threshold")
-	runCmd.Flags().StringVar(&roiMode, "roi-mode", "over", "ROI filter mode ('over' or 'under')")
-	runCmd.Flags().BoolVar(&runAll, "run-all", false, "Automatically run all steps sequentially on start")
-	runCmd.Flags().BoolVar(&outputVerify, "output-verify", config.DefaultOutputVerify, "Verify --write-output files contain required answer sections")
-	runCmd.Flags().IntVar(&outputRetries, "output-retries", config.DefaultOutputRetries, "Retries for output verification failures")
-	runCmd.Flags().BoolVar(&outputRequireHeadings, "output-require-headings", config.DefaultOutputRequireHeadings, "Require strict output headings when verifying outputs")
-	runCmd.Flags().StringVar(&outputChunkMode, "output-chunk-mode", config.DefaultOutputChunkMode, "Output chunk verification mode: auto|single|multi")
-	rootCmd.AddCommand(runCmd)
-}
-```
-
-internal/cli/verify_outputs.go
-```
-package cli
-
-import (
-	"fmt"
-	"os"
-
-	"github.com/spf13/cobra"
-	"github.com/user/oraclepack/internal/config"
-	"github.com/user/oraclepack/internal/pack"
-)
-
-var (
-	verifyOutputsEnabled      bool
-	verifyOutputsRequireHeads bool
-	verifyOutputsChunkMode    string
-)
-
-var verifyOutputsCmd = &cobra.Command{
-	Use:   "verify-outputs [pack.md]",
-	Short: "Verify --write-output files without executing steps",
-	Args:  cobra.ExactArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		out := cmd.OutOrStdout()
-		data, err := os.ReadFile(args[0])
-		if err != nil {
-			return err
-		}
-
-		p, err := pack.Parse(data)
-		if err != nil {
-			return err
-		}
-		if err := pack.Validate(p); err != nil {
-			return err
-		}
-
-		verifyEnabled, err := config.ResolveOutputVerify(verifyOutputsEnabled, cmd.Flags().Changed("output-verify"))
-		if err != nil {
-			return err
-		}
-		if !verifyEnabled {
-			fmt.Fprintln(out, "Output verification disabled (ORACLEPACK_OUTPUT_VERIFY=false).")
-			return nil
-		}
-		requireHeadings, err := config.ResolveOutputRequireHeadings(verifyOutputsRequireHeads, cmd.Flags().Changed("output-require-headings"))
-		if err != nil {
-			return err
-		}
-		chunkMode, err := config.ResolveOutputChunkMode(verifyOutputsChunkMode, cmd.Flags().Changed("output-chunk-mode"))
-		if err != nil {
-			return err
-		}
-
-		report := pack.VerifyReport{
-			TotalSteps: len(p.Steps),
-		}
-
-		for i := range p.Steps {
-			step := &p.Steps[i]
-			failures := pack.VerifyStepOutputs(step, requireHeadings, chunkMode)
-			if len(failures) == 0 {
-				continue
-			}
-			report.CheckedSteps++
-			for _, failure := range failures {
-				failure.StepID = step.ID
-				report.Failures = append(report.Failures, failure)
-			}
-		}
-
-		fmt.Fprint(out, pack.FormatVerifyReport(report))
-		if len(report.Failures) > 0 {
-			return fmt.Errorf("output verification failed")
-		}
-		return nil
-	},
-}
-
-func init() {
-	verifyOutputsCmd.Flags().BoolVar(&verifyOutputsEnabled, "output-verify", config.DefaultOutputVerify, "Verify --write-output files contain required answer sections")
-	verifyOutputsCmd.Flags().BoolVar(&verifyOutputsRequireHeads, "output-require-headings", config.DefaultOutputRequireHeadings, "Require strict output headings when verifying outputs")
-	verifyOutputsCmd.Flags().StringVar(&verifyOutputsChunkMode, "output-chunk-mode", config.DefaultOutputChunkMode, "Output chunk verification mode: auto|single|multi")
-	rootCmd.AddCommand(verifyOutputsCmd)
-}
 ```
 
 internal/app/app.go
@@ -2068,6 +1635,439 @@ func buildROISteps() string {
 }
 ```
 
+internal/cli/cmds.go
+```
+package cli
+
+import (
+	"fmt"
+	"os"
+
+	"github.com/spf13/cobra"
+	"github.com/user/oraclepack/internal/app"
+	"github.com/user/oraclepack/internal/pack"
+	"github.com/user/oraclepack/internal/validate"
+)
+
+var validateCmd = &cobra.Command{
+	Use:   "validate [pack.md]",
+	Short: "Validate an oracle pack",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		out := cmd.OutOrStdout()
+		data, err := os.ReadFile(args[0])
+		if err != nil {
+			return err
+		}
+		p, err := pack.Parse(data)
+		if err != nil {
+			return err
+		}
+		if err := pack.Validate(p); err != nil {
+			return err
+		}
+		findings, warning, err := pack.CheckPackScripts(p)
+		if err != nil {
+			return err
+		}
+		if warning != "" {
+			fmt.Fprintf(out, "Warning: %s\n", warning)
+		}
+		if len(findings) > 0 {
+			for _, finding := range findings {
+				if finding.StepID != "" {
+					fmt.Fprintf(out, "Step %s line %d: %s\n", finding.StepID, finding.Line, finding.Message)
+				} else {
+					fmt.Fprintf(out, "Line %d: %s\n", finding.Line, finding.Message)
+				}
+			}
+			return fmt.Errorf("bash syntax validation failed")
+		}
+		cv := validate.CompositeValidator{}
+		results := cv.ValidatePack(p)
+		fmt.Fprintf(out, "Validated %d steps\n", len(results))
+		for _, r := range results {
+			fmt.Fprintf(out, "Step %s [%s] %s", r.StepID, r.ToolKind.Name(), r.Status)
+			if r.Error != "" {
+				fmt.Fprintf(out, " (%s)", r.Error)
+			}
+			fmt.Fprintln(out)
+		}
+		return nil
+	},
+}
+
+var listCmd = &cobra.Command{
+	Use:   "list [pack.md]",
+	Short: "List steps in an oracle pack",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		cfg := app.Config{PackPath: args[0]}
+		a := app.New(cfg)
+		if err := a.LoadPack(); err != nil {
+			return err
+		}
+		for _, s := range a.Pack.Steps {
+			fmt.Printf("%s: %s\n", s.ID, s.OriginalLine)
+		}
+		return nil
+	},
+}
+
+func init() {
+	rootCmd.AddCommand(validateCmd)
+	rootCmd.AddCommand(listCmd)
+}
+```
+
+internal/cli/root.go
+```
+package cli
+
+import (
+	"fmt"
+	"os"
+
+	"github.com/spf13/cobra"
+	"github.com/user/oraclepack/internal/errors"
+)
+
+var (
+	noTUI     bool
+	oracleBin string
+	outDir    string
+)
+
+var rootCmd = &cobra.Command{
+	Use:   "oraclepack",
+	Short: "Oracle Pack Runner",
+	Long:  `A polished TUI-driven runner for oracle-based interactive bash steps.`,
+}
+
+// Execute adds all child commands to the root command and sets flags appropriately.
+func Execute() {
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(errors.ExitCode(err))
+	}
+}
+
+func init() {
+	rootCmd.PersistentFlags().BoolVar(&noTUI, "no-tui", false, "Disable the TUI and run in plain terminal mode")
+	rootCmd.PersistentFlags().StringVar(&oracleBin, "oracle-bin", "oracle", "Path to the oracle binary")
+	rootCmd.PersistentFlags().StringVarP(&outDir, "out-dir", "o", "", "Output directory for step execution")
+}
+```
+
+internal/cli/run.go
+```
+package cli
+
+import (
+	"context"
+	"fmt"
+	"path/filepath"
+	"strings"
+
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/spf13/cobra"
+	"github.com/user/oraclepack/internal/app"
+	"github.com/user/oraclepack/internal/config"
+	"github.com/user/oraclepack/internal/pack"
+	"github.com/user/oraclepack/internal/tui"
+)
+
+var (
+	yes                   bool
+	resume                bool
+	stopOnFail            bool
+	roiThreshold          float64
+	roiMode               string
+	runAll                bool
+	outputVerify          bool
+	outputRetries         int
+	outputRequireHeadings bool
+	outputChunkMode       string
+)
+
+var runCmd = &cobra.Command{
+	Use:   "run [pack.md]",
+	Short: "Run an oracle pack",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		packPath := args[0]
+
+		// Setup paths
+		base := strings.TrimSuffix(filepath.Base(packPath), filepath.Ext(packPath))
+		statePath := base + ".state.json"
+		reportPath := base + ".report.json"
+
+		resolvedVerify, err := config.ResolveOutputVerify(outputVerify, cmd.Flags().Changed("output-verify"))
+		if err != nil {
+			return err
+		}
+		resolvedRetries, err := config.ResolveOutputRetries(outputRetries, cmd.Flags().Changed("output-retries"))
+		if err != nil {
+			return err
+		}
+		resolvedRequireHeadings, err := config.ResolveOutputRequireHeadings(outputRequireHeadings, cmd.Flags().Changed("output-require-headings"))
+		if err != nil {
+			return err
+		}
+		resolvedChunkMode, err := config.ResolveOutputChunkMode(outputChunkMode, cmd.Flags().Changed("output-chunk-mode"))
+		if err != nil {
+			return err
+		}
+
+		cfg := app.Config{
+			PackPath:              packPath,
+			StatePath:             statePath,
+			ReportPath:            reportPath,
+			Resume:                resume,
+			StopOnFail:            stopOnFail,
+			WorkDir:               ".",
+			OutDir:                outDir,
+			ROIThreshold:          roiThreshold,
+			ROIMode:               roiMode,
+			OutputVerify:          resolvedVerify,
+			OutputRetries:         resolvedRetries,
+			OutputRequireHeadings: resolvedRequireHeadings,
+			OutputChunkMode:       resolvedChunkMode,
+		}
+
+		a := app.New(cfg)
+		// Prepare the application (loads pack, resolves out_dir, provisions env)
+		if err := a.Prepare(); err != nil {
+			return err
+		}
+
+		if err := a.LoadState(); err != nil {
+			return err
+		}
+
+		findings, warning, err := pack.CheckPackScripts(a.Pack)
+		if err != nil {
+			return err
+		}
+		if warning != "" {
+			fmt.Fprintf(cmd.OutOrStdout(), "Warning: %s\n", warning)
+		}
+		if len(findings) > 0 {
+			for _, finding := range findings {
+				if finding.StepID != "" {
+					fmt.Fprintf(cmd.OutOrStdout(), "Step %s line %d: %s\n", finding.StepID, finding.Line, finding.Message)
+				} else {
+					fmt.Fprintf(cmd.OutOrStdout(), "Line %d: %s\n", finding.Line, finding.Message)
+				}
+			}
+			return fmt.Errorf("bash syntax validation failed")
+		}
+
+		if noTUI {
+			out := cmd.OutOrStdout()
+			fmt.Fprintf(out, "[Selected] %s\n", packPath)
+			fmt.Fprintln(out, "[Ready] Parsed and validated pack")
+			err := a.RunPlain(context.Background(), out)
+			if err != nil {
+				fmt.Fprintf(out, "[Completed] Failed: %v\n", err)
+				return err
+			}
+			fmt.Fprintln(out, "[Completed] Success")
+			return nil
+		}
+
+		m := tui.NewModel(a.Pack, a.Runner, a.State, cfg.StatePath, cfg.ROIThreshold, cfg.ROIMode, runAll, cfg.OutputVerify, cfg.OutputRetries, cfg.OutputRequireHeadings, cfg.OutputChunkMode)
+		p := tea.NewProgram(m, tea.WithAltScreen())
+		_, err = p.Run()
+		return err
+	},
+}
+
+func init() {
+	runCmd.Flags().BoolVarP(&yes, "yes", "y", false, "Auto-approve all steps")
+	runCmd.Flags().BoolVar(&resume, "resume", false, "Resume from last successful step")
+	runCmd.Flags().BoolVar(&stopOnFail, "stop-on-fail", true, "Stop execution if a step fails")
+	runCmd.Flags().Float64Var(&roiThreshold, "roi-threshold", 0.0, "Filter steps by ROI threshold")
+	runCmd.Flags().StringVar(&roiMode, "roi-mode", "over", "ROI filter mode ('over' or 'under')")
+	runCmd.Flags().BoolVar(&runAll, "run-all", false, "Automatically run all steps sequentially on start")
+	runCmd.Flags().BoolVar(&outputVerify, "output-verify", config.DefaultOutputVerify, "Verify --write-output files contain required answer sections")
+	runCmd.Flags().IntVar(&outputRetries, "output-retries", config.DefaultOutputRetries, "Retries for output verification failures")
+	runCmd.Flags().BoolVar(&outputRequireHeadings, "output-require-headings", config.DefaultOutputRequireHeadings, "Require strict output headings when verifying outputs")
+	runCmd.Flags().StringVar(&outputChunkMode, "output-chunk-mode", config.DefaultOutputChunkMode, "Output chunk verification mode: auto|single|multi")
+	rootCmd.AddCommand(runCmd)
+}
+```
+
+internal/cli/verify_outputs.go
+```
+package cli
+
+import (
+	"fmt"
+	"os"
+
+	"github.com/spf13/cobra"
+	"github.com/user/oraclepack/internal/config"
+	"github.com/user/oraclepack/internal/pack"
+)
+
+var (
+	verifyOutputsEnabled      bool
+	verifyOutputsRequireHeads bool
+	verifyOutputsChunkMode    string
+)
+
+var verifyOutputsCmd = &cobra.Command{
+	Use:   "verify-outputs [pack.md]",
+	Short: "Verify --write-output files without executing steps",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		out := cmd.OutOrStdout()
+		data, err := os.ReadFile(args[0])
+		if err != nil {
+			return err
+		}
+
+		p, err := pack.Parse(data)
+		if err != nil {
+			return err
+		}
+		if err := pack.Validate(p); err != nil {
+			return err
+		}
+
+		verifyEnabled, err := config.ResolveOutputVerify(verifyOutputsEnabled, cmd.Flags().Changed("output-verify"))
+		if err != nil {
+			return err
+		}
+		if !verifyEnabled {
+			fmt.Fprintln(out, "Output verification disabled (ORACLEPACK_OUTPUT_VERIFY=false).")
+			return nil
+		}
+		requireHeadings, err := config.ResolveOutputRequireHeadings(verifyOutputsRequireHeads, cmd.Flags().Changed("output-require-headings"))
+		if err != nil {
+			return err
+		}
+		chunkMode, err := config.ResolveOutputChunkMode(verifyOutputsChunkMode, cmd.Flags().Changed("output-chunk-mode"))
+		if err != nil {
+			return err
+		}
+
+		report := pack.VerifyReport{
+			TotalSteps: len(p.Steps),
+		}
+
+		for i := range p.Steps {
+			step := &p.Steps[i]
+			failures := pack.VerifyStepOutputs(step, requireHeadings, chunkMode)
+			if len(failures) == 0 {
+				continue
+			}
+			report.CheckedSteps++
+			for _, failure := range failures {
+				failure.StepID = step.ID
+				report.Failures = append(report.Failures, failure)
+			}
+		}
+
+		fmt.Fprint(out, pack.FormatVerifyReport(report))
+		if len(report.Failures) > 0 {
+			return fmt.Errorf("output verification failed")
+		}
+		return nil
+	},
+}
+
+func init() {
+	verifyOutputsCmd.Flags().BoolVar(&verifyOutputsEnabled, "output-verify", config.DefaultOutputVerify, "Verify --write-output files contain required answer sections")
+	verifyOutputsCmd.Flags().BoolVar(&verifyOutputsRequireHeads, "output-require-headings", config.DefaultOutputRequireHeadings, "Require strict output headings when verifying outputs")
+	verifyOutputsCmd.Flags().StringVar(&verifyOutputsChunkMode, "output-chunk-mode", config.DefaultOutputChunkMode, "Output chunk verification mode: auto|single|multi")
+	rootCmd.AddCommand(verifyOutputsCmd)
+}
+```
+
+internal/artifacts/contract.go
+```
+package artifacts
+
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+
+	"github.com/user/oraclepack/internal/foundation"
+)
+
+// Contract maps step IDs to required artifact paths.
+type Contract map[string][]string
+
+// DefaultContract returns the standard artifact contract.
+func DefaultContract() Contract {
+	base := ".oraclepack/ticketify"
+	return Contract{
+		"09": {filepath.Join(base, "next.json")},
+		"10": {filepath.Join(base, "codex-implement.md")},
+		"11": {filepath.Join(base, "codex-verify.md")},
+		"12": {filepath.Join(base, "PR.md")},
+	}
+}
+
+// EvaluateGates checks required artifacts for a given step.
+func EvaluateGates(stepID string, contract Contract) error {
+	paths, ok := contract[stepID]
+	if !ok || len(paths) == 0 {
+		return nil
+	}
+	var missing []string
+	for _, p := range paths {
+		info, err := os.Stat(p)
+		if err != nil || info.IsDir() || info.Size() == 0 {
+			missing = append(missing, p)
+		}
+	}
+	if len(missing) > 0 {
+		return fmt.Errorf("%w: %v", foundation.ErrArtifactMissing, missing)
+	}
+	return nil
+}
+```
+
+internal/artifacts/contract_test.go
+```
+package artifacts
+
+import (
+	"os"
+	"path/filepath"
+	"testing"
+)
+
+func TestEvaluateGates(t *testing.T) {
+	dir := t.TempDir()
+	base := filepath.Join(dir, ".oraclepack", "ticketify")
+	if err := os.MkdirAll(base, 0755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	contract := Contract{
+		"09": {filepath.Join(base, "next.json")},
+	}
+
+	// Missing file should error.
+	if err := EvaluateGates("09", contract); err == nil {
+		t.Fatal("expected missing artifact error")
+	}
+
+	// Create file and verify pass.
+	path := filepath.Join(base, "next.json")
+	if err := os.WriteFile(path, []byte("ok"), 0644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	if err := EvaluateGates("09", contract); err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+}
+```
+
 internal/config/defaults.go
 ```
 package config
@@ -2179,88 +2179,73 @@ func normalizeChunkMode(raw string) (string, error) {
 }
 ```
 
-internal/dispatch/classify.go
+internal/errors/errors.go
 ```
-package dispatch
+package errors
 
 import (
-	"regexp"
-	"strings"
-
-	"github.com/user/oraclepack/internal/tools"
+	"errors"
 )
 
-var classifier = regexp.MustCompile(`^(\s*)(oracle|tm|task-master|codex|gemini)\b`)
+var (
+	// ErrInvalidPack is returned when the Markdown pack is malformed.
+	ErrInvalidPack = errors.New("invalid pack structure")
+	// ErrExecutionFailed is returned when a shell command fails.
+	ErrExecutionFailed = errors.New("execution failed")
+	// ErrConfigInvalid is returned when CLI flags or environment variables are incorrect.
+	ErrConfigInvalid = errors.New("invalid configuration")
+)
 
-// Classification describes a parsed command prefix.
-type Classification struct {
-	Kind    tools.ToolKind
-	Prefix  string
-	Command string
-}
+// ExitCode returns the appropriate exit code for a given error.
+func ExitCode(err error) int {
+	if err == nil {
+		return 0
+	}
 
-// Classify detects a supported tool prefix and returns the remaining command.
-func Classify(line string) (Classification, bool) {
-	m := classifier.FindStringSubmatch(line)
-	if len(m) < 3 {
-		return Classification{}, false
+	if errors.Is(err, ErrConfigInvalid) {
+		return 2
 	}
-	prefix := m[2]
-	kind := toolKindFromPrefix(prefix)
-	if kind == nil {
-		return Classification{}, false
-	}
-	trimmed := strings.TrimSpace(line[len(m[1])+len(prefix):])
-	return Classification{Kind: *kind, Prefix: prefix, Command: strings.TrimSpace(trimmed)}, true
-}
 
-func toolKindFromPrefix(prefix string) *tools.ToolKind {
-	var kind tools.ToolKind
-	switch prefix {
-	case "oracle":
-		kind = tools.ToolOracle
-	case "tm":
-		kind = tools.ToolTM
-	case "task-master":
-		kind = tools.ToolTaskMaster
-	case "codex":
-		kind = tools.ToolCodex
-	case "gemini":
-		kind = tools.ToolGemini
-	default:
-		return nil
+	if errors.Is(err, ErrInvalidPack) {
+		return 3
 	}
-	return &kind
+
+	if errors.Is(err, ErrExecutionFailed) {
+		return 4
+	}
+
+	return 1 // Generic error
 }
 ```
 
-internal/dispatch/classify_test.go
+internal/errors/errors_test.go
 ```
-package dispatch
+package errors
 
-import "testing"
+import (
+	"errors"
+	"fmt"
+	"testing"
+)
 
-func TestClassify(t *testing.T) {
+func TestExitCode(t *testing.T) {
 	tests := []struct {
-		line    string
-		wantOK  bool
-		wantCmd string
+		name     string
+		err      error
+		expected int
 	}{
-		{"oracle query \"hi\"", true, "query \"hi\""},
-		{"  tm list", true, "list"},
-		{"task-master next", true, "next"},
-		{"codex exec \"x\"", true, "exec \"x\""},
-		{"gemini run", true, "run"},
-		{"echo hello", false, ""},
+		{"nil error", nil, 0},
+		{"generic error", errors.New("generic"), 1},
+		{"invalid pack", ErrInvalidPack, 3},
+		{"execution failed", ErrExecutionFailed, 4},
+		{"config invalid", ErrConfigInvalid, 2},
+		{"wrapped invalid pack", fmt.Errorf("wrap: %w", ErrInvalidPack), 3},
 	}
+
 	for _, tt := range tests {
-		t.Run(tt.line, func(t *testing.T) {
-			got, ok := Classify(tt.line)
-			if ok != tt.wantOK {
-				t.Fatalf("expected ok=%v got %v", tt.wantOK, ok)
-			}
-			if ok && got.Command != tt.wantCmd {
-				t.Fatalf("expected cmd %q got %q", tt.wantCmd, got.Command)
+		t.Run(tt.name, func(t *testing.T) {
+			if got := ExitCode(tt.err); got != tt.expected {
+				t.Errorf("ExitCode() = %v, want %v", got, tt.expected)
 			}
 		})
 	}
@@ -3244,73 +3229,88 @@ func MultiWriter(writers ...io.Writer) io.Writer {
 }
 ```
 
-internal/errors/errors.go
+internal/dispatch/classify.go
 ```
-package errors
+package dispatch
 
 import (
-	"errors"
+	"regexp"
+	"strings"
+
+	"github.com/user/oraclepack/internal/tools"
 )
 
-var (
-	// ErrInvalidPack is returned when the Markdown pack is malformed.
-	ErrInvalidPack = errors.New("invalid pack structure")
-	// ErrExecutionFailed is returned when a shell command fails.
-	ErrExecutionFailed = errors.New("execution failed")
-	// ErrConfigInvalid is returned when CLI flags or environment variables are incorrect.
-	ErrConfigInvalid = errors.New("invalid configuration")
-)
+var classifier = regexp.MustCompile(`^(\s*)(oracle|tm|task-master|codex|gemini)\b`)
 
-// ExitCode returns the appropriate exit code for a given error.
-func ExitCode(err error) int {
-	if err == nil {
-		return 0
+// Classification describes a parsed command prefix.
+type Classification struct {
+	Kind    tools.ToolKind
+	Prefix  string
+	Command string
+}
+
+// Classify detects a supported tool prefix and returns the remaining command.
+func Classify(line string) (Classification, bool) {
+	m := classifier.FindStringSubmatch(line)
+	if len(m) < 3 {
+		return Classification{}, false
 	}
-
-	if errors.Is(err, ErrConfigInvalid) {
-		return 2
+	prefix := m[2]
+	kind := toolKindFromPrefix(prefix)
+	if kind == nil {
+		return Classification{}, false
 	}
+	trimmed := strings.TrimSpace(line[len(m[1])+len(prefix):])
+	return Classification{Kind: *kind, Prefix: prefix, Command: strings.TrimSpace(trimmed)}, true
+}
 
-	if errors.Is(err, ErrInvalidPack) {
-		return 3
+func toolKindFromPrefix(prefix string) *tools.ToolKind {
+	var kind tools.ToolKind
+	switch prefix {
+	case "oracle":
+		kind = tools.ToolOracle
+	case "tm":
+		kind = tools.ToolTM
+	case "task-master":
+		kind = tools.ToolTaskMaster
+	case "codex":
+		kind = tools.ToolCodex
+	case "gemini":
+		kind = tools.ToolGemini
+	default:
+		return nil
 	}
-
-	if errors.Is(err, ErrExecutionFailed) {
-		return 4
-	}
-
-	return 1 // Generic error
+	return &kind
 }
 ```
 
-internal/errors/errors_test.go
+internal/dispatch/classify_test.go
 ```
-package errors
+package dispatch
 
-import (
-	"errors"
-	"fmt"
-	"testing"
-)
+import "testing"
 
-func TestExitCode(t *testing.T) {
+func TestClassify(t *testing.T) {
 	tests := []struct {
-		name     string
-		err      error
-		expected int
+		line    string
+		wantOK  bool
+		wantCmd string
 	}{
-		{"nil error", nil, 0},
-		{"generic error", errors.New("generic"), 1},
-		{"invalid pack", ErrInvalidPack, 3},
-		{"execution failed", ErrExecutionFailed, 4},
-		{"config invalid", ErrConfigInvalid, 2},
-		{"wrapped invalid pack", fmt.Errorf("wrap: %w", ErrInvalidPack), 3},
+		{"oracle query \"hi\"", true, "query \"hi\""},
+		{"  tm list", true, "list"},
+		{"task-master next", true, "next"},
+		{"codex exec \"x\"", true, "exec \"x\""},
+		{"gemini run", true, "run"},
+		{"echo hello", false, ""},
 	}
-
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := ExitCode(tt.err); got != tt.expected {
-				t.Errorf("ExitCode() = %v, want %v", got, tt.expected)
+		t.Run(tt.line, func(t *testing.T) {
+			got, ok := Classify(tt.line)
+			if ok != tt.wantOK {
+				t.Fatalf("expected ok=%v got %v", tt.wantOK, ok)
+			}
+			if ok && got.Command != tt.wantCmd {
+				t.Fatalf("expected cmd %q got %q", tt.wantCmd, got.Command)
 			}
 		})
 	}
@@ -4917,224 +4917,6 @@ func TestRenderMarkdown(t *testing.T) {
 }
 ```
 
-internal/report/generate.go
-```
-package report
-
-import (
-	"time"
-
-	"github.com/user/oraclepack/internal/state"
-)
-
-// GenerateReport creates a ReportV1 from a RunState.
-func GenerateReport(s *state.RunState, packName string) *ReportV1 {
-	report := &ReportV1{
-		PackInfo: PackInfo{
-			Name: packName,
-			Hash: s.PackHash,
-		},
-		GeneratedAt: time.Now(),
-		Steps:       []StepReport{},
-	}
-
-	var totalDuration time.Duration
-	success, failure, skipped := 0, 0, 0
-
-	for id, status := range s.StepStatuses {
-		duration := status.EndedAt.Sub(status.StartedAt)
-		if status.EndedAt.IsZero() || status.StartedAt.IsZero() {
-			duration = 0
-		}
-
-		totalDuration += duration
-
-		sr := StepReport{
-			ID:         id,
-			Status:     string(status.Status),
-			ExitCode:   status.ExitCode,
-			Duration:   duration,
-			DurationMs: duration.Milliseconds(),
-			Error:      status.Error,
-		}
-		report.Steps = append(report.Steps, sr)
-
-		switch status.Status {
-		case state.StatusSuccess:
-			success++
-		case state.StatusFailed:
-			failure++
-		case state.StatusSkipped:
-			skipped++
-		}
-	}
-
-	report.Summary = Summary{
-		TotalSteps:      len(s.StepStatuses),
-		SuccessCount:    success,
-		FailureCount:    failure,
-		SkippedCount:    skipped,
-		TotalDuration:   totalDuration,
-		TotalDurationMs: totalDuration.Milliseconds(),
-	}
-
-	if len(s.Warnings) > 0 {
-		report.Warnings = make([]Warning, 0, len(s.Warnings))
-		for _, w := range s.Warnings {
-			report.Warnings = append(report.Warnings, Warning{
-				Scope:   w.Scope,
-				StepID:  w.StepID,
-				Line:    w.Line,
-				Token:   w.Token,
-				Message: w.Message,
-			})
-		}
-	}
-
-	return report
-}
-```
-
-internal/report/io.go
-```
-package report
-
-import (
-	"encoding/json"
-	"fmt"
-	"os"
-)
-
-// WriteReport writes a ReportV1 to disk.
-func WriteReport(path string, rep *ReportV1) error {
-	data, err := json.MarshalIndent(rep, "", "  ")
-	if err != nil {
-		return fmt.Errorf("marshal report: %w", err)
-	}
-	if err := os.WriteFile(path, data, 0644); err != nil {
-		return fmt.Errorf("write report: %w", err)
-	}
-	return nil
-}
-```
-
-internal/report/io_test.go
-```
-package report
-
-import (
-	"os"
-	"path/filepath"
-	"testing"
-)
-
-func TestWriteReport(t *testing.T) {
-	dir := t.TempDir()
-	path := filepath.Join(dir, "report.json")
-
-	rep := &ReportV1{
-		PackInfo: PackInfo{Name: "pack"},
-		Summary:  Summary{TotalSteps: 1},
-	}
-	if err := WriteReport(path, rep); err != nil {
-		t.Fatalf("WriteReport: %v", err)
-	}
-
-	if _, err := os.Stat(path); err != nil {
-		t.Fatalf("expected report file to exist: %v", err)
-	}
-}
-```
-
-internal/report/report_test.go
-```
-package report
-
-import (
-	"testing"
-	"time"
-
-	"github.com/user/oraclepack/internal/state"
-)
-
-func TestGenerateReport(t *testing.T) {
-	s := &state.RunState{
-		PackHash: "hash123",
-		StepStatuses: map[string]state.StepStatus{
-			"01": {
-				Status:    state.StatusSuccess,
-				StartedAt: time.Now().Add(-1 * time.Second),
-				EndedAt:   time.Now(),
-			},
-		},
-	}
-
-	rep := GenerateReport(s, "my-pack")
-
-	if rep.PackInfo.Name != "my-pack" {
-		t.Errorf("expected name my-pack, got %s", rep.PackInfo.Name)
-	}
-
-	if rep.Summary.TotalSteps != 1 {
-		t.Errorf("expected 1 total step, got %d", rep.Summary.TotalSteps)
-	}
-
-	if rep.Summary.SuccessCount != 1 {
-		t.Errorf("expected 1 success, got %d", rep.Summary.SuccessCount)
-	}
-}
-```
-
-internal/report/types.go
-```
-package report
-
-import (
-	"time"
-)
-
-// ReportV1 represents the final machine-readable summary.
-type ReportV1 struct {
-	Summary     Summary      `json:"summary"`
-	PackInfo    PackInfo     `json:"pack_info"`
-	Steps       []StepReport `json:"steps"`
-	Warnings    []Warning    `json:"warnings,omitempty"`
-	GeneratedAt time.Time    `json:"generated_at"`
-}
-
-type Summary struct {
-	TotalSteps      int           `json:"total_steps"`
-	SuccessCount    int           `json:"success_count"`
-	FailureCount    int           `json:"failure_count"`
-	SkippedCount    int           `json:"skipped_count"`
-	TotalDuration   time.Duration `json:"total_duration"`
-	TotalDurationMs int64         `json:"total_duration_ms"`
-}
-
-type PackInfo struct {
-	Name string `json:"name"`
-	Hash string `json:"hash"`
-}
-
-type StepReport struct {
-	ID         string        `json:"id"`
-	Status     string        `json:"status"`
-	ExitCode   int           `json:"exit_code"`
-	Duration   time.Duration `json:"duration"`
-	DurationMs int64         `json:"duration_ms"`
-	Error      string        `json:"error,omitempty"`
-}
-
-// Warning captures non-fatal execution notes surfaced during a run.
-type Warning struct {
-	Scope   string `json:"scope"`
-	StepID  string `json:"step_id,omitempty"`
-	Line    int    `json:"line"`
-	Token   string `json:"token"`
-	Message string `json:"message"`
-}
-```
-
 internal/shell/detect.go
 ```
 package shell
@@ -5417,6 +5199,224 @@ func TestRunCommandLoginShell(t *testing.T) {
 	if res.ExitCode != 0 {
 		t.Fatalf("expected exit code 0, got %d", res.ExitCode)
 	}
+}
+```
+
+internal/report/generate.go
+```
+package report
+
+import (
+	"time"
+
+	"github.com/user/oraclepack/internal/state"
+)
+
+// GenerateReport creates a ReportV1 from a RunState.
+func GenerateReport(s *state.RunState, packName string) *ReportV1 {
+	report := &ReportV1{
+		PackInfo: PackInfo{
+			Name: packName,
+			Hash: s.PackHash,
+		},
+		GeneratedAt: time.Now(),
+		Steps:       []StepReport{},
+	}
+
+	var totalDuration time.Duration
+	success, failure, skipped := 0, 0, 0
+
+	for id, status := range s.StepStatuses {
+		duration := status.EndedAt.Sub(status.StartedAt)
+		if status.EndedAt.IsZero() || status.StartedAt.IsZero() {
+			duration = 0
+		}
+
+		totalDuration += duration
+
+		sr := StepReport{
+			ID:         id,
+			Status:     string(status.Status),
+			ExitCode:   status.ExitCode,
+			Duration:   duration,
+			DurationMs: duration.Milliseconds(),
+			Error:      status.Error,
+		}
+		report.Steps = append(report.Steps, sr)
+
+		switch status.Status {
+		case state.StatusSuccess:
+			success++
+		case state.StatusFailed:
+			failure++
+		case state.StatusSkipped:
+			skipped++
+		}
+	}
+
+	report.Summary = Summary{
+		TotalSteps:      len(s.StepStatuses),
+		SuccessCount:    success,
+		FailureCount:    failure,
+		SkippedCount:    skipped,
+		TotalDuration:   totalDuration,
+		TotalDurationMs: totalDuration.Milliseconds(),
+	}
+
+	if len(s.Warnings) > 0 {
+		report.Warnings = make([]Warning, 0, len(s.Warnings))
+		for _, w := range s.Warnings {
+			report.Warnings = append(report.Warnings, Warning{
+				Scope:   w.Scope,
+				StepID:  w.StepID,
+				Line:    w.Line,
+				Token:   w.Token,
+				Message: w.Message,
+			})
+		}
+	}
+
+	return report
+}
+```
+
+internal/report/io.go
+```
+package report
+
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+)
+
+// WriteReport writes a ReportV1 to disk.
+func WriteReport(path string, rep *ReportV1) error {
+	data, err := json.MarshalIndent(rep, "", "  ")
+	if err != nil {
+		return fmt.Errorf("marshal report: %w", err)
+	}
+	if err := os.WriteFile(path, data, 0644); err != nil {
+		return fmt.Errorf("write report: %w", err)
+	}
+	return nil
+}
+```
+
+internal/report/io_test.go
+```
+package report
+
+import (
+	"os"
+	"path/filepath"
+	"testing"
+)
+
+func TestWriteReport(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "report.json")
+
+	rep := &ReportV1{
+		PackInfo: PackInfo{Name: "pack"},
+		Summary:  Summary{TotalSteps: 1},
+	}
+	if err := WriteReport(path, rep); err != nil {
+		t.Fatalf("WriteReport: %v", err)
+	}
+
+	if _, err := os.Stat(path); err != nil {
+		t.Fatalf("expected report file to exist: %v", err)
+	}
+}
+```
+
+internal/report/report_test.go
+```
+package report
+
+import (
+	"testing"
+	"time"
+
+	"github.com/user/oraclepack/internal/state"
+)
+
+func TestGenerateReport(t *testing.T) {
+	s := &state.RunState{
+		PackHash: "hash123",
+		StepStatuses: map[string]state.StepStatus{
+			"01": {
+				Status:    state.StatusSuccess,
+				StartedAt: time.Now().Add(-1 * time.Second),
+				EndedAt:   time.Now(),
+			},
+		},
+	}
+
+	rep := GenerateReport(s, "my-pack")
+
+	if rep.PackInfo.Name != "my-pack" {
+		t.Errorf("expected name my-pack, got %s", rep.PackInfo.Name)
+	}
+
+	if rep.Summary.TotalSteps != 1 {
+		t.Errorf("expected 1 total step, got %d", rep.Summary.TotalSteps)
+	}
+
+	if rep.Summary.SuccessCount != 1 {
+		t.Errorf("expected 1 success, got %d", rep.Summary.SuccessCount)
+	}
+}
+```
+
+internal/report/types.go
+```
+package report
+
+import (
+	"time"
+)
+
+// ReportV1 represents the final machine-readable summary.
+type ReportV1 struct {
+	Summary     Summary      `json:"summary"`
+	PackInfo    PackInfo     `json:"pack_info"`
+	Steps       []StepReport `json:"steps"`
+	Warnings    []Warning    `json:"warnings,omitempty"`
+	GeneratedAt time.Time    `json:"generated_at"`
+}
+
+type Summary struct {
+	TotalSteps      int           `json:"total_steps"`
+	SuccessCount    int           `json:"success_count"`
+	FailureCount    int           `json:"failure_count"`
+	SkippedCount    int           `json:"skipped_count"`
+	TotalDuration   time.Duration `json:"total_duration"`
+	TotalDurationMs int64         `json:"total_duration_ms"`
+}
+
+type PackInfo struct {
+	Name string `json:"name"`
+	Hash string `json:"hash"`
+}
+
+type StepReport struct {
+	ID         string        `json:"id"`
+	Status     string        `json:"status"`
+	ExitCode   int           `json:"exit_code"`
+	Duration   time.Duration `json:"duration"`
+	DurationMs int64         `json:"duration_ms"`
+	Error      string        `json:"error,omitempty"`
+}
+
+// Warning captures non-fatal execution notes surfaced during a run.
+type Warning struct {
+	Scope   string `json:"scope"`
+	StepID  string `json:"step_id,omitempty"`
+	Line    int    `json:"line"`
+	Token   string `json:"token"`
+	Message string `json:"message"`
 }
 ```
 
@@ -5832,145 +5832,6 @@ func TestMetadataRegistry(t *testing.T) {
 	if ToolOracle.Name() != "oracle" {
 		t.Fatalf("expected oracle name, got %s", ToolOracle.Name())
 	}
-}
-```
-
-internal/types/pack.go
-```
-package types
-
-// Pack represents a parsed oracle pack.
-type Pack struct {
-	Prelude     Prelude `json:"prelude" yaml:"prelude"`
-	Steps       []Step  `json:"steps" yaml:"steps"`
-	Source      string  `json:"source,omitempty" yaml:"source,omitempty"`
-	OutDir      string  `json:"out_dir,omitempty" yaml:"out_dir,omitempty"`
-	WriteOutput bool    `json:"write_output" yaml:"write_output"`
-}
-
-// Prelude contains the shell code that runs before any steps.
-type Prelude struct {
-	Code string `json:"code" yaml:"code"`
-}
-
-// Step represents an individual executable step within the pack.
-type Step struct {
-	ID           string  `json:"id" yaml:"id"`                             // e.g., "01"
-	Number       int     `json:"number" yaml:"number"`                     // e.g., 1
-	Code         string  `json:"code" yaml:"code"`                         // The bash code
-	OriginalLine string  `json:"original_line" yaml:"original_line"`       // The header line, e.g., "# 01)"
-	ROI          float64 `json:"roi,omitempty" yaml:"roi,omitempty"`       // Return on Investment value extracted from header
-	Impact       string  `json:"impact,omitempty" yaml:"impact,omitempty"` // Optional impact metadata extracted from step comments
-}
-```
-
-internal/types/pack_test.go
-```
-package types
-
-import (
-	"encoding/json"
-	"reflect"
-	"testing"
-
-	"github.com/goccy/go-yaml"
-)
-
-func TestPackJSONRoundTrip(t *testing.T) {
-	original := Pack{
-		Prelude: Prelude{Code: "echo prelude"},
-		Steps: []Step{
-			{
-				ID:           "01",
-				Number:       1,
-				Code:         "echo hello",
-				OriginalLine: "# 01) Example",
-				ROI:          3.2,
-				Impact:       "High",
-			},
-		},
-		Source:      "pack.md",
-		OutDir:      "dist",
-		WriteOutput: true,
-	}
-
-	data, err := json.Marshal(original)
-	if err != nil {
-		t.Fatalf("json marshal: %v", err)
-	}
-
-	var decoded Pack
-	if err := json.Unmarshal(data, &decoded); err != nil {
-		t.Fatalf("json unmarshal: %v", err)
-	}
-
-	if !reflect.DeepEqual(original, decoded) {
-		t.Fatalf("json round-trip mismatch: %#v != %#v", original, decoded)
-	}
-}
-
-func TestPackYAMLRoundTrip(t *testing.T) {
-	original := Pack{
-		Prelude: Prelude{Code: "echo prelude"},
-		Steps: []Step{
-			{
-				ID:           "02",
-				Number:       2,
-				Code:         "echo yaml",
-				OriginalLine: "# 02) Example",
-				ROI:          1.1,
-				Impact:       "Low",
-			},
-		},
-		Source:      "pack.yaml",
-		OutDir:      "out",
-		WriteOutput: false,
-	}
-
-	data, err := yaml.Marshal(original)
-	if err != nil {
-		t.Fatalf("yaml marshal: %v", err)
-	}
-
-	var decoded Pack
-	if err := yaml.Unmarshal(data, &decoded); err != nil {
-		t.Fatalf("yaml unmarshal: %v", err)
-	}
-
-	if !reflect.DeepEqual(original, decoded) {
-		t.Fatalf("yaml round-trip mismatch: %#v != %#v", original, decoded)
-	}
-}
-```
-
-internal/types/verification.go
-```
-package types
-
-// OutputContract describes the expected response shape for a step.
-type OutputContract string
-
-const (
-	OutputContractUnknown          OutputContract = ""
-	OutputContractAllSections      OutputContract = "all_sections"
-	OutputContractDirectAnswerOnly OutputContract = "direct_answer_only"
-	OutputContractChunkedBySuffix  OutputContract = "chunked_by_suffix"
-)
-
-// OutputFailure captures a missing or invalid output artifact.
-type OutputFailure struct {
-	StepID        string   `json:"step_id,omitempty" yaml:"step_id,omitempty"`
-	Path          string   `json:"path,omitempty" yaml:"path,omitempty"`
-	MissingTokens []string `json:"missing_tokens,omitempty" yaml:"missing_tokens,omitempty"`
-	Error         string   `json:"error,omitempty" yaml:"error,omitempty"`
-}
-
-// SyntaxFinding captures a structural or syntax issue in generated bash.
-type SyntaxFinding struct {
-	StepID  string `json:"step_id,omitempty" yaml:"step_id,omitempty"`
-	Line    int    `json:"line" yaml:"line"`
-	Token   string `json:"token,omitempty" yaml:"token,omitempty"`
-	Message string `json:"message" yaml:"message"`
 }
 ```
 
@@ -7453,6 +7314,145 @@ func TestURLPickerDefaultURLPrefersProject(t *testing.T) {
 	if got := picker.DefaultURL(); got != project.Items[0].URL {
 		t.Fatalf("expected project default URL %q, got %q", project.Items[0].URL, got)
 	}
+}
+```
+
+internal/types/pack.go
+```
+package types
+
+// Pack represents a parsed oracle pack.
+type Pack struct {
+	Prelude     Prelude `json:"prelude" yaml:"prelude"`
+	Steps       []Step  `json:"steps" yaml:"steps"`
+	Source      string  `json:"source,omitempty" yaml:"source,omitempty"`
+	OutDir      string  `json:"out_dir,omitempty" yaml:"out_dir,omitempty"`
+	WriteOutput bool    `json:"write_output" yaml:"write_output"`
+}
+
+// Prelude contains the shell code that runs before any steps.
+type Prelude struct {
+	Code string `json:"code" yaml:"code"`
+}
+
+// Step represents an individual executable step within the pack.
+type Step struct {
+	ID           string  `json:"id" yaml:"id"`                             // e.g., "01"
+	Number       int     `json:"number" yaml:"number"`                     // e.g., 1
+	Code         string  `json:"code" yaml:"code"`                         // The bash code
+	OriginalLine string  `json:"original_line" yaml:"original_line"`       // The header line, e.g., "# 01)"
+	ROI          float64 `json:"roi,omitempty" yaml:"roi,omitempty"`       // Return on Investment value extracted from header
+	Impact       string  `json:"impact,omitempty" yaml:"impact,omitempty"` // Optional impact metadata extracted from step comments
+}
+```
+
+internal/types/pack_test.go
+```
+package types
+
+import (
+	"encoding/json"
+	"reflect"
+	"testing"
+
+	"github.com/goccy/go-yaml"
+)
+
+func TestPackJSONRoundTrip(t *testing.T) {
+	original := Pack{
+		Prelude: Prelude{Code: "echo prelude"},
+		Steps: []Step{
+			{
+				ID:           "01",
+				Number:       1,
+				Code:         "echo hello",
+				OriginalLine: "# 01) Example",
+				ROI:          3.2,
+				Impact:       "High",
+			},
+		},
+		Source:      "pack.md",
+		OutDir:      "dist",
+		WriteOutput: true,
+	}
+
+	data, err := json.Marshal(original)
+	if err != nil {
+		t.Fatalf("json marshal: %v", err)
+	}
+
+	var decoded Pack
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		t.Fatalf("json unmarshal: %v", err)
+	}
+
+	if !reflect.DeepEqual(original, decoded) {
+		t.Fatalf("json round-trip mismatch: %#v != %#v", original, decoded)
+	}
+}
+
+func TestPackYAMLRoundTrip(t *testing.T) {
+	original := Pack{
+		Prelude: Prelude{Code: "echo prelude"},
+		Steps: []Step{
+			{
+				ID:           "02",
+				Number:       2,
+				Code:         "echo yaml",
+				OriginalLine: "# 02) Example",
+				ROI:          1.1,
+				Impact:       "Low",
+			},
+		},
+		Source:      "pack.yaml",
+		OutDir:      "out",
+		WriteOutput: false,
+	}
+
+	data, err := yaml.Marshal(original)
+	if err != nil {
+		t.Fatalf("yaml marshal: %v", err)
+	}
+
+	var decoded Pack
+	if err := yaml.Unmarshal(data, &decoded); err != nil {
+		t.Fatalf("yaml unmarshal: %v", err)
+	}
+
+	if !reflect.DeepEqual(original, decoded) {
+		t.Fatalf("yaml round-trip mismatch: %#v != %#v", original, decoded)
+	}
+}
+```
+
+internal/types/verification.go
+```
+package types
+
+// OutputContract describes the expected response shape for a step.
+type OutputContract string
+
+const (
+	OutputContractUnknown          OutputContract = ""
+	OutputContractAllSections      OutputContract = "all_sections"
+	OutputContractDirectAnswerOnly OutputContract = "direct_answer_only"
+	OutputContractChunkedBySuffix  OutputContract = "chunked_by_suffix"
+)
+
+// OutputFailure captures a missing or invalid output artifact.
+type OutputFailure struct {
+	StepID        string   `json:"step_id,omitempty" yaml:"step_id,omitempty"`
+	Path          string   `json:"path,omitempty" yaml:"path,omitempty"`
+	MissingTokens []string `json:"missing_tokens,omitempty" yaml:"missing_tokens,omitempty"`
+	Error         string   `json:"error,omitempty" yaml:"error,omitempty"`
+}
+
+// SyntaxFinding captures a structural or syntax issue in generated bash.
+type SyntaxFinding struct {
+	StepID  string `json:"step_id,omitempty" yaml:"step_id,omitempty"`
+	Line    int    `json:"line" yaml:"line"`
+	Token   string `json:"token,omitempty" yaml:"token,omitempty"`
+	Message string `json:"message" yaml:"message"`
 }
 ```
 
