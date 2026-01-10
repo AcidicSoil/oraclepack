@@ -12,7 +12,11 @@ Project Structure:
     ├── cli
     │   ├── cmds.go
     │   ├── root.go
-    │   └── run.go
+    │   ├── run.go
+    │   └── verify_outputs.go
+    ├── config
+    │   ├── defaults.go
+    │   └── resolve.go
     ├── dispatch
     │   ├── classify.go
     │   └── classify_test.go
@@ -46,10 +50,17 @@ Project Structure:
     │   ├── merge_test.go
     │   └── types.go
     ├── pack
-    │   ├── output_check.go
+    │   ├── bash_syntax_validator.go
+    │   ├── bash_syntax_validator_test.go
+    │   ├── bash_tooling_checks.go
+    │   ├── metadata.go
+    │   ├── output_expectations.go
+    │   ├── output_expectations_test.go
+    │   ├── output_validator.go
+    │   ├── output_validator_test.go
     │   ├── parser.go
     │   ├── parser_test.go
-    │   └── types.go
+    │   └── verify_report.go
     ├── render
     │   ├── render.go
     │   └── render_test.go
@@ -93,6 +104,10 @@ Project Structure:
     │   ├── url_picker.go
     │   ├── url_store.go
     │   └── url_store_test.go
+    ├── types
+    │   ├── pack.go
+    │   ├── pack_test.go
+    │   └── verification.go
     └── validate
         ├── artifact_gate.go
         ├── artifact_gate_test.go
@@ -118,30 +133,33 @@ import (
 	"github.com/user/oraclepack/internal/exec"
 	"github.com/user/oraclepack/internal/pack"
 	"github.com/user/oraclepack/internal/state"
+	"github.com/user/oraclepack/internal/types"
 )
 
 // Config holds application-wide configuration.
 type Config struct {
-	PackPath      string
-	StatePath     string
-	ReportPath    string
-	StopOnFail    bool
-	Resume        bool
-	Verbose       bool
-	DryRun        bool
-	OracleFlags   []string
-	WorkDir       string
-	OutDir        string // CLI override for output directory
-	ROIThreshold  float64
-	ROIMode       string // "over" or "under"
-	OutputVerify  bool
-	OutputRetries int
+	PackPath              string
+	StatePath             string
+	ReportPath            string
+	StopOnFail            bool
+	Resume                bool
+	Verbose               bool
+	DryRun                bool
+	OracleFlags           []string
+	WorkDir               string
+	OutDir                string // CLI override for output directory
+	ROIThreshold          float64
+	ROIMode               string // "over" or "under"
+	OutputVerify          bool
+	OutputRetries         int
+	OutputRequireHeadings bool
+	OutputChunkMode       string
 }
 
 // App orchestrates the execution flow.
 type App struct {
 	Config Config
-	Pack   *pack.Pack
+	Pack   *types.Pack
 	State  *state.RunState
 	Runner *exec.Runner
 }
@@ -169,7 +187,7 @@ func (a *App) LoadPack() error {
 		return err
 	}
 
-	if err := p.Validate(); err != nil {
+	if err := pack.Validate(p); err != nil {
 		return err
 	}
 
@@ -272,7 +290,7 @@ func TestApp_RunPlain(t *testing.T) {
 	if err := a.LoadState(); err != nil {
 		t.Fatalf("LoadState failed: %v", err)
 	}
-	
+
 	var out bytes.Buffer
 	err := a.RunPlain(context.Background(), &out)
 	if err != nil {
@@ -328,6 +346,7 @@ import (
 	"github.com/user/oraclepack/internal/pack"
 	"github.com/user/oraclepack/internal/report"
 	"github.com/user/oraclepack/internal/state"
+	"github.com/user/oraclepack/internal/types"
 )
 
 func (a *App) RunPlain(ctx context.Context, out io.Writer) error {
@@ -418,7 +437,7 @@ func (a *App) RunPlain(ctx context.Context, out io.Writer) error {
 	return nil
 }
 
-func (a *App) runStepWithOutputVerification(ctx context.Context, step *pack.Step, out io.Writer) error {
+func (a *App) runStepWithOutputVerification(ctx context.Context, step *types.Step, out io.Writer) error {
 	retries := a.Config.OutputRetries
 	if retries < 0 {
 		retries = 0
@@ -431,46 +450,21 @@ func (a *App) runStepWithOutputVerification(ctx context.Context, step *pack.Step
 		if !a.Config.OutputVerify {
 			return nil
 		}
-		expectations := pack.StepOutputExpectations(step)
-		if len(expectations) == 0 {
+		outputFailures := pack.VerifyStepOutputs(step, a.Config.OutputRequireHeadings, a.Config.OutputChunkMode)
+		if len(outputFailures) == 0 {
 			return nil
 		}
 		var failures []string
-		for path, required := range expectations {
-			ok, missing, err := pack.ValidateOutputFile(path, required)
-			if err != nil {
-				return fmt.Errorf("output verification failed for step %s: %w", step.ID, err)
+		for _, failure := range outputFailures {
+			if failure.Error != "" {
+				failures = append(failures, fmt.Sprintf("%s error: %s", failure.Path, failure.Error))
+				continue
 			}
-			if !ok {
-				failures = append(failures, fmt.Sprintf("%s missing: %s", path, strings.Join(missing, ", ")))
+			if len(failure.MissingTokens) > 0 {
+				failures = append(failures, fmt.Sprintf("%s missing: %s", failure.Path, strings.Join(failure.MissingTokens, ", ")))
 			}
 		}
 		if len(failures) == 0 {
-			return nil
-		}
-		if attempt == retries {
-			return fmt.Errorf(
-				"output verification failed for step %s: %s",
-				step.ID,
-				strings.Join(failures, "; "),
-			)
-		}
-		fmt.Fprintf(out, "⚠ output verification failed for step %s (%s); re-running (%d/%d)...\n",
-			step.ID, strings.Join(failures, "; "), attempt+1, retries)
-	}
-	return nil
-}
-
-func (a *App) recordWarnings() {
-	if a.State == nil || a.Runner == nil {
-		return
-	}
-	warnings := a.Runner.DrainWarnings()
-	if len(warnings) == 0 {
-		return
-	}
-	for _, w := range warnings {
-		a.State.Warnings = append(a.State.Warnings, state.Warning{
 [TRUNCATED]
 ```
 
@@ -695,6 +689,7 @@ var validateCmd = &cobra.Command{
 	Short: "Validate an oracle pack",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		out := cmd.OutOrStdout()
 		data, err := os.ReadFile(args[0])
 		if err != nil {
 			return err
@@ -703,12 +698,28 @@ var validateCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		if err := p.Validate(); err != nil {
+		if err := pack.Validate(p); err != nil {
 			return err
+		}
+		findings, warning, err := pack.CheckPackScripts(p)
+		if err != nil {
+			return err
+		}
+		if warning != "" {
+			fmt.Fprintf(out, "Warning: %s\n", warning)
+		}
+		if len(findings) > 0 {
+			for _, finding := range findings {
+				if finding.StepID != "" {
+					fmt.Fprintf(out, "Step %s line %d: %s\n", finding.StepID, finding.Line, finding.Message)
+				} else {
+					fmt.Fprintf(out, "Line %d: %s\n", finding.Line, finding.Message)
+				}
+			}
+			return fmt.Errorf("bash syntax validation failed")
 		}
 		cv := validate.CompositeValidator{}
 		results := cv.ValidatePack(p)
-		out := cmd.OutOrStdout()
 		fmt.Fprintf(out, "Validated %d steps\n", len(results))
 		for _, r := range results {
 			fmt.Fprintf(out, "Step %s [%s] %s", r.StepID, r.ToolKind.Name(), r.Status)
@@ -796,18 +807,22 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
 	"github.com/user/oraclepack/internal/app"
+	"github.com/user/oraclepack/internal/config"
+	"github.com/user/oraclepack/internal/pack"
 	"github.com/user/oraclepack/internal/tui"
 )
 
 var (
-	yes           bool
-	resume        bool
-	stopOnFail    bool
-	roiThreshold  float64
-	roiMode       string
-	runAll        bool
-	outputVerify  bool
-	outputRetries int
+	yes                   bool
+	resume                bool
+	stopOnFail            bool
+	roiThreshold          float64
+	roiMode               string
+	runAll                bool
+	outputVerify          bool
+	outputRetries         int
+	outputRequireHeadings bool
+	outputChunkMode       string
 )
 
 var runCmd = &cobra.Command{
@@ -822,18 +837,37 @@ var runCmd = &cobra.Command{
 		statePath := base + ".state.json"
 		reportPath := base + ".report.json"
 
+		resolvedVerify, err := config.ResolveOutputVerify(outputVerify, cmd.Flags().Changed("output-verify"))
+		if err != nil {
+			return err
+		}
+		resolvedRetries, err := config.ResolveOutputRetries(outputRetries, cmd.Flags().Changed("output-retries"))
+		if err != nil {
+			return err
+		}
+		resolvedRequireHeadings, err := config.ResolveOutputRequireHeadings(outputRequireHeadings, cmd.Flags().Changed("output-require-headings"))
+		if err != nil {
+			return err
+		}
+		resolvedChunkMode, err := config.ResolveOutputChunkMode(outputChunkMode, cmd.Flags().Changed("output-chunk-mode"))
+		if err != nil {
+			return err
+		}
+
 		cfg := app.Config{
-			PackPath:      packPath,
-			StatePath:     statePath,
-			ReportPath:    reportPath,
-			Resume:        resume,
-			StopOnFail:    stopOnFail,
-			WorkDir:       ".",
-			OutDir:        outDir,
-			ROIThreshold:  roiThreshold,
-			ROIMode:       roiMode,
-			OutputVerify:  outputVerify,
-			OutputRetries: outputRetries,
+			PackPath:              packPath,
+			StatePath:             statePath,
+			ReportPath:            reportPath,
+			Resume:                resume,
+			StopOnFail:            stopOnFail,
+			WorkDir:               ".",
+			OutDir:                outDir,
+			ROIThreshold:          roiThreshold,
+			ROIMode:               roiMode,
+			OutputVerify:          resolvedVerify,
+			OutputRetries:         resolvedRetries,
+			OutputRequireHeadings: resolvedRequireHeadings,
+			OutputChunkMode:       resolvedChunkMode,
 		}
 
 		a := app.New(cfg)
@@ -844,6 +878,24 @@ var runCmd = &cobra.Command{
 
 		if err := a.LoadState(); err != nil {
 			return err
+		}
+
+		findings, warning, err := pack.CheckPackScripts(a.Pack)
+		if err != nil {
+			return err
+		}
+		if warning != "" {
+			fmt.Fprintf(cmd.OutOrStdout(), "Warning: %s\n", warning)
+		}
+		if len(findings) > 0 {
+			for _, finding := range findings {
+				if finding.StepID != "" {
+					fmt.Fprintf(cmd.OutOrStdout(), "Step %s line %d: %s\n", finding.StepID, finding.Line, finding.Message)
+				} else {
+					fmt.Fprintf(cmd.OutOrStdout(), "Line %d: %s\n", finding.Line, finding.Message)
+				}
+			}
+			return fmt.Errorf("bash syntax validation failed")
 		}
 
 		if noTUI {
@@ -859,9 +911,9 @@ var runCmd = &cobra.Command{
 			return nil
 		}
 
-		m := tui.NewModel(a.Pack, a.Runner, a.State, cfg.StatePath, cfg.ROIThreshold, cfg.ROIMode, runAll, cfg.OutputVerify, cfg.OutputRetries)
+		m := tui.NewModel(a.Pack, a.Runner, a.State, cfg.StatePath, cfg.ROIThreshold, cfg.ROIMode, runAll, cfg.OutputVerify, cfg.OutputRetries, cfg.OutputRequireHeadings, cfg.OutputChunkMode)
 		p := tea.NewProgram(m, tea.WithAltScreen())
-		_, err := p.Run()
+		_, err = p.Run()
 		return err
 	},
 }
@@ -873,9 +925,205 @@ func init() {
 	runCmd.Flags().Float64Var(&roiThreshold, "roi-threshold", 0.0, "Filter steps by ROI threshold")
 	runCmd.Flags().StringVar(&roiMode, "roi-mode", "over", "ROI filter mode ('over' or 'under')")
 	runCmd.Flags().BoolVar(&runAll, "run-all", false, "Automatically run all steps sequentially on start")
-	runCmd.Flags().BoolVar(&outputVerify, "output-verify", true, "Verify --write-output files contain required answer sections")
-	runCmd.Flags().IntVar(&outputRetries, "output-retries", 1, "Retries for output verification failures")
-	rootCmd.AddCommand(runCmd)
+[TRUNCATED]
+```
+
+internal/cli/verify_outputs.go
+```
+package cli
+
+import (
+	"fmt"
+	"os"
+
+	"github.com/spf13/cobra"
+	"github.com/user/oraclepack/internal/config"
+	"github.com/user/oraclepack/internal/pack"
+)
+
+var (
+	verifyOutputsEnabled      bool
+	verifyOutputsRequireHeads bool
+	verifyOutputsChunkMode    string
+)
+
+var verifyOutputsCmd = &cobra.Command{
+	Use:   "verify-outputs [pack.md]",
+	Short: "Verify --write-output files without executing steps",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		out := cmd.OutOrStdout()
+		data, err := os.ReadFile(args[0])
+		if err != nil {
+			return err
+		}
+
+		p, err := pack.Parse(data)
+		if err != nil {
+			return err
+		}
+		if err := pack.Validate(p); err != nil {
+			return err
+		}
+
+		verifyEnabled, err := config.ResolveOutputVerify(verifyOutputsEnabled, cmd.Flags().Changed("output-verify"))
+		if err != nil {
+			return err
+		}
+		if !verifyEnabled {
+			fmt.Fprintln(out, "Output verification disabled (ORACLEPACK_OUTPUT_VERIFY=false).")
+			return nil
+		}
+		requireHeadings, err := config.ResolveOutputRequireHeadings(verifyOutputsRequireHeads, cmd.Flags().Changed("output-require-headings"))
+		if err != nil {
+			return err
+		}
+		chunkMode, err := config.ResolveOutputChunkMode(verifyOutputsChunkMode, cmd.Flags().Changed("output-chunk-mode"))
+		if err != nil {
+			return err
+		}
+
+		report := pack.VerifyReport{
+			TotalSteps: len(p.Steps),
+		}
+
+		for i := range p.Steps {
+			step := &p.Steps[i]
+			failures := pack.VerifyStepOutputs(step, requireHeadings, chunkMode)
+			if len(failures) == 0 {
+				continue
+			}
+			report.CheckedSteps++
+			for _, failure := range failures {
+				failure.StepID = step.ID
+				report.Failures = append(report.Failures, failure)
+			}
+		}
+
+		fmt.Fprint(out, pack.FormatVerifyReport(report))
+		if len(report.Failures) > 0 {
+			return fmt.Errorf("output verification failed")
+		}
+		return nil
+	},
+}
+
+func init() {
+	verifyOutputsCmd.Flags().BoolVar(&verifyOutputsEnabled, "output-verify", config.DefaultOutputVerify, "Verify --write-output files contain required answer sections")
+	verifyOutputsCmd.Flags().BoolVar(&verifyOutputsRequireHeads, "output-require-headings", config.DefaultOutputRequireHeadings, "Require strict output headings when verifying outputs")
+	verifyOutputsCmd.Flags().StringVar(&verifyOutputsChunkMode, "output-chunk-mode", config.DefaultOutputChunkMode, "Output chunk verification mode: auto|single|multi")
+	rootCmd.AddCommand(verifyOutputsCmd)
+}
+```
+
+internal/config/defaults.go
+```
+package config
+
+const (
+	EnvOutputVerify          = "ORACLEPACK_OUTPUT_VERIFY"
+	EnvOutputRetries         = "ORACLEPACK_OUTPUT_RETRIES"
+	EnvOutputRequireHeadings = "ORACLEPACK_OUTPUT_REQUIRE_HEADINGS"
+	EnvOutputChunkMode       = "ORACLEPACK_OUTPUT_CHUNK_MODE"
+)
+
+const (
+	DefaultOutputVerify          = false
+	DefaultOutputRetries         = 0
+	DefaultOutputRequireHeadings = false
+	DefaultOutputChunkMode       = "auto"
+)
+```
+
+internal/config/resolve.go
+```
+package config
+
+import (
+	"fmt"
+	"os"
+	"strconv"
+	"strings"
+)
+
+// ResolveOutputVerify applies precedence: CLI flag > env var > default.
+func ResolveOutputVerify(flagValue bool, flagSet bool) (bool, error) {
+	if flagSet {
+		return flagValue, nil
+	}
+	if val, ok := os.LookupEnv(EnvOutputVerify); ok {
+		parsed, err := parseBoolish(val)
+		if err != nil {
+			return DefaultOutputVerify, fmt.Errorf("invalid %s: %w", EnvOutputVerify, err)
+		}
+		return parsed, nil
+	}
+	return DefaultOutputVerify, nil
+}
+
+// ResolveOutputRetries applies precedence: CLI flag > env var > default.
+func ResolveOutputRetries(flagValue int, flagSet bool) (int, error) {
+	if flagSet {
+		return flagValue, nil
+	}
+	if val, ok := os.LookupEnv(EnvOutputRetries); ok {
+		parsed, err := strconv.Atoi(strings.TrimSpace(val))
+		if err != nil {
+			return DefaultOutputRetries, fmt.Errorf("invalid %s: %w", EnvOutputRetries, err)
+		}
+		return parsed, nil
+	}
+	return DefaultOutputRetries, nil
+}
+
+// ResolveOutputRequireHeadings applies precedence: CLI flag > env var > default.
+func ResolveOutputRequireHeadings(flagValue bool, flagSet bool) (bool, error) {
+	if flagSet {
+		return flagValue, nil
+	}
+	if val, ok := os.LookupEnv(EnvOutputRequireHeadings); ok {
+		parsed, err := parseBoolish(val)
+		if err != nil {
+			return DefaultOutputRequireHeadings, fmt.Errorf("invalid %s: %w", EnvOutputRequireHeadings, err)
+		}
+		return parsed, nil
+	}
+	return DefaultOutputRequireHeadings, nil
+}
+
+// ResolveOutputChunkMode applies precedence: CLI flag > env var > default.
+func ResolveOutputChunkMode(flagValue string, flagSet bool) (string, error) {
+	if flagSet {
+		return normalizeChunkMode(flagValue)
+	}
+	if val, ok := os.LookupEnv(EnvOutputChunkMode); ok {
+		return normalizeChunkMode(val)
+	}
+	return normalizeChunkMode(DefaultOutputChunkMode)
+}
+
+func parseBoolish(raw string) (bool, error) {
+	v := strings.ToLower(strings.TrimSpace(raw))
+	switch v {
+	case "1", "true", "yes", "on":
+		return true, nil
+	case "0", "false", "no", "off":
+		return false, nil
+	default:
+		return false, fmt.Errorf("expected boolean (true/false, 1/0, on/off), got %q", raw)
+	}
+}
+
+func normalizeChunkMode(raw string) (string, error) {
+	v := strings.ToLower(strings.TrimSpace(raw))
+	switch v {
+	case "auto", "single", "multi":
+		return v, nil
+	case "":
+		return DefaultOutputChunkMode, nil
+	default:
+		return "", fmt.Errorf("invalid %s: expected auto|single|multi, got %q", EnvOutputChunkMode, raw)
+	}
 }
 ```
 
@@ -1387,7 +1635,7 @@ import (
 	"strings"
 
 	"github.com/user/oraclepack/internal/overrides"
-	"github.com/user/oraclepack/internal/pack"
+	"github.com/user/oraclepack/internal/types"
 )
 
 // ValidationError captures a failed oracle validation for a step.
@@ -1400,7 +1648,7 @@ type ValidationError struct {
 // ValidateOverrides runs oracle --dry-run summary for targeted steps.
 func ValidateOverrides(
 	ctx context.Context,
-	steps []pack.Step,
+	steps []types.Step,
 	over *overrides.RuntimeOverrides,
 	baseline []string,
 	opts RunnerOptions,
@@ -1505,14 +1753,14 @@ import (
 	"testing"
 
 	"github.com/user/oraclepack/internal/overrides"
-	"github.com/user/oraclepack/internal/pack"
+	"github.com/user/oraclepack/internal/types"
 )
 
 func TestValidateOverrides_Success(t *testing.T) {
 	dir := t.TempDir()
 	writeOracleStub(t, dir)
 
-	steps := []pack.Step{
+	steps := []types.Step{
 		{ID: "01", Code: "oracle --ok"},
 	}
 	over := &overrides.RuntimeOverrides{
@@ -1538,7 +1786,7 @@ func TestValidateOverrides_Error(t *testing.T) {
 	dir := t.TempDir()
 	writeOracleStub(t, dir)
 
-	steps := []pack.Step{
+	steps := []types.Step{
 		{ID: "01", Code: "oracle --bad"},
 	}
 	over := &overrides.RuntimeOverrides{
@@ -1606,7 +1854,7 @@ import (
 
 	"github.com/user/oraclepack/internal/errors"
 	"github.com/user/oraclepack/internal/overrides"
-	"github.com/user/oraclepack/internal/pack"
+	"github.com/user/oraclepack/internal/types"
 )
 
 // Runner handles the execution of shell scripts.
@@ -1648,14 +1896,14 @@ func NewRunner(opts RunnerOptions) *Runner {
 }
 
 // RunPrelude executes the prelude code.
-func (r *Runner) RunPrelude(ctx context.Context, p *pack.Prelude, logWriter io.Writer) error {
+func (r *Runner) RunPrelude(ctx context.Context, p *types.Prelude, logWriter io.Writer) error {
 	script, warnings := SanitizeScript(p.Code, "prelude", "")
 	r.recordWarnings(warnings, logWriter)
 	return r.run(ctx, script, logWriter)
 }
 
 // RunStep executes a single step's code.
-func (r *Runner) RunStep(ctx context.Context, s *pack.Step, logWriter io.Writer) error {
+func (r *Runner) RunStep(ctx context.Context, s *types.Step, logWriter io.Writer) error {
 	flags := ApplyChatGPTURL(r.OracleFlags, r.ChatGPTURL)
 	if r.Overrides != nil {
 		flags = r.Overrides.EffectiveFlags(s.ID, r.OracleFlags)
@@ -1729,12 +1977,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/user/oraclepack/internal/pack"
+	"github.com/user/oraclepack/internal/types"
 )
 
 func TestRunner_RunStep(t *testing.T) {
 	r := NewRunner(RunnerOptions{})
-	
+
 	var lines []string
 	lw := &LineWriter{
 		Callback: func(line string) {
@@ -1742,7 +1990,7 @@ func TestRunner_RunStep(t *testing.T) {
 		},
 	}
 
-	step := &pack.Step{
+	step := &types.Step{
 		Code: "echo 'hello world'",
 	}
 
@@ -1767,11 +2015,11 @@ func TestRunner_RunStep(t *testing.T) {
 
 func TestRunner_ContextCancellation(t *testing.T) {
 	r := NewRunner(RunnerOptions{})
-	
+
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // Cancel immediately
 
-	step := &pack.Step{
+	step := &types.Step{
 		Code: "sleep 10",
 	}
 
@@ -2412,44 +2660,424 @@ type RuntimeOverrides struct {
 }
 ```
 
-internal/pack/output_check.go
+internal/pack/bash_syntax_validator.go
 ```
 package pack
 
 import (
-	"os"
 	"regexp"
 	"strings"
+
+	"github.com/user/oraclepack/internal/types"
 )
 
-var writeOutputPathRegex = regexp.MustCompile(`(?m)--write-output\s+"([^"]+)"`)
+var orphanFlagRegex = regexp.MustCompile(`^\s*(?:-p|--prompt)(?:\s+.+)?$`)
+
+// FindOrphanedFlags detects lines that contain only flags like -p/--prompt
+// without being part of a continued command.
+func FindOrphanedFlags(script string) []types.SyntaxFinding {
+	if script == "" {
+		return nil
+	}
+
+	lines := strings.Split(script, "\n")
+	var findings []types.SyntaxFinding
+	for i, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "" || strings.HasPrefix(trimmed, "#") {
+			continue
+		}
+		if !orphanFlagRegex.MatchString(line) {
+			continue
+		}
+
+		if i > 0 && lineContinues(lines[i-1]) {
+			continue
+		}
+
+		findings = append(findings, types.SyntaxFinding{
+			Line:    i + 1,
+			Token:   strings.Fields(trimmed)[0],
+			Message: "Orphaned flag without a preceding command or line continuation",
+		})
+	}
+	return findings
+}
+
+func lineContinues(line string) bool {
+	trimmed := strings.TrimRight(line, " \t")
+	return strings.HasSuffix(trimmed, "\\")
+}
+
+// CheckPackScripts validates prelude and step scripts for orphaned flags and bash syntax.
+func CheckPackScripts(p *types.Pack) ([]types.SyntaxFinding, string, error) {
+	if p == nil {
+		return nil, "", nil
+	}
+
+	var findings []types.SyntaxFinding
+	var warnings []string
+
+	// Prelude orphaned flags
+	for _, finding := range FindOrphanedFlags(p.Prelude.Code) {
+		findings = append(findings, finding)
+	}
+
+	// Step orphaned flags and bash -n checks
+	for _, step := range p.Steps {
+		for _, finding := range FindOrphanedFlags(step.Code) {
+			finding.StepID = step.ID
+			findings = append(findings, finding)
+		}
+
+		syntaxFindings, warning, err := CheckBashSyntax(step.Code)
+		if err != nil {
+			return findings, warning, err
+		}
+		if warning != "" {
+			warnings = append(warnings, warning)
+		}
+		for _, finding := range syntaxFindings {
+			finding.StepID = step.ID
+			findings = append(findings, finding)
+		}
+	}
+
+	// Prelude bash -n check
+	preludeFindings, warning, err := CheckBashSyntax(p.Prelude.Code)
+	if err != nil {
+		return findings, warning, err
+	}
+	if warning != "" {
+		warnings = append(warnings, warning)
+	}
+	findings = append(findings, preludeFindings...)
+
+	return findings, strings.Join(uniqueStrings(warnings), "; "), nil
+}
+
+func uniqueStrings(values []string) []string {
+	if len(values) == 0 {
+		return nil
+	}
+	seen := make(map[string]bool, len(values))
+	var out []string
+	for _, value := range values {
+		if value == "" || seen[value] {
+			continue
+		}
+		seen[value] = true
+		out = append(out, value)
+	}
+	return out
+}
+```
+
+internal/pack/bash_syntax_validator_test.go
+```
+package pack
+
+import (
+	"os/exec"
+	"testing"
+
+	"github.com/user/oraclepack/internal/types"
+)
+
+func TestFindOrphanedFlags(t *testing.T) {
+	script := "-p \"hello\"\n"
+	findings := FindOrphanedFlags(script)
+	if len(findings) != 1 {
+		t.Fatalf("expected 1 finding, got %d", len(findings))
+	}
+	if findings[0].Line != 1 {
+		t.Fatalf("expected line 1, got %d", findings[0].Line)
+	}
+
+	script = "oracle \\\n  -p \"ok\"\n"
+	findings = FindOrphanedFlags(script)
+	if len(findings) != 0 {
+		t.Fatalf("expected no findings for continued line, got %d", len(findings))
+	}
+}
+
+func TestCheckBashSyntax(t *testing.T) {
+	if _, err := exec.LookPath("bash"); err != nil {
+		t.Skip("bash not available")
+	}
+
+	script := "if true\n  echo hello\n"
+	findings, warning, err := CheckBashSyntax(script)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if warning != "" {
+		t.Fatalf("expected no warning, got %s", warning)
+	}
+	if len(findings) == 0 {
+		t.Fatal("expected syntax findings")
+	}
+	if findings[0].Line == 0 {
+		t.Fatal("expected line number in syntax finding")
+	}
+}
+
+func TestCheckPackScriptsReportsStepID(t *testing.T) {
+	p := &types.Pack{
+		Steps: []types.Step{
+			{ID: "01", Code: "-p \"oops\""},
+		},
+	}
+	findings, _, err := CheckPackScripts(p)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(findings) != 1 {
+		t.Fatalf("expected 1 finding, got %d", len(findings))
+	}
+	if findings[0].StepID != "01" {
+		t.Fatalf("expected step ID 01, got %q", findings[0].StepID)
+	}
+}
+```
+
+internal/pack/bash_tooling_checks.go
+```
+package pack
+
+import (
+	"bytes"
+	"os/exec"
+	"regexp"
+	"strconv"
+	"strings"
+
+	"github.com/user/oraclepack/internal/types"
+)
+
+var bashLineRegex = regexp.MustCompile(`line\s+(\d+)`)
+
+// CheckBashSyntax runs "bash -n" on the script and returns syntax findings.
+// If bash is not found, it returns a warning and no findings.
+func CheckBashSyntax(script string) ([]types.SyntaxFinding, string, error) {
+	if strings.TrimSpace(script) == "" {
+		return nil, "", nil
+	}
+
+	if _, err := exec.LookPath("bash"); err != nil {
+		return nil, "bash not found on PATH; skipping bash -n syntax check", nil
+	}
+
+	cmd := exec.Command("bash", "-n")
+	cmd.Stdin = strings.NewReader(script)
+
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+	cmd.Stdout = &stderr
+
+	if err := cmd.Run(); err != nil {
+		msg := strings.TrimSpace(stderr.String())
+		line := 0
+		if match := bashLineRegex.FindStringSubmatch(msg); len(match) > 1 {
+			if parsed, parseErr := strconv.Atoi(match[1]); parseErr == nil {
+				line = parsed
+			}
+		}
+		return []types.SyntaxFinding{
+			{
+				Line:    line,
+				Message: msg,
+			},
+		}, "", nil
+	}
+
+	return nil, "", nil
+}
+```
+
+internal/pack/metadata.go
+```
+package pack
+
+import (
+	"fmt"
+
+	"github.com/user/oraclepack/internal/errors"
+	"github.com/user/oraclepack/internal/types"
+)
+
+// DeriveMetadata extracts configuration from the prelude.
+func DeriveMetadata(p *types.Pack) {
+	if p == nil {
+		return
+	}
+	outDirMatch := outDirRegex.FindStringSubmatch(p.Prelude.Code)
+	if len(outDirMatch) > 1 {
+		p.OutDir = outDirMatch[1]
+	}
+
+	if writeOutputRegex.MatchString(p.Prelude.Code) {
+		p.WriteOutput = true
+	}
+}
+
+// Validate checks if the pack follows all rules.
+func Validate(p *types.Pack) error {
+	if p == nil {
+		return fmt.Errorf("%w: pack is nil", errors.ErrInvalidPack)
+	}
+	if len(p.Steps) == 0 {
+		return fmt.Errorf("%w: at least one step is required", errors.ErrInvalidPack)
+	}
+	if len(p.Steps) != 20 {
+		return fmt.Errorf("%w: expected exactly 20 steps, got %d", errors.ErrInvalidPack, len(p.Steps))
+	}
+
+	seen := make(map[int]bool)
+	for i, step := range p.Steps {
+		if step.Number <= 0 {
+			return fmt.Errorf("%w: invalid step number %d", errors.ErrInvalidPack, step.Number)
+		}
+		if seen[step.Number] {
+			return fmt.Errorf("%w: duplicate step number %d", errors.ErrInvalidPack, step.Number)
+		}
+		seen[step.Number] = true
+
+		// Ensure sequential starting from 1
+		if step.Number != i+1 {
+			return fmt.Errorf("%w: steps must be sequential starting from 1 (expected %d, got %d)", errors.ErrInvalidPack, i+1, step.Number)
+		}
+	}
+
+	return nil
+}
+```
+
+internal/pack/output_expectations.go
+```
+package pack
+
+import (
+	"regexp"
+	"strings"
+
+	"github.com/user/oraclepack/internal/types"
+)
+
+var (
+	writeOutputPathRegex = regexp.MustCompile(`(?m)--write-output\s+["']?([^"'\s]+)["']?`)
+	answerFormatRegex    = regexp.MustCompile(`(?i)answer\s+format`)
+	directOnlyRegex      = regexp.MustCompile(`(?i)return\s+only[:\s]*direct\s+answer`)
+)
+
+// DetectOutputContract determines the expected response contract for a step.
+func DetectOutputContract(step types.Step) types.OutputContract {
+	if step.Code == "" {
+		return types.OutputContractUnknown
+	}
+
+	hasAnswerFormat := answerFormatRegex.MatchString(step.Code)
+	if !hasAnswerFormat {
+		return types.OutputContractUnknown
+	}
+
+	if directOnlyRegex.MatchString(step.Code) {
+		return types.OutputContractDirectAnswerOnly
+	}
+
+	return types.OutputContractAllSections
+}
 
 // StepOutputExpectations returns a map of output paths to required tokens.
 // If no validation is needed, it returns nil.
-func StepOutputExpectations(step *Step) map[string][]string {
+func StepOutputExpectations(step *types.Step) map[string][]string {
+	if step == nil {
+		return nil
+	}
 	paths := ExtractWriteOutputPaths(step.Code)
 	if len(paths) == 0 {
 		return nil
 	}
-	if len(paths) == 1 {
-		tokens := expectedAnswerTokens(step.Code)
-		if len(tokens) == 0 {
+
+	if len(paths) > 1 {
+		out := map[string][]string{}
+		for _, path := range paths {
+			switch {
+			case strings.Contains(path, "-direct-answer"):
+				out[path] = []string{"### Direct answer"}
+			case strings.Contains(path, "-risks-unknowns"):
+				out[path] = []string{"### Risks and unknowns"}
+			case strings.Contains(path, "-next-experiment"):
+				out[path] = []string{"### Next experiment"}
+			case strings.Contains(path, "-missing-evidence"):
+				out[path] = []string{"### Missing evidence"}
+			}
+		}
+		if len(out) == 0 {
 			return nil
 		}
-		return map[string][]string{paths[0]: tokens}
+		return out
 	}
 
+	switch DetectOutputContract(*step) {
+	case types.OutputContractDirectAnswerOnly:
+		return map[string][]string{paths[0]: []string{"### Direct answer"}}
+	case types.OutputContractAllSections:
+		return map[string][]string{paths[0]: {
+			"### Direct answer",
+			"### Risks and unknowns",
+			"### Next experiment",
+			"### Missing evidence",
+		}}
+	default:
+		return nil
+	}
+}
+
+// StepOutputExpectationsWithMode returns expectations honoring chunk mode.
+// chunkMode: auto (default), single (treat as single output), multi (force suffix mapping when multiple outputs).
+func StepOutputExpectationsWithMode(step *types.Step, chunkMode string) map[string][]string {
+	if step == nil {
+		return nil
+	}
+	paths := ExtractWriteOutputPaths(step.Code)
+	if len(paths) == 0 {
+		return nil
+	}
+	mode := strings.ToLower(strings.TrimSpace(chunkMode))
+	if mode == "" {
+		mode = "auto"
+	}
+
+	switch mode {
+	case "single":
+		// Always treat as a single output (use first path).
+		return expectationsForSingle(step, paths[0])
+	case "multi":
+		if len(paths) > 1 {
+			return expectationsForSuffixes(paths)
+		}
+		return expectationsForSingle(step, paths[0])
+	default: // auto
+		if len(paths) > 1 {
+			return expectationsForSuffixes(paths)
+		}
+		return expectationsForSingle(step, paths[0])
+	}
+}
+
+func expectationsForSuffixes(paths []string) map[string][]string {
 	out := map[string][]string{}
 	for _, path := range paths {
 		switch {
 		case strings.Contains(path, "-direct-answer"):
-			out[path] = []string{"direct answer"}
+			out[path] = []string{"### Direct answer"}
 		case strings.Contains(path, "-risks-unknowns"):
-			out[path] = []string{"risks unknowns"}
+			out[path] = []string{"### Risks and unknowns"}
 		case strings.Contains(path, "-next-experiment"):
-			out[path] = []string{"next smallest concrete experiment"}
+			out[path] = []string{"### Next experiment"}
 		case strings.Contains(path, "-missing-evidence"):
-			out[path] = []string{"missing file path pattern"}
+			out[path] = []string{"### Missing evidence"}
 		}
 	}
 	if len(out) == 0 {
@@ -2458,59 +3086,301 @@ func StepOutputExpectations(step *Step) map[string][]string {
 	return out
 }
 
+func expectationsForSingle(step *types.Step, path string) map[string][]string {
+	switch DetectOutputContract(*step) {
+	case types.OutputContractDirectAnswerOnly:
+		return map[string][]string{path: []string{"### Direct answer"}}
+	case types.OutputContractAllSections:
+		return map[string][]string{path: {
+			"### Direct answer",
+			"### Risks and unknowns",
+			"### Next experiment",
+			"### Missing evidence",
+		}}
+	default:
+		return nil
+	}
+}
+
 // ExtractWriteOutputPaths returns all --write-output paths found in the step code.
 func ExtractWriteOutputPaths(code string) []string {
 	matches := writeOutputPathRegex.FindAllStringSubmatch(code, -1)
-	if len(matches) == 0 {
-		return nil
+[TRUNCATED]
+```
+
+internal/pack/output_expectations_test.go
+```
+package pack
+
+import (
+	"reflect"
+	"testing"
+
+	"github.com/user/oraclepack/internal/types"
+)
+
+func TestDetectOutputContract(t *testing.T) {
+	step := types.Step{
+		Code: "Answer format:\nReturn only: Direct answer\n",
 	}
-	paths := make([]string, 0, len(matches))
-	for _, m := range matches {
-		if len(m) >= 2 {
-			paths = append(paths, m[1])
-		}
+	if got := DetectOutputContract(step); got != types.OutputContractDirectAnswerOnly {
+		t.Fatalf("expected direct-answer-only, got %q", got)
 	}
-	return paths
+
+	step = types.Step{
+		Code: "Answer format:\n### Direct answer\n### Risks and unknowns\n",
+	}
+	if got := DetectOutputContract(step); got != types.OutputContractAllSections {
+		t.Fatalf("expected all-sections, got %q", got)
+	}
+
+	step = types.Step{Code: "no format here"}
+	if got := DetectOutputContract(step); got != types.OutputContractUnknown {
+		t.Fatalf("expected unknown, got %q", got)
+	}
 }
 
+func TestStepOutputExpectations_SingleOutput(t *testing.T) {
+	step := &types.Step{
+		Code: `oracle -p "x" --write-output "out.txt"
+Answer format:
+Return only: Direct answer`,
+	}
+	expectations := StepOutputExpectations(step)
+	want := map[string][]string{"out.txt": []string{"### Direct answer"}}
+	if !reflect.DeepEqual(expectations, want) {
+		t.Fatalf("unexpected expectations: %#v", expectations)
+	}
+
+	step = &types.Step{
+		Code: `oracle -p "x" --write-output "out.txt"
+Answer format:
+### Direct answer
+### Risks and unknowns
+### Next experiment
+### Missing evidence`,
+	}
+	expectations = StepOutputExpectations(step)
+	want = map[string][]string{"out.txt": []string{
+		"### Direct answer",
+		"### Risks and unknowns",
+		"### Next experiment",
+		"### Missing evidence",
+	}}
+	if !reflect.DeepEqual(expectations, want) {
+		t.Fatalf("unexpected expectations: %#v", expectations)
+	}
+}
+
+func TestStepOutputExpectations_MultiOutput(t *testing.T) {
+	step := &types.Step{
+		Code: `oracle --write-output "out-direct-answer.md" \
+  --write-output 'out-risks-unknowns.md' \
+  --write-output out-next-experiment.md \
+  --write-output out-missing-evidence.md`,
+	}
+	expectations := StepOutputExpectations(step)
+	if len(expectations) != 4 {
+		t.Fatalf("expected 4 expectations, got %d", len(expectations))
+	}
+	if got := expectations["out-direct-answer.md"]; len(got) != 1 || got[0] != "### Direct answer" {
+		t.Fatalf("unexpected direct-answer tokens: %#v", got)
+	}
+	if got := expectations["out-risks-unknowns.md"]; len(got) != 1 || got[0] != "### Risks and unknowns" {
+		t.Fatalf("unexpected risks-unknowns tokens: %#v", got)
+	}
+	if got := expectations["out-next-experiment.md"]; len(got) != 1 || got[0] != "### Next experiment" {
+		t.Fatalf("unexpected next-experiment tokens: %#v", got)
+	}
+	if got := expectations["out-missing-evidence.md"]; len(got) != 1 || got[0] != "### Missing evidence" {
+		t.Fatalf("unexpected missing-evidence tokens: %#v", got)
+	}
+}
+```
+
+internal/pack/output_validator.go
+```
+package pack
+
+import (
+	"fmt"
+	"os"
+	"regexp"
+	"strings"
+
+	"github.com/user/oraclepack/internal/types"
+)
+
 // ValidateOutputFile checks whether the output file contains the required answer sections.
-// It returns ok=false with missing tokens when validation fails.
-func ValidateOutputFile(path string, requiredTokens []string) (bool, []string, error) {
+// It returns ok=false with a populated OutputFailure when validation fails.
+func ValidateOutputFile(path string, requiredTokens []string) (bool, types.OutputFailure) {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return false, nil, err
+		return false, types.OutputFailure{
+			Path:  path,
+			Error: err.Error(),
+		}
 	}
-	normalized := normalizeText(string(data))
+
+	content := string(data)
 	var missing []string
 	for _, tok := range requiredTokens {
-		if !strings.Contains(normalized, tok) {
+		if !containsToken(content, tok) {
 			missing = append(missing, tok)
 		}
 	}
+
 	if len(missing) > 0 {
-		return false, missing, nil
+		return false, types.OutputFailure{
+			Path:          path,
+			MissingTokens: missing,
+		}
 	}
-	return true, nil, nil
+
+	return true, types.OutputFailure{}
 }
 
-func expectedAnswerTokens(code string) []string {
-	lower := strings.ToLower(code)
-	if !strings.Contains(lower, "answer format") {
+func containsToken(content, token string) bool {
+	if strings.Contains(content, token) {
+		return true
+	}
+
+	heading := strings.TrimSpace(strings.TrimPrefix(token, "###"))
+	if heading == token {
+		return false
+	}
+
+	alts := []string{heading}
+	switch strings.ToLower(heading) {
+	case "direct answer":
+		alts = append(alts, "answer")
+	case "risks and unknowns":
+		alts = append(alts, "risks/unknowns", "risks & unknowns")
+	case "next experiment":
+		alts = append(alts, "next smallest concrete experiment")
+	case "missing evidence":
+		alts = append(alts, "if evidence is insufficient")
+	}
+
+	for _, alt := range alts {
+		if alt == "" {
+			continue
+		}
+		pat := `(?im)^\s*#{0,3}\s*` + regexp.QuoteMeta(alt) + `\b`
+		if regexp.MustCompile(pat).MatchString(content) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// VerifyStepOutputs validates output files for a step. If requireHeadings is false,
+// it only checks that output files exist and are non-empty.
+func VerifyStepOutputs(step *types.Step, requireHeadings bool, chunkMode string) []types.OutputFailure {
+	if step == nil {
 		return nil
 	}
-	return []string{
-		"direct answer",
-		"risks unknowns",
-		"next smallest concrete experiment",
-		"if evidence is insufficient",
+	paths := ExtractWriteOutputPaths(step.Code)
+	if len(paths) == 0 {
+		return nil
 	}
+
+	if !requireHeadings {
+		paths = selectChunkPaths(paths, chunkMode)
+		var failures []types.OutputFailure
+		for _, path := range paths {
+			info, err := os.Stat(path)
+			if err != nil {
+				failures = append(failures, types.OutputFailure{
+					Path:  path,
+					Error: err.Error(),
+				})
+				continue
+			}
+			if info.Size() == 0 {
+				failures = append(failures, types.OutputFailure{
+					Path:  path,
+					Error: fmt.Sprintf("output file is empty: %s", path),
+				})
+			}
+		}
+		return failures
+	}
+
+	expectations := StepOutputExpectationsWithMode(step, chunkMode)
+	if len(expectations) == 0 {
+		return nil
+	}
+	var failures []types.OutputFailure
+	for path, required := range expectations {
+		ok, failure := ValidateOutputFile(path, required)
+		if !ok {
+			failures = append(failures, failure)
+		}
+	}
+	return failures
 }
 
-func normalizeText(s string) string {
-	s = strings.ToLower(s)
-	s = regexp.MustCompile(`[^a-z0-9]+`).ReplaceAllString(s, " ")
-	s = strings.TrimSpace(s)
-	return s
+func selectChunkPaths(paths []string, chunkMode string) []string {
+	if len(paths) == 0 {
+		return paths
+	}
+	mode := strings.ToLower(strings.TrimSpace(chunkMode))
+	if mode == "" {
+		mode = "auto"
+	}
+	switch mode {
+	case "single":
+		return []string{paths[0]}
+	default:
+		return paths
+	}
+}
+```
+
+internal/pack/output_validator_test.go
+```
+package pack
+
+import (
+	"os"
+	"path/filepath"
+	"testing"
+
+	"github.com/user/oraclepack/internal/types"
+)
+
+func TestValidateOutputFile_RelaxedHeadings(t *testing.T) {
+	content := `Direct answer
+
+Risks/unknowns
+
+Next smallest concrete experiment
+
+If evidence is insufficient`
+
+	dir := t.TempDir()
+	path := filepath.Join(dir, "out.md")
+	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+		t.Fatalf("write output: %v", err)
+	}
+
+	ok, failure := ValidateOutputFile(path, []string{
+		"### Direct answer",
+		"### Risks and unknowns",
+		"### Next experiment",
+		"### Missing evidence",
+	})
+	if !ok {
+		t.Fatalf("expected relaxed headings to pass, failure: %#v", failure)
+	}
+
+	step := &types.Step{Code: `oracle --write-output "` + path + `"`}
+	failures := VerifyStepOutputs(step, true, "single")
+	if len(failures) != 0 {
+		t.Fatalf("expected no failures in single chunk mode, got %#v", failures)
+	}
 }
 ```
 
@@ -2526,30 +3396,31 @@ import (
 	"strings"
 
 	"github.com/user/oraclepack/internal/errors"
+	"github.com/user/oraclepack/internal/types"
 )
 
 var (
 	bashFenceRegex = regexp.MustCompile("(?s)```bash\n(.*?)\n```")
 	// Updated regex to support ")", " —", and " -" separators
-	stepHeaderRegex = regexp.MustCompile(`^#\s*(\d{2})(?:\)|[\s]+[—-])`)
-	roiRegex        = regexp.MustCompile(`ROI=(\d+(\.\d+)?)`)
-	impactRegex     = regexp.MustCompile(`^#\s*Impact:\s*(.+)$`)
-	outDirRegex    = regexp.MustCompile(`(?m)^out_dir=["']?([^"'\s]+)["']?`)
+	stepHeaderRegex  = regexp.MustCompile(`^#\s*(\d{2})(?:\)|[\s]+[—-])`)
+	roiRegex         = regexp.MustCompile(`ROI=(\d+(\.\d+)?)`)
+	impactRegex      = regexp.MustCompile(`^#\s*Impact:\s*(.+)$`)
+	outDirRegex      = regexp.MustCompile(`(?m)^out_dir=["']?([^"'\s]+)["']?`)
 	writeOutputRegex = regexp.MustCompile(`(?m)--write-output`)
 )
 
 // Parse reads a Markdown content and returns a Pack.
-func Parse(content []byte) (*Pack, error) {
+func Parse(content []byte) (*types.Pack, error) {
 	match := bashFenceRegex.FindSubmatch(content)
 	if match == nil || len(match) < 2 {
 		return nil, fmt.Errorf("%w: no bash code block found", errors.ErrInvalidPack)
 	}
 
 	bashCode := string(match[1])
-	pack := &Pack{}
-	
+	pack := &types.Pack{}
+
 	scanner := bufio.NewScanner(strings.NewReader(bashCode))
-	var currentStep *Step
+	var currentStep *types.Step
 	var preludeLines []string
 	var inSteps bool
 
@@ -2564,7 +3435,7 @@ func Parse(content []byte) (*Pack, error) {
 				pack.Steps = append(pack.Steps, *currentStep)
 			}
 			num, _ := strconv.Atoi(headerMatch[1])
-			
+
 			// Extract ROI if present
 			var roi float64
 			cleanedLine := line
@@ -2578,7 +3449,7 @@ func Parse(content []byte) (*Pack, error) {
 					// I'll assume OriginalLine is what is displayed, or I should add a Title field.
 					// Looking at Step struct: ID, Number, Code, OriginalLine.
 					// I'll remove it from OriginalLine for now or add a Title field.
-					// The existing TUI uses OriginalLine as description. 
+					// The existing TUI uses OriginalLine as description.
 					// Let's clean OriginalLine for display purposes or add a dedicated Title field.
 					// Adding a dedicated Title field seems cleaner but requires struct change.
 					// For now, I'll strip it from OriginalLine to match the prompt requirement "cleaner UI display".
@@ -2588,7 +3459,7 @@ func Parse(content []byte) (*Pack, error) {
 				}
 			}
 
-			currentStep = &Step{
+			currentStep = &types.Step{
 				ID:           headerMatch[1],
 				Number:       num,
 				OriginalLine: cleanedLine,
@@ -2610,44 +3481,30 @@ func Parse(content []byte) (*Pack, error) {
 	}
 
 	pack.Prelude.Code = strings.Join(preludeLines, "\n")
-	pack.DeriveMetadata()
+	DeriveMetadata(pack)
 
 	return pack, nil
 }
 
-// DeriveMetadata extracts configuration from the prelude.
-func (p *Pack) DeriveMetadata() {
-	outDirMatch := outDirRegex.FindStringSubmatch(p.Prelude.Code)
-	if len(outDirMatch) > 1 {
-		p.OutDir = outDirMatch[1]
+func applyStepMetadata(step *types.Step) {
+	if step == nil {
+		return
 	}
-
-	if writeOutputRegex.MatchString(p.Prelude.Code) {
-		p.WriteOutput = true
-	}
-}
-
-// Validate checks if the pack follows all rules.
-func (p *Pack) Validate() error {
-	if len(p.Steps) == 0 {
-		return fmt.Errorf("%w: at least one step is required", errors.ErrInvalidPack)
-	}
-	if len(p.Steps) != 20 {
-		return fmt.Errorf("%w: expected exactly 20 steps, got %d", errors.ErrInvalidPack, len(p.Steps))
-	}
-
-	seen := make(map[int]bool)
-	for i, step := range p.Steps {
-		if step.Number <= 0 {
-			return fmt.Errorf("%w: invalid step number %d", errors.ErrInvalidPack, step.Number)
+	lines := strings.Split(step.Code, "\n")
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "" || !strings.HasPrefix(trimmed, "#") {
+			continue
 		}
-		if seen[step.Number] {
-			return fmt.Errorf("%w: duplicate step number %d", errors.ErrInvalidPack, step.Number)
+		if step.ROI == 0 {
+			if strings.HasPrefix(trimmed, "# ROI:") {
+				val := strings.TrimSpace(strings.TrimPrefix(trimmed, "# ROI:"))
+				if parsed, err := strconv.ParseFloat(val, 64); err == nil {
+					step.ROI = parsed
+				}
+			}
 		}
-		seen[step.Number] = true
-
-		// Optional: Ensure sequential starting from 1
-		if step.Number != i+1 {
+		if step.Impact == "" {
 [TRUNCATED]
 ```
 
@@ -2659,6 +3516,8 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/user/oraclepack/internal/types"
 )
 
 func TestParse(t *testing.T) {
@@ -2696,7 +3555,7 @@ out_dir="dist"
 		t.Errorf("step 1 mismatch: %+v", p.Steps[0])
 	}
 
-	if err := p.Validate(); err != nil {
+	if err := Validate(p); err != nil {
 		t.Errorf("Validate failed: %v", err)
 	}
 }
@@ -2782,19 +3641,19 @@ func TestValidateErrors(t *testing.T) {
 	base := buildStepSlice(20)
 	tests := []struct {
 		name    string
-		pack    *Pack
+		pack    *types.Pack
 		wantErr string
 	}{
 		{
 			"no steps",
-			&Pack{},
+			&types.Pack{},
 			"at least one step is required",
 		},
 		{
 			"duplicate steps",
-			&Pack{
-				Steps: func() []Step {
-					steps := append([]Step(nil), base...)
+			&types.Pack{
+				Steps: func() []types.Step {
+					steps := append([]types.Step(nil), base...)
 					steps[1].Number = steps[0].Number
 					steps[1].ID = steps[0].ID
 					return steps
@@ -2804,8 +3663,8 @@ func TestValidateErrors(t *testing.T) {
 		},
 		{
 			"wrong step count",
-			&Pack{
-				Steps: []Step{
+			&types.Pack{
+				Steps: []types.Step{
 					{Number: 1, ID: "01"},
 				},
 			},
@@ -2813,63 +3672,54 @@ func TestValidateErrors(t *testing.T) {
 		},
 		{
 			"non-sequential",
-			&Pack{
-				Steps: func() []Step {
-					steps := append([]Step(nil), base...)
-					steps[1].Number = 3
-					steps[1].ID = "03"
-					return steps
-				}(),
-			},
-			"steps must be sequential starting from 1",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := tt.pack.Validate()
-			if err == nil {
-				t.Error("expected error, got nil")
-			} else if !contains(err.Error(), tt.wantErr) {
-				t.Errorf("expected error containing %q, got %q", tt.wantErr, err.Error())
-			}
-		})
-	}
-}
-
-func contains(s, substr string) bool {
-	return len(s) >= len(substr) && (s == substr || (len(substr) > 0 && (s[:len(substr)] == substr || contains(s[1:], substr))))
-}
-
+			&types.Pack{
+				Steps: func() []types.Step {
+					steps := append([]types.Step(nil), base...)
 [TRUNCATED]
 ```
 
-internal/pack/types.go
+internal/pack/verify_report.go
 ```
 package pack
 
-// Pack represents a parsed oracle pack.
-type Pack struct {
-	Prelude     Prelude
-	Steps       []Step
-	Source      string
-	OutDir      string
-	WriteOutput bool
+import (
+	"fmt"
+	"strings"
+
+	"github.com/user/oraclepack/internal/types"
+)
+
+// VerifyReport captures output verification results across a pack.
+type VerifyReport struct {
+	TotalSteps   int
+	CheckedSteps int
+	Failures     []types.OutputFailure
 }
 
-// Prelude contains the shell code that runs before any steps.
-type Prelude struct {
-	Code string
-}
+// FormatVerifyReport renders a human-readable report.
+func FormatVerifyReport(report VerifyReport) string {
+	var b strings.Builder
+	fmt.Fprintf(&b, "Verified outputs for %d/%d steps\n", report.CheckedSteps, report.TotalSteps)
+	if len(report.Failures) == 0 {
+		b.WriteString("All required output tokens were found.\n")
+		return b.String()
+	}
 
-// Step represents an individual executable step within the pack.
-type Step struct {
-	ID           string  // e.g., "01"
-	Number       int     // e.g., 1
-	Code         string  // The bash code
-	OriginalLine string  // The header line, e.g., "# 01)"
-	ROI          float64 // Return on Investment value extracted from header
-	Impact       string  // Optional impact metadata extracted from step comments
+	b.WriteString("Missing or invalid outputs:\n")
+	for _, failure := range report.Failures {
+		stepLabel := failure.StepID
+		if stepLabel == "" {
+			stepLabel = "unknown step"
+		}
+		fmt.Fprintf(&b, "- Step %s: %s", stepLabel, failure.Path)
+		if failure.Error != "" {
+			fmt.Fprintf(&b, " (error: %s)", failure.Error)
+		} else if len(failure.MissingTokens) > 0 {
+			fmt.Fprintf(&b, " missing %s", strings.Join(failure.MissingTokens, ", "))
+		}
+		b.WriteString("\n")
+	}
+	return b.String()
 }
 ```
 
@@ -2881,7 +3731,7 @@ import (
 	"sync"
 
 	"github.com/charmbracelet/glamour"
-	"github.com/user/oraclepack/internal/pack"
+	"github.com/user/oraclepack/internal/types"
 )
 
 const (
@@ -2917,7 +3767,7 @@ func RenderMarkdown(text string, width int, style string) (string, error) {
 }
 
 // RenderStepCode renders a step's code block for preview.
-func RenderStepCode(s pack.Step, width int, style string) (string, error) {
+func RenderStepCode(s types.Step, width int, style string) (string, error) {
 	md := "```bash\n" + s.Code + "\n```"
 	return RenderMarkdown(md, width, style)
 }
@@ -3235,14 +4085,14 @@ import (
 	"time"
 
 	"github.com/user/oraclepack/internal/dispatch"
-	"github.com/user/oraclepack/internal/pack"
 	"github.com/user/oraclepack/internal/state"
 	"github.com/user/oraclepack/internal/tools"
+	"github.com/user/oraclepack/internal/types"
 )
 
 // Engine executes pack steps in headless mode.
 type Engine struct {
-	Pack       *pack.Pack
+	Pack       *types.Pack
 	State      *state.RunState
 	StatePath  string
 	StopOnFail bool
@@ -3311,7 +4161,7 @@ func (e *Engine) Run(ctx context.Context) error {
 	return nil
 }
 
-func detectToolKind(step *pack.Step) tools.ToolKind {
+func detectToolKind(step *types.Step) tools.ToolKind {
 	if step == nil {
 		return tools.ToolUnknown
 	}
@@ -3355,8 +4205,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/user/oraclepack/internal/pack"
 	"github.com/user/oraclepack/internal/state"
+	"github.com/user/oraclepack/internal/types"
 )
 
 type fakeChecker struct {
@@ -3368,8 +4218,8 @@ func (f fakeChecker) DetectBinary(name string) (string, bool) {
 }
 
 func TestEngineSkipsMissingTool(t *testing.T) {
-	p := &pack.Pack{
-		Steps: []pack.Step{
+	p := &types.Pack{
+		Steps: []types.Step{
 			{ID: "01", Number: 1, Code: "codex exec \"hi\""},
 		},
 	}
@@ -3389,16 +4239,16 @@ func TestEngineSkipsMissingTool(t *testing.T) {
 }
 
 func TestEngineFailsOnError(t *testing.T) {
-	p := &pack.Pack{
-		Steps: []pack.Step{
+	p := &types.Pack{
+		Steps: []types.Step{
 			{ID: "01", Number: 1, Code: "exit 1"},
 		},
 	}
 	engine := &Engine{
-		Pack:      p,
-		State:     &state.RunState{SchemaVersion: 1, StepStatuses: map[string]state.StepStatus{}},
+		Pack:       p,
+		State:      &state.RunState{SchemaVersion: 1, StepStatuses: map[string]state.StepStatus{}},
 		StopOnFail: true,
-		Checker:   fakeChecker{found: map[string]bool{}},
+		Checker:    fakeChecker{found: map[string]bool{}},
 	}
 	if err := engine.Run(context.Background()); err == nil {
 		t.Fatal("expected error, got nil")
@@ -3700,7 +4550,7 @@ func TestRenderTicketActionPack(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Parse failed: %v", err)
 	}
-	if err := p.Validate(); err != nil {
+	if err := pack.Validate(p); err != nil {
 		t.Fatalf("Validate failed: %v", err)
 	}
 	if len(p.Steps) != 20 {
@@ -3953,14 +4803,14 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/user/oraclepack/internal/exec"
-	"github.com/user/oraclepack/internal/pack"
 	"github.com/user/oraclepack/internal/state"
+	"github.com/user/oraclepack/internal/types"
 )
 
 func TestFilterLogic(t *testing.T) {
 	// Setup pack with steps having different ROI
-	p := &pack.Pack{
-		Steps: []pack.Step{
+	p := &types.Pack{
+		Steps: []types.Step{
 			{ID: "01", ROI: 1.0, OriginalLine: "Step 1"},
 			{ID: "02", ROI: 5.0, OriginalLine: "Step 2"},
 			{ID: "03", ROI: 10.0, OriginalLine: "Step 3"},
@@ -3970,7 +4820,7 @@ func TestFilterLogic(t *testing.T) {
 	s := &state.RunState{}
 
 	// Initialize model with no filter (threshold 0)
-	m := NewModel(p, r, s, "", 0, "over", false, false, 0)
+	m := NewModel(p, r, s, "", 0, "over", false, false, 0, false, "auto")
 
 	if len(m.list.Items()) != 3 {
 		t.Fatalf("expected 3 items initially, got %d", len(m.list.Items()))
@@ -4010,15 +4860,15 @@ func TestFilterLogic(t *testing.T) {
 func TestROIModeTogglePersists(t *testing.T) {
 	dir := t.TempDir()
 	statePath := filepath.Join(dir, "state.json")
-	p := &pack.Pack{
-		Steps: []pack.Step{
+	p := &types.Pack{
+		Steps: []types.Step{
 			{ID: "01", ROI: 1.0, OriginalLine: "Step 1"},
 		},
 	}
 	r := exec.NewRunner(exec.RunnerOptions{})
 	s := &state.RunState{SchemaVersion: 1}
 
-	m := NewModel(p, r, s, statePath, 0, "over", false, false, 0)
+	m := NewModel(p, r, s, statePath, 0, "over", false, false, 0, false, "auto")
 
 	updated, _ := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("m")})
 	m2 := updated.(Model)
@@ -4316,7 +5166,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/user/oraclepack/internal/exec"
 	"github.com/user/oraclepack/internal/overrides"
-	"github.com/user/oraclepack/internal/pack"
+	"github.com/user/oraclepack/internal/types"
 )
 
 type OverridesStep int
@@ -4341,13 +5191,13 @@ type OverridesFlowModel struct {
 	steps   StepsPickerModel
 	confirm OverridesConfirmModel
 
-	packSteps        []pack.Step
+	packSteps        []types.Step
 	baseline         []string
 	runnerOpts       exec.RunnerOptions
 	pendingOverrides overrides.RuntimeOverrides
 }
 
-func NewOverridesFlowModel(steps []pack.Step, baseline []string, opts exec.RunnerOptions) OverridesFlowModel {
+func NewOverridesFlowModel(steps []types.Step, baseline []string, opts exec.RunnerOptions) OverridesFlowModel {
 	return OverridesFlowModel{
 		step:       OverridesFlags,
 		flags:      NewFlagsPickerModel(nil),
@@ -4476,17 +5326,7 @@ func (m OverridesFlowModel) validateCmd(over overrides.RuntimeOverrides) tea.Cmd
 }
 
 func overridesStepName(step OverridesStep) string {
-	switch step {
-	case OverridesFlags:
-		return "Flags"
-	case OverridesSteps:
-		return "Target Steps"
-	case OverridesConfirm:
-		return "Confirm"
-	default:
-		return "Unknown"
-	}
-}
+[TRUNCATED]
 ```
 
 internal/tui/overrides_steps.go
@@ -4500,7 +5340,7 @@ import (
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/user/oraclepack/internal/pack"
+	"github.com/user/oraclepack/internal/types"
 )
 
 type StepItem struct {
@@ -4518,7 +5358,7 @@ type StepsPickerModel struct {
 	list list.Model
 }
 
-func NewStepsPickerModel(steps []pack.Step) StepsPickerModel {
+func NewStepsPickerModel(steps []types.Step) StepsPickerModel {
 	items := make([]list.Item, 0, len(steps))
 	for _, s := range steps {
 		items = append(items, StepItem{
@@ -4731,19 +5571,19 @@ import (
 	"testing"
 
 	"github.com/user/oraclepack/internal/exec"
-	"github.com/user/oraclepack/internal/pack"
 	"github.com/user/oraclepack/internal/state"
+	"github.com/user/oraclepack/internal/types"
 )
 
 func TestStepPreviewContentUnwrapped(t *testing.T) {
-	p := &pack.Pack{
-		Steps: []pack.Step{
+	p := &types.Pack{
+		Steps: []types.Step{
 			{ID: "01", OriginalLine: "Step 1", Code: "echo hello"},
 		},
 	}
 	r := exec.NewRunner(exec.RunnerOptions{})
 	s := &state.RunState{}
-	m := NewModel(p, r, s, "", 0, "over", false, false, 0)
+	m := NewModel(p, r, s, "", 0, "over", false, false, 0, false, "auto")
 	m.width = 80
 	m.previewID = "01"
 	m.previewWrap = false
@@ -4779,6 +5619,7 @@ import (
 	"github.com/user/oraclepack/internal/pack"
 	"github.com/user/oraclepack/internal/render"
 	"github.com/user/oraclepack/internal/state"
+	"github.com/user/oraclepack/internal/types"
 )
 
 type ViewState int
@@ -4809,7 +5650,7 @@ type Model struct {
 	filterInput textinput.Model
 	urlInput    URLInputModel
 	urlPicker   URLPickerModel
-	pack        *pack.Pack
+	pack        *types.Pack
 	runner      *exec.Runner
 	state       *state.RunState
 	statePath   string
@@ -4834,18 +5675,20 @@ type Model struct {
 	isEditingURL bool
 	isPickingURL bool
 
-	overridesFlow    OverridesFlowModel
-	appliedOverrides *overrides.RuntimeOverrides
-	chatGPTURL       string
-	outputVerify     bool
-	outputRetries    int
+	overridesFlow         OverridesFlowModel
+	appliedOverrides      *overrides.RuntimeOverrides
+	chatGPTURL            string
+	outputVerify          bool
+	outputRetries         int
+	outputRequireHeadings bool
+	outputChunkMode       string
 
 	err      error
 	logLines []string
 	logChan  chan string
 }
 
-func NewModel(p *pack.Pack, r *exec.Runner, s *state.RunState, statePath string, roiThreshold float64, roiMode string, autoRun bool, outputVerify bool, outputRetries int) Model {
+func NewModel(p *types.Pack, r *exec.Runner, s *state.RunState, statePath string, roiThreshold float64, roiMode string, autoRun bool, outputVerify bool, outputRetries int, outputRequireHeadings bool, outputChunkMode string) Model {
 	if s != nil {
 		if s.ROIThreshold > 0 {
 			roiThreshold = s.ROIThreshold
@@ -4890,69 +5733,31 @@ func NewModel(p *pack.Pack, r *exec.Runner, s *state.RunState, statePath string,
 	}
 
 	m := Model{
-		list:          l,
-		viewport:      vp,
-		spinner:       sp,
-		filterInput:   ti,
-		urlInput:      NewURLInputModel(),
-		urlPicker:     urlPicker,
-		pack:          p,
-		runner:        r,
-		state:         s,
-		statePath:     statePath,
-		autoRun:       autoRun,
-		allSteps:      allItems,
-		roiThreshold:  roiThreshold,
-		roiMode:       roiMode,
-		logChan:       make(chan string, 100),
-		viewState:     ViewSteps,
-		overridesFlow: NewOverridesFlowModel(p.Steps, r.OracleFlags, RunnerOptionsFromRunner(r)),
-		chatGPTURL:    resolvedURL,
-		previewWrap:   true,
-		outputVerify:  outputVerify,
-		outputRetries: outputRetries,
+		list:                  l,
+		viewport:              vp,
+		spinner:               sp,
+		filterInput:           ti,
+		urlInput:              NewURLInputModel(),
+		urlPicker:             urlPicker,
+		pack:                  p,
+		runner:                r,
+		state:                 s,
+		statePath:             statePath,
+		autoRun:               autoRun,
+		allSteps:              allItems,
+		roiThreshold:          roiThreshold,
+		roiMode:               roiMode,
+		logChan:               make(chan string, 100),
+		viewState:             ViewSteps,
+		overridesFlow:         NewOverridesFlowModel(p.Steps, r.OracleFlags, RunnerOptionsFromRunner(r)),
+		chatGPTURL:            resolvedURL,
+		previewWrap:           true,
+		outputVerify:          outputVerify,
+		outputRetries:         outputRetries,
+		outputRequireHeadings: outputRequireHeadings,
+		outputChunkMode:       outputChunkMode,
 	}
 	m.urlInput.SetValue(resolvedURL)
-	m.urlInput.Blur()
-
-	// Apply initial filter
-	return m.refreshList()
-}
-
-func (m Model) refreshList() Model {
-	var filtered []list.Item
-	for _, it := range m.allSteps {
-		// Find the original step to check ROI
-		var step *pack.Step
-		for _, s := range m.pack.Steps {
-			if s.ID == it.id {
-				step = &s
-				break
-			}
-		}
-		if step == nil {
-			continue
-		}
-
-		if m.roiThreshold > 0 {
-			if m.roiMode == "under" {
-				if step.ROI >= m.roiThreshold {
-					continue
-				}
-			} else {
-				if step.ROI < m.roiThreshold {
-					continue
-				}
-			}
-		}
-		filtered = append(filtered, it)
-	}
-	m.list.SetItems(filtered)
-	return m
-}
-
-type StartAutoRunMsg struct{}
-
 [TRUNCATED]
 ```
 
@@ -4964,13 +5769,13 @@ import (
 	"testing"
 
 	"github.com/user/oraclepack/internal/exec"
-	"github.com/user/oraclepack/internal/pack"
 	"github.com/user/oraclepack/internal/state"
+	"github.com/user/oraclepack/internal/types"
 )
 
 func TestInitAutoRun(t *testing.T) {
-	p := &pack.Pack{
-		Steps: []pack.Step{
+	p := &types.Pack{
+		Steps: []types.Step{
 			{ID: "01", Number: 1, Code: "echo hello"},
 		},
 	}
@@ -4978,16 +5783,16 @@ func TestInitAutoRun(t *testing.T) {
 	s := &state.RunState{}
 
 	// Test case 1: autoRun = true
-	modelAuto := NewModel(p, r, s, "", 0, "over", true, false, 0)
+	modelAuto := NewModel(p, r, s, "", 0, "over", true, false, 0, false, "auto")
 	cmdAuto := modelAuto.Init()
-	
+
 	if cmdAuto == nil {
 		t.Fatal("expected Init cmd to be non-nil when autoRun is true")
 	}
 	// Note: We can't easily assert the content of a Batch command in a unit test.
 
 	// Test case 2: autoRun = false
-	modelManual := NewModel(p, r, s, "", 0, "over", false, false, 0)
+	modelManual := NewModel(p, r, s, "", 0, "over", false, false, 0, false, "auto")
 	// Even with autoRun false, we have textinput.Blink, so Init is not nil.
 	cmdManual := modelManual.Init()
 	if cmdManual == nil {
@@ -5161,33 +5966,6 @@ func selectDefault(l *list.Model, project URLStore, global URLStore) {
 		return
 	}
 	for idx, item := range l.Items() {
-		if it, ok := item.(urlItem); ok && it.name == name && it.scope == scope {
-			l.Select(idx)
-			return
-		}
-	}
-}
-
-func defaultNameScope(project URLStore, global URLStore) (string, string) {
-	if project.Default != "" {
-		return project.Default, urlScopeProject
-	}
-	if global.Default != "" {
-		return global.Default, urlScopeGlobal
-	}
-	return "", ""
-}
-
-func (m URLPickerModel) DefaultURL() string {
-	name, scope := defaultNameScope(m.project, m.global)
-	if name == "" {
-		return ""
-	}
-	store := m.storeFor(scope)
-	if store == nil {
-		return ""
-	}
-	for _, it := range store.Items {
 [TRUNCATED]
 ```
 
@@ -5356,6 +6134,145 @@ func TestURLPickerDefaultURLPrefersProject(t *testing.T) {
 }
 ```
 
+internal/types/pack.go
+```
+package types
+
+// Pack represents a parsed oracle pack.
+type Pack struct {
+	Prelude     Prelude `json:"prelude" yaml:"prelude"`
+	Steps       []Step  `json:"steps" yaml:"steps"`
+	Source      string  `json:"source,omitempty" yaml:"source,omitempty"`
+	OutDir      string  `json:"out_dir,omitempty" yaml:"out_dir,omitempty"`
+	WriteOutput bool    `json:"write_output" yaml:"write_output"`
+}
+
+// Prelude contains the shell code that runs before any steps.
+type Prelude struct {
+	Code string `json:"code" yaml:"code"`
+}
+
+// Step represents an individual executable step within the pack.
+type Step struct {
+	ID           string  `json:"id" yaml:"id"`                             // e.g., "01"
+	Number       int     `json:"number" yaml:"number"`                     // e.g., 1
+	Code         string  `json:"code" yaml:"code"`                         // The bash code
+	OriginalLine string  `json:"original_line" yaml:"original_line"`       // The header line, e.g., "# 01)"
+	ROI          float64 `json:"roi,omitempty" yaml:"roi,omitempty"`       // Return on Investment value extracted from header
+	Impact       string  `json:"impact,omitempty" yaml:"impact,omitempty"` // Optional impact metadata extracted from step comments
+}
+```
+
+internal/types/pack_test.go
+```
+package types
+
+import (
+	"encoding/json"
+	"reflect"
+	"testing"
+
+	"github.com/goccy/go-yaml"
+)
+
+func TestPackJSONRoundTrip(t *testing.T) {
+	original := Pack{
+		Prelude: Prelude{Code: "echo prelude"},
+		Steps: []Step{
+			{
+				ID:           "01",
+				Number:       1,
+				Code:         "echo hello",
+				OriginalLine: "# 01) Example",
+				ROI:          3.2,
+				Impact:       "High",
+			},
+		},
+		Source:      "pack.md",
+		OutDir:      "dist",
+		WriteOutput: true,
+	}
+
+	data, err := json.Marshal(original)
+	if err != nil {
+		t.Fatalf("json marshal: %v", err)
+	}
+
+	var decoded Pack
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		t.Fatalf("json unmarshal: %v", err)
+	}
+
+	if !reflect.DeepEqual(original, decoded) {
+		t.Fatalf("json round-trip mismatch: %#v != %#v", original, decoded)
+	}
+}
+
+func TestPackYAMLRoundTrip(t *testing.T) {
+	original := Pack{
+		Prelude: Prelude{Code: "echo prelude"},
+		Steps: []Step{
+			{
+				ID:           "02",
+				Number:       2,
+				Code:         "echo yaml",
+				OriginalLine: "# 02) Example",
+				ROI:          1.1,
+				Impact:       "Low",
+			},
+		},
+		Source:      "pack.yaml",
+		OutDir:      "out",
+		WriteOutput: false,
+	}
+
+	data, err := yaml.Marshal(original)
+	if err != nil {
+		t.Fatalf("yaml marshal: %v", err)
+	}
+
+	var decoded Pack
+	if err := yaml.Unmarshal(data, &decoded); err != nil {
+		t.Fatalf("yaml unmarshal: %v", err)
+	}
+
+	if !reflect.DeepEqual(original, decoded) {
+		t.Fatalf("yaml round-trip mismatch: %#v != %#v", original, decoded)
+	}
+}
+```
+
+internal/types/verification.go
+```
+package types
+
+// OutputContract describes the expected response shape for a step.
+type OutputContract string
+
+const (
+	OutputContractUnknown          OutputContract = ""
+	OutputContractAllSections      OutputContract = "all_sections"
+	OutputContractDirectAnswerOnly OutputContract = "direct_answer_only"
+	OutputContractChunkedBySuffix  OutputContract = "chunked_by_suffix"
+)
+
+// OutputFailure captures a missing or invalid output artifact.
+type OutputFailure struct {
+	StepID        string   `json:"step_id,omitempty" yaml:"step_id,omitempty"`
+	Path          string   `json:"path,omitempty" yaml:"path,omitempty"`
+	MissingTokens []string `json:"missing_tokens,omitempty" yaml:"missing_tokens,omitempty"`
+	Error         string   `json:"error,omitempty" yaml:"error,omitempty"`
+}
+
+// SyntaxFinding captures a structural or syntax issue in generated bash.
+type SyntaxFinding struct {
+	StepID  string `json:"step_id,omitempty" yaml:"step_id,omitempty"`
+	Line    int    `json:"line" yaml:"line"`
+	Token   string `json:"token,omitempty" yaml:"token,omitempty"`
+	Message string `json:"message" yaml:"message"`
+}
+```
+
 internal/validate/artifact_gate.go
 ```
 package validate
@@ -5365,9 +6282,9 @@ import (
 
 	"github.com/user/oraclepack/internal/artifacts"
 	"github.com/user/oraclepack/internal/foundation"
-	"github.com/user/oraclepack/internal/pack"
 	"github.com/user/oraclepack/internal/state"
 	"github.com/user/oraclepack/internal/tools"
+	"github.com/user/oraclepack/internal/types"
 )
 
 // ArtifactGateValidator checks expected artifacts after a step.
@@ -5375,7 +6292,7 @@ type ArtifactGateValidator struct {
 	Contract artifacts.Contract
 }
 
-func (v ArtifactGateValidator) Validate(step *pack.Step, kind tools.ToolKind, toolPresent bool) (state.Status, string) {
+func (v ArtifactGateValidator) Validate(step *types.Step, kind tools.ToolKind, toolPresent bool) (state.Status, string) {
 	if step == nil {
 		return state.StatusSuccess, ""
 	}
@@ -5410,16 +6327,16 @@ import (
 	"testing"
 
 	"github.com/user/oraclepack/internal/artifacts"
-	"github.com/user/oraclepack/internal/pack"
 	"github.com/user/oraclepack/internal/state"
 	"github.com/user/oraclepack/internal/tools"
+	"github.com/user/oraclepack/internal/types"
 )
 
 func TestArtifactGateValidator(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "next.json")
 	contract := artifacts.Contract{"09": {path}}
-	step := &pack.Step{ID: "09"}
+	step := &types.Step{ID: "09"}
 	v := ArtifactGateValidator{Contract: contract}
 
 	status, _ := v.Validate(step, tools.ToolCodex, true)
@@ -5447,8 +6364,8 @@ internal/validate/composite.go
 package validate
 
 import (
-	"github.com/user/oraclepack/internal/pack"
 	"github.com/user/oraclepack/internal/state"
+	"github.com/user/oraclepack/internal/types"
 )
 
 // CompositeValidator coordinates multiple validators for all steps.
@@ -5459,7 +6376,7 @@ type CompositeValidator struct {
 }
 
 // ValidatePack validates all steps in a pack and returns per-step results.
-func (v CompositeValidator) ValidatePack(p *pack.Pack) []StepResult {
+func (v CompositeValidator) ValidatePack(p *types.Pack) []StepResult {
 	if p == nil {
 		return nil
 	}
@@ -5513,13 +6430,13 @@ package validate
 import (
 	"testing"
 
-	"github.com/user/oraclepack/internal/pack"
 	"github.com/user/oraclepack/internal/state"
+	"github.com/user/oraclepack/internal/types"
 )
 
 func TestCompositeValidator(t *testing.T) {
-	p := &pack.Pack{
-		Steps: []pack.Step{
+	p := &types.Pack{
+		Steps: []types.Step{
 			{ID: "01", Code: "codex exec \"hi\""},
 		},
 	}
@@ -5541,16 +6458,16 @@ internal/validate/oracle.go
 package validate
 
 import (
-	"github.com/user/oraclepack/internal/pack"
 	"github.com/user/oraclepack/internal/state"
 	"github.com/user/oraclepack/internal/tools"
+	"github.com/user/oraclepack/internal/types"
 )
 
 // OracleDryRunValidator is a placeholder for oracle-specific validation.
 type OracleDryRunValidator struct{}
 
 // Validate returns success for non-oracle tools and no-op for oracle until wired.
-func (OracleDryRunValidator) Validate(step *pack.Step, kind tools.ToolKind) (state.Status, string) {
+func (OracleDryRunValidator) Validate(step *types.Step, kind tools.ToolKind) (state.Status, string) {
 	if kind != tools.ToolOracle {
 		return state.StatusSuccess, ""
 	}
@@ -5565,10 +6482,10 @@ package validate
 import (
 	"fmt"
 
-	"github.com/user/oraclepack/internal/pack"
 	"github.com/user/oraclepack/internal/shell"
 	"github.com/user/oraclepack/internal/state"
 	"github.com/user/oraclepack/internal/tools"
+	"github.com/user/oraclepack/internal/types"
 )
 
 // ToolPresenceValidator checks that tool binaries exist on PATH.
@@ -5577,7 +6494,7 @@ type ToolPresenceValidator struct {
 }
 
 // Validate returns skipped if the tool is missing.
-func (v ToolPresenceValidator) Validate(step *pack.Step, kind tools.ToolKind) (state.Status, string, bool) {
+func (v ToolPresenceValidator) Validate(step *types.Step, kind tools.ToolKind) (state.Status, string, bool) {
 	if kind == tools.ToolUnknown {
 		return state.StatusSuccess, "", true
 	}
@@ -5609,9 +6526,9 @@ package validate
 import (
 	"testing"
 
-	"github.com/user/oraclepack/internal/pack"
 	"github.com/user/oraclepack/internal/state"
 	"github.com/user/oraclepack/internal/tools"
+	"github.com/user/oraclepack/internal/types"
 )
 
 type fakeChecker struct {
@@ -5623,7 +6540,7 @@ func (f fakeChecker) DetectBinary(name string) (string, bool) {
 }
 
 func TestToolPresenceValidator(t *testing.T) {
-	step := &pack.Step{ID: "01", Code: "codex exec \"hi\""}
+	step := &types.Step{ID: "01", Code: "codex exec \"hi\""}
 	v := ToolPresenceValidator{Checker: fakeChecker{found: map[string]bool{"codex": false}}}
 	status, reason, present := v.Validate(step, tools.ToolCodex)
 	if status != state.StatusSkipped || present {
@@ -5653,9 +6570,9 @@ import (
 	"strings"
 
 	"github.com/user/oraclepack/internal/dispatch"
-	"github.com/user/oraclepack/internal/pack"
 	"github.com/user/oraclepack/internal/state"
 	"github.com/user/oraclepack/internal/tools"
+	"github.com/user/oraclepack/internal/types"
 )
 
 // StepResult captures validation output for a step.
@@ -5667,7 +6584,7 @@ type StepResult struct {
 }
 
 // DetectToolKind scans a step for a known tool prefix.
-func DetectToolKind(step *pack.Step) tools.ToolKind {
+func DetectToolKind(step *types.Step) tools.ToolKind {
 	if step == nil {
 		return tools.ToolUnknown
 	}
