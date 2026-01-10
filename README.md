@@ -225,6 +225,10 @@ oraclepack run <pack.md> \
   --run-all \
   --resume \
   --stop-on-fail=true \
+  --output-verify \
+  --output-retries 1 \
+  --output-require-headings \
+  --output-chunk-mode auto \
   --no-tui \
   --out-dir ./out
 ```
@@ -303,9 +307,10 @@ oracle query "check-integrity"
 
 1. Steps must start with `# NN)` (e.g., `# 01)`, `# 02)`).
 2. Step numbering must be sequential starting from `01`.
-3. The first bash code block in the file is the one executed.
-4. Everything before the first `# 01)` is the **prelude**, which runs once.
-5. Optional ROI tags (`ROI=2.5`) can be embedded in the step header for filtering.
+3. Packs must include **exactly 20 steps**.
+4. The first bash code block in the file is the one executed.
+5. Everything before the first `# 01)` is the **prelude**, which runs once.
+6. Optional ROI tags (`ROI=2.5`) can be embedded in the step header for filtering.
 
 ## 📊 Reports and State
 
