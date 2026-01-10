@@ -179,9 +179,22 @@ oraclepack verify-outputs examples/setup-project.md
 - For Codex automation, use non-interactive `codex exec` in pack steps.
 - Artifact gates can validate expected outputs (missing tools are skipped; missing artifacts after a tool runs are treated as failures).
 
-### Output verification contracts
+### Output verification (optional, disabled by default)
 
-When `--write-output` is present, oraclepack checks for literal section headings in the output:
+Enable with `--output-verify` or `ORACLEPACK_OUTPUT_VERIFY=true`.
+Strict heading checks are controlled by `--output-require-headings` or `ORACLEPACK_OUTPUT_REQUIRE_HEADINGS=true`.
+Chunk verification behavior is controlled by `--output-chunk-mode` or `ORACLEPACK_OUTPUT_CHUNK_MODE=auto|single|multi`.
+
+### Environment variables
+
+```env
+ORACLEPACK_OUTPUT_VERIFY=false
+ORACLEPACK_OUTPUT_RETRIES=0
+ORACLEPACK_OUTPUT_REQUIRE_HEADINGS=false
+ORACLEPACK_OUTPUT_CHUNK_MODE=auto
+```
+
+When strict headings are enabled, oraclepack checks for section headings in the output. The matcher is tolerant of common variants (e.g., missing `###`, “Risks/unknowns”, “Next smallest concrete experiment”).
 
 - Required headings: `### Direct answer`, `### Risks and unknowns`, `### Next experiment`, `### Missing evidence`
 - Direct-only variant: include `Answer format` plus `Return only: Direct answer` in the prompt; oraclepack will require only `### Direct answer`.
@@ -190,6 +203,12 @@ When `--write-output` is present, oraclepack checks for literal section headings
   - `-risks-unknowns` → `### Risks and unknowns`
   - `-next-experiment` → `### Next experiment`
   - `-missing-evidence` → `### Missing evidence`
+
+### Chunk verification modes
+
+- `auto` (default): if multiple `--write-output` paths exist, treat as chunked; otherwise single.
+- `single`: always treat as a single output (first `--write-output` path).
+- `multi`: force chunked validation when multiple outputs are present; otherwise fall back to single.
 
 ### Browser Mode Reliability
 

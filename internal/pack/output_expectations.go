@@ -77,6 +77,74 @@ func StepOutputExpectations(step *types.Step) map[string][]string {
 	}
 }
 
+// StepOutputExpectationsWithMode returns expectations honoring chunk mode.
+// chunkMode: auto (default), single (treat as single output), multi (force suffix mapping when multiple outputs).
+func StepOutputExpectationsWithMode(step *types.Step, chunkMode string) map[string][]string {
+	if step == nil {
+		return nil
+	}
+	paths := ExtractWriteOutputPaths(step.Code)
+	if len(paths) == 0 {
+		return nil
+	}
+	mode := strings.ToLower(strings.TrimSpace(chunkMode))
+	if mode == "" {
+		mode = "auto"
+	}
+
+	switch mode {
+	case "single":
+		// Always treat as a single output (use first path).
+		return expectationsForSingle(step, paths[0])
+	case "multi":
+		if len(paths) > 1 {
+			return expectationsForSuffixes(paths)
+		}
+		return expectationsForSingle(step, paths[0])
+	default: // auto
+		if len(paths) > 1 {
+			return expectationsForSuffixes(paths)
+		}
+		return expectationsForSingle(step, paths[0])
+	}
+}
+
+func expectationsForSuffixes(paths []string) map[string][]string {
+	out := map[string][]string{}
+	for _, path := range paths {
+		switch {
+		case strings.Contains(path, "-direct-answer"):
+			out[path] = []string{"### Direct answer"}
+		case strings.Contains(path, "-risks-unknowns"):
+			out[path] = []string{"### Risks and unknowns"}
+		case strings.Contains(path, "-next-experiment"):
+			out[path] = []string{"### Next experiment"}
+		case strings.Contains(path, "-missing-evidence"):
+			out[path] = []string{"### Missing evidence"}
+		}
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
+}
+
+func expectationsForSingle(step *types.Step, path string) map[string][]string {
+	switch DetectOutputContract(*step) {
+	case types.OutputContractDirectAnswerOnly:
+		return map[string][]string{path: []string{"### Direct answer"}}
+	case types.OutputContractAllSections:
+		return map[string][]string{path: {
+			"### Direct answer",
+			"### Risks and unknowns",
+			"### Next experiment",
+			"### Missing evidence",
+		}}
+	default:
+		return nil
+	}
+}
+
 // ExtractWriteOutputPaths returns all --write-output paths found in the step code.
 func ExtractWriteOutputPaths(code string) []string {
 	matches := writeOutputPathRegex.FindAllStringSubmatch(code, -1)

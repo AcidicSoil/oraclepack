@@ -12,20 +12,22 @@ import (
 
 // Config holds application-wide configuration.
 type Config struct {
-	PackPath      string
-	StatePath     string
-	ReportPath    string
-	StopOnFail    bool
-	Resume        bool
-	Verbose       bool
-	DryRun        bool
-	OracleFlags   []string
-	WorkDir       string
-	OutDir        string // CLI override for output directory
-	ROIThreshold  float64
-	ROIMode       string // "over" or "under"
-	OutputVerify  bool
-	OutputRetries int
+	PackPath              string
+	StatePath             string
+	ReportPath            string
+	StopOnFail            bool
+	Resume                bool
+	Verbose               bool
+	DryRun                bool
+	OracleFlags           []string
+	WorkDir               string
+	OutDir                string // CLI override for output directory
+	ROIThreshold          float64
+	ROIMode               string // "over" or "under"
+	OutputVerify          bool
+	OutputRetries         int
+	OutputRequireHeadings bool
+	OutputChunkMode       string
 }
 
 // App orchestrates the execution flow.

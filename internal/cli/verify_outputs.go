@@ -7,10 +7,13 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/user/oraclepack/internal/config"
 	"github.com/user/oraclepack/internal/pack"
-	"github.com/user/oraclepack/internal/types"
 )
 
-var verifyOutputsEnabled bool
+var (
+	verifyOutputsEnabled      bool
+	verifyOutputsRequireHeads bool
+	verifyOutputsChunkMode    string
+)
 
 var verifyOutputsCmd = &cobra.Command{
 	Use:   "verify-outputs [pack.md]",
@@ -39,6 +42,14 @@ var verifyOutputsCmd = &cobra.Command{
 			fmt.Fprintln(out, "Output verification disabled (ORACLEPACK_OUTPUT_VERIFY=false).")
 			return nil
 		}
+		requireHeadings, err := config.ResolveOutputRequireHeadings(verifyOutputsRequireHeads, cmd.Flags().Changed("output-require-headings"))
+		if err != nil {
+			return err
+		}
+		chunkMode, err := config.ResolveOutputChunkMode(verifyOutputsChunkMode, cmd.Flags().Changed("output-chunk-mode"))
+		if err != nil {
+			return err
+		}
 
 		report := pack.VerifyReport{
 			TotalSteps: len(p.Steps),
@@ -46,25 +57,14 @@ var verifyOutputsCmd = &cobra.Command{
 
 		for i := range p.Steps {
 			step := &p.Steps[i]
-			expectations := pack.StepOutputExpectations(step)
-			if len(expectations) == 0 {
+			failures := pack.VerifyStepOutputs(step, requireHeadings, chunkMode)
+			if len(failures) == 0 {
 				continue
 			}
 			report.CheckedSteps++
-			for path, required := range expectations {
-				if _, err := os.Stat(path); err != nil {
-					report.Failures = append(report.Failures, types.OutputFailure{
-						StepID: step.ID,
-						Path:   path,
-						Error:  err.Error(),
-					})
-					continue
-				}
-				ok, failure := pack.ValidateOutputFile(path, required)
-				if !ok {
-					failure.StepID = step.ID
-					report.Failures = append(report.Failures, failure)
-				}
+			for _, failure := range failures {
+				failure.StepID = step.ID
+				report.Failures = append(report.Failures, failure)
 			}
 		}
 
@@ -78,5 +78,7 @@ var verifyOutputsCmd = &cobra.Command{
 
 func init() {
 	verifyOutputsCmd.Flags().BoolVar(&verifyOutputsEnabled, "output-verify", config.DefaultOutputVerify, "Verify --write-output files contain required answer sections")
+	verifyOutputsCmd.Flags().BoolVar(&verifyOutputsRequireHeads, "output-require-headings", config.DefaultOutputRequireHeadings, "Require strict output headings when verifying outputs")
+	verifyOutputsCmd.Flags().StringVar(&verifyOutputsChunkMode, "output-chunk-mode", config.DefaultOutputChunkMode, "Output chunk verification mode: auto|single|multi")
 	rootCmd.AddCommand(verifyOutputsCmd)
 }

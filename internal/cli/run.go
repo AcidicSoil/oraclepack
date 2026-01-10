@@ -15,14 +15,16 @@ import (
 )
 
 var (
-	yes           bool
-	resume        bool
-	stopOnFail    bool
-	roiThreshold  float64
-	roiMode       string
-	runAll        bool
-	outputVerify  bool
-	outputRetries int
+	yes                   bool
+	resume                bool
+	stopOnFail            bool
+	roiThreshold          float64
+	roiMode               string
+	runAll                bool
+	outputVerify          bool
+	outputRetries         int
+	outputRequireHeadings bool
+	outputChunkMode       string
 )
 
 var runCmd = &cobra.Command{
@@ -45,19 +47,29 @@ var runCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
+		resolvedRequireHeadings, err := config.ResolveOutputRequireHeadings(outputRequireHeadings, cmd.Flags().Changed("output-require-headings"))
+		if err != nil {
+			return err
+		}
+		resolvedChunkMode, err := config.ResolveOutputChunkMode(outputChunkMode, cmd.Flags().Changed("output-chunk-mode"))
+		if err != nil {
+			return err
+		}
 
 		cfg := app.Config{
-			PackPath:      packPath,
-			StatePath:     statePath,
-			ReportPath:    reportPath,
-			Resume:        resume,
-			StopOnFail:    stopOnFail,
-			WorkDir:       ".",
-			OutDir:        outDir,
-			ROIThreshold:  roiThreshold,
-			ROIMode:       roiMode,
-			OutputVerify:  resolvedVerify,
-			OutputRetries: resolvedRetries,
+			PackPath:              packPath,
+			StatePath:             statePath,
+			ReportPath:            reportPath,
+			Resume:                resume,
+			StopOnFail:            stopOnFail,
+			WorkDir:               ".",
+			OutDir:                outDir,
+			ROIThreshold:          roiThreshold,
+			ROIMode:               roiMode,
+			OutputVerify:          resolvedVerify,
+			OutputRetries:         resolvedRetries,
+			OutputRequireHeadings: resolvedRequireHeadings,
+			OutputChunkMode:       resolvedChunkMode,
 		}
 
 		a := app.New(cfg)
@@ -101,7 +113,7 @@ var runCmd = &cobra.Command{
 			return nil
 		}
 
-		m := tui.NewModel(a.Pack, a.Runner, a.State, cfg.StatePath, cfg.ROIThreshold, cfg.ROIMode, runAll, cfg.OutputVerify, cfg.OutputRetries)
+		m := tui.NewModel(a.Pack, a.Runner, a.State, cfg.StatePath, cfg.ROIThreshold, cfg.ROIMode, runAll, cfg.OutputVerify, cfg.OutputRetries, cfg.OutputRequireHeadings, cfg.OutputChunkMode)
 		p := tea.NewProgram(m, tea.WithAltScreen())
 		_, err = p.Run()
 		return err
@@ -117,5 +129,7 @@ func init() {
 	runCmd.Flags().BoolVar(&runAll, "run-all", false, "Automatically run all steps sequentially on start")
 	runCmd.Flags().BoolVar(&outputVerify, "output-verify", config.DefaultOutputVerify, "Verify --write-output files contain required answer sections")
 	runCmd.Flags().IntVar(&outputRetries, "output-retries", config.DefaultOutputRetries, "Retries for output verification failures")
+	runCmd.Flags().BoolVar(&outputRequireHeadings, "output-require-headings", config.DefaultOutputRequireHeadings, "Require strict output headings when verifying outputs")
+	runCmd.Flags().StringVar(&outputChunkMode, "output-chunk-mode", config.DefaultOutputChunkMode, "Output chunk verification mode: auto|single|multi")
 	rootCmd.AddCommand(runCmd)
 }

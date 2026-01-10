@@ -24,7 +24,7 @@ func TestFilterLogic(t *testing.T) {
 	s := &state.RunState{}
 
 	// Initialize model with no filter (threshold 0)
-	m := NewModel(p, r, s, "", 0, "over", false, false, 0)
+	m := NewModel(p, r, s, "", 0, "over", false, false, 0, false, "auto")
 
 	if len(m.list.Items()) != 3 {
 		t.Fatalf("expected 3 items initially, got %d", len(m.list.Items()))
@@ -72,7 +72,7 @@ func TestROIModeTogglePersists(t *testing.T) {
 	r := exec.NewRunner(exec.RunnerOptions{})
 	s := &state.RunState{SchemaVersion: 1}
 
-	m := NewModel(p, r, s, statePath, 0, "over", false, false, 0)
+	m := NewModel(p, r, s, statePath, 0, "over", false, false, 0, false, "auto")
 
 	updated, _ := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("m")})
 	m2 := updated.(Model)

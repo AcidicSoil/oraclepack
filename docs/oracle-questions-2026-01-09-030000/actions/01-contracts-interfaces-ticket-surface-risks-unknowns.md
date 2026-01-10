@@ -1,0 +1,10 @@
+Risks/unknowns
+
+* Override injection/validation expansion beyond `oracle` is underspecified: which overrides/flags apply to `tm`/`task-master`, `codex`, and `gemini`, and what “validation” means for each tool are not defined; this can easily produce partial/incorrect behavior.
+* Dispatcher intent is ambiguous: tickets do not specify whether the dispatcher should “interpret actions” (semantic dispatch) vs only broaden prefix-based detection to include non-`oracle` commands.
+* User-facing docs/TUI discoverability is unclear: where the “Action Pack execution semantics + failure modes” documentation should live (README vs `oraclepack-tui.md` vs TUI help text) is not specified, risking continued user confusion about what is/ isn’t routed/validated.
+* Action Pack “implement” execution path has key unknowns: where `top_n` is defined/how ranking works, and the exact `<out_dir>/_actions.json` location/structure needed for deterministic dispatch are not provided. 
+* Taskify “agent-mode” surface is incomplete: the tickets don’t specify how `mode=codex|gemini` is selected (CLI flag vs TUI option vs config) or which exact step slot replaces the autopilot entrypoint while keeping the 20-step contract intact. 
+* `ticket-action-pack.md` placeholder replacement is underspecified in places: whether Step 11 defaults to Codex verification, Gemini diff review, or both, and whether Steps 12–13 must change are not defined, increasing the risk of a half-automated pack that still looks “successful” but doesn’t produce expected artifacts. 
+* Operational “skip” contract for missing tools is not defined: tickets require `command -v` guards and “skip” behavior when `codex`/`gemini` are absent, but don’t specify exit codes/status/report semantics, creating inconsistency across CLI/TUI reporting and resume behavior.
+* Runner/TUI behavior gaps remain undefined for reliability: signal handling (SIGINT propagation, atomic state/log flush), the full resume contract (what reruns, how interrupted prelude is treated), and how to avoid UX implying non-existent guarantees for non-`oracle` override/validation are not specified. 

@@ -73,18 +73,20 @@ type Model struct {
 	isEditingURL bool
 	isPickingURL bool
 
-	overridesFlow    OverridesFlowModel
-	appliedOverrides *overrides.RuntimeOverrides
-	chatGPTURL       string
-	outputVerify     bool
-	outputRetries    int
+	overridesFlow         OverridesFlowModel
+	appliedOverrides      *overrides.RuntimeOverrides
+	chatGPTURL            string
+	outputVerify          bool
+	outputRetries         int
+	outputRequireHeadings bool
+	outputChunkMode       string
 
 	err      error
 	logLines []string
 	logChan  chan string
 }
 
-func NewModel(p *types.Pack, r *exec.Runner, s *state.RunState, statePath string, roiThreshold float64, roiMode string, autoRun bool, outputVerify bool, outputRetries int) Model {
+func NewModel(p *types.Pack, r *exec.Runner, s *state.RunState, statePath string, roiThreshold float64, roiMode string, autoRun bool, outputVerify bool, outputRetries int, outputRequireHeadings bool, outputChunkMode string) Model {
 	if s != nil {
 		if s.ROIThreshold > 0 {
 			roiThreshold = s.ROIThreshold
@@ -129,27 +131,29 @@ func NewModel(p *types.Pack, r *exec.Runner, s *state.RunState, statePath string
 	}
 
 	m := Model{
-		list:          l,
-		viewport:      vp,
-		spinner:       sp,
-		filterInput:   ti,
-		urlInput:      NewURLInputModel(),
-		urlPicker:     urlPicker,
-		pack:          p,
-		runner:        r,
-		state:         s,
-		statePath:     statePath,
-		autoRun:       autoRun,
-		allSteps:      allItems,
-		roiThreshold:  roiThreshold,
-		roiMode:       roiMode,
-		logChan:       make(chan string, 100),
-		viewState:     ViewSteps,
-		overridesFlow: NewOverridesFlowModel(p.Steps, r.OracleFlags, RunnerOptionsFromRunner(r)),
-		chatGPTURL:    resolvedURL,
-		previewWrap:   true,
-		outputVerify:  outputVerify,
-		outputRetries: outputRetries,
+		list:                  l,
+		viewport:              vp,
+		spinner:               sp,
+		filterInput:           ti,
+		urlInput:              NewURLInputModel(),
+		urlPicker:             urlPicker,
+		pack:                  p,
+		runner:                r,
+		state:                 s,
+		statePath:             statePath,
+		autoRun:               autoRun,
+		allSteps:              allItems,
+		roiThreshold:          roiThreshold,
+		roiMode:               roiMode,
+		logChan:               make(chan string, 100),
+		viewState:             ViewSteps,
+		overridesFlow:         NewOverridesFlowModel(p.Steps, r.OracleFlags, RunnerOptionsFromRunner(r)),
+		chatGPTURL:            resolvedURL,
+		previewWrap:           true,
+		outputVerify:          outputVerify,
+		outputRetries:         outputRetries,
+		outputRequireHeadings: outputRequireHeadings,
+		outputChunkMode:       outputChunkMode,
 	}
 	m.urlInput.SetValue(resolvedURL)
 	m.urlInput.Blur()
@@ -927,19 +931,19 @@ func (m Model) runStep(id string) tea.Cmd {
 				return FinishedMsg{Err: nil, ID: id}
 			}
 
-			expectations := pack.StepOutputExpectations(step)
-			if len(expectations) == 0 {
+			outputFailures := pack.VerifyStepOutputs(step, m.outputRequireHeadings, m.outputChunkMode)
+			if len(outputFailures) == 0 {
 				return FinishedMsg{Err: nil, ID: id}
 			}
 
 			var failures []string
-			for path, required := range expectations {
-				ok, failure := pack.ValidateOutputFile(path, required)
-				if !ok {
-					if failure.Error != "" {
-						return FinishedMsg{Err: fmt.Errorf("output verification failed for step %s: %s", step.ID, failure.Error), ID: id}
-					}
-					failures = append(failures, fmt.Sprintf("%s missing: %s", path, strings.Join(failure.MissingTokens, ", ")))
+			for _, failure := range outputFailures {
+				if failure.Error != "" {
+					failures = append(failures, fmt.Sprintf("%s error: %s", failure.Path, failure.Error))
+					continue
+				}
+				if len(failure.MissingTokens) > 0 {
+					failures = append(failures, fmt.Sprintf("%s missing: %s", failure.Path, strings.Join(failure.MissingTokens, ", ")))
 				}
 			}
 			if len(failures) == 0 {

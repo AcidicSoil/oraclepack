@@ -115,18 +115,18 @@ func (a *App) runStepWithOutputVerification(ctx context.Context, step *types.Ste
 		if !a.Config.OutputVerify {
 			return nil
 		}
-		expectations := pack.StepOutputExpectations(step)
-		if len(expectations) == 0 {
+		outputFailures := pack.VerifyStepOutputs(step, a.Config.OutputRequireHeadings, a.Config.OutputChunkMode)
+		if len(outputFailures) == 0 {
 			return nil
 		}
 		var failures []string
-		for path, required := range expectations {
-			ok, failure := pack.ValidateOutputFile(path, required)
-			if !ok {
-				if failure.Error != "" {
-					return fmt.Errorf("output verification failed for step %s: %s", step.ID, failure.Error)
-				}
-				failures = append(failures, fmt.Sprintf("%s missing: %s", path, strings.Join(failure.MissingTokens, ", ")))
+		for _, failure := range outputFailures {
+			if failure.Error != "" {
+				failures = append(failures, fmt.Sprintf("%s error: %s", failure.Path, failure.Error))
+				continue
+			}
+			if len(failure.MissingTokens) > 0 {
+				failures = append(failures, fmt.Sprintf("%s missing: %s", failure.Path, strings.Join(failure.MissingTokens, ", ")))
 			}
 		}
 		if len(failures) == 0 {

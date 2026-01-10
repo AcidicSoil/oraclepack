@@ -17,7 +17,7 @@ func TestStepPreviewContentUnwrapped(t *testing.T) {
 	}
 	r := exec.NewRunner(exec.RunnerOptions{})
 	s := &state.RunState{}
-	m := NewModel(p, r, s, "", 0, "over", false, false, 0)
+	m := NewModel(p, r, s, "", 0, "over", false, false, 0, false, "auto")
 	m.width = 80
 	m.previewID = "01"
 	m.previewWrap = false
