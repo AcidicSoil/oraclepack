@@ -13,11 +13,32 @@ Produce **multiple** codebase-driven Stage-1 packs, one per inferred topic/domai
 
 Use when the user wants separate packs per topic/domain grouped by a target repo/project/codebase, not a `.tickets/` folder.
 
+
+## Setup wizard (always run)
+
+For each available argument listed in this skill, ask the user:
+
+```
+1) Use default
+2) Enter custom value
+```
+
+Collect a choice for every argument (no skips). Then output a summary table of chosen values before running.
+
+For each available argument listed in this skill, ask the user:
+
+```
+1) Use default
+2) Enter custom value
+```
+
+Collect a choice for every argument (no skips). Then run the workflow using the resolved values.
+
 ## Inputs (parse trailing KEY=value; last-one-wins)
 
 Supported keys (defaults in parentheses):
 - `codebase_name` (`Unknown`)
-- `out_dir` (`docs/oracle-questions-YYYY-MM-DD`)
+- `out_dir` (`docs/oracle-questions-YYYY-MM-DD-HHMMSS`)
 - `oracle_cmd` (`oracle`)
 - `oracle_flags` (`--files-report`)
 - `extra_files` (empty; appended literally)
@@ -30,12 +51,14 @@ Supported keys (defaults in parentheses):
 - `group_max_files` (`200`)
 - `group_max_chars` (`200000`)
 - `ignore_dirs` (empty; comma-separated; merged with defaults)
+- `.gitignore` is respected by default; patterns are applied first, then `ignore_dirs`.
 - `include_exts` (empty; uses default extension allowlist)
 - `exclude_glob` (empty; comma-separated glob patterns)
 - `mode` (`codebase-grouped-direct`)
+- `allow_overwrite` (`false`)
 
 Notes:
-- `YYYY-MM-DD` is computed at pack generation time for default `out_dir`.
+- `YYYY-MM-DD-HHMMSS` is computed at pack generation time for default `out_dir`.
 - If oracle flag support is uncertain, omit unsupported flags; never invent flags.
 
 ## Workflow (deterministic)
@@ -45,14 +68,9 @@ Notes:
 - `references/attachment-minimization.md`
 - `references/codebase-pack-template.md`
 
-2) Ask user if custom args are needed (numbered picker):
-
-```
-1) Use defaults (no args)
-2) Provide custom args
-```
-
-If `2`, ask for KEY=value args and run with those; otherwise run with defaults.
+If `2`, ask for KEY=value args and run with those.
+If `3`, propose 2–4 concrete KEY=value bundles tailored to the target codebase (focus on `code_root`, `include_exts`, `exclude_glob`, `group_max_files`, `code_max_files`), then let the user pick one or edit; run with the chosen bundle.
+Otherwise run with defaults.
 
 3) Generate packs (deterministic grouping + per-group pack files):
 
@@ -65,6 +83,7 @@ python3 /home/user/.codex/skills/oraclepack-codebase-pack-grouped/scripts/genera
 Outputs:
 - `{{out_dir}}/packs/*.md` (one pack per group/part)
 - `{{out_dir}}/_groups.json` (group -> file list)
+- `{{out_dir}}/manifest.json` (group -> pack paths + files)
 
 4) Size control (mandatory; fail fast):
 - Run `oracle --dry-run summary --files-report ...` for the **largest** group pack (or each pack if unsure).

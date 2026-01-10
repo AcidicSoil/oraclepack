@@ -6,6 +6,7 @@ import math
 import json
 import re
 import sys
+import fnmatch
 from pathlib import Path
 from typing import Dict, Iterable, List, Tuple
 
@@ -30,11 +31,33 @@ def _today() -> str:
     return _dt.date.today().isoformat()
 
 
+def _now_slug() -> str:
+    return _dt.datetime.now().strftime("%Y-%m-%d-%H%M%S")
+
+
 def _slugify(s: str) -> str:
     s = s.strip().lower()
     s = re.sub(r"[^a-z0-9]+", "-", s)
     s = re.sub(r"-+", "-", s).strip("-")
     return s or "group"
+
+
+def _ensure_run_dir(out_dir: str, allow_overwrite: bool) -> str:
+    base = Path(out_dir)
+    if not base.exists():
+        base.mkdir(parents=True, exist_ok=True)
+        return str(base)
+    if allow_overwrite:
+        return str(base)
+    # create a new run directory
+    ts = _now_slug()
+    for i in range(0, 1000):
+        suffix = f"-run-{ts}" if i == 0 else f"-run-{ts}-{i:02d}"
+        cand = Path(f"{out_dir}{suffix}")
+        if not cand.exists():
+            cand.mkdir(parents=True, exist_ok=True)
+            return str(cand)
+    raise SystemExit("[ERROR] could not allocate unique run directory")
 
 
 def _tokenize(text: str) -> List[str]:
@@ -49,6 +72,76 @@ def _normalize_title(text: str) -> str:
     text = re.sub(r"[^a-z0-9]+", " ", text)
     text = re.sub(r"\s+", " ", text).strip()
     return text
+
+
+def _read_gitignore(start: Path) -> Tuple[Path, List[str]]:
+    cur = start.resolve()
+    if cur.is_file():
+        cur = cur.parent
+    while True:
+        p = cur / ".gitignore"
+        if p.exists():
+            lines: List[str] = []
+            for ln in p.read_text(encoding="utf-8", errors="replace").splitlines():
+                s = ln.strip()
+                if not s or s.startswith("#"):
+                    continue
+                lines.append(s)
+            return cur, lines
+        if cur.parent == cur:
+            return start.resolve(), []
+        cur = cur.parent
+
+
+def _gitignore_match(rel_posix: str, name: str, pattern: str) -> bool:
+    neg = pattern.startswith("!")
+    if neg:
+        pattern = pattern[1:]
+    if not pattern:
+        return False
+
+    anchored = pattern.startswith("/")
+    if anchored:
+        pattern = pattern.lstrip("/")
+
+    dir_only = pattern.endswith("/")
+    if dir_only:
+        pattern = pattern.rstrip("/")
+
+    if "/" not in pattern:
+        if dir_only:
+            return any(part == pattern for part in rel_posix.split("/"))
+        return fnmatch.fnmatch(name, pattern)
+
+    target = rel_posix
+    if anchored:
+        if dir_only:
+            return target.startswith(pattern + "/")
+        return fnmatch.fnmatch(target, pattern)
+    if dir_only:
+        return f"/{pattern}/" in f"/{target}/"
+    return fnmatch.fnmatch(target, f"**/{pattern}") or fnmatch.fnmatch(target, pattern)
+
+
+def _is_gitignored(path: Path, git_root: Path, patterns: List[str]) -> bool:
+    try:
+        rel = path.resolve().relative_to(git_root)
+    except Exception:
+        rel = path
+    rel_posix = rel.as_posix()
+    parts = rel_posix.split("/")
+    subpaths = []
+    cur = ""
+    for part in parts:
+        cur = f"{cur}/{part}" if cur else part
+        subpaths.append((cur, part))
+    ignored = False
+    for pat in patterns:
+        neg = pat.startswith("!")
+        for subpath, name in subpaths:
+            if _gitignore_match(subpath, name, pat):
+                ignored = not neg
+    return ignored
 
 
 def _read_heading(path: Path) -> str:
@@ -68,7 +161,13 @@ def _collect_ticket_paths(ticket_root: str, ticket_glob: str, ticket_paths: str)
     root = Path(ticket_root)
     if not root.exists():
         return []
-    return [Path(p) for p in root.glob(ticket_glob)]
+    git_root, patterns = _read_gitignore(root)
+    out: List[Path] = []
+    for p in root.glob(ticket_glob):
+        if _is_gitignored(Path(p), git_root, patterns):
+            continue
+        out.append(Path(p))
+    return out
 
 
 def _read_signature(path: Path, max_lines: int = 40) -> Tuple[str, str]:
@@ -379,7 +478,7 @@ def main() -> int:
 
     args = _parse_kv_args(sys.argv[1:])
     codebase_name = args.get("codebase_name", "Unknown")
-    out_dir = args.get("out_dir", f"docs/oracle-questions-{_today()}")
+    out_dir = args.get("out_dir", f"docs/oracle-questions-{_now_slug()}")
     oracle_cmd = args.get("oracle_cmd", "oracle")
     oracle_flags = args.get("oracle_flags", "--files-report")
     extra_files = args.get("extra_files", "")
@@ -391,6 +490,7 @@ def main() -> int:
     group_min_score = float(args.get("group_min_score", "0.08"))
     group_max_files = int(args.get("group_max_files", "25"))
     group_max_chars = int(args.get("group_max_chars", "200000"))
+    allow_overwrite = args.get("allow_overwrite", "false").lower() in ("1", "true", "yes")
     dedupe_mode = args.get("dedupe_mode", "report")
     dedupe_jaccard = float(args.get("dedupe_jaccard", "0.55"))
     dedupe_overlap_hi = float(args.get("dedupe_overlap_hi", "0.80"))
@@ -508,6 +608,7 @@ def main() -> int:
     if missing:
         raise SystemExit(f"[ERROR] Tickets missing group assignment: {missing}")
 
+    out_dir = _ensure_run_dir(out_dir, allow_overwrite)
     base_out = Path(out_dir)
     packs_dir = base_out / "packs"
     packs_dir.mkdir(parents=True, exist_ok=True)

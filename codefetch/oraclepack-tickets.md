@@ -31,7 +31,8 @@ Project Structure:
     ├── Oraclepack bash fix.md
     ├── Oraclepack output verification issues.md
     ├── Oraclepack-CLI-agents.md
-    └── Publish OraclePack MCP.md
+    ├── Publish OraclePack MCP.md
+    └── Skills Integration Status.md
 
 </filetree>
 
@@ -237,13 +238,6 @@ Source:
 ```
 
 ```ticket T3
-T# Title: Implement pre-generation normalization and deduplication decision points (DP-08..DP-12)
-Type: enhancement
-Target Area: Pre-gen text normalization + dedup decisions
-Summary:
-- Add explicit, formalized decisions for canonical title extraction, preprocessing policy, duplicate thresholds, merge strategy, and delta preservation when merging duplicates. Each decision produces the specified output/action for use during grouping/packing.
-In Scope:
-- DP-08 Decide ticket/file canonical title extraction rule
 [TRUNCATED]
 ```
 
@@ -455,10 +449,6 @@ Source:
 ```ticket T4
 T# Title: Add preflight to fail fast on missing `-f` attachment files
 Type: enhancement
-Target Area: `oraclepack run` preflight; oracle invocation scanning via `ExtractOracleInvocations`; path resolution via WorkDir
-Summary:
-  Add a preflight check that detects missing attachment files referenced by `oracle … -f <path>` before executing steps. This turns late runtime failures into early, actionable errors that identify the step number and missing path. The check must resolve paths relative to the resolved WorkDir.
-In Scope:
 [TRUNCATED]
 ```
 
@@ -668,14 +658,6 @@ Risks / Dependencies:
 - Depends on T1 if migrating global storage to XDG config dir.
 Acceptance Criteria:
 - After using the URL picker, no `<packBase>.chatgpt-urls.json` is created near the pack/state/CWD.
-- Default behavior persists URLs to exactly one global store (stable path; not per-pack).
-- When “project scope” is selected, URLs persist to `<repo>/.oraclepack/chatgpt-urls.json` (single per-project file).
-Priority & Severity (if inferable from input text):
-- Priority: Not provided
-- Severity: Not provided
-Source:
-- “The TUI ‘ChatGPT URL picker’ then creates `<sameBase>.chatgpt-urls.json`…”
-- “Best UX default: change … default save scope to global…”
 [TRUNCATED]
 ```
 
@@ -883,12 +865,6 @@ Evidence:
   - Not provided
 Open Items / Unknowns:
   - The “critical subcommands” list oraclepack relies on (examples referenced, but exact dependency set not provided).
-  - Where oraclepack stores `.state.json`/`.report.json` and current schema stability guarantees (not provided).
-Risks / Dependencies:
-  - Depends on T1 for deterministic upstream version selection in tests.
-Acceptance Criteria:
-  - Snapshot tests exist for `oracle --help` and at least one `oracle <subcommand> --help`, and are executed in CI with diffs detected.
-  - A runnable golden-path fixture exists and asserts only on wrapper-owned artifacts (exit code and/or `.state.json`/`.report.json`).
 [TRUNCATED]
 ```
 
@@ -1129,13 +1105,6 @@ In Scope:
 Out of Scope:
 - Not provided
 Current Behavior (Actual):
-- Pack structural issues can slip into execution time if not validated earlier.
-Expected Behavior:
-- CI fails fast when manifest validation fails or rendered pack fails oraclepack validation.
-Reproduction Steps:
-1) Commit a manifest with 19 steps; CI should fail at validate(manifest.json).
-2) Commit a manifest that renders an invalid pack (if possible); CI should fail at oraclepack validate.
-Requirements / Constraints:
 [TRUNCATED]
 ```
 
@@ -1327,8 +1296,7 @@ Priority & Severity (if inferable from input text):
 Source:
 - “Make validate unavoidable in normal use”
 - “Ensure `oraclepack run` always calls `validate` first (or at minimum in TUI ‘Run/Rerun’ paths).”
-- “Add CI/pre-commit: run `oraclepack validate` on any generated/modified pack.”
-```
+[TRUNCATED]
 ```
 
 .tickets/Oraclepack output verification issues.md
@@ -1513,13 +1481,6 @@ Summary:
 In Scope:
   - Document that when “Answer format” is present, the validator requires all four tokens in a single-output file unless using chunked outputs.
   - Provide template guidance for two supported patterns:
-    - Single file per step: output must include headings/phrases that satisfy all required tokens (“Direct answer”, “Risks/unknowns”, “Next smallest concrete experiment”, “If evidence is insufficient”).
-    - Chunked outputs: use multiple `--write-output` files with suffixes:
-      - `-direct-answer`
-      - `-risks-unknowns`
-      - `-next-experiment`
-      - `-missing-evidence`
-  - Document the “Missing evidence” vs “If evidence is insufficient” token mismatch risk (token is literal).
 [TRUNCATED]
 ```
 
@@ -1862,6 +1823,99 @@ Source:
 ```
 ```
 
+.tickets/Skills Integration Status.md
+```
+Directly “integrating skills into the CLI/MCP” helps, but it does not solve the core failure mode by itself. The real problem is that the CLI/MCP is running against a moving target (skills) with no version pinning, no compatibility gates, and no automated contract testing. The fix is to make skills a versioned, discoverable runtime dependency of oraclepack, with explicit compatibility rules and a lockable install.
+
+What you have today
+
+* Skills already define a stable-ish invocation surface: trailing `KEY=value` args, deterministic scripts like `generate_grouped_packs.py`, and mandatory validators (`validate_pack.py`, `lint_attachments.py`).
+* MCP today shells out to the Go CLI (`oraclepack validate`, `oraclepack run`) and has a clear “exec enabled” safety gate (`ORACLEPACK_ENABLE_EXEC`).
+* MCP tools are schema-described and discoverable via `tools/list`; that same pattern can be used for skills-as-tools, but you still need versioning/compatibility or you’ll just move the breakage boundary. ([Model Context Protocol][1])
+
+A solution that actually keeps oraclepack in sync with rapidly changing skills
+
+1. Make “skills” a versioned plugin/bundle, not “whatever is on disk”
+
+* Define a skill bundle manifest (per skill, or per bundle) with:
+
+  * `name`, `version`
+  * `oraclepack_requires` (a version range)
+  * entrypoints to scripts (`generate`, `validate`, `lint`, etc.)
+  * an args schema (even if you keep `KEY=value` internally)
+  * a content hash (sha256 tree digest) for reproducibility
+* This is the same “declare a public API + version it” principle behind SemVer: you need an explicit contract before versions mean anything. ([Semantic Versioning][2])
+
+1. Pin skill versions per run (lockfile), and enforce compatibility at runtime
+
+* Add a lockfile (e.g., `oraclepack.lock.json`) that records:
+
+  * skill name + exact version (or git sha)
+  * manifest digest
+  * oraclepack CLI version
+* On `oraclepack run` / `oraclepack skill run`, oraclepack verifies:
+
+  * installed skill version matches the lock (or fetches it)
+  * `oraclepack_requires` matches the current binary
+  * otherwise: fail fast with a clear message: “skill X@Y requires oraclepack >=A,<B”
+* This eliminates “skills changed under me” failures.
+
+1. Ship an “install/update” mechanism so the CLI can stay stable while skills move fast
+
+* CLI commands:
+
+  * `oraclepack skill list`
+  * `oraclepack skill install oraclepack-tickets-pack-grouped@1.4.2` (or `@<gitsha>`)
+  * `oraclepack skill run <name> KEY=value...`
+  * `oraclepack skill update <name>` (explicit, not automatic)
+* Skills can be distributed as:
+
+  * GitHub release tarballs, or
+  * a Python package with entry points for discovery (clean plugin model). ([Python Packaging][3])
+* Store installed bundles under `~/.oraclepack/skills/<name>/<version>/…` and always run from that immutable path.
+
+1. Unify execution so CLI and MCP cannot drift
+
+* Implement one “skill runner” code path:
+
+  * CLI subcommand uses it
+  * MCP tool calls the same runner
+* Your MCP server already uses subprocess patterns + safety gates; add “skills” under the same gate as pack execution because skills write files and can invoke tooling.
+* Expose via MCP tools:
+
+  * `oraclepack_skill_list`
+  * `oraclepack_skill_describe`
+  * `oraclepack_skill_run`
+    MCP tools are designed to be discoverable with explicit schemas. ([Model Context Protocol][1])
+
+1. Add contract tests that run on every skills change
+
+* When any skill changes, CI runs:
+
+  * `oraclepack skill run oraclepack-tickets-pack-grouped …` against a fixture repo
+  * then `oraclepack validate` on every generated pack
+* This converts “skills broke runs” into “PR fails before merge.”
+
+Why “just integrate” isn’t sufficient
+
+* If oraclepack always runs “whatever skill checkout you happen to have,” integration simply makes the breakage happen at runtime inside oraclepack instead of outside it.
+* What prevents breakage is: versioned artifacts + compatibility gating + lockfiles + contract tests.
+
+Minimal implementation order (fastest path to stability)
+
+1. Add skill manifest + digest + `oraclepack_requires` range.
+2. Add `oraclepack skill run` that executes the existing deterministic scripts referenced in the skill (no rewriting).
+3. Add lockfile support + install cache.
+4. Add MCP `oraclepack_skill_*` tools that call the same runner.
+5. Add CI contract tests on skills changes.
+
+If you want, I can draft the exact manifest schema and the CLI/MCP command/tool surfaces to match what your skills already expose (`KEY=value` args, deterministic generators, validators), without forcing you to change how skills are authored.
+
+[1]: https://modelcontextprotocol.io/specification/2025-06-18/server/tools?utm_source=chatgpt.com "Tools"
+[2]: https://semver.org/?utm_source=chatgpt.com "Semantic Versioning 2.0.0 | Semantic Versioning"
+[3]: https://packaging.python.org/guides/creating-and-discovering-plugins/?utm_source=chatgpt.com "Creating and discovering plugins"
+```
+
 .tickets/PRD-TUI/Oraclepack TUI Integration.md
 ```
 Parent Ticket:
@@ -2125,18 +2179,6 @@ In Scope:
 - Implement a new subcommand such as `oraclepack call` (or `oraclepack oracle`) that:
   - Lets the user pick a ChatGPT URL preset.
   - Lets the user specify attachments (e.g., `tickets_prd.md`).
-  - Runs one `oracle …` invocation.
-- Implement a corresponding TUI flow/screen for “Single Oracle Call” with:
-  - URL preset selection
-  - attachments selection
-  - prompt/template input
-  - run
-- Ensure this path bypasses pack parsing requirements (no need for a `bash` fenced block).
-
-Out of Scope:
-- Generating ticket-derived context bundle (`prd_context.md`) and a dedicated PRD generator pack (see T6/T7).
-
-Current Behavior (Actual):
 [TRUNCATED]
 ```
 
@@ -2906,22 +2948,6 @@ In Scope:
 - Ensure Codex invocation is non-interactive (ticket references `codex exec …` as the intended entrypoint).
 - Ensure Gemini invocation is non-interactive (ticket references `gemini -p/--prompt` as intended).
 - Apply safety defaults: “Keep safety defaults strict (do not ‘yolo’ by default)” (flag specifics not mandated beyond this phrase).
-- Reflect/acknowledge runner constraint: “does not attach stdin/TTY” and the resulting failure mode for interactive tools.
-
-Out of Scope:
-- Not provided
-
-Current Behavior (Actual):
-- Runner behavior described: executes scripts via `bash -lc`, does not attach stdin/TTY; interactive CLIs may fail or stall.
-
-Expected Behavior:
-- Action Packs avoid interactive-only command forms and use non-interactive command forms for Codex/Gemini.
-- Defaults remain conservative and do not enable “yolo” behavior by default.
-
-Reproduction Steps:
-- Not provided
-
-Requirements / Constraints:
 [TRUNCATED]
 ```
 
@@ -3381,15 +3407,6 @@ Target Area:
 
 Summary:
 - The ticket explicitly calls out safety: executor tools may run commands or perform actions; defaults should be conservative.
-- Add/confirm guardrails so the implement/dispatcher mode does not auto-approve tool execution by default, and requires explicit opt-in for riskier behaviors.
-
-In Scope:
-- Ensure implement/dispatcher mode defaults are “strict” and not “yolo by default”.
-- Ensure any approval/tool-execution modes are conservative unless a user opts in (mechanism not specified in the ticket text).
-
-Out of Scope:
-- Defining new security models or sandboxing systems beyond what’s stated (not provided).
-
 [TRUNCATED]
 ```
 
@@ -3597,13 +3614,6 @@ In Scope:
 - Step 11: Add verification automation via `codex exec` and/or Gemini diff review:
   - `.oraclepack/ticketify/codex-verify.md` and/or `.oraclepack/ticketify/gemini-review.json`.
 - Step 16: Add PR draft automation that writes `.oraclepack/ticketify/PR.md`.
-- Include command-availability guards and “skip” behavior as shown in the referenced step snippets (e.g., `command -v ...` checks) to avoid hard failures when tools are missing.
-
-Out of Scope:
-- Changing Steps 01–07 semantics (ticket discovery/actions/PRD/Task Master parse/complexity/expand).
-- Extending oraclepack’s override injection/validation to cover `codex`/`gemini` (handled in T2).
-
-Current Behavior (Actual):
 [TRUNCATED]
 ```
 
@@ -3969,18 +3979,6 @@ Acceptance Criteria:
 
   * Rerunning on unchanged inputs (same prompt, same attached file digests, same flags/model) results in zero provider calls and identical outputs.
 
-        Oracle Pack Workflow Analysis
-
-* Stage 3 “Actionizer”:
-
-  * `oraclepack actionize --run-dir ...` generates deterministic artifacts under `actionizer/` (`normalized.jsonl`, `backlog.md`, `change-plan.md`).
-
-  * Reruns do not duplicate tasks (stable IDs) and produce byte-identical output when inputs unchanged.
-
-  * Missing/contradictory answers produce explicit `blocked`/`conflict` tasks with required evidence patterns.
-
-* CI mode:
-
 [TRUNCATED]
 ```
 
@@ -4210,18 +4208,6 @@ Target Area: Examples + validation of generated prompt/skill output
 Summary:
   - Provide concrete example inputs (ticket and/or .tickets) and the expected generated prompt/skill output shape for validation.
   - Ensure examples exercise optional fields (missing PAIN-POINT, missing ADDITIONAL-INFORMATION, with/without REFERENCE-FILE).
-  - Add lightweight validation criteria to confirm generated output preserves placeholders and wrapper structure.
-In Scope:
-  - Example cases covering:
-    - Only {user-idea} + {project-in-question}
-    - With {PAIN-POINT}
-    - With {REFERENCE-FILE}
-  - Validation checklist for generated output structure (placeholders present; optional fields handled).
-Out of Scope:
-  - End-to-end integration tests that require specific repo tooling not provided.
-Current Behavior (Actual):
-  - No examples/validation for tickets/.tickets prompt-skill generation are defined.
-Expected Behavior:
 [TRUNCATED]
 ```
 
@@ -4957,20 +4943,6 @@ Type: enhancement
 Target Area: oraclepack_mcp_server/server.py (MCP tool registration + schemas + formatting)
 Summary:
 - Implement the MCP server surface that maps `oraclepack` CLI operations and Taskify helper functions into callable MCP tools.
-- Provide consistent response formatting (markdown/json) and ensure run tools respect execution gating.
-In Scope:
-- Tool schemas/inputs covering:
-  - `oraclepack_validate_pack`
-  - `oraclepack_list_steps`
-  - `oraclepack_run_pack` (gated)
-  - `oraclepack_read_file`
-  - `oraclepack_taskify_detect_stage2`
-  - `oraclepack_taskify_validate_stage2`
-  - `oraclepack_taskify_validate_action_pack`
-  - `oraclepack_taskify_artifacts_summary`
-  - `oraclepack_taskify_run_action_pack` (gated)
-- Response formatting:
-  - Support JSON and Markdown result formats (including stdout/stderr blocks and truncation notes).
 [TRUNCATED]
 ```
 
@@ -5721,16 +5693,6 @@ def validate_action_pack(pack_path: Path) -> dict:
     if len(bash_fence) != 1:
         errors.append(f"expected exactly one ```bash fence; found {len(bash_fence)}")
     if len(any_fence) != 2:
-        # One opening and one closing fence expected, and it must be a bash fence.
-        errors.append(f"expected no other code fences; found {len(any_fence)} total fences")
-
-    # Extract bash block content if possible
-    bash_block = ""
-    m = re.search(r"```bash\s*\n(?P<body>[\s\S]*?)\n```\s*", text)
-    if m:
-        bash_block = m.group("body")
-
-    # Validate step headers inside bash fence
 [TRUNCATED]
 ```
 

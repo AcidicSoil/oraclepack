@@ -31,6 +31,7 @@ def main() -> int:
     p = argparse.ArgumentParser(description="Render group-specific bundle packs from manifest.")
     p.add_argument("--manifest", default="manifest.json")
     p.add_argument("--out-dir", default="docs/oracle-questions-sharded")
+    p.add_argument("--allow-overwrite", action="store_true")
     p.add_argument("--template", default="/home/user/.codex/skills/oraclepack-tickets-pack-grouped/references/tickets-pack-template-bundle.md")
     p.add_argument("--codebase-name", default="Unknown")
     p.add_argument("--oracle-cmd", default="oracle")
@@ -61,6 +62,9 @@ def main() -> int:
         pack_path = pack_dir / f"oracle-pack_{slug}.md"
         bundle_path = pack_dir / f"tickets_bundle_{slug}.md"
         out_run_dir = pack_dir / "out"
+
+        if pack_path.exists() and not args.allow_overwrite:
+            raise SystemExit(f"[ERROR] pack already exists (use --allow-overwrite to overwrite): {pack_path}")
 
         mapping = {
             "codebase_name": args.codebase_name,

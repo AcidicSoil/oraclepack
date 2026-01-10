@@ -8,6 +8,7 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Tuple
+import fnmatch
 
 STOPWORDS = {
     "the", "and", "for", "with", "from", "this", "that", "into", "over", "under", "when",
@@ -37,6 +38,76 @@ def _read_text(path: Path) -> str:
         return path.read_text(encoding="utf-8", errors="replace")
     except FileNotFoundError:
         return ""
+
+
+def _read_gitignore(start: Path) -> Tuple[Path, List[str]]:
+    cur = start.resolve()
+    if cur.is_file():
+        cur = cur.parent
+    while True:
+        p = cur / ".gitignore"
+        if p.exists():
+            lines: List[str] = []
+            for ln in p.read_text(encoding="utf-8", errors="replace").splitlines():
+                s = ln.strip()
+                if not s or s.startswith("#"):
+                    continue
+                lines.append(s)
+            return cur, lines
+        if cur.parent == cur:
+            return start.resolve(), []
+        cur = cur.parent
+
+
+def _gitignore_match(rel_posix: str, name: str, pattern: str) -> bool:
+    neg = pattern.startswith("!")
+    if neg:
+        pattern = pattern[1:]
+    if not pattern:
+        return False
+
+    anchored = pattern.startswith("/")
+    if anchored:
+        pattern = pattern.lstrip("/")
+
+    dir_only = pattern.endswith("/")
+    if dir_only:
+        pattern = pattern.rstrip("/")
+
+    if "/" not in pattern:
+        if dir_only:
+            return any(part == pattern for part in rel_posix.split("/"))
+        return fnmatch.fnmatch(name, pattern)
+
+    target = rel_posix
+    if anchored:
+        if dir_only:
+            return target.startswith(pattern + "/")
+        return fnmatch.fnmatch(target, pattern)
+    if dir_only:
+        return f"/{pattern}/" in f"/{target}/"
+    return fnmatch.fnmatch(target, f"**/{pattern}") or fnmatch.fnmatch(target, pattern)
+
+
+def _is_gitignored(path: Path, git_root: Path, patterns: List[str]) -> bool:
+    try:
+        rel = path.resolve().relative_to(git_root)
+    except Exception:
+        rel = path
+    rel_posix = rel.as_posix()
+    parts = rel_posix.split("/")
+    subpaths = []
+    cur = ""
+    for part in parts:
+        cur = f"{cur}/{part}" if cur else part
+        subpaths.append((cur, part))
+    ignored = False
+    for pat in patterns:
+        neg = pat.startswith("!")
+        for subpath, name in subpaths:
+            if _gitignore_match(subpath, name, pat):
+                ignored = not neg
+    return ignored
 
 
 def _extract_repr(text: str, stem: str, max_chars: int) -> str:
@@ -159,7 +230,7 @@ def main() -> int:
     p.add_argument("--ticket-root", default=".tickets")
     p.add_argument("--ticket-glob", default="**/*.md")
     p.add_argument("--ticket-paths", default="")
-    p.add_argument("--out-dir", default="docs/oracle-questions-sharded")
+    p.add_argument("--out-dir", default="")
     p.add_argument("--min-sim", type=float, default=0.15)
     p.add_argument("--max-group-size", type=int, default=25)
     p.add_argument("--min-group-size", type=int, default=1)
@@ -168,11 +239,26 @@ def main() -> int:
     p.add_argument("--use-llm-for-ambiguous", action="store_true")
     args = p.parse_args()
 
+    def _now_slug() -> str:
+        import datetime as _dt
+        return _dt.datetime.now().strftime("%Y-%m-%d-%H%M%S")
+
     ticket_root = Path(args.ticket_root)
+    out_dir = Path(args.out_dir) if args.out_dir else Path(f"docs/oracle-questions-sharded-{_now_slug()}")
+    if out_dir.exists():
+        ts = _now_slug()
+        out_dir = Path(f"{out_dir}-run-{ts}")
+    out_dir.mkdir(parents=True, exist_ok=True)
     if args.ticket_paths:
         paths = [Path(p.strip()) for p in args.ticket_paths.split(",") if p.strip()]
     else:
-        paths = sorted(ticket_root.glob(args.ticket_glob), key=lambda p: str(p)) if ticket_root.exists() else []
+        git_root, patterns = _read_gitignore(ticket_root)
+        paths = []
+        if ticket_root.exists():
+            for p in sorted(ticket_root.glob(args.ticket_glob), key=lambda p: str(p)):
+                if _is_gitignored(p, git_root, patterns):
+                    continue
+                paths.append(p)
 
     texts: List[str] = []
     tickets: List[Ticket] = []
@@ -270,8 +356,6 @@ def main() -> int:
             part += 1
 
     # Build manifest
-    out_dir = Path(args.out_dir)
-    out_dir.mkdir(parents=True, exist_ok=True)
     manifest_groups = []
     for g in sorted(final_groups.keys()):
         idxs = final_groups[g]
@@ -296,7 +380,7 @@ def main() -> int:
             }
         )
 
-    manifest = {"groups": manifest_groups}
+    manifest = {"groups": manifest_groups, "out_dir": str(out_dir)}
     (out_dir / "manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True), encoding="utf-8")
     return 0
 

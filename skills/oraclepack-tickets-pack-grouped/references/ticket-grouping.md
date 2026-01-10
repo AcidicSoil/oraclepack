@@ -24,6 +24,7 @@ Objective: split tickets into focused topic/domain groups and generate one pack 
 - If `ticket_paths` is non-empty: split on commas, trim whitespace, use exactly that list.
 - Else: glob `ticket_root/ticket_glob`.
 - Always sort lexicographically by path string.
+- Apply `.gitignore` from the nearest parent containing one (primary).
 
 2) Detect possible duplicates (if `dedupe_mode != off`):
 - Signature: filename stem + first heading + first `dedupe_body_chars` chars.

@@ -22,5 +22,5 @@ Objective: deterministically split a target codebase into topic/domain groups an
 ## Exclusions
 
 - Ignore directories include `.git`, `node_modules`, `dist`, `build`, `.venv`, and other common build outputs.
-- Additional ignore names can be provided via `ignore_dirs` (comma-separated).
+- `.gitignore` patterns are applied first, then `ignore_dirs` (comma-separated) are merged with defaults.
 - Use `exclude_glob` to drop specific paths.

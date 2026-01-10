@@ -35,6 +35,69 @@ DEFAULT_INCLUDE_EXTS = {
     ".yml", ".json", ".toml", ".ini", ".sh", ".ps1", ".tf", ".proto",
 }
 
+def _read_gitignore(root: Path) -> List[str]:
+    path = root / ".gitignore"
+    if not path.exists():
+        return []
+    lines: List[str] = []
+    for ln in path.read_text(encoding="utf-8", errors="replace").splitlines():
+        s = ln.strip()
+        if not s or s.startswith("#"):
+            continue
+        lines.append(s)
+    return lines
+
+
+def _gitignore_match(rel_posix: str, name: str, pattern: str) -> bool:
+    neg = pattern.startswith("!")
+    if neg:
+        pattern = pattern[1:]
+    if not pattern:
+        return False
+
+    anchored = pattern.startswith("/")
+    if anchored:
+        pattern = pattern.lstrip("/")
+
+    dir_only = pattern.endswith("/")
+    if dir_only:
+        pattern = pattern.rstrip("/")
+
+    # Match basename-only patterns
+    if "/" not in pattern:
+        if dir_only:
+            # Any parent dir name match
+            return any(part == pattern for part in rel_posix.split("/"))
+        return fnmatch.fnmatch(name, pattern)
+
+    # Path patterns (allow **)
+    target = rel_posix
+    if anchored:
+        if dir_only:
+            return target.startswith(pattern + "/")
+        return fnmatch.fnmatch(target, pattern)
+    # Unanchored path pattern: match anywhere
+    if dir_only:
+        return f"/{pattern}/" in f"/{target}/"
+    return fnmatch.fnmatch(target, f"**/{pattern}") or fnmatch.fnmatch(target, pattern)
+
+
+def _is_gitignored(rel_posix: str, patterns: List[str]) -> bool:
+    ignored = False
+    parts = rel_posix.split("/")
+    subpaths = []
+    cur = ""
+    for part in parts:
+        cur = f"{cur}/{part}" if cur else part
+        subpaths.append((cur, part))
+    # Evaluate patterns in order for each subpath and full path
+    for pat in patterns:
+        neg = pat.startswith("!")
+        for subpath, name in subpaths:
+            if _gitignore_match(subpath, name, pat):
+                ignored = not neg
+    return ignored
+
 
 def _parse_kv_args(argv: List[str]) -> Dict[str, str]:
     args: Dict[str, str] = {}
@@ -50,11 +113,32 @@ def _today() -> str:
     return _dt.date.today().isoformat()
 
 
+def _now_slug() -> str:
+    return _dt.datetime.now().strftime("%Y-%m-%d-%H%M%S")
+
+
 def _slugify(s: str) -> str:
     s = s.strip().lower()
     s = re.sub(r"[^a-z0-9]+", "-", s)
     s = re.sub(r"-+", "-", s).strip("-")
     return s or "group"
+
+
+def _ensure_run_dir(out_dir: str, allow_overwrite: bool) -> str:
+    base = Path(out_dir)
+    if not base.exists():
+        base.mkdir(parents=True, exist_ok=True)
+        return str(base)
+    if allow_overwrite:
+        return str(base)
+    ts = _now_slug()
+    for i in range(0, 1000):
+        suffix = f"-run-{ts}" if i == 0 else f"-run-{ts}-{i:02d}"
+        cand = Path(f"{out_dir}{suffix}")
+        if not cand.exists():
+            cand.mkdir(parents=True, exist_ok=True)
+            return str(cand)
+    raise SystemExit("[ERROR] could not allocate unique run directory")
 
 
 def _tokenize(text: str) -> List[str]:
@@ -119,6 +203,7 @@ def _collect_paths(
     if not root.exists():
         return []
 
+    gitignore_patterns = _read_gitignore(root)
     ignore = {p.strip() for p in ignore_dirs.split(",") if p.strip()}
     ignore = ignore.union(DEFAULT_IGNORE_DIRS)
 
@@ -133,6 +218,10 @@ def _collect_paths(
         if p.is_dir():
             continue
         parts = set(p.parts)
+        rel = p.relative_to(root)
+        rel_posix = rel.as_posix()
+        if _is_gitignored(rel_posix, gitignore_patterns):
+            continue
         if parts.intersection(ignore):
             continue
         if excludes and any(fnmatch.fnmatch(str(p), g) for g in excludes):
@@ -181,7 +270,7 @@ def main() -> None:
     args = _parse_kv_args(sys.argv[1:])
 
     codebase_name = args.get("codebase_name", "Unknown")
-    out_dir = args.get("out_dir", f"docs/oracle-questions-{_today()}")
+    out_dir = args.get("out_dir", f"docs/oracle-questions-{_now_slug()}")
     oracle_cmd = args.get("oracle_cmd", "oracle")
     oracle_flags = args.get("oracle_flags", "--files-report")
     extra_files = args.get("extra_files", "")
@@ -197,6 +286,7 @@ def main() -> None:
     include_exts = args.get("include_exts", "")
     exclude_glob = args.get("exclude_glob", "")
     mode = args.get("mode", "codebase-grouped-direct")
+    allow_overwrite = args.get("allow_overwrite", "false").lower() in ("1", "true", "yes")
 
     template_path = Path(__file__).resolve().parents[1] / "references" / "codebase-pack-template.md"
     if not template_path.exists():
@@ -237,6 +327,7 @@ def main() -> None:
     if not groups:
         groups = {"root": []}
 
+    out_dir = _ensure_run_dir(out_dir, allow_overwrite)
     out_dir_path = Path(out_dir)
     packs_dir = out_dir_path / "packs"
     packs_dir.mkdir(parents=True, exist_ok=True)
@@ -277,6 +368,9 @@ def main() -> None:
                 "{{group_files_json}}",
                 json.dumps([str(p) for p in chunk], indent=2),
             )
+            unresolved = sorted(set(re.findall(r"\{\{([^}]+)\}\}", rendered)))
+            if unresolved:
+                raise SystemExit(f"[ERROR] Unresolved template placeholders: {unresolved}")
 
             pack_path.write_text(rendered, encoding="utf-8")
             rendered_groups.setdefault(full_group_name, []).append(str(pack_path))
@@ -287,6 +381,17 @@ def main() -> None:
         "packs": rendered_groups,
     }
     (out_dir_path / "_groups.json").write_text(json.dumps(groups_json, indent=2), encoding="utf-8")
+    manifest = {
+        "groups": [
+            {
+                "group": g,
+                "packs": rendered_groups.get(g, []),
+                "files": [str(p) for p in groups.get(g, [])],
+            }
+            for g in sorted(groups.keys())
+        ]
+    }
+    (out_dir_path / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
 
 
 if __name__ == "__main__":
