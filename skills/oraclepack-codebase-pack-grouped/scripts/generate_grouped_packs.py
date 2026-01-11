@@ -286,7 +286,13 @@ def main() -> None:
     include_exts = args.get("include_exts", "")
     exclude_glob = args.get("exclude_glob", "")
     mode = args.get("mode", "codebase-grouped-direct")
+    command_mode = args.get("command_mode", "inline")
+    inline_max_tokens = args.get("inline_max_tokens", "60000")
     allow_overwrite = args.get("allow_overwrite", "false").lower() in ("1", "true", "yes")
+
+    if command_mode == "inline":
+        if ("--browser-inline-files" not in oracle_flags) and ("--browser-attachments" not in oracle_flags):
+            oracle_flags = (oracle_flags + " --browser-inline-files").strip()
 
     template_path = Path(__file__).resolve().parents[1] / "references" / "codebase-pack-template.md"
     if not template_path.exists():
@@ -364,6 +370,8 @@ def main() -> None:
             rendered = rendered.replace("{{include_exts}}", include_exts)
             rendered = rendered.replace("{{exclude_glob}}", exclude_glob)
             rendered = rendered.replace("{{mode}}", mode)
+            rendered = rendered.replace("{{command_mode}}", command_mode)
+            rendered = rendered.replace("{{inline_max_tokens}}", str(inline_max_tokens))
             rendered = rendered.replace(
                 "{{group_files_json}}",
                 json.dumps([str(p) for p in chunk], indent=2),

@@ -13,6 +13,8 @@
 - group_name: {{group_name}}
 - group_slug: {{group_slug}}
 - mode: {{mode}}
+- command_mode: {{command_mode}}
+- inline_max_tokens: {{inline_max_tokens}}
 
 Notes (contract):
 - Exactly one fenced `bash` block in this document.
@@ -141,6 +143,55 @@ done
 
 if [ "${#ticket_args[@]}" -eq 0 ]; then
   echo "WARNING: no tickets resolved for group '{{group_name}}'." >&2
+fi
+
+COMMAND_MODE="{{command_mode}}"
+INLINE_MAX_TOKENS="{{inline_max_tokens}}"
+if [ "$COMMAND_MODE" = "inline" ] && [ "${#ticket_args[@]}" -gt 0 ]; then
+  INLINE_PATHS="$(printf '%s\n' "${__tickets[@]}")"
+  export INLINE_PATHS INLINE_MAX_TOKENS
+  mapfile -t __tickets_capped < <(python3 - <<'PY'
+from __future__ import annotations
+from pathlib import Path
+import os
+import re
+import sys
+
+paths = [p for p in os.environ.get("INLINE_PATHS", "").splitlines() if p]
+max_tokens = int(os.environ.get("INLINE_MAX_TOKENS", "60000"))
+
+def est_tokens(text: str) -> int:
+    try:
+        import tiktoken  # type: ignore
+        enc = tiktoken.get_encoding("cl100k_base")
+        return len(enc.encode(text))
+    except Exception:
+        approx = max(len(text) // 4, len(re.findall(r"\\w+|[^\\s\\w]", text)))
+        return approx
+
+selected = []
+total = 0
+for p in paths:
+    try:
+        content = Path(p).read_text(encoding="utf-8", errors="replace")
+    except Exception:
+        continue
+    block = f"### File: {p}\\n{content}\\n"
+    t = est_tokens(block)
+    if total + t > max_tokens:
+        break
+    selected.append(p)
+    total += t
+
+for p in selected:
+    print(p)
+print(f"INLINE_TOKENS_EST={total}", file=sys.stderr)
+PY
+)
+  ticket_args=()
+  for p in "${__tickets_capped[@]}"; do
+    ticket_args+=(-f "$p")
+  done
 fi
 
 # extra_files appended literally (may be empty; may include -f/--file):

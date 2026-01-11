@@ -57,6 +57,8 @@ Supported keys (defaults in parentheses):
 - `dedupe_delta_min` (`0.15`)
 - `dedupe_body_chars` (`2000`)
 - `mode` (`tickets-grouped-direct`)
+- `command_mode` (`inline`)
+- `inline_max_tokens` (`60000`)
 - `allow_overwrite` (`false`)
 
 Notes:

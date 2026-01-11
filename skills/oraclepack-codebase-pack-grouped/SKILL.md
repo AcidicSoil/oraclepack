@@ -55,6 +55,8 @@ Supported keys (defaults in parentheses):
 - `include_exts` (empty; uses default extension allowlist)
 - `exclude_glob` (empty; comma-separated glob patterns)
 - `mode` (`codebase-grouped-direct`)
+- `command_mode` (`inline`)
+- `inline_max_tokens` (`60000`)
 - `allow_overwrite` (`false`)
 
 Notes:

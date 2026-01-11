@@ -122,6 +122,88 @@ Project Structure:
 </filetree>
 
 <source_code>
+internal/artifacts/contract.go
+```
+package artifacts
+
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+
+	"github.com/user/oraclepack/internal/foundation"
+)
+
+// Contract maps step IDs to required artifact paths.
+type Contract map[string][]string
+
+// DefaultContract returns the standard artifact contract.
+func DefaultContract() Contract {
+	base := ".oraclepack/ticketify"
+	return Contract{
+		"09": {filepath.Join(base, "next.json")},
+		"10": {filepath.Join(base, "codex-implement.md")},
+		"11": {filepath.Join(base, "codex-verify.md")},
+		"12": {filepath.Join(base, "PR.md")},
+	}
+}
+
+// EvaluateGates checks required artifacts for a given step.
+func EvaluateGates(stepID string, contract Contract) error {
+	paths, ok := contract[stepID]
+	if !ok || len(paths) == 0 {
+		return nil
+	}
+	var missing []string
+	for _, p := range paths {
+		info, err := os.Stat(p)
+		if err != nil || info.IsDir() || info.Size() == 0 {
+			missing = append(missing, p)
+		}
+	}
+	if len(missing) > 0 {
+		return fmt.Errorf("%w: %v", foundation.ErrArtifactMissing, missing)
+	}
+	return nil
+}
+```
+
+internal/artifacts/contract_test.go
+```
+package artifacts
+
+import (
+	"os"
+	"path/filepath"
+	"testing"
+)
+
+func TestEvaluateGates(t *testing.T) {
+	dir := t.TempDir()
+	base := filepath.Join(dir, ".oraclepack", "ticketify")
+	if err := os.MkdirAll(base, 0755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	contract := Contract{
+		"09": {filepath.Join(base, "next.json")},
+	}
+
+	// Missing file should error.
+	if err := EvaluateGates("09", contract); err == nil {
+		t.Fatal("expected missing artifact error")
+	}
+
+	// Create file and verify pass.
+	path := filepath.Join(base, "next.json")
+	if err := os.WriteFile(path, []byte("ok"), 0644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	if err := EvaluateGates("09", contract); err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+}
+```
+
 internal/app/app.go
 ```
 package app
@@ -588,88 +670,6 @@ func buildROISteps() string {
 }
 ```
 
-internal/artifacts/contract.go
-```
-package artifacts
-
-import (
-	"fmt"
-	"os"
-	"path/filepath"
-
-	"github.com/user/oraclepack/internal/foundation"
-)
-
-// Contract maps step IDs to required artifact paths.
-type Contract map[string][]string
-
-// DefaultContract returns the standard artifact contract.
-func DefaultContract() Contract {
-	base := ".oraclepack/ticketify"
-	return Contract{
-		"09": {filepath.Join(base, "next.json")},
-		"10": {filepath.Join(base, "codex-implement.md")},
-		"11": {filepath.Join(base, "codex-verify.md")},
-		"12": {filepath.Join(base, "PR.md")},
-	}
-}
-
-// EvaluateGates checks required artifacts for a given step.
-func EvaluateGates(stepID string, contract Contract) error {
-	paths, ok := contract[stepID]
-	if !ok || len(paths) == 0 {
-		return nil
-	}
-	var missing []string
-	for _, p := range paths {
-		info, err := os.Stat(p)
-		if err != nil || info.IsDir() || info.Size() == 0 {
-			missing = append(missing, p)
-		}
-	}
-	if len(missing) > 0 {
-		return fmt.Errorf("%w: %v", foundation.ErrArtifactMissing, missing)
-	}
-	return nil
-}
-```
-
-internal/artifacts/contract_test.go
-```
-package artifacts
-
-import (
-	"os"
-	"path/filepath"
-	"testing"
-)
-
-func TestEvaluateGates(t *testing.T) {
-	dir := t.TempDir()
-	base := filepath.Join(dir, ".oraclepack", "ticketify")
-	if err := os.MkdirAll(base, 0755); err != nil {
-		t.Fatalf("mkdir: %v", err)
-	}
-	contract := Contract{
-		"09": {filepath.Join(base, "next.json")},
-	}
-
-	// Missing file should error.
-	if err := EvaluateGates("09", contract); err == nil {
-		t.Fatal("expected missing artifact error")
-	}
-
-	// Create file and verify pass.
-	path := filepath.Join(base, "next.json")
-	if err := os.WriteFile(path, []byte("ok"), 0644); err != nil {
-		t.Fatalf("write: %v", err)
-	}
-	if err := EvaluateGates("09", contract); err != nil {
-		t.Fatalf("expected no error, got %v", err)
-	}
-}
-```
-
 internal/cli/cmds.go
 ```
 package cli
@@ -1016,6 +1016,94 @@ func init() {
 }
 ```
 
+internal/dispatch/classify.go
+```
+package dispatch
+
+import (
+	"regexp"
+	"strings"
+
+	"github.com/user/oraclepack/internal/tools"
+)
+
+var classifier = regexp.MustCompile(`^(\s*)(oracle|tm|task-master|codex|gemini)\b`)
+
+// Classification describes a parsed command prefix.
+type Classification struct {
+	Kind    tools.ToolKind
+	Prefix  string
+	Command string
+}
+
+// Classify detects a supported tool prefix and returns the remaining command.
+func Classify(line string) (Classification, bool) {
+	m := classifier.FindStringSubmatch(line)
+	if len(m) < 3 {
+		return Classification{}, false
+	}
+	prefix := m[2]
+	kind := toolKindFromPrefix(prefix)
+	if kind == nil {
+		return Classification{}, false
+	}
+	trimmed := strings.TrimSpace(line[len(m[1])+len(prefix):])
+	return Classification{Kind: *kind, Prefix: prefix, Command: strings.TrimSpace(trimmed)}, true
+}
+
+func toolKindFromPrefix(prefix string) *tools.ToolKind {
+	var kind tools.ToolKind
+	switch prefix {
+	case "oracle":
+		kind = tools.ToolOracle
+	case "tm":
+		kind = tools.ToolTM
+	case "task-master":
+		kind = tools.ToolTaskMaster
+	case "codex":
+		kind = tools.ToolCodex
+	case "gemini":
+		kind = tools.ToolGemini
+	default:
+		return nil
+	}
+	return &kind
+}
+```
+
+internal/dispatch/classify_test.go
+```
+package dispatch
+
+import "testing"
+
+func TestClassify(t *testing.T) {
+	tests := []struct {
+		line    string
+		wantOK  bool
+		wantCmd string
+	}{
+		{"oracle query \"hi\"", true, "query \"hi\""},
+		{"  tm list", true, "list"},
+		{"task-master next", true, "next"},
+		{"codex exec \"x\"", true, "exec \"x\""},
+		{"gemini run", true, "run"},
+		{"echo hello", false, ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.line, func(t *testing.T) {
+			got, ok := Classify(tt.line)
+			if ok != tt.wantOK {
+				t.Fatalf("expected ok=%v got %v", tt.wantOK, ok)
+			}
+			if ok && got.Command != tt.wantCmd {
+				t.Fatalf("expected cmd %q got %q", tt.wantCmd, got.Command)
+			}
+		})
+	}
+}
+```
+
 internal/config/defaults.go
 ```
 package config
@@ -1123,167 +1211,6 @@ func normalizeChunkMode(raw string) (string, error) {
 		return DefaultOutputChunkMode, nil
 	default:
 		return "", fmt.Errorf("invalid %s: expected auto|single|multi, got %q", EnvOutputChunkMode, raw)
-	}
-}
-```
-
-internal/dispatch/classify.go
-```
-package dispatch
-
-import (
-	"regexp"
-	"strings"
-
-	"github.com/user/oraclepack/internal/tools"
-)
-
-var classifier = regexp.MustCompile(`^(\s*)(oracle|tm|task-master|codex|gemini)\b`)
-
-// Classification describes a parsed command prefix.
-type Classification struct {
-	Kind    tools.ToolKind
-	Prefix  string
-	Command string
-}
-
-// Classify detects a supported tool prefix and returns the remaining command.
-func Classify(line string) (Classification, bool) {
-	m := classifier.FindStringSubmatch(line)
-	if len(m) < 3 {
-		return Classification{}, false
-	}
-	prefix := m[2]
-	kind := toolKindFromPrefix(prefix)
-	if kind == nil {
-		return Classification{}, false
-	}
-	trimmed := strings.TrimSpace(line[len(m[1])+len(prefix):])
-	return Classification{Kind: *kind, Prefix: prefix, Command: strings.TrimSpace(trimmed)}, true
-}
-
-func toolKindFromPrefix(prefix string) *tools.ToolKind {
-	var kind tools.ToolKind
-	switch prefix {
-	case "oracle":
-		kind = tools.ToolOracle
-	case "tm":
-		kind = tools.ToolTM
-	case "task-master":
-		kind = tools.ToolTaskMaster
-	case "codex":
-		kind = tools.ToolCodex
-	case "gemini":
-		kind = tools.ToolGemini
-	default:
-		return nil
-	}
-	return &kind
-}
-```
-
-internal/dispatch/classify_test.go
-```
-package dispatch
-
-import "testing"
-
-func TestClassify(t *testing.T) {
-	tests := []struct {
-		line    string
-		wantOK  bool
-		wantCmd string
-	}{
-		{"oracle query \"hi\"", true, "query \"hi\""},
-		{"  tm list", true, "list"},
-		{"task-master next", true, "next"},
-		{"codex exec \"x\"", true, "exec \"x\""},
-		{"gemini run", true, "run"},
-		{"echo hello", false, ""},
-	}
-	for _, tt := range tests {
-		t.Run(tt.line, func(t *testing.T) {
-			got, ok := Classify(tt.line)
-			if ok != tt.wantOK {
-				t.Fatalf("expected ok=%v got %v", tt.wantOK, ok)
-			}
-			if ok && got.Command != tt.wantCmd {
-				t.Fatalf("expected cmd %q got %q", tt.wantCmd, got.Command)
-			}
-		})
-	}
-}
-```
-
-internal/errors/errors.go
-```
-package errors
-
-import (
-	"errors"
-)
-
-var (
-	// ErrInvalidPack is returned when the Markdown pack is malformed.
-	ErrInvalidPack = errors.New("invalid pack structure")
-	// ErrExecutionFailed is returned when a shell command fails.
-	ErrExecutionFailed = errors.New("execution failed")
-	// ErrConfigInvalid is returned when CLI flags or environment variables are incorrect.
-	ErrConfigInvalid = errors.New("invalid configuration")
-)
-
-// ExitCode returns the appropriate exit code for a given error.
-func ExitCode(err error) int {
-	if err == nil {
-		return 0
-	}
-
-	if errors.Is(err, ErrConfigInvalid) {
-		return 2
-	}
-
-	if errors.Is(err, ErrInvalidPack) {
-		return 3
-	}
-
-	if errors.Is(err, ErrExecutionFailed) {
-		return 4
-	}
-
-	return 1 // Generic error
-}
-```
-
-internal/errors/errors_test.go
-```
-package errors
-
-import (
-	"errors"
-	"fmt"
-	"testing"
-)
-
-func TestExitCode(t *testing.T) {
-	tests := []struct {
-		name     string
-		err      error
-		expected int
-	}{
-		{"nil error", nil, 0},
-		{"generic error", errors.New("generic"), 1},
-		{"invalid pack", ErrInvalidPack, 3},
-		{"execution failed", ErrExecutionFailed, 4},
-		{"config invalid", ErrConfigInvalid, 2},
-		{"wrapped invalid pack", fmt.Errorf("wrap: %w", ErrInvalidPack), 3},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := ExitCode(tt.err); got != tt.expected {
-				t.Errorf("ExitCode() = %v, want %v", got, tt.expected)
-			}
-		})
 	}
 }
 ```
@@ -2265,398 +2192,76 @@ func MultiWriter(writers ...io.Writer) io.Writer {
 }
 ```
 
-internal/foundation/atomic.go
+internal/errors/errors.go
 ```
-package foundation
-
-import (
-	"fmt"
-	"os"
-)
-
-// WriteAtomic writes data to path atomically by writing to a temp file and renaming.
-func WriteAtomic(path string, data []byte, perm os.FileMode) error {
-	tempPath := path + ".tmp"
-	if err := os.WriteFile(tempPath, data, perm); err != nil {
-		return fmt.Errorf("write temp file: %w", err)
-	}
-	if err := os.Rename(tempPath, path); err != nil {
-		_ = os.Remove(tempPath)
-		return fmt.Errorf("rename temp file: %w", err)
-	}
-	return nil
-}
-```
-
-internal/foundation/atomic_test.go
-```
-package foundation
-
-import (
-	"os"
-	"path/filepath"
-	"testing"
-)
-
-func TestWriteAtomic(t *testing.T) {
-	dir := t.TempDir()
-	path := filepath.Join(dir, "out.json")
-	if err := WriteAtomic(path, []byte("hello"), 0644); err != nil {
-		t.Fatalf("WriteAtomic: %v", err)
-	}
-	data, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatalf("read: %v", err)
-	}
-	if string(data) != "hello" {
-		t.Fatalf("unexpected contents: %q", string(data))
-	}
-}
-```
-
-internal/foundation/clock.go
-```
-package foundation
-
-import "time"
-
-// Clock abstracts time for deterministic testing.
-type Clock interface {
-	Now() time.Time
-}
-
-// RealClock uses the system clock.
-type RealClock struct{}
-
-// Now returns the current time.
-func (RealClock) Now() time.Time { return time.Now() }
-
-// MockClock returns a fixed time that can be advanced.
-type MockClock struct {
-	current time.Time
-}
-
-// NewMockClock initializes a mock clock with a starting time.
-func NewMockClock(start time.Time) *MockClock {
-	return &MockClock{current: start}
-}
-
-// Now returns the mock time.
-func (m *MockClock) Now() time.Time { return m.current }
-
-// Advance moves the mock time forward.
-func (m *MockClock) Advance(d time.Duration) {
-	m.current = m.current.Add(d)
-}
-```
-
-internal/foundation/clock_test.go
-```
-package foundation
-
-import (
-	"testing"
-	"time"
-)
-
-func TestMockClock(t *testing.T) {
-	start := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
-	m := NewMockClock(start)
-	if !m.Now().Equal(start) {
-		t.Fatalf("expected %v, got %v", start, m.Now())
-	}
-	m.Advance(2 * time.Hour)
-	want := start.Add(2 * time.Hour)
-	if !m.Now().Equal(want) {
-		t.Fatalf("expected %v, got %v", want, m.Now())
-	}
-}
-```
-
-internal/foundation/config.go
-```
-package foundation
-
-import (
-	"encoding/json"
-	"fmt"
-	"os"
-	"strconv"
-)
-
-// Config holds runtime settings that can be loaded from JSON and environment variables.
-// Env values always take precedence over JSON values.
-type Config struct {
-	Name      string  `json:"name" env:"ORACLEPACK_NAME"`
-	Retries   int     `json:"retries" env:"ORACLEPACK_RETRIES"`
-	Enabled   bool    `json:"enabled" env:"ORACLEPACK_ENABLED"`
-	Threshold float64 `json:"threshold" env:"ORACLEPACK_THRESHOLD"`
-}
-
-// LoadConfig loads configuration from a JSON file and then applies environment overrides.
-// If path is empty, JSON loading is skipped and only env overrides are applied.
-func LoadConfig(path string) (Config, error) {
-	var cfg Config
-	if path != "" {
-		data, err := os.ReadFile(path)
-		if err != nil {
-			return Config{}, fmt.Errorf("read config: %w", err)
-		}
-		if err := json.Unmarshal(data, &cfg); err != nil {
-			return Config{}, fmt.Errorf("parse config: %w", err)
-		}
-	}
-
-	if v, ok := os.LookupEnv("ORACLEPACK_NAME"); ok {
-		cfg.Name = v
-	}
-	if v, ok := os.LookupEnv("ORACLEPACK_RETRIES"); ok {
-		parsed, err := strconv.Atoi(v)
-		if err != nil {
-			return Config{}, fmt.Errorf("parse ORACLEPACK_RETRIES: %w", err)
-		}
-		cfg.Retries = parsed
-	}
-	if v, ok := os.LookupEnv("ORACLEPACK_ENABLED"); ok {
-		parsed, err := strconv.ParseBool(v)
-		if err != nil {
-			return Config{}, fmt.Errorf("parse ORACLEPACK_ENABLED: %w", err)
-		}
-		cfg.Enabled = parsed
-	}
-	if v, ok := os.LookupEnv("ORACLEPACK_THRESHOLD"); ok {
-		parsed, err := strconv.ParseFloat(v, 64)
-		if err != nil {
-			return Config{}, fmt.Errorf("parse ORACLEPACK_THRESHOLD: %w", err)
-		}
-		cfg.Threshold = parsed
-	}
-
-	return cfg, nil
-}
-```
-
-internal/foundation/config_test.go
-```
-package foundation
-
-import (
-	"os"
-	"path/filepath"
-	"testing"
-)
-
-func TestLoadConfigEnvOverrides(t *testing.T) {
-	t.Setenv("ORACLEPACK_NAME", "env-name")
-	t.Setenv("ORACLEPACK_RETRIES", "5")
-	t.Setenv("ORACLEPACK_ENABLED", "true")
-	t.Setenv("ORACLEPACK_THRESHOLD", "2.5")
-
-	dir := t.TempDir()
-	path := filepath.Join(dir, "config.json")
-	if err := os.WriteFile(path, []byte(`{"name":"json-name","retries":1,"enabled":false,"threshold":1.0}`), 0644); err != nil {
-		t.Fatalf("write json: %v", err)
-	}
-
-	cfg, err := LoadConfig(path)
-	if err != nil {
-		t.Fatalf("LoadConfig: %v", err)
-	}
-
-	if cfg.Name != "env-name" || cfg.Retries != 5 || cfg.Enabled != true || cfg.Threshold != 2.5 {
-		t.Fatalf("env overrides not applied: %+v", cfg)
-	}
-}
-
-func TestLoadConfigJSONOnly(t *testing.T) {
-	dir := t.TempDir()
-	path := filepath.Join(dir, "config.json")
-	if err := os.WriteFile(path, []byte(`{"name":"json-name","retries":3,"enabled":true,"threshold":4.25}`), 0644); err != nil {
-		t.Fatalf("write json: %v", err)
-	}
-
-	cfg, err := LoadConfig(path)
-	if err != nil {
-		t.Fatalf("LoadConfig: %v", err)
-	}
-
-	if cfg.Name != "json-name" || cfg.Retries != 3 || cfg.Enabled != true || cfg.Threshold != 4.25 {
-		t.Fatalf("json load mismatch: %+v", cfg)
-	}
-}
-```
-
-internal/foundation/errors.go
-```
-package foundation
-
-import "errors"
-
-var (
-	// ErrMissingBinary is returned when a required binary is not found on PATH.
-	ErrMissingBinary = errors.New("missing binary")
-	// ErrArtifactMissing is returned when an expected artifact is absent.
-	ErrArtifactMissing = errors.New("artifact missing")
-)
-```
-
-internal/foundation/errors_test.go
-```
-package foundation
+package errors
 
 import (
 	"errors"
-	"testing"
 )
 
-func TestCommonErrors(t *testing.T) {
-	if ErrMissingBinary == nil || ErrArtifactMissing == nil {
-		t.Fatal("expected error variables to be initialized")
+var (
+	// ErrInvalidPack is returned when the Markdown pack is malformed.
+	ErrInvalidPack = errors.New("invalid pack structure")
+	// ErrExecutionFailed is returned when a shell command fails.
+	ErrExecutionFailed = errors.New("execution failed")
+	// ErrConfigInvalid is returned when CLI flags or environment variables are incorrect.
+	ErrConfigInvalid = errors.New("invalid configuration")
+)
+
+// ExitCode returns the appropriate exit code for a given error.
+func ExitCode(err error) int {
+	if err == nil {
+		return 0
 	}
-	if !errors.Is(ErrMissingBinary, ErrMissingBinary) {
-		t.Fatal("errors.Is failed for ErrMissingBinary")
+
+	if errors.Is(err, ErrConfigInvalid) {
+		return 2
 	}
-	if !errors.Is(ErrArtifactMissing, ErrArtifactMissing) {
-		t.Fatal("errors.Is failed for ErrArtifactMissing")
+
+	if errors.Is(err, ErrInvalidPack) {
+		return 3
 	}
+
+	if errors.Is(err, ErrExecutionFailed) {
+		return 4
+	}
+
+	return 1 // Generic error
 }
 ```
 
-internal/overrides/merge.go
+internal/errors/errors_test.go
 ```
-package overrides
-
-// EffectiveFlags calculates the final flags for a step.
-func (r *RuntimeOverrides) EffectiveFlags(stepID string, baseline []string) []string {
-	if r == nil || r.ApplyToSteps == nil || !r.ApplyToSteps[stepID] {
-		return baseline
-	}
-
-	var effective []string
-
-	// Map for removed flags
-	removed := make(map[string]bool)
-	for _, f := range r.RemovedFlags {
-		removed[f] = true
-	}
-
-	// Filter baseline
-	for _, flag := range baseline {
-		if !removed[flag] {
-			effective = append(effective, flag)
-		}
-	}
-
-	// Append added flags
-	effective = append(effective, r.AddedFlags...)
-
-	// Inject ChatGPTURL
-	if r.ChatGPTURL != "" {
-		effective = append(effective, "--chatgpt-url", r.ChatGPTURL)
-	}
-
-	return effective
-}
-```
-
-internal/overrides/merge_test.go
-```
-package overrides
+package errors
 
 import (
-	"reflect"
+	"errors"
+	"fmt"
 	"testing"
 )
 
-func TestEffectiveFlags(t *testing.T) {
+func TestExitCode(t *testing.T) {
 	tests := []struct {
-		name      string
-		overrides *RuntimeOverrides
-		stepID    string
-		baseline  []string
-		want      []string
+		name     string
+		err      error
+		expected int
 	}{
-		{
-			name:      "No overrides (nil)",
-			overrides: nil,
-			stepID:    "01",
-			baseline:  []string{"--json"},
-			want:      []string{"--json"},
-		},
-		{
-			name: "Step not targeted",
-			overrides: &RuntimeOverrides{
-				ApplyToSteps: map[string]bool{"02": true},
-				AddedFlags:   []string{"--verbose"},
-			},
-			stepID:   "01",
-			baseline: []string{"--json"},
-			want:     []string{"--json"},
-		},
-		{
-			name: "Step targeted: Add flags",
-			overrides: &RuntimeOverrides{
-				ApplyToSteps: map[string]bool{"01": true},
-				AddedFlags:   []string{"--verbose"},
-			},
-			stepID:   "01",
-			baseline: []string{"--json"},
-			want:     []string{"--json", "--verbose"},
-		},
-		{
-			name: "Step targeted: Remove flags",
-			overrides: &RuntimeOverrides{
-				ApplyToSteps: map[string]bool{"01": true},
-				RemovedFlags: []string{"--json"},
-			},
-			stepID:   "01",
-			baseline: []string{"--json", "--other"},
-			want:     []string{"--other"},
-		},
-		{
-			name: "Step targeted: Add and Remove",
-			overrides: &RuntimeOverrides{
-				ApplyToSteps: map[string]bool{"01": true},
-				AddedFlags:   []string{"--new"},
-				RemovedFlags: []string{"--old"},
-			},
-			stepID:   "01",
-			baseline: []string{"--old", "--keep"},
-			want:     []string{"--keep", "--new"},
-		},
-		{
-			name: "Step targeted: Inject ChatGPT URL",
-			overrides: &RuntimeOverrides{
-				ApplyToSteps: map[string]bool{"01": true},
-				ChatGPTURL:   "https://chat.openai.com/share/123",
-			},
-			stepID:   "01",
-			baseline: []string{"--json"},
-			want:     []string{"--json", "--chatgpt-url", "https://chat.openai.com/share/123"},
-		},
+		{"nil error", nil, 0},
+		{"generic error", errors.New("generic"), 1},
+		{"invalid pack", ErrInvalidPack, 3},
+		{"execution failed", ErrExecutionFailed, 4},
+		{"config invalid", ErrConfigInvalid, 2},
+		{"wrapped invalid pack", fmt.Errorf("wrap: %w", ErrInvalidPack), 3},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.overrides.EffectiveFlags(tt.stepID, tt.baseline)
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("EffectiveFlags() = %v, want %v", got, tt.want)
+			if got := ExitCode(tt.err); got != tt.expected {
+				t.Errorf("ExitCode() = %v, want %v", got, tt.expected)
 			}
 		})
 	}
-}
-```
-
-internal/overrides/types.go
-```
-package overrides
-
-// RuntimeOverrides holds configuration for runtime flag modifications.
-type RuntimeOverrides struct {
-	AddedFlags   []string        // Flags to append (e.g., "--model=gpt-4")
-	RemovedFlags []string        // Flags to remove (e.g., "--json")
-	ChatGPTURL   string          // Optional URL to inject via --chatgpt-url
-	ApplyToSteps map[string]bool // Set of step IDs to apply overrides to. If empty, applies to none.
 }
 ```
 
@@ -3723,104 +3328,398 @@ func FormatVerifyReport(report VerifyReport) string {
 }
 ```
 
-internal/render/render.go
+internal/foundation/atomic.go
 ```
-package render
+package foundation
 
 import (
-	"sync"
-
-	"github.com/charmbracelet/glamour"
-	"github.com/user/oraclepack/internal/types"
+	"fmt"
+	"os"
 )
 
-const (
-	DefaultStyle = "dark"
-	DefaultWidth = 80
-)
-
-type rendererKey struct {
-	width int
-	style string
-}
-
-var (
-	rendererMu    sync.Mutex
-	rendererCache = map[rendererKey]*glamour.TermRenderer{}
-)
-
-// RenderMarkdown renders markdown text as ANSI-styled text.
-func RenderMarkdown(text string, width int, style string) (string, error) {
-	if width <= 0 {
-		width = DefaultWidth
+// WriteAtomic writes data to path atomically by writing to a temp file and renaming.
+func WriteAtomic(path string, data []byte, perm os.FileMode) error {
+	tempPath := path + ".tmp"
+	if err := os.WriteFile(tempPath, data, perm); err != nil {
+		return fmt.Errorf("write temp file: %w", err)
 	}
-	if style == "" {
-		style = DefaultStyle
+	if err := os.Rename(tempPath, path); err != nil {
+		_ = os.Remove(tempPath)
+		return fmt.Errorf("rename temp file: %w", err)
 	}
-
-	r, err := rendererFor(width, style)
-	if err != nil {
-		return "", err
-	}
-
-	return r.Render(text)
-}
-
-// RenderStepCode renders a step's code block for preview.
-func RenderStepCode(s types.Step, width int, style string) (string, error) {
-	md := "```bash\n" + s.Code + "\n```"
-	return RenderMarkdown(md, width, style)
-}
-
-func rendererFor(width int, style string) (*glamour.TermRenderer, error) {
-	key := rendererKey{width: width, style: style}
-
-	rendererMu.Lock()
-	r := rendererCache[key]
-	rendererMu.Unlock()
-	if r != nil {
-		return r, nil
-	}
-
-	opts := []glamour.TermRendererOption{glamour.WithWordWrap(width)}
-	if style == "auto" {
-		opts = append(opts, glamour.WithAutoStyle())
-	} else {
-		opts = append(opts, glamour.WithStandardStyle(style))
-	}
-
-	r, err := glamour.NewTermRenderer(opts...)
-	if err != nil {
-		return nil, err
-	}
-
-	rendererMu.Lock()
-	rendererCache[key] = r
-	rendererMu.Unlock()
-	return r, nil
+	return nil
 }
 ```
 
-internal/render/render_test.go
+internal/foundation/atomic_test.go
 ```
-package render
+package foundation
 
 import (
-	"strings"
+	"os"
+	"path/filepath"
 	"testing"
 )
 
-func TestRenderMarkdown(t *testing.T) {
-	text := "# Hello\n**bold**"
-	got, err := RenderMarkdown(text, 40, DefaultStyle)
+func TestWriteAtomic(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "out.json")
+	if err := WriteAtomic(path, []byte("hello"), 0644); err != nil {
+		t.Fatalf("WriteAtomic: %v", err)
+	}
+	data, err := os.ReadFile(path)
 	if err != nil {
-		t.Fatalf("RenderMarkdown failed: %v", err)
+		t.Fatalf("read: %v", err)
+	}
+	if string(data) != "hello" {
+		t.Fatalf("unexpected contents: %q", string(data))
+	}
+}
+```
+
+internal/foundation/clock.go
+```
+package foundation
+
+import "time"
+
+// Clock abstracts time for deterministic testing.
+type Clock interface {
+	Now() time.Time
+}
+
+// RealClock uses the system clock.
+type RealClock struct{}
+
+// Now returns the current time.
+func (RealClock) Now() time.Time { return time.Now() }
+
+// MockClock returns a fixed time that can be advanced.
+type MockClock struct {
+	current time.Time
+}
+
+// NewMockClock initializes a mock clock with a starting time.
+func NewMockClock(start time.Time) *MockClock {
+	return &MockClock{current: start}
+}
+
+// Now returns the mock time.
+func (m *MockClock) Now() time.Time { return m.current }
+
+// Advance moves the mock time forward.
+func (m *MockClock) Advance(d time.Duration) {
+	m.current = m.current.Add(d)
+}
+```
+
+internal/foundation/clock_test.go
+```
+package foundation
+
+import (
+	"testing"
+	"time"
+)
+
+func TestMockClock(t *testing.T) {
+	start := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+	m := NewMockClock(start)
+	if !m.Now().Equal(start) {
+		t.Fatalf("expected %v, got %v", start, m.Now())
+	}
+	m.Advance(2 * time.Hour)
+	want := start.Add(2 * time.Hour)
+	if !m.Now().Equal(want) {
+		t.Fatalf("expected %v, got %v", want, m.Now())
+	}
+}
+```
+
+internal/foundation/config.go
+```
+package foundation
+
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+	"strconv"
+)
+
+// Config holds runtime settings that can be loaded from JSON and environment variables.
+// Env values always take precedence over JSON values.
+type Config struct {
+	Name      string  `json:"name" env:"ORACLEPACK_NAME"`
+	Retries   int     `json:"retries" env:"ORACLEPACK_RETRIES"`
+	Enabled   bool    `json:"enabled" env:"ORACLEPACK_ENABLED"`
+	Threshold float64 `json:"threshold" env:"ORACLEPACK_THRESHOLD"`
+}
+
+// LoadConfig loads configuration from a JSON file and then applies environment overrides.
+// If path is empty, JSON loading is skipped and only env overrides are applied.
+func LoadConfig(path string) (Config, error) {
+	var cfg Config
+	if path != "" {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return Config{}, fmt.Errorf("read config: %w", err)
+		}
+		if err := json.Unmarshal(data, &cfg); err != nil {
+			return Config{}, fmt.Errorf("parse config: %w", err)
+		}
 	}
 
-	// ANSI escape codes start with \x1b[
-	if !strings.Contains(got, "\x1b[") {
-		t.Errorf("expected ANSI codes in output, got: %q", got)
+	if v, ok := os.LookupEnv("ORACLEPACK_NAME"); ok {
+		cfg.Name = v
 	}
+	if v, ok := os.LookupEnv("ORACLEPACK_RETRIES"); ok {
+		parsed, err := strconv.Atoi(v)
+		if err != nil {
+			return Config{}, fmt.Errorf("parse ORACLEPACK_RETRIES: %w", err)
+		}
+		cfg.Retries = parsed
+	}
+	if v, ok := os.LookupEnv("ORACLEPACK_ENABLED"); ok {
+		parsed, err := strconv.ParseBool(v)
+		if err != nil {
+			return Config{}, fmt.Errorf("parse ORACLEPACK_ENABLED: %w", err)
+		}
+		cfg.Enabled = parsed
+	}
+	if v, ok := os.LookupEnv("ORACLEPACK_THRESHOLD"); ok {
+		parsed, err := strconv.ParseFloat(v, 64)
+		if err != nil {
+			return Config{}, fmt.Errorf("parse ORACLEPACK_THRESHOLD: %w", err)
+		}
+		cfg.Threshold = parsed
+	}
+
+	return cfg, nil
+}
+```
+
+internal/foundation/config_test.go
+```
+package foundation
+
+import (
+	"os"
+	"path/filepath"
+	"testing"
+)
+
+func TestLoadConfigEnvOverrides(t *testing.T) {
+	t.Setenv("ORACLEPACK_NAME", "env-name")
+	t.Setenv("ORACLEPACK_RETRIES", "5")
+	t.Setenv("ORACLEPACK_ENABLED", "true")
+	t.Setenv("ORACLEPACK_THRESHOLD", "2.5")
+
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.json")
+	if err := os.WriteFile(path, []byte(`{"name":"json-name","retries":1,"enabled":false,"threshold":1.0}`), 0644); err != nil {
+		t.Fatalf("write json: %v", err)
+	}
+
+	cfg, err := LoadConfig(path)
+	if err != nil {
+		t.Fatalf("LoadConfig: %v", err)
+	}
+
+	if cfg.Name != "env-name" || cfg.Retries != 5 || cfg.Enabled != true || cfg.Threshold != 2.5 {
+		t.Fatalf("env overrides not applied: %+v", cfg)
+	}
+}
+
+func TestLoadConfigJSONOnly(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.json")
+	if err := os.WriteFile(path, []byte(`{"name":"json-name","retries":3,"enabled":true,"threshold":4.25}`), 0644); err != nil {
+		t.Fatalf("write json: %v", err)
+	}
+
+	cfg, err := LoadConfig(path)
+	if err != nil {
+		t.Fatalf("LoadConfig: %v", err)
+	}
+
+	if cfg.Name != "json-name" || cfg.Retries != 3 || cfg.Enabled != true || cfg.Threshold != 4.25 {
+		t.Fatalf("json load mismatch: %+v", cfg)
+	}
+}
+```
+
+internal/foundation/errors.go
+```
+package foundation
+
+import "errors"
+
+var (
+	// ErrMissingBinary is returned when a required binary is not found on PATH.
+	ErrMissingBinary = errors.New("missing binary")
+	// ErrArtifactMissing is returned when an expected artifact is absent.
+	ErrArtifactMissing = errors.New("artifact missing")
+)
+```
+
+internal/foundation/errors_test.go
+```
+package foundation
+
+import (
+	"errors"
+	"testing"
+)
+
+func TestCommonErrors(t *testing.T) {
+	if ErrMissingBinary == nil || ErrArtifactMissing == nil {
+		t.Fatal("expected error variables to be initialized")
+	}
+	if !errors.Is(ErrMissingBinary, ErrMissingBinary) {
+		t.Fatal("errors.Is failed for ErrMissingBinary")
+	}
+	if !errors.Is(ErrArtifactMissing, ErrArtifactMissing) {
+		t.Fatal("errors.Is failed for ErrArtifactMissing")
+	}
+}
+```
+
+internal/overrides/merge.go
+```
+package overrides
+
+// EffectiveFlags calculates the final flags for a step.
+func (r *RuntimeOverrides) EffectiveFlags(stepID string, baseline []string) []string {
+	if r == nil || r.ApplyToSteps == nil || !r.ApplyToSteps[stepID] {
+		return baseline
+	}
+
+	var effective []string
+
+	// Map for removed flags
+	removed := make(map[string]bool)
+	for _, f := range r.RemovedFlags {
+		removed[f] = true
+	}
+
+	// Filter baseline
+	for _, flag := range baseline {
+		if !removed[flag] {
+			effective = append(effective, flag)
+		}
+	}
+
+	// Append added flags
+	effective = append(effective, r.AddedFlags...)
+
+	// Inject ChatGPTURL
+	if r.ChatGPTURL != "" {
+		effective = append(effective, "--chatgpt-url", r.ChatGPTURL)
+	}
+
+	return effective
+}
+```
+
+internal/overrides/merge_test.go
+```
+package overrides
+
+import (
+	"reflect"
+	"testing"
+)
+
+func TestEffectiveFlags(t *testing.T) {
+	tests := []struct {
+		name      string
+		overrides *RuntimeOverrides
+		stepID    string
+		baseline  []string
+		want      []string
+	}{
+		{
+			name:      "No overrides (nil)",
+			overrides: nil,
+			stepID:    "01",
+			baseline:  []string{"--json"},
+			want:      []string{"--json"},
+		},
+		{
+			name: "Step not targeted",
+			overrides: &RuntimeOverrides{
+				ApplyToSteps: map[string]bool{"02": true},
+				AddedFlags:   []string{"--verbose"},
+			},
+			stepID:   "01",
+			baseline: []string{"--json"},
+			want:     []string{"--json"},
+		},
+		{
+			name: "Step targeted: Add flags",
+			overrides: &RuntimeOverrides{
+				ApplyToSteps: map[string]bool{"01": true},
+				AddedFlags:   []string{"--verbose"},
+			},
+			stepID:   "01",
+			baseline: []string{"--json"},
+			want:     []string{"--json", "--verbose"},
+		},
+		{
+			name: "Step targeted: Remove flags",
+			overrides: &RuntimeOverrides{
+				ApplyToSteps: map[string]bool{"01": true},
+				RemovedFlags: []string{"--json"},
+			},
+			stepID:   "01",
+			baseline: []string{"--json", "--other"},
+			want:     []string{"--other"},
+		},
+		{
+			name: "Step targeted: Add and Remove",
+			overrides: &RuntimeOverrides{
+				ApplyToSteps: map[string]bool{"01": true},
+				AddedFlags:   []string{"--new"},
+				RemovedFlags: []string{"--old"},
+			},
+			stepID:   "01",
+			baseline: []string{"--old", "--keep"},
+			want:     []string{"--keep", "--new"},
+		},
+		{
+			name: "Step targeted: Inject ChatGPT URL",
+			overrides: &RuntimeOverrides{
+				ApplyToSteps: map[string]bool{"01": true},
+				ChatGPTURL:   "https://chat.openai.com/share/123",
+			},
+			stepID:   "01",
+			baseline: []string{"--json"},
+			want:     []string{"--json", "--chatgpt-url", "https://chat.openai.com/share/123"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.overrides.EffectiveFlags(tt.stepID, tt.baseline)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("EffectiveFlags() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+```
+
+internal/overrides/types.go
+```
+package overrides
+
+// RuntimeOverrides holds configuration for runtime flag modifications.
+type RuntimeOverrides struct {
+	AddedFlags   []string        // Flags to append (e.g., "--model=gpt-4")
+	RemovedFlags []string        // Flags to remove (e.g., "--json")
+	ChatGPTURL   string          // Optional URL to inject via --chatgpt-url
+	ApplyToSteps map[string]bool // Set of step IDs to apply overrides to. If empty, applies to none.
 }
 ```
 
@@ -4039,6 +3938,107 @@ type Warning struct {
 	Line    int    `json:"line"`
 	Token   string `json:"token"`
 	Message string `json:"message"`
+}
+```
+
+internal/render/render.go
+```
+package render
+
+import (
+	"sync"
+
+	"github.com/charmbracelet/glamour"
+	"github.com/user/oraclepack/internal/types"
+)
+
+const (
+	DefaultStyle = "dark"
+	DefaultWidth = 80
+)
+
+type rendererKey struct {
+	width int
+	style string
+}
+
+var (
+	rendererMu    sync.Mutex
+	rendererCache = map[rendererKey]*glamour.TermRenderer{}
+)
+
+// RenderMarkdown renders markdown text as ANSI-styled text.
+func RenderMarkdown(text string, width int, style string) (string, error) {
+	if width <= 0 {
+		width = DefaultWidth
+	}
+	if style == "" {
+		style = DefaultStyle
+	}
+
+	r, err := rendererFor(width, style)
+	if err != nil {
+		return "", err
+	}
+
+	return r.Render(text)
+}
+
+// RenderStepCode renders a step's code block for preview.
+func RenderStepCode(s types.Step, width int, style string) (string, error) {
+	md := "```bash\n" + s.Code + "\n```"
+	return RenderMarkdown(md, width, style)
+}
+
+func rendererFor(width int, style string) (*glamour.TermRenderer, error) {
+	key := rendererKey{width: width, style: style}
+
+	rendererMu.Lock()
+	r := rendererCache[key]
+	rendererMu.Unlock()
+	if r != nil {
+		return r, nil
+	}
+
+	opts := []glamour.TermRendererOption{glamour.WithWordWrap(width)}
+	if style == "auto" {
+		opts = append(opts, glamour.WithAutoStyle())
+	} else {
+		opts = append(opts, glamour.WithStandardStyle(style))
+	}
+
+	r, err := glamour.NewTermRenderer(opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	rendererMu.Lock()
+	rendererCache[key] = r
+	rendererMu.Unlock()
+	return r, nil
+}
+```
+
+internal/render/render_test.go
+```
+package render
+
+import (
+	"strings"
+	"testing"
+)
+
+func TestRenderMarkdown(t *testing.T) {
+	text := "# Hello\n**bold**"
+	got, err := RenderMarkdown(text, 40, DefaultStyle)
+	if err != nil {
+		t.Fatalf("RenderMarkdown failed: %v", err)
+	}
+
+	// ANSI escape codes start with \x1b[
+	if !strings.Contains(got, "\x1b[") {
+		t.Errorf("expected ANSI codes in output, got: %q", got)
+	}
 }
 ```
 
@@ -4323,421 +4323,6 @@ func TestRunCommandLoginShell(t *testing.T) {
 	}
 	if res.ExitCode != 0 {
 		t.Fatalf("expected exit code 0, got %d", res.ExitCode)
-	}
-}
-```
-
-internal/state/io.go
-```
-package state
-
-// Intentionally left without extra imports.
-
-// WriteState writes RunState atomically to disk.
-func WriteState(path string, state *RunState) error {
-	return SaveStateAtomic(path, state)
-}
-```
-
-internal/state/io_test.go
-```
-package state
-
-import (
-	"path/filepath"
-	"testing"
-	"time"
-)
-
-func TestWriteStateAndLoadState(t *testing.T) {
-	dir := t.TempDir()
-	path := filepath.Join(dir, "state.json")
-
-	input := &RunState{
-		SchemaVersion: 1,
-		PackHash:      "hash",
-		StartTime:     time.Now(),
-		CurrentStep:   2,
-		StepStatuses: map[string]StepStatus{
-			"01": {Status: StatusSuccess},
-		},
-	}
-
-	if err := WriteState(path, input); err != nil {
-		t.Fatalf("WriteState: %v", err)
-	}
-
-	out, err := LoadState(path)
-	if err != nil {
-		t.Fatalf("LoadState: %v", err)
-	}
-
-	if out.CurrentStep != 2 {
-		t.Fatalf("expected CurrentStep 2, got %d", out.CurrentStep)
-	}
-	if out.StepStatuses["01"].Status != StatusSuccess {
-		t.Fatalf("expected status success, got %s", out.StepStatuses["01"].Status)
-	}
-}
-```
-
-internal/state/persist.go
-```
-package state
-
-import (
-	"encoding/json"
-	"fmt"
-	"os"
-)
-
-// SaveStateAtomic saves the state to a file atomically.
-func SaveStateAtomic(path string, state *RunState) error {
-	data, err := json.MarshalIndent(state, "", "  ")
-	if err != nil {
-		return fmt.Errorf("marshal state: %w", err)
-	}
-
-	tempPath := path + ".tmp"
-	if err := os.WriteFile(tempPath, data, 0644); err != nil {
-		return fmt.Errorf("write temp file: %w", err)
-	}
-
-	if err := os.Rename(tempPath, path); err != nil {
-		os.Remove(tempPath)
-		return fmt.Errorf("rename temp file: %w", err)
-	}
-
-	return nil
-}
-
-// LoadState loads the state from a file.
-func LoadState(path string) (*RunState, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, fmt.Errorf("state file not found: %w", err)
-		}
-		return nil, fmt.Errorf("read state file: %w", err)
-	}
-
-	var state RunState
-	if err := json.Unmarshal(data, &state); err != nil {
-		return nil, fmt.Errorf("unmarshal state: %w", err)
-	}
-
-	return &state, nil
-}
-```
-
-internal/state/state_test.go
-```
-package state
-
-import (
-	"os"
-	"testing"
-)
-
-func TestStatePersistence(t *testing.T) {
-	tmpFile := "test_state.json"
-	defer os.Remove(tmpFile)
-
-	s := &RunState{
-		SchemaVersion: 1,
-		PackHash:      "abc",
-		StepStatuses: map[string]StepStatus{
-			"01": {Status: StatusSuccess, ExitCode: 0},
-		},
-	}
-
-	if err := SaveStateAtomic(tmpFile, s); err != nil {
-		t.Fatalf("SaveStateAtomic failed: %v", err)
-	}
-
-	loaded, err := LoadState(tmpFile)
-	if err != nil {
-		t.Fatalf("LoadState failed: %v", err)
-	}
-
-	if loaded.PackHash != s.PackHash {
-		t.Errorf("expected hash %s, got %s", s.PackHash, loaded.PackHash)
-	}
-
-	if loaded.StepStatuses["01"].Status != StatusSuccess {
-		t.Errorf("expected status success, got %s", loaded.StepStatuses["01"].Status)
-	}
-}
-```
-
-internal/state/types.go
-```
-package state
-
-import (
-	"time"
-)
-
-type Status string
-
-const (
-	StatusPending Status = "pending"
-	StatusRunning Status = "running"
-	StatusSuccess Status = "success"
-	StatusFailed  Status = "failed"
-	StatusSkipped Status = "skipped"
-)
-
-// RunState tracks the execution progress of an oracle pack.
-type RunState struct {
-	SchemaVersion int                   `json:"schema_version"`
-	PackHash      string                `json:"pack_hash"`
-	StartTime     time.Time             `json:"start_time"`
-	CurrentStep   int                   `json:"current_step,omitempty"`
-	StepStatuses  map[string]StepStatus `json:"step_statuses"`
-	ROIThreshold  float64               `json:"roi_threshold,omitempty"`
-	ROIMode       string                `json:"roi_mode,omitempty"`
-	Warnings      []Warning             `json:"warnings,omitempty"`
-}
-
-// StepStatus holds the outcome of an individual step.
-type StepStatus struct {
-	Status    Status    `json:"status"`
-	ExitCode  int       `json:"exit_code"`
-	StartedAt time.Time `json:"started_at"`
-	EndedAt   time.Time `json:"ended_at"`
-	Error     string    `json:"error,omitempty"`
-}
-
-// Warning captures a non-fatal execution note (e.g., sanitized labels).
-type Warning struct {
-	Scope   string `json:"scope"`
-	StepID  string `json:"step_id,omitempty"`
-	Line    int    `json:"line"`
-	Token   string `json:"token"`
-	Message string `json:"message"`
-}
-```
-
-internal/templates/template_test.go
-```
-package templates
-
-import (
-	"os"
-	"testing"
-
-	"github.com/user/oraclepack/internal/pack"
-)
-
-func TestRenderTicketActionPack(t *testing.T) {
-	got := RenderTicketActionPack()
-	if got == "" {
-		t.Fatal("expected non-empty template")
-	}
-
-	// Golden comparison
-	data, err := os.ReadFile("ticket-action-pack.md")
-	if err != nil {
-		t.Fatalf("read template: %v", err)
-	}
-	if string(data) != got {
-		t.Fatalf("template mismatch with golden file")
-	}
-
-	// Ensure pack is parseable and validates 20-step contract.
-	p, err := pack.Parse([]byte(got))
-	if err != nil {
-		t.Fatalf("Parse failed: %v", err)
-	}
-	if err := pack.Validate(p); err != nil {
-		t.Fatalf("Validate failed: %v", err)
-	}
-	if len(p.Steps) != 20 {
-		t.Fatalf("expected 20 steps, got %d", len(p.Steps))
-	}
-}
-```
-
-internal/templates/ticket-action-pack.md
-```
-# Ticket Action Pack
-
-```bash
-out_dir=".oraclepack/ticketify"
---write-output
-
-# 01)
-echo "Build tickets index"
-
-# 02)
-echo "Generate actions json"
-
-# 03)
-echo "Generate tickets PRD"
-
-# 04)
-echo "Prep taskmaster inputs"
-
-# 05)
-task-master parse-prd .taskmaster/docs/prd.md
-
-# 06)
-task-master analyze-complexity --research
-
-# 07)
-task-master expand --all --research
-
-# 08)
-echo "Prepare headless automation"
-
-# 09)
-if command -v gemini >/dev/null 2>&1; then
-  gemini run "Select next tasks" --write-output ".oraclepack/ticketify/next.json"
-else
-  echo "Skipped: gemini missing"
-fi
-
-# 10)
-if command -v codex >/dev/null 2>&1; then
-  codex exec "Implement tasks" --write-output ".oraclepack/ticketify/codex-implement.md"
-else
-  echo "Skipped: codex missing"
-fi
-
-# 11)
-if command -v codex >/dev/null 2>&1; then
-  codex exec "Verify changes" --write-output ".oraclepack/ticketify/codex-verify.md"
-else
-  echo "Skipped: codex missing"
-fi
-
-# 12)
-if command -v gemini >/dev/null 2>&1; then
-  gemini run "Review outputs" --write-output ".oraclepack/ticketify/gemini-review.json"
-else
-  echo "Skipped: gemini missing"
-fi
-
-# 13)
-if command -v codex >/dev/null 2>&1; then
-  codex exec "Prepare fixes" --write-output ".oraclepack/ticketify/codex-fixes.md"
-else
-  echo "Skipped: codex missing"
-fi
-
-# 14)
-echo "Summarize results"
-
-# 15)
-echo "Prepare release notes"
-
-# 16)
-if command -v codex >/dev/null 2>&1; then
-  codex exec "Draft PR description" --write-output ".oraclepack/ticketify/PR.md"
-else
-  echo "Skipped: codex missing"
-fi
-
-# 17)
-echo "Finalize checklist"
-
-# 18)
-echo "Post-run cleanup"
-
-# 19)
-echo "Audit artifacts"
-
-# 20)
-echo "Done"
-```
-```
-
-internal/templates/ticket_action_pack.go
-```
-package templates
-
-import _ "embed"
-
-//go:embed ticket-action-pack.md
-var ticketActionPack string
-
-// RenderTicketActionPack returns the canonical ticket action pack template.
-func RenderTicketActionPack() string {
-	return ticketActionPack
-}
-```
-
-internal/tools/types.go
-```
-package tools
-
-// ToolKind identifies a supported tool prefix.
-type ToolKind int
-
-const (
-	ToolUnknown ToolKind = iota
-	ToolOracle
-	ToolTM
-	ToolTaskMaster
-	ToolCodex
-	ToolGemini
-)
-
-// ToolMetadata captures tool invocation details.
-type ToolMetadata struct {
-	Name string
-	Args []string
-}
-
-var registry = map[ToolKind]ToolMetadata{
-	ToolUnknown:    {Name: "unknown"},
-	ToolOracle:     {Name: "oracle"},
-	ToolTM:         {Name: "tm"},
-	ToolTaskMaster: {Name: "task-master"},
-	ToolCodex:      {Name: "codex", Args: []string{"exec"}},
-	ToolGemini:     {Name: "gemini"},
-}
-
-// Metadata returns tool metadata if present.
-func Metadata(kind ToolKind) (ToolMetadata, bool) {
-	meta, ok := registry[kind]
-	return meta, ok
-}
-
-// Name returns the canonical tool name.
-func (k ToolKind) Name() string {
-	if meta, ok := registry[k]; ok {
-		return meta.Name
-	}
-	return "unknown"
-}
-
-// PresenceChecker abstracts binary detection.
-type PresenceChecker interface {
-	DetectBinary(name string) (string, bool)
-}
-```
-
-internal/tools/types_test.go
-```
-package tools
-
-import "testing"
-
-func TestMetadataRegistry(t *testing.T) {
-	meta, ok := Metadata(ToolCodex)
-	if !ok {
-		t.Fatalf("expected metadata for codex")
-	}
-	if meta.Name != "codex" {
-		t.Fatalf("expected codex name, got %s", meta.Name)
-	}
-	if len(meta.Args) != 1 || meta.Args[0] != "exec" {
-		t.Fatalf("expected codex exec args, got %+v", meta.Args)
-	}
-	if ToolOracle.Name() != "oracle" {
-		t.Fatalf("expected oracle name, got %s", ToolOracle.Name())
 	}
 }
 ```
@@ -6131,6 +5716,421 @@ func TestURLPickerDefaultURLPrefersProject(t *testing.T) {
 	if got := picker.DefaultURL(); got != project.Items[0].URL {
 		t.Fatalf("expected project default URL %q, got %q", project.Items[0].URL, got)
 	}
+}
+```
+
+internal/state/io.go
+```
+package state
+
+// Intentionally left without extra imports.
+
+// WriteState writes RunState atomically to disk.
+func WriteState(path string, state *RunState) error {
+	return SaveStateAtomic(path, state)
+}
+```
+
+internal/state/io_test.go
+```
+package state
+
+import (
+	"path/filepath"
+	"testing"
+	"time"
+)
+
+func TestWriteStateAndLoadState(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "state.json")
+
+	input := &RunState{
+		SchemaVersion: 1,
+		PackHash:      "hash",
+		StartTime:     time.Now(),
+		CurrentStep:   2,
+		StepStatuses: map[string]StepStatus{
+			"01": {Status: StatusSuccess},
+		},
+	}
+
+	if err := WriteState(path, input); err != nil {
+		t.Fatalf("WriteState: %v", err)
+	}
+
+	out, err := LoadState(path)
+	if err != nil {
+		t.Fatalf("LoadState: %v", err)
+	}
+
+	if out.CurrentStep != 2 {
+		t.Fatalf("expected CurrentStep 2, got %d", out.CurrentStep)
+	}
+	if out.StepStatuses["01"].Status != StatusSuccess {
+		t.Fatalf("expected status success, got %s", out.StepStatuses["01"].Status)
+	}
+}
+```
+
+internal/state/persist.go
+```
+package state
+
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+)
+
+// SaveStateAtomic saves the state to a file atomically.
+func SaveStateAtomic(path string, state *RunState) error {
+	data, err := json.MarshalIndent(state, "", "  ")
+	if err != nil {
+		return fmt.Errorf("marshal state: %w", err)
+	}
+
+	tempPath := path + ".tmp"
+	if err := os.WriteFile(tempPath, data, 0644); err != nil {
+		return fmt.Errorf("write temp file: %w", err)
+	}
+
+	if err := os.Rename(tempPath, path); err != nil {
+		os.Remove(tempPath)
+		return fmt.Errorf("rename temp file: %w", err)
+	}
+
+	return nil
+}
+
+// LoadState loads the state from a file.
+func LoadState(path string) (*RunState, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, fmt.Errorf("state file not found: %w", err)
+		}
+		return nil, fmt.Errorf("read state file: %w", err)
+	}
+
+	var state RunState
+	if err := json.Unmarshal(data, &state); err != nil {
+		return nil, fmt.Errorf("unmarshal state: %w", err)
+	}
+
+	return &state, nil
+}
+```
+
+internal/state/state_test.go
+```
+package state
+
+import (
+	"os"
+	"testing"
+)
+
+func TestStatePersistence(t *testing.T) {
+	tmpFile := "test_state.json"
+	defer os.Remove(tmpFile)
+
+	s := &RunState{
+		SchemaVersion: 1,
+		PackHash:      "abc",
+		StepStatuses: map[string]StepStatus{
+			"01": {Status: StatusSuccess, ExitCode: 0},
+		},
+	}
+
+	if err := SaveStateAtomic(tmpFile, s); err != nil {
+		t.Fatalf("SaveStateAtomic failed: %v", err)
+	}
+
+	loaded, err := LoadState(tmpFile)
+	if err != nil {
+		t.Fatalf("LoadState failed: %v", err)
+	}
+
+	if loaded.PackHash != s.PackHash {
+		t.Errorf("expected hash %s, got %s", s.PackHash, loaded.PackHash)
+	}
+
+	if loaded.StepStatuses["01"].Status != StatusSuccess {
+		t.Errorf("expected status success, got %s", loaded.StepStatuses["01"].Status)
+	}
+}
+```
+
+internal/state/types.go
+```
+package state
+
+import (
+	"time"
+)
+
+type Status string
+
+const (
+	StatusPending Status = "pending"
+	StatusRunning Status = "running"
+	StatusSuccess Status = "success"
+	StatusFailed  Status = "failed"
+	StatusSkipped Status = "skipped"
+)
+
+// RunState tracks the execution progress of an oracle pack.
+type RunState struct {
+	SchemaVersion int                   `json:"schema_version"`
+	PackHash      string                `json:"pack_hash"`
+	StartTime     time.Time             `json:"start_time"`
+	CurrentStep   int                   `json:"current_step,omitempty"`
+	StepStatuses  map[string]StepStatus `json:"step_statuses"`
+	ROIThreshold  float64               `json:"roi_threshold,omitempty"`
+	ROIMode       string                `json:"roi_mode,omitempty"`
+	Warnings      []Warning             `json:"warnings,omitempty"`
+}
+
+// StepStatus holds the outcome of an individual step.
+type StepStatus struct {
+	Status    Status    `json:"status"`
+	ExitCode  int       `json:"exit_code"`
+	StartedAt time.Time `json:"started_at"`
+	EndedAt   time.Time `json:"ended_at"`
+	Error     string    `json:"error,omitempty"`
+}
+
+// Warning captures a non-fatal execution note (e.g., sanitized labels).
+type Warning struct {
+	Scope   string `json:"scope"`
+	StepID  string `json:"step_id,omitempty"`
+	Line    int    `json:"line"`
+	Token   string `json:"token"`
+	Message string `json:"message"`
+}
+```
+
+internal/tools/types.go
+```
+package tools
+
+// ToolKind identifies a supported tool prefix.
+type ToolKind int
+
+const (
+	ToolUnknown ToolKind = iota
+	ToolOracle
+	ToolTM
+	ToolTaskMaster
+	ToolCodex
+	ToolGemini
+)
+
+// ToolMetadata captures tool invocation details.
+type ToolMetadata struct {
+	Name string
+	Args []string
+}
+
+var registry = map[ToolKind]ToolMetadata{
+	ToolUnknown:    {Name: "unknown"},
+	ToolOracle:     {Name: "oracle"},
+	ToolTM:         {Name: "tm"},
+	ToolTaskMaster: {Name: "task-master"},
+	ToolCodex:      {Name: "codex", Args: []string{"exec"}},
+	ToolGemini:     {Name: "gemini"},
+}
+
+// Metadata returns tool metadata if present.
+func Metadata(kind ToolKind) (ToolMetadata, bool) {
+	meta, ok := registry[kind]
+	return meta, ok
+}
+
+// Name returns the canonical tool name.
+func (k ToolKind) Name() string {
+	if meta, ok := registry[k]; ok {
+		return meta.Name
+	}
+	return "unknown"
+}
+
+// PresenceChecker abstracts binary detection.
+type PresenceChecker interface {
+	DetectBinary(name string) (string, bool)
+}
+```
+
+internal/tools/types_test.go
+```
+package tools
+
+import "testing"
+
+func TestMetadataRegistry(t *testing.T) {
+	meta, ok := Metadata(ToolCodex)
+	if !ok {
+		t.Fatalf("expected metadata for codex")
+	}
+	if meta.Name != "codex" {
+		t.Fatalf("expected codex name, got %s", meta.Name)
+	}
+	if len(meta.Args) != 1 || meta.Args[0] != "exec" {
+		t.Fatalf("expected codex exec args, got %+v", meta.Args)
+	}
+	if ToolOracle.Name() != "oracle" {
+		t.Fatalf("expected oracle name, got %s", ToolOracle.Name())
+	}
+}
+```
+
+internal/templates/template_test.go
+```
+package templates
+
+import (
+	"os"
+	"testing"
+
+	"github.com/user/oraclepack/internal/pack"
+)
+
+func TestRenderTicketActionPack(t *testing.T) {
+	got := RenderTicketActionPack()
+	if got == "" {
+		t.Fatal("expected non-empty template")
+	}
+
+	// Golden comparison
+	data, err := os.ReadFile("ticket-action-pack.md")
+	if err != nil {
+		t.Fatalf("read template: %v", err)
+	}
+	if string(data) != got {
+		t.Fatalf("template mismatch with golden file")
+	}
+
+	// Ensure pack is parseable and validates 20-step contract.
+	p, err := pack.Parse([]byte(got))
+	if err != nil {
+		t.Fatalf("Parse failed: %v", err)
+	}
+	if err := pack.Validate(p); err != nil {
+		t.Fatalf("Validate failed: %v", err)
+	}
+	if len(p.Steps) != 20 {
+		t.Fatalf("expected 20 steps, got %d", len(p.Steps))
+	}
+}
+```
+
+internal/templates/ticket-action-pack.md
+```
+# Ticket Action Pack
+
+```bash
+out_dir=".oraclepack/ticketify"
+--write-output
+
+# 01)
+echo "Build tickets index"
+
+# 02)
+echo "Generate actions json"
+
+# 03)
+echo "Generate tickets PRD"
+
+# 04)
+echo "Prep taskmaster inputs"
+
+# 05)
+task-master parse-prd .taskmaster/docs/prd.md
+
+# 06)
+task-master analyze-complexity --research
+
+# 07)
+task-master expand --all --research
+
+# 08)
+echo "Prepare headless automation"
+
+# 09)
+if command -v gemini >/dev/null 2>&1; then
+  gemini run "Select next tasks" --write-output ".oraclepack/ticketify/next.json"
+else
+  echo "Skipped: gemini missing"
+fi
+
+# 10)
+if command -v codex >/dev/null 2>&1; then
+  codex exec "Implement tasks" --write-output ".oraclepack/ticketify/codex-implement.md"
+else
+  echo "Skipped: codex missing"
+fi
+
+# 11)
+if command -v codex >/dev/null 2>&1; then
+  codex exec "Verify changes" --write-output ".oraclepack/ticketify/codex-verify.md"
+else
+  echo "Skipped: codex missing"
+fi
+
+# 12)
+if command -v gemini >/dev/null 2>&1; then
+  gemini run "Review outputs" --write-output ".oraclepack/ticketify/gemini-review.json"
+else
+  echo "Skipped: gemini missing"
+fi
+
+# 13)
+if command -v codex >/dev/null 2>&1; then
+  codex exec "Prepare fixes" --write-output ".oraclepack/ticketify/codex-fixes.md"
+else
+  echo "Skipped: codex missing"
+fi
+
+# 14)
+echo "Summarize results"
+
+# 15)
+echo "Prepare release notes"
+
+# 16)
+if command -v codex >/dev/null 2>&1; then
+  codex exec "Draft PR description" --write-output ".oraclepack/ticketify/PR.md"
+else
+  echo "Skipped: codex missing"
+fi
+
+# 17)
+echo "Finalize checklist"
+
+# 18)
+echo "Post-run cleanup"
+
+# 19)
+echo "Audit artifacts"
+
+# 20)
+echo "Done"
+```
+```
+
+internal/templates/ticket_action_pack.go
+```
+package templates
+
+import _ "embed"
+
+//go:embed ticket-action-pack.md
+var ticketActionPack string
+
+// RenderTicketActionPack returns the canonical ticket action pack template.
+func RenderTicketActionPack() string {
+	return ticketActionPack
 }
 ```
 

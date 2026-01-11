@@ -498,6 +498,12 @@ def main() -> int:
     dedupe_delta_min = float(args.get("dedupe_delta_min", "0.15"))
     dedupe_body_chars = int(args.get("dedupe_body_chars", "2000"))
     mode = args.get("mode", "tickets-grouped-direct")
+    command_mode = args.get("command_mode", "inline")
+    inline_max_tokens = args.get("inline_max_tokens", "60000")
+
+    if command_mode == "inline":
+        if ("--browser-inline-files" not in oracle_flags) and ("--browser-attachments" not in oracle_flags):
+            oracle_flags = (oracle_flags + " --browser-inline-files").strip()
 
     template_path = Path(__file__).resolve().parent.parent / "references" / "tickets-pack-template.md"
     template = template_path.read_text(encoding="utf-8")
@@ -642,8 +648,10 @@ def main() -> int:
                 "ticket_max_files": str(min(len(part), max(1, group_max_files))),
                 "group_name": group_name,
                 "group_slug": group_slug,
-                "mode": mode,
-            }
+            "mode": mode,
+            "command_mode": command_mode,
+            "inline_max_tokens": str(inline_max_tokens),
+        }
 
             content = _render_template(template, mapping)
             pack_file.write_text(content, encoding="utf-8")

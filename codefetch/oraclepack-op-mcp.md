@@ -209,6 +209,62 @@ Signature: 8a477f597d28d172789f06886806bc55
 #	https://bford.info/cachedir/spec.html
 ```
 
+oraclepack-mcp-server/oraclepack_mcp_server.egg-info/PKG-INFO
+```
+Metadata-Version: 2.4
+Name: oraclepack-mcp-server
+Version: 0.1.0
+Summary: MCP wrapper for oraclepack CLI
+Author: Oraclepack Contributor
+Requires-Python: >=3.10
+Requires-Dist: mcp[cli]>=0.1.0
+Requires-Dist: pydantic-settings>=2.0.0
+Requires-Dist: pydantic>=2.0.0
+```
+
+oraclepack-mcp-server/oraclepack_mcp_server.egg-info/SOURCES.txt
+```
+README.md
+pyproject.toml
+oraclepack_mcp_server/__init__.py
+oraclepack_mcp_server/__main__.py
+oraclepack_mcp_server/config.py
+oraclepack_mcp_server/oraclepack_cli.py
+oraclepack_mcp_server/security.py
+oraclepack_mcp_server/server.py
+oraclepack_mcp_server/taskify.py
+oraclepack_mcp_server.egg-info/PKG-INFO
+oraclepack_mcp_server.egg-info/SOURCES.txt
+oraclepack_mcp_server.egg-info/dependency_links.txt
+oraclepack_mcp_server.egg-info/entry_points.txt
+oraclepack_mcp_server.egg-info/requires.txt
+oraclepack_mcp_server.egg-info/top_level.txt
+tests/test_config.py
+```
+
+oraclepack-mcp-server/oraclepack_mcp_server.egg-info/dependency_links.txt
+```
+
+```
+
+oraclepack-mcp-server/oraclepack_mcp_server.egg-info/entry_points.txt
+```
+[console_scripts]
+oraclepack-mcp = oraclepack_mcp_server.__main__:main
+```
+
+oraclepack-mcp-server/oraclepack_mcp_server.egg-info/requires.txt
+```
+mcp[cli]>=0.1.0
+pydantic-settings>=2.0.0
+pydantic>=2.0.0
+```
+
+oraclepack-mcp-server/oraclepack_mcp_server.egg-info/top_level.txt
+```
+oraclepack_mcp_server
+```
+
 oraclepack-mcp-server/oraclepack_mcp_server/__init__.py
 ```
 ```
@@ -727,62 +783,6 @@ This pack contains {len(steps)} steps: {', '.join(steps)}.
 
 1. **Verify**: Use `oraclepack_taskify_validate_action_pack` to ensure structure is correct.
 [TRUNCATED]
-```
-
-oraclepack-mcp-server/oraclepack_mcp_server.egg-info/PKG-INFO
-```
-Metadata-Version: 2.4
-Name: oraclepack-mcp-server
-Version: 0.1.0
-Summary: MCP wrapper for oraclepack CLI
-Author: Oraclepack Contributor
-Requires-Python: >=3.10
-Requires-Dist: mcp[cli]>=0.1.0
-Requires-Dist: pydantic-settings>=2.0.0
-Requires-Dist: pydantic>=2.0.0
-```
-
-oraclepack-mcp-server/oraclepack_mcp_server.egg-info/SOURCES.txt
-```
-README.md
-pyproject.toml
-oraclepack_mcp_server/__init__.py
-oraclepack_mcp_server/__main__.py
-oraclepack_mcp_server/config.py
-oraclepack_mcp_server/oraclepack_cli.py
-oraclepack_mcp_server/security.py
-oraclepack_mcp_server/server.py
-oraclepack_mcp_server/taskify.py
-oraclepack_mcp_server.egg-info/PKG-INFO
-oraclepack_mcp_server.egg-info/SOURCES.txt
-oraclepack_mcp_server.egg-info/dependency_links.txt
-oraclepack_mcp_server.egg-info/entry_points.txt
-oraclepack_mcp_server.egg-info/requires.txt
-oraclepack_mcp_server.egg-info/top_level.txt
-tests/test_config.py
-```
-
-oraclepack-mcp-server/oraclepack_mcp_server.egg-info/dependency_links.txt
-```
-
-```
-
-oraclepack-mcp-server/oraclepack_mcp_server.egg-info/entry_points.txt
-```
-[console_scripts]
-oraclepack-mcp = oraclepack_mcp_server.__main__:main
-```
-
-oraclepack-mcp-server/oraclepack_mcp_server.egg-info/requires.txt
-```
-mcp[cli]>=0.1.0
-pydantic-settings>=2.0.0
-pydantic>=2.0.0
-```
-
-oraclepack-mcp-server/oraclepack_mcp_server.egg-info/top_level.txt
-```
-oraclepack_mcp_server
 ```
 
 oraclepack-mcp-server/tests/test_cli.py
@@ -2179,73 +2179,88 @@ func normalizeChunkMode(raw string) (string, error) {
 }
 ```
 
-internal/errors/errors.go
+internal/dispatch/classify.go
 ```
-package errors
+package dispatch
 
 import (
-	"errors"
+	"regexp"
+	"strings"
+
+	"github.com/user/oraclepack/internal/tools"
 )
 
-var (
-	// ErrInvalidPack is returned when the Markdown pack is malformed.
-	ErrInvalidPack = errors.New("invalid pack structure")
-	// ErrExecutionFailed is returned when a shell command fails.
-	ErrExecutionFailed = errors.New("execution failed")
-	// ErrConfigInvalid is returned when CLI flags or environment variables are incorrect.
-	ErrConfigInvalid = errors.New("invalid configuration")
-)
+var classifier = regexp.MustCompile(`^(\s*)(oracle|tm|task-master|codex|gemini)\b`)
 
-// ExitCode returns the appropriate exit code for a given error.
-func ExitCode(err error) int {
-	if err == nil {
-		return 0
+// Classification describes a parsed command prefix.
+type Classification struct {
+	Kind    tools.ToolKind
+	Prefix  string
+	Command string
+}
+
+// Classify detects a supported tool prefix and returns the remaining command.
+func Classify(line string) (Classification, bool) {
+	m := classifier.FindStringSubmatch(line)
+	if len(m) < 3 {
+		return Classification{}, false
 	}
-
-	if errors.Is(err, ErrConfigInvalid) {
-		return 2
+	prefix := m[2]
+	kind := toolKindFromPrefix(prefix)
+	if kind == nil {
+		return Classification{}, false
 	}
+	trimmed := strings.TrimSpace(line[len(m[1])+len(prefix):])
+	return Classification{Kind: *kind, Prefix: prefix, Command: strings.TrimSpace(trimmed)}, true
+}
 
-	if errors.Is(err, ErrInvalidPack) {
-		return 3
+func toolKindFromPrefix(prefix string) *tools.ToolKind {
+	var kind tools.ToolKind
+	switch prefix {
+	case "oracle":
+		kind = tools.ToolOracle
+	case "tm":
+		kind = tools.ToolTM
+	case "task-master":
+		kind = tools.ToolTaskMaster
+	case "codex":
+		kind = tools.ToolCodex
+	case "gemini":
+		kind = tools.ToolGemini
+	default:
+		return nil
 	}
-
-	if errors.Is(err, ErrExecutionFailed) {
-		return 4
-	}
-
-	return 1 // Generic error
+	return &kind
 }
 ```
 
-internal/errors/errors_test.go
+internal/dispatch/classify_test.go
 ```
-package errors
+package dispatch
 
-import (
-	"errors"
-	"fmt"
-	"testing"
-)
+import "testing"
 
-func TestExitCode(t *testing.T) {
+func TestClassify(t *testing.T) {
 	tests := []struct {
-		name     string
-		err      error
-		expected int
+		line    string
+		wantOK  bool
+		wantCmd string
 	}{
-		{"nil error", nil, 0},
-		{"generic error", errors.New("generic"), 1},
-		{"invalid pack", ErrInvalidPack, 3},
-		{"execution failed", ErrExecutionFailed, 4},
-		{"config invalid", ErrConfigInvalid, 2},
-		{"wrapped invalid pack", fmt.Errorf("wrap: %w", ErrInvalidPack), 3},
+		{"oracle query \"hi\"", true, "query \"hi\""},
+		{"  tm list", true, "list"},
+		{"task-master next", true, "next"},
+		{"codex exec \"x\"", true, "exec \"x\""},
+		{"gemini run", true, "run"},
+		{"echo hello", false, ""},
 	}
-
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := ExitCode(tt.err); got != tt.expected {
-				t.Errorf("ExitCode() = %v, want %v", got, tt.expected)
+		t.Run(tt.line, func(t *testing.T) {
+			got, ok := Classify(tt.line)
+			if ok != tt.wantOK {
+				t.Fatalf("expected ok=%v got %v", tt.wantOK, ok)
+			}
+			if ok && got.Command != tt.wantCmd {
+				t.Fatalf("expected cmd %q got %q", tt.wantCmd, got.Command)
 			}
 		})
 	}
@@ -3229,88 +3244,73 @@ func MultiWriter(writers ...io.Writer) io.Writer {
 }
 ```
 
-internal/dispatch/classify.go
+internal/errors/errors.go
 ```
-package dispatch
+package errors
 
 import (
-	"regexp"
-	"strings"
-
-	"github.com/user/oraclepack/internal/tools"
+	"errors"
 )
 
-var classifier = regexp.MustCompile(`^(\s*)(oracle|tm|task-master|codex|gemini)\b`)
+var (
+	// ErrInvalidPack is returned when the Markdown pack is malformed.
+	ErrInvalidPack = errors.New("invalid pack structure")
+	// ErrExecutionFailed is returned when a shell command fails.
+	ErrExecutionFailed = errors.New("execution failed")
+	// ErrConfigInvalid is returned when CLI flags or environment variables are incorrect.
+	ErrConfigInvalid = errors.New("invalid configuration")
+)
 
-// Classification describes a parsed command prefix.
-type Classification struct {
-	Kind    tools.ToolKind
-	Prefix  string
-	Command string
-}
+// ExitCode returns the appropriate exit code for a given error.
+func ExitCode(err error) int {
+	if err == nil {
+		return 0
+	}
 
-// Classify detects a supported tool prefix and returns the remaining command.
-func Classify(line string) (Classification, bool) {
-	m := classifier.FindStringSubmatch(line)
-	if len(m) < 3 {
-		return Classification{}, false
+	if errors.Is(err, ErrConfigInvalid) {
+		return 2
 	}
-	prefix := m[2]
-	kind := toolKindFromPrefix(prefix)
-	if kind == nil {
-		return Classification{}, false
-	}
-	trimmed := strings.TrimSpace(line[len(m[1])+len(prefix):])
-	return Classification{Kind: *kind, Prefix: prefix, Command: strings.TrimSpace(trimmed)}, true
-}
 
-func toolKindFromPrefix(prefix string) *tools.ToolKind {
-	var kind tools.ToolKind
-	switch prefix {
-	case "oracle":
-		kind = tools.ToolOracle
-	case "tm":
-		kind = tools.ToolTM
-	case "task-master":
-		kind = tools.ToolTaskMaster
-	case "codex":
-		kind = tools.ToolCodex
-	case "gemini":
-		kind = tools.ToolGemini
-	default:
-		return nil
+	if errors.Is(err, ErrInvalidPack) {
+		return 3
 	}
-	return &kind
+
+	if errors.Is(err, ErrExecutionFailed) {
+		return 4
+	}
+
+	return 1 // Generic error
 }
 ```
 
-internal/dispatch/classify_test.go
+internal/errors/errors_test.go
 ```
-package dispatch
+package errors
 
-import "testing"
+import (
+	"errors"
+	"fmt"
+	"testing"
+)
 
-func TestClassify(t *testing.T) {
+func TestExitCode(t *testing.T) {
 	tests := []struct {
-		line    string
-		wantOK  bool
-		wantCmd string
+		name     string
+		err      error
+		expected int
 	}{
-		{"oracle query \"hi\"", true, "query \"hi\""},
-		{"  tm list", true, "list"},
-		{"task-master next", true, "next"},
-		{"codex exec \"x\"", true, "exec \"x\""},
-		{"gemini run", true, "run"},
-		{"echo hello", false, ""},
+		{"nil error", nil, 0},
+		{"generic error", errors.New("generic"), 1},
+		{"invalid pack", ErrInvalidPack, 3},
+		{"execution failed", ErrExecutionFailed, 4},
+		{"config invalid", ErrConfigInvalid, 2},
+		{"wrapped invalid pack", fmt.Errorf("wrap: %w", ErrInvalidPack), 3},
 	}
+
 	for _, tt := range tests {
-		t.Run(tt.line, func(t *testing.T) {
-			got, ok := Classify(tt.line)
-			if ok != tt.wantOK {
-				t.Fatalf("expected ok=%v got %v", tt.wantOK, ok)
-			}
-			if ok && got.Command != tt.wantCmd {
-				t.Fatalf("expected cmd %q got %q", tt.wantCmd, got.Command)
+		t.Run(tt.name, func(t *testing.T) {
+			if got := ExitCode(tt.err); got != tt.expected {
+				t.Errorf("ExitCode() = %v, want %v", got, tt.expected)
 			}
 		})
 	}
@@ -4917,6 +4917,224 @@ func TestRenderMarkdown(t *testing.T) {
 }
 ```
 
+internal/report/generate.go
+```
+package report
+
+import (
+	"time"
+
+	"github.com/user/oraclepack/internal/state"
+)
+
+// GenerateReport creates a ReportV1 from a RunState.
+func GenerateReport(s *state.RunState, packName string) *ReportV1 {
+	report := &ReportV1{
+		PackInfo: PackInfo{
+			Name: packName,
+			Hash: s.PackHash,
+		},
+		GeneratedAt: time.Now(),
+		Steps:       []StepReport{},
+	}
+
+	var totalDuration time.Duration
+	success, failure, skipped := 0, 0, 0
+
+	for id, status := range s.StepStatuses {
+		duration := status.EndedAt.Sub(status.StartedAt)
+		if status.EndedAt.IsZero() || status.StartedAt.IsZero() {
+			duration = 0
+		}
+
+		totalDuration += duration
+
+		sr := StepReport{
+			ID:         id,
+			Status:     string(status.Status),
+			ExitCode:   status.ExitCode,
+			Duration:   duration,
+			DurationMs: duration.Milliseconds(),
+			Error:      status.Error,
+		}
+		report.Steps = append(report.Steps, sr)
+
+		switch status.Status {
+		case state.StatusSuccess:
+			success++
+		case state.StatusFailed:
+			failure++
+		case state.StatusSkipped:
+			skipped++
+		}
+	}
+
+	report.Summary = Summary{
+		TotalSteps:      len(s.StepStatuses),
+		SuccessCount:    success,
+		FailureCount:    failure,
+		SkippedCount:    skipped,
+		TotalDuration:   totalDuration,
+		TotalDurationMs: totalDuration.Milliseconds(),
+	}
+
+	if len(s.Warnings) > 0 {
+		report.Warnings = make([]Warning, 0, len(s.Warnings))
+		for _, w := range s.Warnings {
+			report.Warnings = append(report.Warnings, Warning{
+				Scope:   w.Scope,
+				StepID:  w.StepID,
+				Line:    w.Line,
+				Token:   w.Token,
+				Message: w.Message,
+			})
+		}
+	}
+
+	return report
+}
+```
+
+internal/report/io.go
+```
+package report
+
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+)
+
+// WriteReport writes a ReportV1 to disk.
+func WriteReport(path string, rep *ReportV1) error {
+	data, err := json.MarshalIndent(rep, "", "  ")
+	if err != nil {
+		return fmt.Errorf("marshal report: %w", err)
+	}
+	if err := os.WriteFile(path, data, 0644); err != nil {
+		return fmt.Errorf("write report: %w", err)
+	}
+	return nil
+}
+```
+
+internal/report/io_test.go
+```
+package report
+
+import (
+	"os"
+	"path/filepath"
+	"testing"
+)
+
+func TestWriteReport(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "report.json")
+
+	rep := &ReportV1{
+		PackInfo: PackInfo{Name: "pack"},
+		Summary:  Summary{TotalSteps: 1},
+	}
+	if err := WriteReport(path, rep); err != nil {
+		t.Fatalf("WriteReport: %v", err)
+	}
+
+	if _, err := os.Stat(path); err != nil {
+		t.Fatalf("expected report file to exist: %v", err)
+	}
+}
+```
+
+internal/report/report_test.go
+```
+package report
+
+import (
+	"testing"
+	"time"
+
+	"github.com/user/oraclepack/internal/state"
+)
+
+func TestGenerateReport(t *testing.T) {
+	s := &state.RunState{
+		PackHash: "hash123",
+		StepStatuses: map[string]state.StepStatus{
+			"01": {
+				Status:    state.StatusSuccess,
+				StartedAt: time.Now().Add(-1 * time.Second),
+				EndedAt:   time.Now(),
+			},
+		},
+	}
+
+	rep := GenerateReport(s, "my-pack")
+
+	if rep.PackInfo.Name != "my-pack" {
+		t.Errorf("expected name my-pack, got %s", rep.PackInfo.Name)
+	}
+
+	if rep.Summary.TotalSteps != 1 {
+		t.Errorf("expected 1 total step, got %d", rep.Summary.TotalSteps)
+	}
+
+	if rep.Summary.SuccessCount != 1 {
+		t.Errorf("expected 1 success, got %d", rep.Summary.SuccessCount)
+	}
+}
+```
+
+internal/report/types.go
+```
+package report
+
+import (
+	"time"
+)
+
+// ReportV1 represents the final machine-readable summary.
+type ReportV1 struct {
+	Summary     Summary      `json:"summary"`
+	PackInfo    PackInfo     `json:"pack_info"`
+	Steps       []StepReport `json:"steps"`
+	Warnings    []Warning    `json:"warnings,omitempty"`
+	GeneratedAt time.Time    `json:"generated_at"`
+}
+
+type Summary struct {
+	TotalSteps      int           `json:"total_steps"`
+	SuccessCount    int           `json:"success_count"`
+	FailureCount    int           `json:"failure_count"`
+	SkippedCount    int           `json:"skipped_count"`
+	TotalDuration   time.Duration `json:"total_duration"`
+	TotalDurationMs int64         `json:"total_duration_ms"`
+}
+
+type PackInfo struct {
+	Name string `json:"name"`
+	Hash string `json:"hash"`
+}
+
+type StepReport struct {
+	ID         string        `json:"id"`
+	Status     string        `json:"status"`
+	ExitCode   int           `json:"exit_code"`
+	Duration   time.Duration `json:"duration"`
+	DurationMs int64         `json:"duration_ms"`
+	Error      string        `json:"error,omitempty"`
+}
+
+// Warning captures non-fatal execution notes surfaced during a run.
+type Warning struct {
+	Scope   string `json:"scope"`
+	StepID  string `json:"step_id,omitempty"`
+	Line    int    `json:"line"`
+	Token   string `json:"token"`
+	Message string `json:"message"`
+}
+```
+
 internal/shell/detect.go
 ```
 package shell
@@ -5199,224 +5417,6 @@ func TestRunCommandLoginShell(t *testing.T) {
 	if res.ExitCode != 0 {
 		t.Fatalf("expected exit code 0, got %d", res.ExitCode)
 	}
-}
-```
-
-internal/report/generate.go
-```
-package report
-
-import (
-	"time"
-
-	"github.com/user/oraclepack/internal/state"
-)
-
-// GenerateReport creates a ReportV1 from a RunState.
-func GenerateReport(s *state.RunState, packName string) *ReportV1 {
-	report := &ReportV1{
-		PackInfo: PackInfo{
-			Name: packName,
-			Hash: s.PackHash,
-		},
-		GeneratedAt: time.Now(),
-		Steps:       []StepReport{},
-	}
-
-	var totalDuration time.Duration
-	success, failure, skipped := 0, 0, 0
-
-	for id, status := range s.StepStatuses {
-		duration := status.EndedAt.Sub(status.StartedAt)
-		if status.EndedAt.IsZero() || status.StartedAt.IsZero() {
-			duration = 0
-		}
-
-		totalDuration += duration
-
-		sr := StepReport{
-			ID:         id,
-			Status:     string(status.Status),
-			ExitCode:   status.ExitCode,
-			Duration:   duration,
-			DurationMs: duration.Milliseconds(),
-			Error:      status.Error,
-		}
-		report.Steps = append(report.Steps, sr)
-
-		switch status.Status {
-		case state.StatusSuccess:
-			success++
-		case state.StatusFailed:
-			failure++
-		case state.StatusSkipped:
-			skipped++
-		}
-	}
-
-	report.Summary = Summary{
-		TotalSteps:      len(s.StepStatuses),
-		SuccessCount:    success,
-		FailureCount:    failure,
-		SkippedCount:    skipped,
-		TotalDuration:   totalDuration,
-		TotalDurationMs: totalDuration.Milliseconds(),
-	}
-
-	if len(s.Warnings) > 0 {
-		report.Warnings = make([]Warning, 0, len(s.Warnings))
-		for _, w := range s.Warnings {
-			report.Warnings = append(report.Warnings, Warning{
-				Scope:   w.Scope,
-				StepID:  w.StepID,
-				Line:    w.Line,
-				Token:   w.Token,
-				Message: w.Message,
-			})
-		}
-	}
-
-	return report
-}
-```
-
-internal/report/io.go
-```
-package report
-
-import (
-	"encoding/json"
-	"fmt"
-	"os"
-)
-
-// WriteReport writes a ReportV1 to disk.
-func WriteReport(path string, rep *ReportV1) error {
-	data, err := json.MarshalIndent(rep, "", "  ")
-	if err != nil {
-		return fmt.Errorf("marshal report: %w", err)
-	}
-	if err := os.WriteFile(path, data, 0644); err != nil {
-		return fmt.Errorf("write report: %w", err)
-	}
-	return nil
-}
-```
-
-internal/report/io_test.go
-```
-package report
-
-import (
-	"os"
-	"path/filepath"
-	"testing"
-)
-
-func TestWriteReport(t *testing.T) {
-	dir := t.TempDir()
-	path := filepath.Join(dir, "report.json")
-
-	rep := &ReportV1{
-		PackInfo: PackInfo{Name: "pack"},
-		Summary:  Summary{TotalSteps: 1},
-	}
-	if err := WriteReport(path, rep); err != nil {
-		t.Fatalf("WriteReport: %v", err)
-	}
-
-	if _, err := os.Stat(path); err != nil {
-		t.Fatalf("expected report file to exist: %v", err)
-	}
-}
-```
-
-internal/report/report_test.go
-```
-package report
-
-import (
-	"testing"
-	"time"
-
-	"github.com/user/oraclepack/internal/state"
-)
-
-func TestGenerateReport(t *testing.T) {
-	s := &state.RunState{
-		PackHash: "hash123",
-		StepStatuses: map[string]state.StepStatus{
-			"01": {
-				Status:    state.StatusSuccess,
-				StartedAt: time.Now().Add(-1 * time.Second),
-				EndedAt:   time.Now(),
-			},
-		},
-	}
-
-	rep := GenerateReport(s, "my-pack")
-
-	if rep.PackInfo.Name != "my-pack" {
-		t.Errorf("expected name my-pack, got %s", rep.PackInfo.Name)
-	}
-
-	if rep.Summary.TotalSteps != 1 {
-		t.Errorf("expected 1 total step, got %d", rep.Summary.TotalSteps)
-	}
-
-	if rep.Summary.SuccessCount != 1 {
-		t.Errorf("expected 1 success, got %d", rep.Summary.SuccessCount)
-	}
-}
-```
-
-internal/report/types.go
-```
-package report
-
-import (
-	"time"
-)
-
-// ReportV1 represents the final machine-readable summary.
-type ReportV1 struct {
-	Summary     Summary      `json:"summary"`
-	PackInfo    PackInfo     `json:"pack_info"`
-	Steps       []StepReport `json:"steps"`
-	Warnings    []Warning    `json:"warnings,omitempty"`
-	GeneratedAt time.Time    `json:"generated_at"`
-}
-
-type Summary struct {
-	TotalSteps      int           `json:"total_steps"`
-	SuccessCount    int           `json:"success_count"`
-	FailureCount    int           `json:"failure_count"`
-	SkippedCount    int           `json:"skipped_count"`
-	TotalDuration   time.Duration `json:"total_duration"`
-	TotalDurationMs int64         `json:"total_duration_ms"`
-}
-
-type PackInfo struct {
-	Name string `json:"name"`
-	Hash string `json:"hash"`
-}
-
-type StepReport struct {
-	ID         string        `json:"id"`
-	Status     string        `json:"status"`
-	ExitCode   int           `json:"exit_code"`
-	Duration   time.Duration `json:"duration"`
-	DurationMs int64         `json:"duration_ms"`
-	Error      string        `json:"error,omitempty"`
-}
-
-// Warning captures non-fatal execution notes surfaced during a run.
-type Warning struct {
-	Scope   string `json:"scope"`
-	StepID  string `json:"step_id,omitempty"`
-	Line    int    `json:"line"`
-	Token   string `json:"token"`
-	Message string `json:"message"`
 }
 ```
 

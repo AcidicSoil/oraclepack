@@ -1,702 +1,42 @@
 <filetree>
 Project Structure:
 └── docs
-    ├── oracle-questions-2026-01-09-030000
-    │   ├── actions
-    │   │   ├── 01-contracts-interfaces-ticket-surface-direct-answer.md
-    │   │   ├── 01-contracts-interfaces-ticket-surface-missing-evidence.md
-    │   │   ├── 01-contracts-interfaces-ticket-surface-next-experiment.md
-    │   │   └── 01-contracts-interfaces-ticket-surface-risks-unknowns.md
-    │   ├── packs
-    │   │   ├── actions.md
-    │   │   ├── mcp.md
-    │   │   ├── misc.md
-    │   │   ├── other.md
-    │   │   ├── prd-tui.md
-    │   │   └── raw-exports.md
-    │   ├── _groups.json
-    │   └── manifest.json
-    └── oracle-pack-2026-01-09.md
+    └── oracle-questions-2026-01-09-030000
+        ├── actions
+        │   ├── 01-contracts-interfaces-ticket-surface-direct-answer.md
+        │   ├── 01-contracts-interfaces-ticket-surface-missing-evidence.md
+        │   ├── 01-contracts-interfaces-ticket-surface-next-experiment.md
+        │   └── 01-contracts-interfaces-ticket-surface-risks-unknowns.md
+        ├── mcp
+        │   ├── 01-contracts-interfaces-ticket-surface-direct-answer.md
+        │   ├── 01-contracts-interfaces-ticket-surface-missing-evidence.md
+        │   ├── 01-contracts-interfaces-ticket-surface-next-experiment.md
+        │   ├── 01-contracts-interfaces-ticket-surface-risks-unknowns.md
+        │   ├── 02-contracts-interfaces-integration-points-direct-answer.md
+        │   ├── 02-contracts-interfaces-integration-points-missing-evidence.md
+        │   ├── 02-contracts-interfaces-integration-points-next-experiment.md
+        │   ├── 02-contracts-interfaces-integration-points-risks-unknowns.md
+        │   ├── 03-invariants-invariant-map-direct-answer.md
+        │   ├── 03-invariants-invariant-map-missing-evidence.md
+        │   ├── 03-invariants-invariant-map-next-experiment.md
+        │   ├── 03-invariants-invariant-map-risks-unknowns.md
+        │   ├── 04-invariants-validation-boundaries-direct-answer.md
+        │   ├── 04-invariants-validation-boundaries-missing-evidence.md
+        │   ├── 04-invariants-validation-boundaries-next-experiment.md
+        │   └── 04-invariants-validation-boundaries-risks-unknowns.md
+        ├── packs
+        │   ├── actions.md
+        │   ├── mcp.md
+        │   ├── misc.md
+        │   ├── other.md
+        │   ├── prd-tui.md
+        │   └── raw-exports.md
+        ├── _groups.json
+        └── manifest.json
 
 </filetree>
 
 <source_code>
-docs/oracle-pack-2026-01-09.md
-```
-# Oracle Pack — Unknown (Gold Stage 1)
-
-## Parsed args
-- codebase_name: Unknown
-- constraints: None
-- non_goals: None
-- team_size: Unknown
-- deadline: Unknown
-- out_dir: docs/oracle-questions-2026-01-09
-- oracle_cmd: oracle
-- oracle_flags: --files-report
-- engine: None
-- model: None
-- extra_files: (none)
-
-Notes:
-- Template is the contract. Keep the pack runner-ingestible.
-- Exactly one fenced bash block in this whole document.
-- Exactly 20 steps, numbered 01..20.
-- Each step includes: ROI= impact= confidence= effort= horizon= category= reference=
-- Categories must be exactly the fixed set used in Coverage check.
-
-## Commands
-```bash
-# Optional preflight pattern:
-# - Add --dry-run summary to preview what will be sent, and keep --files-report enabled when available.
-
-# 01) ROI=4.2 impact=High confidence=High effort=Low horizon=Immediate category=contracts/interfaces reference=internal/cli/root.go
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-09/01-contracts-interfaces-surface.md" \
-  -f "README.md" \
-  -f "internal/cli/root.go" \
-  -p "$(cat <<'PROMPT'
-Strategist question #01
-
-Reference: internal/cli/root.go
-Category: contracts/interfaces
-Horizon: Immediate
-ROI: 4.2 (impact=High, confidence=High, effort=Low)
-
-Question:
-Identify the primary public interface(s) of this system (CLI commands, flags, and pack format surface). For each, list the key inputs/outputs and where they are defined in the code.
-
-Rationale (one sentence):
-We need a trustworthy map of the system's outside-facing contract before deeper planning.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–6 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 02) ROI=3.6 impact=High confidence=Medium effort=Medium horizon=Immediate category=contracts/interfaces reference=internal/tools/types.go
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-09/02-contracts-interfaces-integration.md" \
-  -f "internal/tools/types.go" \
-  -f "internal/exec/runner.go" \
-  -p "$(cat <<'PROMPT'
-Strategist question #02
-
-Reference: internal/tools/types.go
-Category: contracts/interfaces
-Horizon: Immediate
-ROI: 3.6 (impact=High, confidence=Medium, effort=Medium)
-
-Question:
-What are the top integration points with external tools or systems (oracle CLI, shell environment, filesystem, optional task-master/codex/gemini prefixes)? For each, point to the contract or config that declares it.
-
-Rationale (one sentence):
-Integration boundaries drive risk, deployment needs, and test strategy.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–6 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 03) ROI=3.4 impact=High confidence=Medium effort=Medium horizon=NearTerm category=invariants reference=internal/pack/parser.go
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-09/03-invariants-domain.md" \
-  -f "internal/pack/parser.go" \
-  -f "internal/pack/types.go" \
-  -p "$(cat <<'PROMPT'
-Strategist question #03
-
-Reference: internal/pack/parser.go
-Category: invariants
-Horizon: NearTerm
-ROI: 3.4 (impact=High, confidence=Medium, effort=Medium)
-
-Question:
-List the system's most important invariants about pack structure and step metadata (e.g., numbering, ROI parsing, header format). For each, show where it is enforced or where enforcement is missing.
-
-Rationale (one sentence):
-Invariants define correctness and are the backbone of reliable changes.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–8 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 04) ROI=3.1 impact=Medium confidence=Medium effort=Medium horizon=NearTerm category=invariants reference=internal/pack/output_check.go
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-09/04-invariants-validation.md" \
-  -f "internal/pack/output_check.go" \
-  -f "internal/pack/parser.go" \
-  -p "$(cat <<'PROMPT'
-Strategist question #04
-
-Reference: internal/pack/output_check.go
-Category: invariants
-Horizon: NearTerm
-ROI: 3.1 (impact=Medium, confidence=Medium, effort=Medium)
-
-Question:
-Where does validation happen (pack parsing, output section validation, tool detection)? Identify the validation boundaries and the most likely gaps that could cause inconsistent state or false positives.
-
-Rationale (one sentence):
-Knowing validation boundaries prevents regressions and reduces correctness risk.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–8 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 05) ROI=3.0 impact=Medium confidence=Medium effort=Low horizon=NearTerm category=caching/state reference=internal/state/types.go
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-09/05-caching-state-layers.md" \
-  -f "internal/state/types.go" \
-  -f "internal/state/persist.go" \
-  -p "$(cat <<'PROMPT'
-Strategist question #05
-
-Reference: internal/state/types.go
-Category: caching/state
-Horizon: NearTerm
-ROI: 3.0 (impact=Medium, confidence=Medium, effort=Low)
-
-Question:
-What stateful components exist (run state, report artifacts, in-memory tracking within a run)? For each, describe lifecycle, persistence, and where it is implemented.
-
-Rationale (one sentence):
-State and caching are common sources of subtle bugs and performance issues.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–8 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 06) ROI=2.6 impact=Medium confidence=Low effort=Medium horizon=NearTerm category=caching/state reference=internal/app/run.go
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-09/06-caching-state-consistency.md" \
-  -f "internal/app/run.go" \
-  -f "internal/state/persist.go" \
-  -p "$(cat <<'PROMPT'
-Strategist question #06
-
-Reference: internal/app/run.go
-Category: caching/state
-Horizon: NearTerm
-ROI: 2.6 (impact=Medium, confidence=Low, effort=Medium)
-
-Question:
-Identify the top consistency risks between in-memory run state and persisted state/report files (e.g., partial writes, skipped updates, resume behavior). Where are the knobs/configs that influence state persistence?
-
-Rationale (one sentence):
-Consistency failure modes often surface as "random bugs" and are expensive to debug.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–8 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 07) ROI=2.4 impact=Medium confidence=Low effort=Medium horizon=NearTerm category=background jobs reference=internal/app/run.go
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-09/07-background-jobs-discovery.md" \
-  -f "internal/app/run.go" \
-  -f "internal/tui/tui.go" \
-  -p "$(cat <<'PROMPT'
-Strategist question #07
-
-Reference: internal/app/run.go
-Category: background jobs
-Horizon: NearTerm
-ROI: 2.4 (impact=Medium, confidence=Low, effort=Medium)
-
-Question:
-What background jobs/workers/scheduled tasks exist (if any)? For each, identify trigger mechanism, payload, retries, idempotency, and where it is defined.
-
-Rationale (one sentence):
-Background work affects reliability, cost, and operational complexity.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–8 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 08) ROI=2.2 impact=Medium confidence=Low effort=High horizon=NearTerm category=background jobs reference=internal/exec/runner.go
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-09/08-background-jobs-reliability.md" \
-  -f "internal/exec/runner.go" \
-  -f "internal/app/run.go" \
-  -p "$(cat <<'PROMPT'
-Strategist question #08
-
-Reference: internal/exec/runner.go
-Category: background jobs
-Horizon: NearTerm
-ROI: 2.2 (impact=Medium, confidence=Low, effort=High)
-
-Question:
-Where are the main reliability controls for any background or long-running work (timeouts, retries, cancellation, concurrency limits), and what is missing or inconsistent?
-
-Rationale (one sentence):
-Reliability controls prevent incident loops and data corruption.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–8 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 09) ROI=3.3 impact=High confidence=Medium effort=Low horizon=Immediate category=observability reference=internal/report/generate.go
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-09/09-observability-signals.md" \
-  -f "internal/report/generate.go" \
-  -f "internal/report/types.go" \
-  -p "$(cat <<'PROMPT'
-Strategist question #09
-
-Reference: internal/report/generate.go
-Category: observability
-Horizon: Immediate
-ROI: 3.3 (impact=High, confidence=Medium, effort=Low)
-
-Question:
-What observability signals exist (run reports, warnings, stdout/stderr logs), and what are the primary identifiers for correlating a step/run across components? Point to the code/config that defines them.
-
-Rationale (one sentence):
-You cannot operate or improve what you cannot measure or debug quickly.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–8 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 10) ROI=3.0 impact=High confidence=Medium effort=Medium horizon=Immediate category=observability reference=internal/report/io.go
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-09/10-observability-gaps.md" \
-  -f "internal/report/io.go" \
-  -f "internal/exec/runner.go" \
-  -p "$(cat <<'PROMPT'
-Strategist question #10
-
-Reference: internal/report/io.go
-Category: observability
-Horizon: Immediate
-ROI: 3.0 (impact=High, confidence=Medium, effort=Medium)
-
-Question:
-Where are the biggest observability gaps (missing structured logs, missing metrics, missing trace spans)? Recommend the smallest additions that would most improve debugging.
-
-Rationale (one sentence):
-Targeted observability improvements compound across all future changes.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–8 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 11) ROI=3.2 impact=High confidence=Medium effort=Low horizon=Immediate category=permissions reference=internal/cli/root.go
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-09/11-permissions-model.md" \
-  -f "internal/cli/root.go" \
-  -f "internal/app/app.go" \
-  -p "$(cat <<'PROMPT'
-Strategist question #11
-
-Reference: internal/cli/root.go
-Category: permissions
-Horizon: Immediate
-ROI: 3.2 (impact=High, confidence=Medium, effort=Low)
-
-Question:
-What is the permission model (roles/scopes/claims/ACLs), and where is it defined? If none, explain what access assumptions the CLI makes (filesystem, shell, external tools).
-
-Rationale (one sentence):
-Permission rules are a high-risk area with security and product impact.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–8 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 12) ROI=2.8 impact=High confidence=Low effort=Medium horizon=Immediate category=permissions reference=internal/cli/run.go
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-09/12-permissions-enforcement.md" \
-  -f "internal/cli/run.go" \
-  -f "internal/app/run.go" \
-  -p "$(cat <<'PROMPT'
-Strategist question #12
-
-Reference: internal/cli/run.go
-Category: permissions
-Horizon: Immediate
-ROI: 2.8 (impact=High, confidence=Low, effort=Medium)
-
-Question:
-Where are permissions or access checks enforced (if at all)? Identify enforcement chokepoints and any bypass risks for filesystem or shell execution.
-
-Rationale (one sentence):
-Enforcement consistency prevents privilege escalation and policy drift.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–8 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 13) ROI=2.5 impact=Medium confidence=Low effort=Medium horizon=NearTerm category=migrations reference=internal/state/types.go
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-09/13-migrations-schema.md" \
-  -f "internal/state/types.go" \
-  -f "internal/state/persist.go" \
-  -p "$(cat <<'PROMPT'
-Strategist question #13
-
-Reference: internal/state/types.go
-Category: migrations
-Horizon: NearTerm
-ROI: 2.5 (impact=Medium, confidence=Low, effort=Medium)
-
-Question:
-How are schema/config migrations handled (state file schema versions, report schema changes, pack format evolution)? Identify tooling, version fields, and how migrations are applied during upgrades.
-
-Rationale (one sentence):
-Migration mechanics are critical for safe releases and rollbacks.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–8 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 14) ROI=2.2 impact=Medium confidence=Low effort=High horizon=NearTerm category=migrations reference=internal/state/persist.go
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-09/14-migrations-compat.md" \
-  -f "internal/state/persist.go" \
-  -f "internal/state/types.go" \
-  -p "$(cat <<'PROMPT'
-Strategist question #14
-
-Reference: internal/state/persist.go
-Category: migrations
-Horizon: NearTerm
-ROI: 2.2 (impact=Medium, confidence=Low, effort=High)
-
-Question:
-What are the backward/forward compatibility expectations for state and report files (e.g., loading older state, changing schema_version)? Identify where compatibility is ensured or currently risky.
-
-Rationale (one sentence):
-Compatibility strategy prevents outages during upgrades.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–8 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 15) ROI=3.1 impact=High confidence=Medium effort=Medium horizon=NearTerm category=UX flows reference=internal/tui/tui.go
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-09/15-ux-flows-primary.md" \
-  -f "internal/tui/tui.go" \
-  -f "internal/cli/run.go" \
-  -p "$(cat <<'PROMPT'
-Strategist question #15
-
-Reference: internal/tui/tui.go
-Category: UX flows
-Horizon: NearTerm
-ROI: 3.1 (impact=High, confidence=Medium, effort=Medium)
-
-Question:
-What are the primary user/operator flows (TUI navigation, step selection, overrides, run/resume)? Map each to the main components/modules involved and note key state transitions.
-
-Rationale (one sentence):
-Flow maps reveal critical paths and help prioritize work with user impact.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 16) ROI=2.7 impact=Medium confidence=Medium effort=Medium horizon=NearTerm category=UX flows reference=internal/tui/overrides_flow.go
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-09/16-ux-flows-edgecases.md" \
-  -f "internal/tui/overrides_flow.go" \
-  -f "internal/tui/tui.go" \
-  -p "$(cat <<'PROMPT'
-Strategist question #16
-
-Reference: internal/tui/overrides_flow.go
-Category: UX flows
-Horizon: NearTerm
-ROI: 2.7 (impact=Medium, confidence=Medium, effort=Medium)
-
-Question:
-For the primary flows, what are the top edge cases and "gotchas" (validation failures, canceled overrides, partial runs, retries)? Identify where these cases are handled and where they are missing.
-
-Rationale (one sentence):
-Edge-case handling is where many UX and reliability issues originate.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 17) ROI=3.4 impact=High confidence=Medium effort=Low horizon=Immediate category=failure modes reference=internal/errors/errors.go
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-09/17-failure-modes-taxonomy.md" \
-  -f "internal/errors/errors.go" \
-  -f "internal/exec/runner.go" \
-  -p "$(cat <<'PROMPT'
-Strategist question #17
-
-Reference: internal/errors/errors.go
-Category: failure modes
-Horizon: Immediate
-ROI: 3.4 (impact=High, confidence=Medium, effort=Low)
-
-Question:
-What is the failure-mode taxonomy of this system (invalid pack, execution failure, config errors, subprocess failures)? Identify where failures are classified/handled and what is surfaced to users/operators.
-
-Rationale (one sentence):
-Explicit failure handling prevents incidents and reduces user-facing errors.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 18) ROI=3.0 impact=High confidence=Medium effort=Medium horizon=Immediate category=failure modes reference=internal/app/run.go
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-09/18-failure-modes-resilience.md" \
-  -f "internal/app/run.go" \
-  -f "internal/exec/runner.go" \
-  -p "$(cat <<'PROMPT'
-Strategist question #18
-
-Reference: internal/app/run.go
-Category: failure modes
-Horizon: Immediate
-ROI: 3.0 (impact=High, confidence=Medium, effort=Medium)
-
-Question:
-What resilience mechanisms exist (retry loops, output verification retries, stop-on-fail, resume), and which critical paths lack them? Where are these configured?
-
-Rationale (one sentence):
-Resilience patterns determine real-world reliability under stress.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 19) ROI=2.6 impact=Medium confidence=Low effort=Medium horizon=NearTerm category=feature flags reference=internal/overrides/types.go
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-09/19-feature-flags-inventory.md" \
-  -f "internal/overrides/types.go" \
-  -f "internal/cli/run.go" \
-  -p "$(cat <<'PROMPT'
-Strategist question #19
-
-Reference: internal/overrides/types.go
-Category: feature flags
-Horizon: NearTerm
-ROI: 2.6 (impact=Medium, confidence=Low, effort=Medium)
-
-Question:
-What feature-flag or override system exists (flag injection, step targeting, ROI filtering)? Inventory the flags/overrides and identify where they are defined, evaluated, and documented.
-
-Rationale (one sentence):
-Flags enable safe rollout and experimentation and reduce release risk.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-# 20) ROI=2.4 impact=Medium confidence=Low effort=High horizon=NearTerm category=feature flags reference=internal/overrides/merge.go
-oracle \
-  --files-report \
-  --write-output "docs/oracle-questions-2026-01-09/20-feature-flags-rollout.md" \
-  -f "internal/overrides/merge.go" \
-  -f "internal/tui/overrides_flow.go" \
-  -p "$(cat <<'PROMPT'
-Strategist question #20
-
-Reference: internal/overrides/merge.go
-Category: feature flags
-Horizon: NearTerm
-ROI: 2.4 (impact=Medium, confidence=Low, effort=High)
-
-Question:
-Describe the flag/override lifecycle (how overrides are created, validated, applied to steps, and retired). Identify minimum guardrails needed to prevent override drift.
-
-Rationale (one sentence):
-A disciplined rollout lifecycle reduces long-term complexity and operational risk.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-```
-
-Coverage check
---------------
-
-Mark each as OK or Missing(<which step ids>):
-
-*   contracts/interfaces: OK
-
-*   invariants: OK
-
-*   caching/state: OK
-
-*   background jobs: OK
-
-*   observability: OK
-
-*   permissions: OK
-
-*   migrations: OK
-
-*   UX flows: OK
-
-*   failure modes: OK
-
-*   feature flags: OK
-```
-
 docs/oracle-questions-2026-01-09-030000/_groups.json
 ```
 {
@@ -877,48 +217,117 @@ docs/oracle-questions-2026-01-09-030000/actions/01-contracts-interfaces-ticket-s
 ```
 Direct answer
 
-* Clarify/document Action Pack execution semantics (CLI/TUI docs surface): steps run as `bash -lc ...` in the project root, and oraclepack’s “special handling” (flag injection/override validation) applies only to commands beginning with `oracle`; non-`oracle` tools (`tm`/`task-master`, `codex`, `gemini`) run directly as shell commands.  
-* Dispatcher/command-detection contract expansion: broaden detection beyond the oracle-anchored regex (`^(\\s*)(oracle)\\b`) so steps containing `tm`/`task-master`, `codex`, and `gemini` can be treated as first-class command targets for dispatch/override/validation inclusion. Back-compat: preserve existing behavior for `oracle ...` commands. 
-* Override-validation behavior change (TUI/validate surface): today validation targets only oracle invocations (runs `oracle --dry-run summary`) and skips steps without oracle lines; tickets imply extending/restructuring validation so steps containing `tm`/`task-master`, `codex`, `gemini` are not silently excluded purely due to prefix mismatch. Back-compat: do not regress the current oracle-only validation flow.  
-* `ticket-action-pack.md` content contract change: replace placeholder steps (explicitly 09–13 and 16) with headless `gemini` + non-interactive `codex exec` automation. Back-compat: keep the pack “oraclepack-ingestible” (single bash fence, `# NN)` steps) and keep Steps 01–07 semantics unchanged.  
-* New standardized output artifact interface under `.oraclepack/ticketify/` for the agent loop: Step 09 `next.json`, Step 10 `codex-implement.md`, Step 11 `codex-verify.md` and/or `gemini-review.json`, Step 16 `PR.md`. Back-compat: paths are treated as required/stable outputs (don’t rename/move without versioning).  
-* Tool-availability/skip semantics become part of the operational contract for these steps: add `command -v ...` guards and documented “skip” behavior to avoid hard failures when `codex`/`gemini` are missing or interactive (blocking risk). Back-compat: default runs should not newly fail just because optional tools aren’t installed.  
-* Taskify Action Pack generator surface change: add an opt-in “agent-mode” (suggested `mode=codex` / `mode=gemini`) that swaps the existing autopilot entrypoint step slot after Task Master expansion, while keeping the 20-step contract intact. Back-compat: default mode remains current behavior; agent-mode must not add steps. 
-* Output/reporting contract stability: tickets explicitly name run outputs/artifacts (e.g., `.oraclepack/ticketify/_tickets_index.json`, `_actions.json`, `.taskmaster/docs/tickets_prd.md`, `.oraclepack/ticketify/tm-complexity.json`, plus `ticket-action-pack.state.json` / `ticket-action-pack.report.json`) and restate project-root execution (no chdir to `out_dir`). Back-compat: keep these names/locations stable to avoid breaking consumers and user expectations. 
+Document (CLI/TUI user-facing) the current Action Pack execution contract: each step runs as shell via bash -lc ..., and oraclepack’s special handling (override injection/validation) applies only to commands beginning with oracle (non-oracle tools run directly). Evidence: Oraclepack_Compatibility_Issues.md (“oraclepack executes each step as shell (bash -lc ...) and only applies oracle-specific behavior to oracle-prefixed commands… non-oracle tools (tm/task-master, codex, gemini) run directly”). 
+
+Oraclepack_Compatibility_Issues
+
+ 
+
+Oraclepack_Compatibility_Issues
+
+Extend the dispatcher’s command-detection surface beyond oracle-prefixed commands (currently anchored to ^(\\s*)(oracle)\\b) so steps containing tm/task-master, codex, and/or gemini are no longer excluded from the override/validation pipeline solely due to prefix mismatch; preserve existing oracle behavior. Evidence: Oraclepack_Compatibility_Issues.md (T2: “injects flags into commands that begin with oracle… regex anchored to ^(\\s*)(oracle)\\b… does not match tm, codex, gemini… Must preserve existing oracle command behavior”). 
+
+Oraclepack_Compatibility_Issues
+
+ 
+
+Oraclepack_Compatibility_Issues
+
+Extend/adjust TUI override validation so it doesn’t only run oracle --dry-run summary for detected oracle invocations and skip steps without oracle commands (i.e., make override validation aware of non-oracle tool steps, per the dispatcher changes). Evidence: Oraclepack_Compatibility_Issues.md (“TUI override validation… runs oracle --dry-run summary… steps without oracle invocations are skipped”; T2 scope calls for updating override validation beyond oracle-only targeting). 
+
+Oraclepack_Compatibility_Issues
+
+ 
+
+Oraclepack_Compatibility_Issues
+
+Replace placeholder steps in ticket-action-pack.md (explicitly 09–13 and 16) with headless gemini + non-interactive codex exec automation, standardizing new output artifacts under .oraclepack/ticketify/ (e.g., next.json, codex-implement.md, codex-verify.md and/or gemini-review.json, PR.md). Back-compat constraint: the artifact paths are part of the step contract (don’t rename/move without versioning). Evidence: Oraclepack_Compatibility_Issues.md (T3 “Replace… placeholder steps… Step 09 writes .oraclepack/ticketify/next.json… Step 10 writes codex-implement.md… Step 11 writes codex-verify.md and/or gemini-review.json… Step 16 writes PR.md; “Must write the artifacts to the paths specified”). 
+
+Oraclepack_Compatibility_Issues
+
+ 
+
+Oraclepack_Compatibility_Issues
+
+ 
+
+Oraclepack_Compatibility_Issues
+
+Make tool-availability guards and “skip” behavior part of the public operational contract for these new non-oracle steps (e.g., command -v ... checks), and explicitly treat “interactive CLI blocks” as a first-class hazard; back-compat constraint: default runs should not start failing/hanging just because optional tools aren’t installed or are interactive. Evidence: Oraclepack_Compatibility_Issues.md (“If CLI isn’t installed/on PATH → step fails; if interactive → blocks”; T3 requires “command-availability guards and ‘skip’ behavior… to avoid hard failures when tools are missing”). 
+
+Oraclepack_Compatibility_Issues
+
+ 
+
+Oraclepack_Compatibility_Issues
+
+Add an “agent-mode” option to taskify-generated Action Packs (suggested mode=codex / mode=gemini) that swaps the existing autopilot entrypoint step with an agent-implementation step, without changing the schema/step-count contract; back-compat constraint: keep the “20-step contract intact” and keep existing default behavior unchanged unless mode is explicitly selected. Evidence: Oraclepack_Compatibility_Issues.md (T4 “Add ‘agent-mode’… mode=codex / mode=gemini… keep the 20-step contract intact by swapping… step slot”). 
+
+Oraclepack_Compatibility_Issues
+
+ 
+
+Oraclepack_Compatibility_Issues
+
+Preserve the Action Pack ingestibility contract as a hard interface boundary (single ```bash fence, # NN) step structure / fixed-step schema), even as new automation is inserted into placeholder slots. Evidence: Oraclepack_Compatibility_Issues.md (“Action Pack is ‘oraclepack-ingestible’ (single bash fence, # NN) steps)”; “keep the 20-step contract intact”).
+
+Oraclepack_Compatibility_Issues
 ```
 
 docs/oracle-questions-2026-01-09-030000/actions/01-contracts-interfaces-ticket-surface-missing-evidence.md
 ```
 Missing evidence
 
-* `.tickets/actions/*.md` (full raw tickets, not summaries)
-* `ticket-action-pack.md` (and its generator/template source): `**/*ticket-action-pack*.md`, `**/*ticketify*pack*.md`, `**/templates/**`, `**/assets/**`
-* “taskify” Action Pack generator implementation (for proposed `mode=codex|gemini`): `**/*taskify*.*`, `**/taskify/**`, `**/oraclepack-taskify/**`
-* Oraclepack CLI/TUI public surface (commands/flags/help) and wiring: `**/cmd/**`, `**/internal/cli/**`, `**/*root*.go`, `**/*commands*.go`
-* Oraclepack dispatcher / command-detection / override-injection / validation pipeline (regex currently `^(\\s*)(oracle)\\b` per tickets): `**/*dispatch*.*`, `**/*detect*.*`, `**/*override*.*`, `**/*validate*.*`, `**/internal/**`
-* Oraclepack TUI override-validation flow (to assess user-visible behavior/back-compat): `**/*tui*.*`, `**/internal/**tui**/**`
-* Docs explicitly referenced by the tickets: `**/oraclepack-tui.md`, `**/oracle_pack_and_taskify-skills.md`
+* `.tickets/actions/**/*.md` (including any actions “Parent Ticket Summary.md” / index files)
+* The referenced pack(s): `**/ticket-action-pack.md`, `**/oracle_pack_and_taskify-skills.md`, `**/oraclepack-tui.md`
+* The generator/template source for `ticket-action-pack.md`: `**/*ticket-action-pack*.md`, `**/*ticketify*pack*.md`, `**/templates/**`, `**/assets/**`
+* Oraclepack command detection + override injection + validation implementation: `**/cmd/oraclepack/**`, `**/internal/**`, `**/*dispatch*.*`, `**/*override*.*`, `**/*validate*.*`
+* Run state/report writers + schema definitions for the named artifacts: `**/*state*.go`, `**/*report*.go`, `**/*.state.json*`, `**/*.report.json*`, `**/schema/**`
+* TUI surfaces for override/validation UX changes: `**/*tui*/**`, `**/*ui*/**`, `**/*bubbletea*/**`
 ```
 
 docs/oracle-questions-2026-01-09-030000/actions/01-contracts-interfaces-ticket-surface-next-experiment.md
 ```
 Next smallest concrete experiment
 
-* Run `rg -n --hidden --no-ignore-vcs 'ticket-action-pack\.md|Action Pack|override validation|dry-run summary|\^\(\\\\s\*\)\(oracle\)\\\\b|\btm\b|\btask-master\b|\bcodex\b|\bgemini\b' .`
+* In the oraclepack repo root, locate the current oracle-only detection + validation callsites to scope the minimal dispatcher/validation expansion: `rg -n --hidden --glob '!.git/' -F -e '^(\\s*)(oracle)\\b' -e 'oracle --dry-run summary' -e 'override validation' -e 'injects flags into commands that begin with' .` 
 ```
 
 docs/oracle-questions-2026-01-09-030000/actions/01-contracts-interfaces-ticket-surface-risks-unknowns.md
 ```
 Risks/unknowns
 
-* Override injection/validation expansion beyond `oracle` is underspecified: which overrides/flags apply to `tm`/`task-master`, `codex`, and `gemini`, and what “validation” means for each tool are not defined; this can easily produce partial/incorrect behavior.
-* Dispatcher intent is ambiguous: tickets do not specify whether the dispatcher should “interpret actions” (semantic dispatch) vs only broaden prefix-based detection to include non-`oracle` commands.
-* User-facing docs/TUI discoverability is unclear: where the “Action Pack execution semantics + failure modes” documentation should live (README vs `oraclepack-tui.md` vs TUI help text) is not specified, risking continued user confusion about what is/ isn’t routed/validated.
-* Action Pack “implement” execution path has key unknowns: where `top_n` is defined/how ranking works, and the exact `<out_dir>/_actions.json` location/structure needed for deterministic dispatch are not provided. 
-* Taskify “agent-mode” surface is incomplete: the tickets don’t specify how `mode=codex|gemini` is selected (CLI flag vs TUI option vs config) or which exact step slot replaces the autopilot entrypoint while keeping the 20-step contract intact. 
-* `ticket-action-pack.md` placeholder replacement is underspecified in places: whether Step 11 defaults to Codex verification, Gemini diff review, or both, and whether Steps 12–13 must change are not defined, increasing the risk of a half-automated pack that still looks “successful” but doesn’t produce expected artifacts. 
-* Operational “skip” contract for missing tools is not defined: tickets require `command -v` guards and “skip” behavior when `codex`/`gemini` are absent, but don’t specify exit codes/status/report semantics, creating inconsistency across CLI/TUI reporting and resume behavior.
-* Runner/TUI behavior gaps remain undefined for reliability: signal handling (SIGINT propagation, atomic state/log flush), the full resume contract (what reruns, how interrupted prelude is treated), and how to avoid UX implying non-existent guarantees for non-`oracle` override/validation are not specified. 
+The tickets do not specify which overrides/flags should apply to each non-oracle tool (tm/task-master, codex, gemini) or what “validation” means for them; implementing anything beyond broadened detection risks incorrect/partial behavior. 
+
+Oraclepack_Compatibility_Issues
+
+“Headless/non-interactive” invocation details for codex/gemini are not specified; interactivity is explicitly called out as a risk (runs can block), and missing binaries on PATH can hard-fail steps without guards/skip semantics. 
+
+Oraclepack_Compatibility_Issues
+
+The intended default for verification is underspecified: Step 11 could be codex exec, Gemini diff review, or both; similarly, whether Steps 12–13 should be modified is not stated. 
+
+Oraclepack_Compatibility_Issues
+
+The user-facing selection surface for taskify “agent-mode” is not specified (CLI flag vs TUI option vs config), and the exact step slot to swap is not specified. 
+
+Oraclepack_Compatibility_Issues
+
+Where the “clarify current execution semantics/failure modes” documentation should live (README vs oraclepack-tui.md vs TUI help text) is not provided, which affects discoverability and backward-compat messaging. 
+
+Oraclepack_Compatibility_Issues
+
+The tickets do not provide exact code locations for the current detection/override-validation machinery (they describe behavior like an oracle-anchored matcher and oracle-only validation, but not file paths), so the scope of required CLI/TUI/internal refactors is uncertain. 
+
+Oraclepack_Compatibility_Issues
+
+Inference: Several on-disk artifact paths are named as expected outputs (e.g., .oraclepack/ticketify/*, ticket-action-pack.state.json, ticket-action-pack.report.json), but the tickets don’t define schemas/versions for these artifacts, increasing drift risk for any downstream tooling that consumes them. 
+
+Oraclepack_Compatibility_Issues
+
+Reproduction steps are not provided across the split tickets, making regression testing of new/changed public behavior (CLI/TUI validation, pack execution outcomes) harder to anchor. 
+
+Oraclepack_Compatibility_Issues
 ```
 
 docs/oracle-questions-2026-01-09-030000/packs/actions.md
@@ -1278,433 +687,6 @@ fi
 
 # extra_files appended literally (may be empty; may include -f/--file):
 oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/actions/02-contracts-interfaces-integration-points-direct-answer.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
-Strategist question #02  (ticket-driven, group: actions)
-
-Reference: actions
-Category: contracts/interfaces
-Horizon: Immediate
-ROI: 4.6 (impact=6, confidence=0.78, effort=1)
-
-Question:
-Using the attached tickets as the primary context, identify external integrations implied by the tickets; required config/contract changes; failure/timeout behavior; minimal compat-safe rollout.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-
-Output section: Direct answer
-Start with heading: Direct answer
-Return only: Direct answer (1–10 bullets, evidence-cited)
-PROMPT
-)"
-
-oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/actions/02-contracts-interfaces-integration-points-risks-unknowns.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
-Strategist question #02  (ticket-driven, group: actions)
-
-Reference: actions
-Category: contracts/interfaces
-Horizon: Immediate
-ROI: 4.6 (impact=6, confidence=0.78, effort=1)
-
-Question:
-Using the attached tickets as the primary context, identify external integrations implied by the tickets; required config/contract changes; failure/timeout behavior; minimal compat-safe rollout.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-
-Output section: Risks/unknowns
-Start with heading: Risks/unknowns
-Return only: Risks/unknowns (bullets)
-PROMPT
-)"
-
-oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/actions/02-contracts-interfaces-integration-points-next-experiment.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
-Strategist question #02  (ticket-driven, group: actions)
-
-Reference: actions
-Category: contracts/interfaces
-Horizon: Immediate
-ROI: 4.6 (impact=6, confidence=0.78, effort=1)
-
-Question:
-Using the attached tickets as the primary context, identify external integrations implied by the tickets; required config/contract changes; failure/timeout behavior; minimal compat-safe rollout.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-
-Output section: Next smallest concrete experiment
-Start with heading: Next smallest concrete experiment
-Return only: Next smallest concrete experiment (exactly one action)
-PROMPT
-)"
-
-oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/actions/02-contracts-interfaces-integration-points-missing-evidence.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
-Strategist question #02  (ticket-driven, group: actions)
-
-Reference: actions
-Category: contracts/interfaces
-Horizon: Immediate
-ROI: 4.6 (impact=6, confidence=0.78, effort=1)
-
-Question:
-Using the attached tickets as the primary context, identify external integrations implied by the tickets; required config/contract changes; failure/timeout behavior; minimal compat-safe rollout.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-
-Output section: Missing evidence
-Start with heading: Missing evidence
-Return only: If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-
-# 03) ROI=5.1 impact=7 confidence=0.74 effort=1 horizon=NearTerm category=invariants reference=actions
-
-# tickets attached directly (deterministic; self-contained)
-mapfile -t __tickets < <(python3 - <<'PY'
-from __future__ import annotations
-from pathlib import Path
-import fnmatch
-
-TICKET_ROOT = ".tickets"
-TICKET_GLOB = "**/*.md"
-TICKET_PATHS = ".tickets/actions/Enable Action Packs Dispatch.md,.tickets/actions/Improving Oraclepack Workflow.md,.tickets/actions/Oraclepack Action Pack Integration.md,.tickets/actions/Oraclepack Action Pack Issue.md,.tickets/actions/Oraclepack Action Packs.md,.tickets/actions/Oraclepack Compatibility Issues.md".strip()
-MAX = int("6")
-
-
-root = Path(TICKET_ROOT)
-
-def read_gitignore(start: Path):
-    cur = start.resolve()
-    if cur.is_file():
-        cur = cur.parent
-    while True:
-        p = cur / ".gitignore"
-        if p.exists():
-            lines = []
-            for ln in p.read_text(encoding="utf-8", errors="replace").splitlines():
-                s = ln.strip()
-                if not s or s.startswith("#"):
-                    continue
-                lines.append(s)
-            return cur, lines
-        if cur.parent == cur:
-            return start.resolve(), []
-        cur = cur.parent
-
-
-def gitignore_match(rel_posix: str, name: str, pattern: str) -> bool:
-    neg = pattern.startswith("!")
-    if neg:
-        pattern = pattern[1:]
-    if not pattern:
-        return False
-
-    anchored = pattern.startswith("/")
-    if anchored:
-        pattern = pattern.lstrip("/")
-
-    dir_only = pattern.endswith("/")
-    if dir_only:
-        pattern = pattern.rstrip("/")
-
-    if "/" not in pattern:
-        if dir_only:
-            return any(part == pattern for part in rel_posix.split("/"))
-        return fnmatch.fnmatch(name, pattern)
-
-    target = rel_posix
-    if anchored:
-        if dir_only:
-            return target.startswith(pattern + "/")
-        return fnmatch.fnmatch(target, pattern)
-    if dir_only:
-        return f"/{pattern}/" in f"/{target}/"
-    return fnmatch.fnmatch(target, f"**/{pattern}") or fnmatch.fnmatch(target, pattern)
-
-
-def is_gitignored(path: Path, git_root: Path, patterns: list[str]) -> bool:
-    try:
-        rel = path.resolve().relative_to(git_root)
-    except Exception:
-        rel = path
-    rel_posix = rel.as_posix()
-    name = rel_posix.split("/")[-1]
-    ignored = False
-    for pat in patterns:
-        neg = pat.startswith("!")
-        if gitignore_match(rel_posix, name, pat):
-            ignored = not neg
-    return ignored
-
-
-git_root, git_patterns = read_gitignore(root)
-def lex_sorted(ps):
-    return sorted((str(p) for p in ps), key=lambda s: s)
-
-if TICKET_PATHS:
-    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
-else:
-    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
-
-tickets = [Path(p) for p in lex_sorted(tickets)]
-tickets = [p for p in tickets if not is_gitignored(p, git_root, git_patterns)]
-if MAX and MAX > 0:
-    tickets = tickets[:MAX]
-
-for p in tickets:
-    print(str(p))
-PY
-)
-
-ticket_args=()
-for p in "${__tickets[@]}"; do
-  ticket_args+=(-f "$p")
-done
-
-if [ "${#ticket_args[@]}" -eq 0 ]; then
-  echo "WARNING: no tickets resolved for group 'actions'." >&2
-fi
-
-# extra_files appended literally (may be empty; may include -f/--file):
-oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/actions/03-invariants-invariant-map-direct-answer.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
-Strategist question #03  (ticket-driven, group: actions)
-
-Reference: actions
-Category: invariants
-Horizon: NearTerm
-ROI: 5.1 (impact=7, confidence=0.74, effort=1)
-
-Question:
-Using the attached tickets as the primary context, extract system invariants implied by tickets (inputs/outputs, pack schema rules, step execution rules) and where to enforce them.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-
-Output section: Direct answer
-Start with heading: Direct answer
-Return only: Direct answer (1–10 bullets, evidence-cited)
-PROMPT
-)"
-
-oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/actions/03-invariants-invariant-map-risks-unknowns.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
-Strategist question #03  (ticket-driven, group: actions)
-
-Reference: actions
-Category: invariants
-Horizon: NearTerm
-ROI: 5.1 (impact=7, confidence=0.74, effort=1)
-
-Question:
-Using the attached tickets as the primary context, extract system invariants implied by tickets (inputs/outputs, pack schema rules, step execution rules) and where to enforce them.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-
-Output section: Risks/unknowns
-Start with heading: Risks/unknowns
-Return only: Risks/unknowns (bullets)
-PROMPT
-)"
-
-oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/actions/03-invariants-invariant-map-next-experiment.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
-Strategist question #03  (ticket-driven, group: actions)
-
-Reference: actions
-Category: invariants
-Horizon: NearTerm
-ROI: 5.1 (impact=7, confidence=0.74, effort=1)
-
-Question:
-Using the attached tickets as the primary context, extract system invariants implied by tickets (inputs/outputs, pack schema rules, step execution rules) and where to enforce them.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-
-Output section: Next smallest concrete experiment
-Start with heading: Next smallest concrete experiment
-Return only: Next smallest concrete experiment (exactly one action)
-PROMPT
-)"
-
-oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/actions/03-invariants-invariant-map-missing-evidence.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
-Strategist question #03  (ticket-driven, group: actions)
-
-Reference: actions
-Category: invariants
-Horizon: NearTerm
-ROI: 5.1 (impact=7, confidence=0.74, effort=1)
-
-Question:
-Using the attached tickets as the primary context, extract system invariants implied by tickets (inputs/outputs, pack schema rules, step execution rules) and where to enforce them.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-
-Output section: Missing evidence
-Start with heading: Missing evidence
-Return only: If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-
-# 04) ROI=5.0 impact=7 confidence=0.72 effort=2 horizon=NearTerm category=invariants reference=actions
-
-# tickets attached directly (deterministic; self-contained)
-mapfile -t __tickets < <(python3 - <<'PY'
-from __future__ import annotations
-from pathlib import Path
-import fnmatch
-
-TICKET_ROOT = ".tickets"
-TICKET_GLOB = "**/*.md"
-TICKET_PATHS = ".tickets/actions/Enable Action Packs Dispatch.md,.tickets/actions/Improving Oraclepack Workflow.md,.tickets/actions/Oraclepack Action Pack Integration.md,.tickets/actions/Oraclepack Action Pack Issue.md,.tickets/actions/Oraclepack Action Packs.md,.tickets/actions/Oraclepack Compatibility Issues.md".strip()
-MAX = int("6")
-
-
-root = Path(TICKET_ROOT)
-
-def read_gitignore(start: Path):
-    cur = start.resolve()
-    if cur.is_file():
-        cur = cur.parent
-    while True:
-        p = cur / ".gitignore"
-        if p.exists():
-            lines = []
-            for ln in p.read_text(encoding="utf-8", errors="replace").splitlines():
-                s = ln.strip()
-                if not s or s.startswith("#"):
-                    continue
-                lines.append(s)
-            return cur, lines
-        if cur.parent == cur:
-            return start.resolve(), []
-        cur = cur.parent
-
-
-def gitignore_match(rel_posix: str, name: str, pattern: str) -> bool:
-    neg = pattern.startswith("!")
-    if neg:
-        pattern = pattern[1:]
-    if not pattern:
-        return False
-
-    anchored = pattern.startswith("/")
-    if anchored:
-        pattern = pattern.lstrip("/")
-
-    dir_only = pattern.endswith("/")
-    if dir_only:
-        pattern = pattern.rstrip("/")
-
-    if "/" not in pattern:
-        if dir_only:
-            return any(part == pattern for part in rel_posix.split("/"))
-        return fnmatch.fnmatch(name, pattern)
-
-    target = rel_posix
-    if anchored:
-        if dir_only:
-            return target.startswith(pattern + "/")
-        return fnmatch.fnmatch(target, pattern)
-    if dir_only:
-        return f"/{pattern}/" in f"/{target}/"
-    return fnmatch.fnmatch(target, f"**/{pattern}") or fnmatch.fnmatch(target, pattern)
-
-
-def is_gitignored(path: Path, git_root: Path, patterns: list[str]) -> bool:
-    try:
-        rel = path.resolve().relative_to(git_root)
-    except Exception:
-        rel = path
-    rel_posix = rel.as_posix()
-    name = rel_posix.split("/")[-1]
-    ignored = False
-    for pat in patterns:
-        neg = pat.startswith("!")
-        if gitignore_match(rel_posix, name, pat):
-            ignored = not neg
-    return ignored
-
-
-git_root, git_patterns = read_gitignore(root)
-def lex_sorted(ps):
-    return sorted((str(p) for p in ps), key=lambda s: s)
-
-if TICKET_PATHS:
-    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
-else:
-    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
-
-tickets = [Path(p) for p in lex_sorted(tickets)]
-tickets = [p for p in tickets if not is_gitignored(p, git_root, git_patterns)]
-if MAX and MAX > 0:
-    tickets = tickets[:MAX]
-
-for p in tickets:
-    print(str(p))
-PY
-)
-
-ticket_args=()
-for p in "${__tickets[@]}"; do
-  ticket_args+=(-f "$p")
-done
-
-if [ "${#ticket_args[@]}" -eq 0 ]; then
-  echo "WARNING: no tickets resolved for group 'actions'." >&2
-fi
-
-# extra_files appended literally (may be empty; may include -f/--file):
 [TRUNCATED]
 ```
 
@@ -2065,433 +1047,6 @@ fi
 
 # extra_files appended literally (may be empty; may include -f/--file):
 oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/mcp/02-contracts-interfaces-integration-points-direct-answer.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
-Strategist question #02  (ticket-driven, group: mcp)
-
-Reference: mcp
-Category: contracts/interfaces
-Horizon: Immediate
-ROI: 4.6 (impact=6, confidence=0.78, effort=1)
-
-Question:
-Using the attached tickets as the primary context, identify external integrations implied by the tickets; required config/contract changes; failure/timeout behavior; minimal compat-safe rollout.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-
-Output section: Direct answer
-Start with heading: Direct answer
-Return only: Direct answer (1–10 bullets, evidence-cited)
-PROMPT
-)"
-
-oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/mcp/02-contracts-interfaces-integration-points-risks-unknowns.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
-Strategist question #02  (ticket-driven, group: mcp)
-
-Reference: mcp
-Category: contracts/interfaces
-Horizon: Immediate
-ROI: 4.6 (impact=6, confidence=0.78, effort=1)
-
-Question:
-Using the attached tickets as the primary context, identify external integrations implied by the tickets; required config/contract changes; failure/timeout behavior; minimal compat-safe rollout.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-
-Output section: Risks/unknowns
-Start with heading: Risks/unknowns
-Return only: Risks/unknowns (bullets)
-PROMPT
-)"
-
-oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/mcp/02-contracts-interfaces-integration-points-next-experiment.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
-Strategist question #02  (ticket-driven, group: mcp)
-
-Reference: mcp
-Category: contracts/interfaces
-Horizon: Immediate
-ROI: 4.6 (impact=6, confidence=0.78, effort=1)
-
-Question:
-Using the attached tickets as the primary context, identify external integrations implied by the tickets; required config/contract changes; failure/timeout behavior; minimal compat-safe rollout.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-
-Output section: Next smallest concrete experiment
-Start with heading: Next smallest concrete experiment
-Return only: Next smallest concrete experiment (exactly one action)
-PROMPT
-)"
-
-oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/mcp/02-contracts-interfaces-integration-points-missing-evidence.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
-Strategist question #02  (ticket-driven, group: mcp)
-
-Reference: mcp
-Category: contracts/interfaces
-Horizon: Immediate
-ROI: 4.6 (impact=6, confidence=0.78, effort=1)
-
-Question:
-Using the attached tickets as the primary context, identify external integrations implied by the tickets; required config/contract changes; failure/timeout behavior; minimal compat-safe rollout.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-
-Output section: Missing evidence
-Start with heading: Missing evidence
-Return only: If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-
-# 03) ROI=5.1 impact=7 confidence=0.74 effort=1 horizon=NearTerm category=invariants reference=mcp
-
-# tickets attached directly (deterministic; self-contained)
-mapfile -t __tickets < <(python3 - <<'PY'
-from __future__ import annotations
-from pathlib import Path
-import fnmatch
-
-TICKET_ROOT = ".tickets"
-TICKET_GLOB = "**/*.md"
-TICKET_PATHS = ".tickets/mcp/Expose Oraclepack as MCP.md,.tickets/mcp/MCP Server for Oraclepack.md,.tickets/mcp/gaps-still-not-covered.md,.tickets/mcp/gaps_part2-mcp-builder.md,.tickets/mcp/oraclepack-MCP.md,.tickets/mcp/oraclepack_mcp_server.md".strip()
-MAX = int("6")
-
-
-root = Path(TICKET_ROOT)
-
-def read_gitignore(start: Path):
-    cur = start.resolve()
-    if cur.is_file():
-        cur = cur.parent
-    while True:
-        p = cur / ".gitignore"
-        if p.exists():
-            lines = []
-            for ln in p.read_text(encoding="utf-8", errors="replace").splitlines():
-                s = ln.strip()
-                if not s or s.startswith("#"):
-                    continue
-                lines.append(s)
-            return cur, lines
-        if cur.parent == cur:
-            return start.resolve(), []
-        cur = cur.parent
-
-
-def gitignore_match(rel_posix: str, name: str, pattern: str) -> bool:
-    neg = pattern.startswith("!")
-    if neg:
-        pattern = pattern[1:]
-    if not pattern:
-        return False
-
-    anchored = pattern.startswith("/")
-    if anchored:
-        pattern = pattern.lstrip("/")
-
-    dir_only = pattern.endswith("/")
-    if dir_only:
-        pattern = pattern.rstrip("/")
-
-    if "/" not in pattern:
-        if dir_only:
-            return any(part == pattern for part in rel_posix.split("/"))
-        return fnmatch.fnmatch(name, pattern)
-
-    target = rel_posix
-    if anchored:
-        if dir_only:
-            return target.startswith(pattern + "/")
-        return fnmatch.fnmatch(target, pattern)
-    if dir_only:
-        return f"/{pattern}/" in f"/{target}/"
-    return fnmatch.fnmatch(target, f"**/{pattern}") or fnmatch.fnmatch(target, pattern)
-
-
-def is_gitignored(path: Path, git_root: Path, patterns: list[str]) -> bool:
-    try:
-        rel = path.resolve().relative_to(git_root)
-    except Exception:
-        rel = path
-    rel_posix = rel.as_posix()
-    name = rel_posix.split("/")[-1]
-    ignored = False
-    for pat in patterns:
-        neg = pat.startswith("!")
-        if gitignore_match(rel_posix, name, pat):
-            ignored = not neg
-    return ignored
-
-
-git_root, git_patterns = read_gitignore(root)
-def lex_sorted(ps):
-    return sorted((str(p) for p in ps), key=lambda s: s)
-
-if TICKET_PATHS:
-    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
-else:
-    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
-
-tickets = [Path(p) for p in lex_sorted(tickets)]
-tickets = [p for p in tickets if not is_gitignored(p, git_root, git_patterns)]
-if MAX and MAX > 0:
-    tickets = tickets[:MAX]
-
-for p in tickets:
-    print(str(p))
-PY
-)
-
-ticket_args=()
-for p in "${__tickets[@]}"; do
-  ticket_args+=(-f "$p")
-done
-
-if [ "${#ticket_args[@]}" -eq 0 ]; then
-  echo "WARNING: no tickets resolved for group 'mcp'." >&2
-fi
-
-# extra_files appended literally (may be empty; may include -f/--file):
-oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/mcp/03-invariants-invariant-map-direct-answer.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
-Strategist question #03  (ticket-driven, group: mcp)
-
-Reference: mcp
-Category: invariants
-Horizon: NearTerm
-ROI: 5.1 (impact=7, confidence=0.74, effort=1)
-
-Question:
-Using the attached tickets as the primary context, extract system invariants implied by tickets (inputs/outputs, pack schema rules, step execution rules) and where to enforce them.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-
-Output section: Direct answer
-Start with heading: Direct answer
-Return only: Direct answer (1–10 bullets, evidence-cited)
-PROMPT
-)"
-
-oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/mcp/03-invariants-invariant-map-risks-unknowns.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
-Strategist question #03  (ticket-driven, group: mcp)
-
-Reference: mcp
-Category: invariants
-Horizon: NearTerm
-ROI: 5.1 (impact=7, confidence=0.74, effort=1)
-
-Question:
-Using the attached tickets as the primary context, extract system invariants implied by tickets (inputs/outputs, pack schema rules, step execution rules) and where to enforce them.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-
-Output section: Risks/unknowns
-Start with heading: Risks/unknowns
-Return only: Risks/unknowns (bullets)
-PROMPT
-)"
-
-oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/mcp/03-invariants-invariant-map-next-experiment.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
-Strategist question #03  (ticket-driven, group: mcp)
-
-Reference: mcp
-Category: invariants
-Horizon: NearTerm
-ROI: 5.1 (impact=7, confidence=0.74, effort=1)
-
-Question:
-Using the attached tickets as the primary context, extract system invariants implied by tickets (inputs/outputs, pack schema rules, step execution rules) and where to enforce them.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-
-Output section: Next smallest concrete experiment
-Start with heading: Next smallest concrete experiment
-Return only: Next smallest concrete experiment (exactly one action)
-PROMPT
-)"
-
-oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/mcp/03-invariants-invariant-map-missing-evidence.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
-Strategist question #03  (ticket-driven, group: mcp)
-
-Reference: mcp
-Category: invariants
-Horizon: NearTerm
-ROI: 5.1 (impact=7, confidence=0.74, effort=1)
-
-Question:
-Using the attached tickets as the primary context, extract system invariants implied by tickets (inputs/outputs, pack schema rules, step execution rules) and where to enforce them.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-
-Output section: Missing evidence
-Start with heading: Missing evidence
-Return only: If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-
-# 04) ROI=5.0 impact=7 confidence=0.72 effort=2 horizon=NearTerm category=invariants reference=mcp
-
-# tickets attached directly (deterministic; self-contained)
-mapfile -t __tickets < <(python3 - <<'PY'
-from __future__ import annotations
-from pathlib import Path
-import fnmatch
-
-TICKET_ROOT = ".tickets"
-TICKET_GLOB = "**/*.md"
-TICKET_PATHS = ".tickets/mcp/Expose Oraclepack as MCP.md,.tickets/mcp/MCP Server for Oraclepack.md,.tickets/mcp/gaps-still-not-covered.md,.tickets/mcp/gaps_part2-mcp-builder.md,.tickets/mcp/oraclepack-MCP.md,.tickets/mcp/oraclepack_mcp_server.md".strip()
-MAX = int("6")
-
-
-root = Path(TICKET_ROOT)
-
-def read_gitignore(start: Path):
-    cur = start.resolve()
-    if cur.is_file():
-        cur = cur.parent
-    while True:
-        p = cur / ".gitignore"
-        if p.exists():
-            lines = []
-            for ln in p.read_text(encoding="utf-8", errors="replace").splitlines():
-                s = ln.strip()
-                if not s or s.startswith("#"):
-                    continue
-                lines.append(s)
-            return cur, lines
-        if cur.parent == cur:
-            return start.resolve(), []
-        cur = cur.parent
-
-
-def gitignore_match(rel_posix: str, name: str, pattern: str) -> bool:
-    neg = pattern.startswith("!")
-    if neg:
-        pattern = pattern[1:]
-    if not pattern:
-        return False
-
-    anchored = pattern.startswith("/")
-    if anchored:
-        pattern = pattern.lstrip("/")
-
-    dir_only = pattern.endswith("/")
-    if dir_only:
-        pattern = pattern.rstrip("/")
-
-    if "/" not in pattern:
-        if dir_only:
-            return any(part == pattern for part in rel_posix.split("/"))
-        return fnmatch.fnmatch(name, pattern)
-
-    target = rel_posix
-    if anchored:
-        if dir_only:
-            return target.startswith(pattern + "/")
-        return fnmatch.fnmatch(target, pattern)
-    if dir_only:
-        return f"/{pattern}/" in f"/{target}/"
-    return fnmatch.fnmatch(target, f"**/{pattern}") or fnmatch.fnmatch(target, pattern)
-
-
-def is_gitignored(path: Path, git_root: Path, patterns: list[str]) -> bool:
-    try:
-        rel = path.resolve().relative_to(git_root)
-    except Exception:
-        rel = path
-    rel_posix = rel.as_posix()
-    name = rel_posix.split("/")[-1]
-    ignored = False
-    for pat in patterns:
-        neg = pat.startswith("!")
-        if gitignore_match(rel_posix, name, pat):
-            ignored = not neg
-    return ignored
-
-
-git_root, git_patterns = read_gitignore(root)
-def lex_sorted(ps):
-    return sorted((str(p) for p in ps), key=lambda s: s)
-
-if TICKET_PATHS:
-    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
-else:
-    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
-
-tickets = [Path(p) for p in lex_sorted(tickets)]
-tickets = [p for p in tickets if not is_gitignored(p, git_root, git_patterns)]
-if MAX and MAX > 0:
-    tickets = tickets[:MAX]
-
-for p in tickets:
-    print(str(p))
-PY
-)
-
-ticket_args=()
-for p in "${__tickets[@]}"; do
-  ticket_args+=(-f "$p")
-done
-
-if [ "${#ticket_args[@]}" -eq 0 ]; then
-  echo "WARNING: no tickets resolved for group 'mcp'." >&2
-fi
-
-# extra_files appended literally (may be empty; may include -f/--file):
 [TRUNCATED]
 ```
 
@@ -2851,429 +1406,6 @@ if [ "${#ticket_args[@]}" -eq 0 ]; then
 fi
 
 # extra_files appended literally (may be empty; may include -f/--file):
-oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/misc/02-contracts-interfaces-integration-points-direct-answer.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
-Strategist question #02  (ticket-driven, group: misc)
-
-Reference: misc
-Category: contracts/interfaces
-Horizon: Immediate
-ROI: 4.6 (impact=6, confidence=0.78, effort=1)
-
-Question:
-Using the attached tickets as the primary context, identify external integrations implied by the tickets; required config/contract changes; failure/timeout behavior; minimal compat-safe rollout.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-
-Output section: Direct answer
-Start with heading: Direct answer
-Return only: Direct answer (1–10 bullets, evidence-cited)
-PROMPT
-)"
-
-oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/misc/02-contracts-interfaces-integration-points-risks-unknowns.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
-Strategist question #02  (ticket-driven, group: misc)
-
-Reference: misc
-Category: contracts/interfaces
-Horizon: Immediate
-ROI: 4.6 (impact=6, confidence=0.78, effort=1)
-
-Question:
-Using the attached tickets as the primary context, identify external integrations implied by the tickets; required config/contract changes; failure/timeout behavior; minimal compat-safe rollout.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-
-Output section: Risks/unknowns
-Start with heading: Risks/unknowns
-Return only: Risks/unknowns (bullets)
-PROMPT
-)"
-
-oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/misc/02-contracts-interfaces-integration-points-next-experiment.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
-Strategist question #02  (ticket-driven, group: misc)
-
-Reference: misc
-Category: contracts/interfaces
-Horizon: Immediate
-ROI: 4.6 (impact=6, confidence=0.78, effort=1)
-
-Question:
-Using the attached tickets as the primary context, identify external integrations implied by the tickets; required config/contract changes; failure/timeout behavior; minimal compat-safe rollout.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-
-Output section: Next smallest concrete experiment
-Start with heading: Next smallest concrete experiment
-Return only: Next smallest concrete experiment (exactly one action)
-PROMPT
-)"
-
-oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/misc/02-contracts-interfaces-integration-points-missing-evidence.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
-Strategist question #02  (ticket-driven, group: misc)
-
-Reference: misc
-Category: contracts/interfaces
-Horizon: Immediate
-ROI: 4.6 (impact=6, confidence=0.78, effort=1)
-
-Question:
-Using the attached tickets as the primary context, identify external integrations implied by the tickets; required config/contract changes; failure/timeout behavior; minimal compat-safe rollout.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-
-Output section: Missing evidence
-Start with heading: Missing evidence
-Return only: If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-
-# 03) ROI=5.1 impact=7 confidence=0.74 effort=1 horizon=NearTerm category=invariants reference=misc
-
-# tickets attached directly (deterministic; self-contained)
-mapfile -t __tickets < <(python3 - <<'PY'
-from __future__ import annotations
-from pathlib import Path
-import fnmatch
-
-TICKET_ROOT = ".tickets"
-TICKET_GLOB = "**/*.md"
-TICKET_PATHS = ".tickets/Formalize LLM Decision Points.md,.tickets/Oraclepack CLI MCP Parity.md,.tickets/Oraclepack File Storage.md,.tickets/Oraclepack Parity Automation.md,.tickets/Oraclepack Schema Approach.md,.tickets/Oraclepack bash fix.md,.tickets/Oraclepack output verification issues.md,.tickets/Oraclepack-CLI-agents.md,.tickets/Publish OraclePack MCP.md".strip()
-MAX = int("9")
-
-
-root = Path(TICKET_ROOT)
-
-def read_gitignore(start: Path):
-    cur = start.resolve()
-    if cur.is_file():
-        cur = cur.parent
-    while True:
-        p = cur / ".gitignore"
-        if p.exists():
-            lines = []
-            for ln in p.read_text(encoding="utf-8", errors="replace").splitlines():
-                s = ln.strip()
-                if not s or s.startswith("#"):
-                    continue
-                lines.append(s)
-            return cur, lines
-        if cur.parent == cur:
-            return start.resolve(), []
-        cur = cur.parent
-
-
-def gitignore_match(rel_posix: str, name: str, pattern: str) -> bool:
-    neg = pattern.startswith("!")
-    if neg:
-        pattern = pattern[1:]
-    if not pattern:
-        return False
-
-    anchored = pattern.startswith("/")
-    if anchored:
-        pattern = pattern.lstrip("/")
-
-    dir_only = pattern.endswith("/")
-    if dir_only:
-        pattern = pattern.rstrip("/")
-
-    if "/" not in pattern:
-        if dir_only:
-            return any(part == pattern for part in rel_posix.split("/"))
-        return fnmatch.fnmatch(name, pattern)
-
-    target = rel_posix
-    if anchored:
-        if dir_only:
-            return target.startswith(pattern + "/")
-        return fnmatch.fnmatch(target, pattern)
-    if dir_only:
-        return f"/{pattern}/" in f"/{target}/"
-    return fnmatch.fnmatch(target, f"**/{pattern}") or fnmatch.fnmatch(target, pattern)
-
-
-def is_gitignored(path: Path, git_root: Path, patterns: list[str]) -> bool:
-    try:
-        rel = path.resolve().relative_to(git_root)
-    except Exception:
-        rel = path
-    rel_posix = rel.as_posix()
-    name = rel_posix.split("/")[-1]
-    ignored = False
-    for pat in patterns:
-        neg = pat.startswith("!")
-        if gitignore_match(rel_posix, name, pat):
-            ignored = not neg
-    return ignored
-
-
-git_root, git_patterns = read_gitignore(root)
-def lex_sorted(ps):
-    return sorted((str(p) for p in ps), key=lambda s: s)
-
-if TICKET_PATHS:
-    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
-else:
-    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
-
-tickets = [Path(p) for p in lex_sorted(tickets)]
-tickets = [p for p in tickets if not is_gitignored(p, git_root, git_patterns)]
-if MAX and MAX > 0:
-    tickets = tickets[:MAX]
-
-for p in tickets:
-    print(str(p))
-PY
-)
-
-ticket_args=()
-for p in "${__tickets[@]}"; do
-  ticket_args+=(-f "$p")
-done
-
-if [ "${#ticket_args[@]}" -eq 0 ]; then
-  echo "WARNING: no tickets resolved for group 'misc'." >&2
-fi
-
-# extra_files appended literally (may be empty; may include -f/--file):
-oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/misc/03-invariants-invariant-map-direct-answer.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
-Strategist question #03  (ticket-driven, group: misc)
-
-Reference: misc
-Category: invariants
-Horizon: NearTerm
-ROI: 5.1 (impact=7, confidence=0.74, effort=1)
-
-Question:
-Using the attached tickets as the primary context, extract system invariants implied by tickets (inputs/outputs, pack schema rules, step execution rules) and where to enforce them.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-
-Output section: Direct answer
-Start with heading: Direct answer
-Return only: Direct answer (1–10 bullets, evidence-cited)
-PROMPT
-)"
-
-oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/misc/03-invariants-invariant-map-risks-unknowns.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
-Strategist question #03  (ticket-driven, group: misc)
-
-Reference: misc
-Category: invariants
-Horizon: NearTerm
-ROI: 5.1 (impact=7, confidence=0.74, effort=1)
-
-Question:
-Using the attached tickets as the primary context, extract system invariants implied by tickets (inputs/outputs, pack schema rules, step execution rules) and where to enforce them.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-
-Output section: Risks/unknowns
-Start with heading: Risks/unknowns
-Return only: Risks/unknowns (bullets)
-PROMPT
-)"
-
-oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/misc/03-invariants-invariant-map-next-experiment.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
-Strategist question #03  (ticket-driven, group: misc)
-
-Reference: misc
-Category: invariants
-Horizon: NearTerm
-ROI: 5.1 (impact=7, confidence=0.74, effort=1)
-
-Question:
-Using the attached tickets as the primary context, extract system invariants implied by tickets (inputs/outputs, pack schema rules, step execution rules) and where to enforce them.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-
-Output section: Next smallest concrete experiment
-Start with heading: Next smallest concrete experiment
-Return only: Next smallest concrete experiment (exactly one action)
-PROMPT
-)"
-
-oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/misc/03-invariants-invariant-map-missing-evidence.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
-Strategist question #03  (ticket-driven, group: misc)
-
-Reference: misc
-Category: invariants
-Horizon: NearTerm
-ROI: 5.1 (impact=7, confidence=0.74, effort=1)
-
-Question:
-Using the attached tickets as the primary context, extract system invariants implied by tickets (inputs/outputs, pack schema rules, step execution rules) and where to enforce them.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-
-Output section: Missing evidence
-Start with heading: Missing evidence
-Return only: If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-
-# 04) ROI=5.0 impact=7 confidence=0.72 effort=2 horizon=NearTerm category=invariants reference=misc
-
-# tickets attached directly (deterministic; self-contained)
-mapfile -t __tickets < <(python3 - <<'PY'
-from __future__ import annotations
-from pathlib import Path
-import fnmatch
-
-TICKET_ROOT = ".tickets"
-TICKET_GLOB = "**/*.md"
-TICKET_PATHS = ".tickets/Formalize LLM Decision Points.md,.tickets/Oraclepack CLI MCP Parity.md,.tickets/Oraclepack File Storage.md,.tickets/Oraclepack Parity Automation.md,.tickets/Oraclepack Schema Approach.md,.tickets/Oraclepack bash fix.md,.tickets/Oraclepack output verification issues.md,.tickets/Oraclepack-CLI-agents.md,.tickets/Publish OraclePack MCP.md".strip()
-MAX = int("9")
-
-
-root = Path(TICKET_ROOT)
-
-def read_gitignore(start: Path):
-    cur = start.resolve()
-    if cur.is_file():
-        cur = cur.parent
-    while True:
-        p = cur / ".gitignore"
-        if p.exists():
-            lines = []
-            for ln in p.read_text(encoding="utf-8", errors="replace").splitlines():
-                s = ln.strip()
-                if not s or s.startswith("#"):
-                    continue
-                lines.append(s)
-            return cur, lines
-        if cur.parent == cur:
-            return start.resolve(), []
-        cur = cur.parent
-
-
-def gitignore_match(rel_posix: str, name: str, pattern: str) -> bool:
-    neg = pattern.startswith("!")
-    if neg:
-        pattern = pattern[1:]
-    if not pattern:
-        return False
-
-    anchored = pattern.startswith("/")
-    if anchored:
-        pattern = pattern.lstrip("/")
-
-    dir_only = pattern.endswith("/")
-    if dir_only:
-        pattern = pattern.rstrip("/")
-
-    if "/" not in pattern:
-        if dir_only:
-            return any(part == pattern for part in rel_posix.split("/"))
-        return fnmatch.fnmatch(name, pattern)
-
-    target = rel_posix
-    if anchored:
-        if dir_only:
-            return target.startswith(pattern + "/")
-        return fnmatch.fnmatch(target, pattern)
-    if dir_only:
-        return f"/{pattern}/" in f"/{target}/"
-    return fnmatch.fnmatch(target, f"**/{pattern}") or fnmatch.fnmatch(target, pattern)
-
-
-def is_gitignored(path: Path, git_root: Path, patterns: list[str]) -> bool:
-    try:
-        rel = path.resolve().relative_to(git_root)
-    except Exception:
-        rel = path
-    rel_posix = rel.as_posix()
-    name = rel_posix.split("/")[-1]
-    ignored = False
-    for pat in patterns:
-        neg = pat.startswith("!")
-        if gitignore_match(rel_posix, name, pat):
-            ignored = not neg
-    return ignored
-
-
-git_root, git_patterns = read_gitignore(root)
-def lex_sorted(ps):
-    return sorted((str(p) for p in ps), key=lambda s: s)
-
-if TICKET_PATHS:
-    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
-else:
-    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
-
-tickets = [Path(p) for p in lex_sorted(tickets)]
-tickets = [p for p in tickets if not is_gitignored(p, git_root, git_patterns)]
-if MAX and MAX > 0:
-    tickets = tickets[:MAX]
-
-for p in tickets:
-    print(str(p))
-PY
-)
-
-ticket_args=()
-for p in "${__tickets[@]}"; do
-  ticket_args+=(-f "$p")
-done
-
 [TRUNCATED]
 ```
 
@@ -3644,439 +1776,6 @@ ROI: 4.6 (impact=6, confidence=0.78, effort=1)
 Question:
 Using the attached tickets as the primary context, identify external integrations implied by the tickets; required config/contract changes; failure/timeout behavior; minimal compat-safe rollout.
 
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-
-Output section: Direct answer
-Start with heading: Direct answer
-Return only: Direct answer (1–10 bullets, evidence-cited)
-PROMPT
-)"
-
-oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/other/02-contracts-interfaces-integration-points-risks-unknowns.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
-Strategist question #02  (ticket-driven, group: other)
-
-Reference: other
-Category: contracts/interfaces
-Horizon: Immediate
-ROI: 4.6 (impact=6, confidence=0.78, effort=1)
-
-Question:
-Using the attached tickets as the primary context, identify external integrations implied by the tickets; required config/contract changes; failure/timeout behavior; minimal compat-safe rollout.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-
-Output section: Risks/unknowns
-Start with heading: Risks/unknowns
-Return only: Risks/unknowns (bullets)
-PROMPT
-)"
-
-oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/other/02-contracts-interfaces-integration-points-next-experiment.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
-Strategist question #02  (ticket-driven, group: other)
-
-Reference: other
-Category: contracts/interfaces
-Horizon: Immediate
-ROI: 4.6 (impact=6, confidence=0.78, effort=1)
-
-Question:
-Using the attached tickets as the primary context, identify external integrations implied by the tickets; required config/contract changes; failure/timeout behavior; minimal compat-safe rollout.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-
-Output section: Next smallest concrete experiment
-Start with heading: Next smallest concrete experiment
-Return only: Next smallest concrete experiment (exactly one action)
-PROMPT
-)"
-
-oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/other/02-contracts-interfaces-integration-points-missing-evidence.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
-Strategist question #02  (ticket-driven, group: other)
-
-Reference: other
-Category: contracts/interfaces
-Horizon: Immediate
-ROI: 4.6 (impact=6, confidence=0.78, effort=1)
-
-Question:
-Using the attached tickets as the primary context, identify external integrations implied by the tickets; required config/contract changes; failure/timeout behavior; minimal compat-safe rollout.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-
-Output section: Missing evidence
-Start with heading: Missing evidence
-Return only: If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-
-# 03) ROI=5.1 impact=7 confidence=0.74 effort=1 horizon=NearTerm category=invariants reference=other
-
-# tickets attached directly (deterministic; self-contained)
-mapfile -t __tickets < <(python3 - <<'PY'
-from __future__ import annotations
-from pathlib import Path
-import fnmatch
-
-TICKET_ROOT = ".tickets"
-TICKET_GLOB = "**/*.md"
-TICKET_PATHS = ".tickets/other/Oraclepack Pipeline Improvements.md,.tickets/other/Oraclepack Prompt Generator.md,.tickets/other/Oraclepack Workflow Enhancement.md,.tickets/other/Verbose Payload Rendering TUI.md".strip()
-MAX = int("4")
-
-
-root = Path(TICKET_ROOT)
-
-def read_gitignore(start: Path):
-    cur = start.resolve()
-    if cur.is_file():
-        cur = cur.parent
-    while True:
-        p = cur / ".gitignore"
-        if p.exists():
-            lines = []
-            for ln in p.read_text(encoding="utf-8", errors="replace").splitlines():
-                s = ln.strip()
-                if not s or s.startswith("#"):
-                    continue
-                lines.append(s)
-            return cur, lines
-        if cur.parent == cur:
-            return start.resolve(), []
-        cur = cur.parent
-
-
-def gitignore_match(rel_posix: str, name: str, pattern: str) -> bool:
-    neg = pattern.startswith("!")
-    if neg:
-        pattern = pattern[1:]
-    if not pattern:
-        return False
-
-    anchored = pattern.startswith("/")
-    if anchored:
-        pattern = pattern.lstrip("/")
-
-    dir_only = pattern.endswith("/")
-    if dir_only:
-        pattern = pattern.rstrip("/")
-
-    if "/" not in pattern:
-        if dir_only:
-            return any(part == pattern for part in rel_posix.split("/"))
-        return fnmatch.fnmatch(name, pattern)
-
-    target = rel_posix
-    if anchored:
-        if dir_only:
-            return target.startswith(pattern + "/")
-        return fnmatch.fnmatch(target, pattern)
-    if dir_only:
-        return f"/{pattern}/" in f"/{target}/"
-    return fnmatch.fnmatch(target, f"**/{pattern}") or fnmatch.fnmatch(target, pattern)
-
-
-def is_gitignored(path: Path, git_root: Path, patterns: list[str]) -> bool:
-    try:
-        rel = path.resolve().relative_to(git_root)
-    except Exception:
-        rel = path
-    rel_posix = rel.as_posix()
-    name = rel_posix.split("/")[-1]
-    ignored = False
-    for pat in patterns:
-        neg = pat.startswith("!")
-        if gitignore_match(rel_posix, name, pat):
-            ignored = not neg
-    return ignored
-
-
-git_root, git_patterns = read_gitignore(root)
-def lex_sorted(ps):
-    return sorted((str(p) for p in ps), key=lambda s: s)
-
-if TICKET_PATHS:
-    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
-else:
-    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
-
-tickets = [Path(p) for p in lex_sorted(tickets)]
-tickets = [p for p in tickets if not is_gitignored(p, git_root, git_patterns)]
-if MAX and MAX > 0:
-    tickets = tickets[:MAX]
-
-for p in tickets:
-    print(str(p))
-PY
-)
-
-ticket_args=()
-for p in "${__tickets[@]}"; do
-  ticket_args+=(-f "$p")
-done
-
-if [ "${#ticket_args[@]}" -eq 0 ]; then
-  echo "WARNING: no tickets resolved for group 'other'." >&2
-fi
-
-# extra_files appended literally (may be empty; may include -f/--file):
-oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/other/03-invariants-invariant-map-direct-answer.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
-Strategist question #03  (ticket-driven, group: other)
-
-Reference: other
-Category: invariants
-Horizon: NearTerm
-ROI: 5.1 (impact=7, confidence=0.74, effort=1)
-
-Question:
-Using the attached tickets as the primary context, extract system invariants implied by tickets (inputs/outputs, pack schema rules, step execution rules) and where to enforce them.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-
-Output section: Direct answer
-Start with heading: Direct answer
-Return only: Direct answer (1–10 bullets, evidence-cited)
-PROMPT
-)"
-
-oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/other/03-invariants-invariant-map-risks-unknowns.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
-Strategist question #03  (ticket-driven, group: other)
-
-Reference: other
-Category: invariants
-Horizon: NearTerm
-ROI: 5.1 (impact=7, confidence=0.74, effort=1)
-
-Question:
-Using the attached tickets as the primary context, extract system invariants implied by tickets (inputs/outputs, pack schema rules, step execution rules) and where to enforce them.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-
-Output section: Risks/unknowns
-Start with heading: Risks/unknowns
-Return only: Risks/unknowns (bullets)
-PROMPT
-)"
-
-oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/other/03-invariants-invariant-map-next-experiment.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
-Strategist question #03  (ticket-driven, group: other)
-
-Reference: other
-Category: invariants
-Horizon: NearTerm
-ROI: 5.1 (impact=7, confidence=0.74, effort=1)
-
-Question:
-Using the attached tickets as the primary context, extract system invariants implied by tickets (inputs/outputs, pack schema rules, step execution rules) and where to enforce them.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-
-Output section: Next smallest concrete experiment
-Start with heading: Next smallest concrete experiment
-Return only: Next smallest concrete experiment (exactly one action)
-PROMPT
-)"
-
-oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/other/03-invariants-invariant-map-missing-evidence.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
-Strategist question #03  (ticket-driven, group: other)
-
-Reference: other
-Category: invariants
-Horizon: NearTerm
-ROI: 5.1 (impact=7, confidence=0.74, effort=1)
-
-Question:
-Using the attached tickets as the primary context, extract system invariants implied by tickets (inputs/outputs, pack schema rules, step execution rules) and where to enforce them.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-
-Output section: Missing evidence
-Start with heading: Missing evidence
-Return only: If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-
-# 04) ROI=5.0 impact=7 confidence=0.72 effort=2 horizon=NearTerm category=invariants reference=other
-
-# tickets attached directly (deterministic; self-contained)
-mapfile -t __tickets < <(python3 - <<'PY'
-from __future__ import annotations
-from pathlib import Path
-import fnmatch
-
-TICKET_ROOT = ".tickets"
-TICKET_GLOB = "**/*.md"
-TICKET_PATHS = ".tickets/other/Oraclepack Pipeline Improvements.md,.tickets/other/Oraclepack Prompt Generator.md,.tickets/other/Oraclepack Workflow Enhancement.md,.tickets/other/Verbose Payload Rendering TUI.md".strip()
-MAX = int("4")
-
-
-root = Path(TICKET_ROOT)
-
-def read_gitignore(start: Path):
-    cur = start.resolve()
-    if cur.is_file():
-        cur = cur.parent
-    while True:
-        p = cur / ".gitignore"
-        if p.exists():
-            lines = []
-            for ln in p.read_text(encoding="utf-8", errors="replace").splitlines():
-                s = ln.strip()
-                if not s or s.startswith("#"):
-                    continue
-                lines.append(s)
-            return cur, lines
-        if cur.parent == cur:
-            return start.resolve(), []
-        cur = cur.parent
-
-
-def gitignore_match(rel_posix: str, name: str, pattern: str) -> bool:
-    neg = pattern.startswith("!")
-    if neg:
-        pattern = pattern[1:]
-    if not pattern:
-        return False
-
-    anchored = pattern.startswith("/")
-    if anchored:
-        pattern = pattern.lstrip("/")
-
-    dir_only = pattern.endswith("/")
-    if dir_only:
-        pattern = pattern.rstrip("/")
-
-    if "/" not in pattern:
-        if dir_only:
-            return any(part == pattern for part in rel_posix.split("/"))
-        return fnmatch.fnmatch(name, pattern)
-
-    target = rel_posix
-    if anchored:
-        if dir_only:
-            return target.startswith(pattern + "/")
-        return fnmatch.fnmatch(target, pattern)
-    if dir_only:
-        return f"/{pattern}/" in f"/{target}/"
-    return fnmatch.fnmatch(target, f"**/{pattern}") or fnmatch.fnmatch(target, pattern)
-
-
-def is_gitignored(path: Path, git_root: Path, patterns: list[str]) -> bool:
-    try:
-        rel = path.resolve().relative_to(git_root)
-    except Exception:
-        rel = path
-    rel_posix = rel.as_posix()
-    name = rel_posix.split("/")[-1]
-    ignored = False
-    for pat in patterns:
-        neg = pat.startswith("!")
-        if gitignore_match(rel_posix, name, pat):
-            ignored = not neg
-    return ignored
-
-
-git_root, git_patterns = read_gitignore(root)
-def lex_sorted(ps):
-    return sorted((str(p) for p in ps), key=lambda s: s)
-
-if TICKET_PATHS:
-    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
-else:
-    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
-
-tickets = [Path(p) for p in lex_sorted(tickets)]
-tickets = [p for p in tickets if not is_gitignored(p, git_root, git_patterns)]
-if MAX and MAX > 0:
-    tickets = tickets[:MAX]
-
-for p in tickets:
-    print(str(p))
-PY
-)
-
-ticket_args=()
-for p in "${__tickets[@]}"; do
-  ticket_args+=(-f "$p")
-done
-
-if [ "${#ticket_args[@]}" -eq 0 ]; then
-  echo "WARNING: no tickets resolved for group 'other'." >&2
-fi
-
-# extra_files appended literally (may be empty; may include -f/--file):
-oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/other/04-invariants-validation-boundaries-direct-answer.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
-Strategist question #04  (ticket-driven, group: other)
-
-Reference: other
-Category: invariants
-Horizon: NearTerm
-ROI: 5.0 (impact=7, confidence=0.72, effort=2)
-
-Question:
-Using the attached tickets as the primary context, identify validation boundaries that must exist (ticket parsing, pack generation, pack validation); propose minimal validation plan.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
 [TRUNCATED]
 ```
 
@@ -4450,436 +2149,6 @@ Using the attached tickets as the primary context, identify external integration
 Constraints: None
 Non-goals: None
 
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-
-Output section: Direct answer
-Start with heading: Direct answer
-Return only: Direct answer (1–10 bullets, evidence-cited)
-PROMPT
-)"
-
-oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/prd-tui/02-contracts-interfaces-integration-points-risks-unknowns.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
-Strategist question #02  (ticket-driven, group: PRD-TUI)
-
-Reference: prd-tui
-Category: contracts/interfaces
-Horizon: Immediate
-ROI: 4.6 (impact=6, confidence=0.78, effort=1)
-
-Question:
-Using the attached tickets as the primary context, identify external integrations implied by the tickets; required config/contract changes; failure/timeout behavior; minimal compat-safe rollout.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-
-Output section: Risks/unknowns
-Start with heading: Risks/unknowns
-Return only: Risks/unknowns (bullets)
-PROMPT
-)"
-
-oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/prd-tui/02-contracts-interfaces-integration-points-next-experiment.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
-Strategist question #02  (ticket-driven, group: PRD-TUI)
-
-Reference: prd-tui
-Category: contracts/interfaces
-Horizon: Immediate
-ROI: 4.6 (impact=6, confidence=0.78, effort=1)
-
-Question:
-Using the attached tickets as the primary context, identify external integrations implied by the tickets; required config/contract changes; failure/timeout behavior; minimal compat-safe rollout.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-
-Output section: Next smallest concrete experiment
-Start with heading: Next smallest concrete experiment
-Return only: Next smallest concrete experiment (exactly one action)
-PROMPT
-)"
-
-oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/prd-tui/02-contracts-interfaces-integration-points-missing-evidence.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
-Strategist question #02  (ticket-driven, group: PRD-TUI)
-
-Reference: prd-tui
-Category: contracts/interfaces
-Horizon: Immediate
-ROI: 4.6 (impact=6, confidence=0.78, effort=1)
-
-Question:
-Using the attached tickets as the primary context, identify external integrations implied by the tickets; required config/contract changes; failure/timeout behavior; minimal compat-safe rollout.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-
-Output section: Missing evidence
-Start with heading: Missing evidence
-Return only: If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-
-# 03) ROI=5.1 impact=7 confidence=0.74 effort=1 horizon=NearTerm category=invariants reference=prd-tui
-
-# tickets attached directly (deterministic; self-contained)
-mapfile -t __tickets < <(python3 - <<'PY'
-from __future__ import annotations
-from pathlib import Path
-import fnmatch
-
-TICKET_ROOT = ".tickets"
-TICKET_GLOB = "**/*.md"
-TICKET_PATHS = ".tickets/PRD-TUI/Oraclepack TUI Integration.md,.tickets/PRD-TUI/PRD-generator URL routing.md".strip()
-MAX = int("2")
-
-
-root = Path(TICKET_ROOT)
-
-def read_gitignore(start: Path):
-    cur = start.resolve()
-    if cur.is_file():
-        cur = cur.parent
-    while True:
-        p = cur / ".gitignore"
-        if p.exists():
-            lines = []
-            for ln in p.read_text(encoding="utf-8", errors="replace").splitlines():
-                s = ln.strip()
-                if not s or s.startswith("#"):
-                    continue
-                lines.append(s)
-            return cur, lines
-        if cur.parent == cur:
-            return start.resolve(), []
-        cur = cur.parent
-
-
-def gitignore_match(rel_posix: str, name: str, pattern: str) -> bool:
-    neg = pattern.startswith("!")
-    if neg:
-        pattern = pattern[1:]
-    if not pattern:
-        return False
-
-    anchored = pattern.startswith("/")
-    if anchored:
-        pattern = pattern.lstrip("/")
-
-    dir_only = pattern.endswith("/")
-    if dir_only:
-        pattern = pattern.rstrip("/")
-
-    if "/" not in pattern:
-        if dir_only:
-            return any(part == pattern for part in rel_posix.split("/"))
-        return fnmatch.fnmatch(name, pattern)
-
-    target = rel_posix
-    if anchored:
-        if dir_only:
-            return target.startswith(pattern + "/")
-        return fnmatch.fnmatch(target, pattern)
-    if dir_only:
-        return f"/{pattern}/" in f"/{target}/"
-    return fnmatch.fnmatch(target, f"**/{pattern}") or fnmatch.fnmatch(target, pattern)
-
-
-def is_gitignored(path: Path, git_root: Path, patterns: list[str]) -> bool:
-    try:
-        rel = path.resolve().relative_to(git_root)
-    except Exception:
-        rel = path
-    rel_posix = rel.as_posix()
-    name = rel_posix.split("/")[-1]
-    ignored = False
-    for pat in patterns:
-        neg = pat.startswith("!")
-        if gitignore_match(rel_posix, name, pat):
-            ignored = not neg
-    return ignored
-
-
-git_root, git_patterns = read_gitignore(root)
-def lex_sorted(ps):
-    return sorted((str(p) for p in ps), key=lambda s: s)
-
-if TICKET_PATHS:
-    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
-else:
-    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
-
-tickets = [Path(p) for p in lex_sorted(tickets)]
-tickets = [p for p in tickets if not is_gitignored(p, git_root, git_patterns)]
-if MAX and MAX > 0:
-    tickets = tickets[:MAX]
-
-for p in tickets:
-    print(str(p))
-PY
-)
-
-ticket_args=()
-for p in "${__tickets[@]}"; do
-  ticket_args+=(-f "$p")
-done
-
-if [ "${#ticket_args[@]}" -eq 0 ]; then
-  echo "WARNING: no tickets resolved for group 'PRD-TUI'." >&2
-fi
-
-# extra_files appended literally (may be empty; may include -f/--file):
-oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/prd-tui/03-invariants-invariant-map-direct-answer.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
-Strategist question #03  (ticket-driven, group: PRD-TUI)
-
-Reference: prd-tui
-Category: invariants
-Horizon: NearTerm
-ROI: 5.1 (impact=7, confidence=0.74, effort=1)
-
-Question:
-Using the attached tickets as the primary context, extract system invariants implied by tickets (inputs/outputs, pack schema rules, step execution rules) and where to enforce them.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-
-Output section: Direct answer
-Start with heading: Direct answer
-Return only: Direct answer (1–10 bullets, evidence-cited)
-PROMPT
-)"
-
-oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/prd-tui/03-invariants-invariant-map-risks-unknowns.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
-Strategist question #03  (ticket-driven, group: PRD-TUI)
-
-Reference: prd-tui
-Category: invariants
-Horizon: NearTerm
-ROI: 5.1 (impact=7, confidence=0.74, effort=1)
-
-Question:
-Using the attached tickets as the primary context, extract system invariants implied by tickets (inputs/outputs, pack schema rules, step execution rules) and where to enforce them.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-
-Output section: Risks/unknowns
-Start with heading: Risks/unknowns
-Return only: Risks/unknowns (bullets)
-PROMPT
-)"
-
-oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/prd-tui/03-invariants-invariant-map-next-experiment.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
-Strategist question #03  (ticket-driven, group: PRD-TUI)
-
-Reference: prd-tui
-Category: invariants
-Horizon: NearTerm
-ROI: 5.1 (impact=7, confidence=0.74, effort=1)
-
-Question:
-Using the attached tickets as the primary context, extract system invariants implied by tickets (inputs/outputs, pack schema rules, step execution rules) and where to enforce them.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-
-Output section: Next smallest concrete experiment
-Start with heading: Next smallest concrete experiment
-Return only: Next smallest concrete experiment (exactly one action)
-PROMPT
-)"
-
-oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/prd-tui/03-invariants-invariant-map-missing-evidence.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
-Strategist question #03  (ticket-driven, group: PRD-TUI)
-
-Reference: prd-tui
-Category: invariants
-Horizon: NearTerm
-ROI: 5.1 (impact=7, confidence=0.74, effort=1)
-
-Question:
-Using the attached tickets as the primary context, extract system invariants implied by tickets (inputs/outputs, pack schema rules, step execution rules) and where to enforce them.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-
-Output section: Missing evidence
-Start with heading: Missing evidence
-Return only: If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-
-# 04) ROI=5.0 impact=7 confidence=0.72 effort=2 horizon=NearTerm category=invariants reference=prd-tui
-
-# tickets attached directly (deterministic; self-contained)
-mapfile -t __tickets < <(python3 - <<'PY'
-from __future__ import annotations
-from pathlib import Path
-import fnmatch
-
-TICKET_ROOT = ".tickets"
-TICKET_GLOB = "**/*.md"
-TICKET_PATHS = ".tickets/PRD-TUI/Oraclepack TUI Integration.md,.tickets/PRD-TUI/PRD-generator URL routing.md".strip()
-MAX = int("2")
-
-
-root = Path(TICKET_ROOT)
-
-def read_gitignore(start: Path):
-    cur = start.resolve()
-    if cur.is_file():
-        cur = cur.parent
-    while True:
-        p = cur / ".gitignore"
-        if p.exists():
-            lines = []
-            for ln in p.read_text(encoding="utf-8", errors="replace").splitlines():
-                s = ln.strip()
-                if not s or s.startswith("#"):
-                    continue
-                lines.append(s)
-            return cur, lines
-        if cur.parent == cur:
-            return start.resolve(), []
-        cur = cur.parent
-
-
-def gitignore_match(rel_posix: str, name: str, pattern: str) -> bool:
-    neg = pattern.startswith("!")
-    if neg:
-        pattern = pattern[1:]
-    if not pattern:
-        return False
-
-    anchored = pattern.startswith("/")
-    if anchored:
-        pattern = pattern.lstrip("/")
-
-    dir_only = pattern.endswith("/")
-    if dir_only:
-        pattern = pattern.rstrip("/")
-
-    if "/" not in pattern:
-        if dir_only:
-            return any(part == pattern for part in rel_posix.split("/"))
-        return fnmatch.fnmatch(name, pattern)
-
-    target = rel_posix
-    if anchored:
-        if dir_only:
-            return target.startswith(pattern + "/")
-        return fnmatch.fnmatch(target, pattern)
-    if dir_only:
-        return f"/{pattern}/" in f"/{target}/"
-    return fnmatch.fnmatch(target, f"**/{pattern}") or fnmatch.fnmatch(target, pattern)
-
-
-def is_gitignored(path: Path, git_root: Path, patterns: list[str]) -> bool:
-    try:
-        rel = path.resolve().relative_to(git_root)
-    except Exception:
-        rel = path
-    rel_posix = rel.as_posix()
-    name = rel_posix.split("/")[-1]
-    ignored = False
-    for pat in patterns:
-        neg = pat.startswith("!")
-        if gitignore_match(rel_posix, name, pat):
-            ignored = not neg
-    return ignored
-
-
-git_root, git_patterns = read_gitignore(root)
-def lex_sorted(ps):
-    return sorted((str(p) for p in ps), key=lambda s: s)
-
-if TICKET_PATHS:
-    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
-else:
-    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
-
-tickets = [Path(p) for p in lex_sorted(tickets)]
-tickets = [p for p in tickets if not is_gitignored(p, git_root, git_patterns)]
-if MAX and MAX > 0:
-    tickets = tickets[:MAX]
-
-for p in tickets:
-    print(str(p))
-PY
-)
-
-ticket_args=()
-for p in "${__tickets[@]}"; do
-  ticket_args+=(-f "$p")
-done
-
-if [ "${#ticket_args[@]}" -eq 0 ]; then
-  echo "WARNING: no tickets resolved for group 'PRD-TUI'." >&2
-fi
-
-# extra_files appended literally (may be empty; may include -f/--file):
-oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/prd-tui/04-invariants-validation-boundaries-direct-answer.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
-Strategist question #04  (ticket-driven, group: PRD-TUI)
-
-Reference: prd-tui
-Category: invariants
-Horizon: NearTerm
-ROI: 5.0 (impact=7, confidence=0.72, effort=2)
-
-Question:
-Using the attached tickets as the primary context, identify validation boundaries that must exist (ticket parsing, pack generation, pack validation); propose minimal validation plan.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
 [TRUNCATED]
 ```
 
@@ -5257,439 +2526,182 @@ Answer format:
 1) Direct answer (1–10 bullets, evidence-cited)
 2) Risks/unknowns (bullets)
 3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-
-Output section: Direct answer
-Start with heading: Direct answer
-Return only: Direct answer (1–10 bullets, evidence-cited)
-PROMPT
-)"
-
-oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/raw-exports/02-contracts-interfaces-integration-points-risks-unknowns.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
-Strategist question #02  (ticket-driven, group: raw-exports)
-
-Reference: raw-exports
-Category: contracts/interfaces
-Horizon: Immediate
-ROI: 4.6 (impact=6, confidence=0.78, effort=1)
-
-Question:
-Using the attached tickets as the primary context, identify external integrations implied by the tickets; required config/contract changes; failure/timeout behavior; minimal compat-safe rollout.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-
-Output section: Risks/unknowns
-Start with heading: Risks/unknowns
-Return only: Risks/unknowns (bullets)
-PROMPT
-)"
-
-oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/raw-exports/02-contracts-interfaces-integration-points-next-experiment.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
-Strategist question #02  (ticket-driven, group: raw-exports)
-
-Reference: raw-exports
-Category: contracts/interfaces
-Horizon: Immediate
-ROI: 4.6 (impact=6, confidence=0.78, effort=1)
-
-Question:
-Using the attached tickets as the primary context, identify external integrations implied by the tickets; required config/contract changes; failure/timeout behavior; minimal compat-safe rollout.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-
-Output section: Next smallest concrete experiment
-Start with heading: Next smallest concrete experiment
-Return only: Next smallest concrete experiment (exactly one action)
-PROMPT
-)"
-
-oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/raw-exports/02-contracts-interfaces-integration-points-missing-evidence.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
-Strategist question #02  (ticket-driven, group: raw-exports)
-
-Reference: raw-exports
-Category: contracts/interfaces
-Horizon: Immediate
-ROI: 4.6 (impact=6, confidence=0.78, effort=1)
-
-Question:
-Using the attached tickets as the primary context, identify external integrations implied by the tickets; required config/contract changes; failure/timeout behavior; minimal compat-safe rollout.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-
-Output section: Missing evidence
-Start with heading: Missing evidence
-Return only: If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-
-# 03) ROI=5.1 impact=7 confidence=0.74 effort=1 horizon=NearTerm category=invariants reference=raw-exports
-
-# tickets attached directly (deterministic; self-contained)
-mapfile -t __tickets < <(python3 - <<'PY'
-from __future__ import annotations
-from pathlib import Path
-import fnmatch
-
-TICKET_ROOT = ".tickets"
-TICKET_GLOB = "**/*.md"
-TICKET_PATHS = ".tickets/raw-exports/Output verification failure.md".strip()
-MAX = int("1")
-
-
-root = Path(TICKET_ROOT)
-
-def read_gitignore(start: Path):
-    cur = start.resolve()
-    if cur.is_file():
-        cur = cur.parent
-    while True:
-        p = cur / ".gitignore"
-        if p.exists():
-            lines = []
-            for ln in p.read_text(encoding="utf-8", errors="replace").splitlines():
-                s = ln.strip()
-                if not s or s.startswith("#"):
-                    continue
-                lines.append(s)
-            return cur, lines
-        if cur.parent == cur:
-            return start.resolve(), []
-        cur = cur.parent
-
-
-def gitignore_match(rel_posix: str, name: str, pattern: str) -> bool:
-    neg = pattern.startswith("!")
-    if neg:
-        pattern = pattern[1:]
-    if not pattern:
-        return False
-
-    anchored = pattern.startswith("/")
-    if anchored:
-        pattern = pattern.lstrip("/")
-
-    dir_only = pattern.endswith("/")
-    if dir_only:
-        pattern = pattern.rstrip("/")
-
-    if "/" not in pattern:
-        if dir_only:
-            return any(part == pattern for part in rel_posix.split("/"))
-        return fnmatch.fnmatch(name, pattern)
-
-    target = rel_posix
-    if anchored:
-        if dir_only:
-            return target.startswith(pattern + "/")
-        return fnmatch.fnmatch(target, pattern)
-    if dir_only:
-        return f"/{pattern}/" in f"/{target}/"
-    return fnmatch.fnmatch(target, f"**/{pattern}") or fnmatch.fnmatch(target, pattern)
-
-
-def is_gitignored(path: Path, git_root: Path, patterns: list[str]) -> bool:
-    try:
-        rel = path.resolve().relative_to(git_root)
-    except Exception:
-        rel = path
-    rel_posix = rel.as_posix()
-    name = rel_posix.split("/")[-1]
-    ignored = False
-    for pat in patterns:
-        neg = pat.startswith("!")
-        if gitignore_match(rel_posix, name, pat):
-            ignored = not neg
-    return ignored
-
-
-git_root, git_patterns = read_gitignore(root)
-def lex_sorted(ps):
-    return sorted((str(p) for p in ps), key=lambda s: s)
-
-if TICKET_PATHS:
-    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
-else:
-    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
-
-tickets = [Path(p) for p in lex_sorted(tickets)]
-tickets = [p for p in tickets if not is_gitignored(p, git_root, git_patterns)]
-if MAX and MAX > 0:
-    tickets = tickets[:MAX]
-
-for p in tickets:
-    print(str(p))
-PY
-)
-
-ticket_args=()
-for p in "${__tickets[@]}"; do
-  ticket_args+=(-f "$p")
-done
-
-if [ "${#ticket_args[@]}" -eq 0 ]; then
-  echo "WARNING: no tickets resolved for group 'raw-exports'." >&2
-fi
-
-# extra_files appended literally (may be empty; may include -f/--file):
-oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/raw-exports/03-invariants-invariant-map-direct-answer.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
-Strategist question #03  (ticket-driven, group: raw-exports)
-
-Reference: raw-exports
-Category: invariants
-Horizon: NearTerm
-ROI: 5.1 (impact=7, confidence=0.74, effort=1)
-
-Question:
-Using the attached tickets as the primary context, extract system invariants implied by tickets (inputs/outputs, pack schema rules, step execution rules) and where to enforce them.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-
-Output section: Direct answer
-Start with heading: Direct answer
-Return only: Direct answer (1–10 bullets, evidence-cited)
-PROMPT
-)"
-
-oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/raw-exports/03-invariants-invariant-map-risks-unknowns.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
-Strategist question #03  (ticket-driven, group: raw-exports)
-
-Reference: raw-exports
-Category: invariants
-Horizon: NearTerm
-ROI: 5.1 (impact=7, confidence=0.74, effort=1)
-
-Question:
-Using the attached tickets as the primary context, extract system invariants implied by tickets (inputs/outputs, pack schema rules, step execution rules) and where to enforce them.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-
-Output section: Risks/unknowns
-Start with heading: Risks/unknowns
-Return only: Risks/unknowns (bullets)
-PROMPT
-)"
-
-oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/raw-exports/03-invariants-invariant-map-next-experiment.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
-Strategist question #03  (ticket-driven, group: raw-exports)
-
-Reference: raw-exports
-Category: invariants
-Horizon: NearTerm
-ROI: 5.1 (impact=7, confidence=0.74, effort=1)
-
-Question:
-Using the attached tickets as the primary context, extract system invariants implied by tickets (inputs/outputs, pack schema rules, step execution rules) and where to enforce them.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-
-Output section: Next smallest concrete experiment
-Start with heading: Next smallest concrete experiment
-Return only: Next smallest concrete experiment (exactly one action)
-PROMPT
-)"
-
-oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/raw-exports/03-invariants-invariant-map-missing-evidence.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
-Strategist question #03  (ticket-driven, group: raw-exports)
-
-Reference: raw-exports
-Category: invariants
-Horizon: NearTerm
-ROI: 5.1 (impact=7, confidence=0.74, effort=1)
-
-Question:
-Using the attached tickets as the primary context, extract system invariants implied by tickets (inputs/outputs, pack schema rules, step execution rules) and where to enforce them.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-
-Output section: Missing evidence
-Start with heading: Missing evidence
-Return only: If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-PROMPT
-)"
-
-
-# 04) ROI=5.0 impact=7 confidence=0.72 effort=2 horizon=NearTerm category=invariants reference=raw-exports
-
-# tickets attached directly (deterministic; self-contained)
-mapfile -t __tickets < <(python3 - <<'PY'
-from __future__ import annotations
-from pathlib import Path
-import fnmatch
-
-TICKET_ROOT = ".tickets"
-TICKET_GLOB = "**/*.md"
-TICKET_PATHS = ".tickets/raw-exports/Output verification failure.md".strip()
-MAX = int("1")
-
-
-root = Path(TICKET_ROOT)
-
-def read_gitignore(start: Path):
-    cur = start.resolve()
-    if cur.is_file():
-        cur = cur.parent
-    while True:
-        p = cur / ".gitignore"
-        if p.exists():
-            lines = []
-            for ln in p.read_text(encoding="utf-8", errors="replace").splitlines():
-                s = ln.strip()
-                if not s or s.startswith("#"):
-                    continue
-                lines.append(s)
-            return cur, lines
-        if cur.parent == cur:
-            return start.resolve(), []
-        cur = cur.parent
-
-
-def gitignore_match(rel_posix: str, name: str, pattern: str) -> bool:
-    neg = pattern.startswith("!")
-    if neg:
-        pattern = pattern[1:]
-    if not pattern:
-        return False
-
-    anchored = pattern.startswith("/")
-    if anchored:
-        pattern = pattern.lstrip("/")
-
-    dir_only = pattern.endswith("/")
-    if dir_only:
-        pattern = pattern.rstrip("/")
-
-    if "/" not in pattern:
-        if dir_only:
-            return any(part == pattern for part in rel_posix.split("/"))
-        return fnmatch.fnmatch(name, pattern)
-
-    target = rel_posix
-    if anchored:
-        if dir_only:
-            return target.startswith(pattern + "/")
-        return fnmatch.fnmatch(target, pattern)
-    if dir_only:
-        return f"/{pattern}/" in f"/{target}/"
-    return fnmatch.fnmatch(target, f"**/{pattern}") or fnmatch.fnmatch(target, pattern)
-
-
-def is_gitignored(path: Path, git_root: Path, patterns: list[str]) -> bool:
-    try:
-        rel = path.resolve().relative_to(git_root)
-    except Exception:
-        rel = path
-    rel_posix = rel.as_posix()
-    name = rel_posix.split("/")[-1]
-    ignored = False
-    for pat in patterns:
-        neg = pat.startswith("!")
-        if gitignore_match(rel_posix, name, pat):
-            ignored = not neg
-    return ignored
-
-
-git_root, git_patterns = read_gitignore(root)
-def lex_sorted(ps):
-    return sorted((str(p) for p in ps), key=lambda s: s)
-
-if TICKET_PATHS:
-    tickets = [Path(p.strip()) for p in TICKET_PATHS.split(",") if p.strip()]
-else:
-    tickets = list(root.glob(TICKET_GLOB)) if root.exists() else []
-
-tickets = [Path(p) for p in lex_sorted(tickets)]
-tickets = [p for p in tickets if not is_gitignored(p, git_root, git_patterns)]
-if MAX and MAX > 0:
-    tickets = tickets[:MAX]
-
-for p in tickets:
-    print(str(p))
-PY
-)
-
-ticket_args=()
-for p in "${__tickets[@]}"; do
-  ticket_args+=(-f "$p")
-done
-
-if [ "${#ticket_args[@]}" -eq 0 ]; then
-  echo "WARNING: no tickets resolved for group 'raw-exports'." >&2
-fi
-
-# extra_files appended literally (may be empty; may include -f/--file):
-oracle   --files-report   --write-output "docs/oracle-questions-2026-01-09-030000/raw-exports/04-invariants-validation-boundaries-direct-answer.md"   "${ticket_args[@]}"      -p "$(cat <<'PROMPT'
-Strategist question #04  (ticket-driven, group: raw-exports)
-
-Reference: raw-exports
-Category: invariants
-Horizon: NearTerm
-ROI: 5.0 (impact=7, confidence=0.72, effort=2)
-
-Question:
-Using the attached tickets as the primary context, identify validation boundaries that must exist (ticket parsing, pack generation, pack validation); propose minimal validation plan.
-
-Constraints: None
-Non-goals: None
-
-Answer format:
-1) Direct answer (1–10 bullets, evidence-cited)
-2) Risks/unknowns (bullets)
-3) Next smallest concrete experiment (exactly one action)
-4) If evidence is insufficient, name the exact missing file/path pattern(s) to attach next.
-
-Output section: Direct answer
-Start with heading: Direct answer
 [TRUNCATED]
+```
+
+docs/oracle-questions-2026-01-09-030000/mcp/01-contracts-interfaces-ticket-surface-direct-answer.md
+```
+Direct answer
+
+MCP_Server_for_Oraclepack
+
+oraclepack_mcp_server
+```
+
+docs/oracle-questions-2026-01-09-030000/mcp/01-contracts-interfaces-ticket-surface-missing-evidence.md
+```
+## Risks/unknowns
+
+* Streamable-HTTP transport correctness is uncertain across the “proposal” vs actual implementation: tickets call out that `--transport streamable-http` may be wired/mapped incorrectly (and that SSE is superseded), which can break non-stdio deployments. 
+* Production streamable-HTTP posture is under-specified: no clear auth/TLS/DNS-rebinding mitigation story in the tickets’ “gaps” section, which is a deployment risk if HTTP mode is used beyond purely local/dev. 
+* Dependency safety/pinning ambiguity: tickets flag an “unpinned” MCP Python SDK dependency in the presence of a DNS-rebinding advisory, but the current server’s `requirements.txt` shown in the code excerpt is only `mcp>=1.0.0` (still not pinned to an exact safe patch), so the intended minimum safe version is unclear.
+* Remote execution exposure risk: “run” tools become available via a single boolean env gate (`ORACLEPACK_ENABLE_EXEC`), and the run tool is explicitly annotated as open-world/destructive, with no per-tool authorization/allowlisting described for HTTP mode.
+* Filesystem escape hardening is a known concern in tickets (symlink traversal and lack of tests called out). While the server enforces `ORACLEPACK_ALLOWED_ROOTS`, the test coverage/guarantees for symlink + path traversal behavior remain an unknown from the tickets’ perspective.
+* Operational fragility from external process dependency: MCP tools rely on an external `oraclepack` binary + correct working directory configuration, which can vary across MCP hosts and lead to confusing failures.
+* Stage-2 ambiguity failure modes: tickets explicitly call out risk when multiple `NN-*.md` files match the same prefix; additionally, Stage-2 “auto” selection uses deterministic-but-heuristic lexicographic “newest” selection, which may select the wrong target in real repos.
+* Artifacts summary semantics can be surprising: the implementation treats paths outside `ORACLEPACK_ALLOWED_ROOTS` as “missing: not allowed” rather than an error, which can mask config mistakes and complicate debugging.
+* Distribution/public config surface is in flux: tickets propose multiple packaging/config approaches (PATH executable, `uvx`, `.mcpb`, registry publishing). Each path changes the client-facing `command/args` contract and can break existing MCP configs if not versioned/migrated. 
+```
+
+docs/oracle-questions-2026-01-09-030000/mcp/01-contracts-interfaces-ticket-surface-next-experiment.md
+```
+Direct answer
+
+* Add a new public server entrypoint `python -m oraclepack_mcp_server --transport {stdio|streamable-http}` (default `stdio`) to expose oraclepack via MCP.  
+* Expose a new MCP tool surface (public API contract) with these tool names: `oraclepack_validate_pack`, `oraclepack_list_steps`, `oraclepack_run_pack`, `oraclepack_read_file`, `oraclepack_taskify_detect_stage2`, `oraclepack_taskify_validate_stage2`, `oraclepack_taskify_validate_action_pack`, `oraclepack_taskify_artifacts_summary`, `oraclepack_taskify_run_action_pack`.  
+* Introduce env-driven server configuration as a public contract: `ORACLEPACK_ALLOWED_ROOTS`, `ORACLEPACK_BIN`, `ORACLEPACK_WORKDIR`, `ORACLEPACK_ENABLE_EXEC`, `ORACLEPACK_CHARACTER_LIMIT`, `ORACLEPACK_MAX_READ_BYTES`; backwards-compat constraint is “secure by default” (exec disabled unless explicitly enabled; filesystem reads constrained to allowlisted roots).  
+* Gate “run” tools behind `ORACLEPACK_ENABLE_EXEC=1` (deny-by-default execution); backwards-compat constraint is that enabling exec must remain an explicit opt-in to avoid silently expanding agent capabilities.  
+* Add deterministic Stage-2 helper contracts: detect Stage-2 outputs from either a directory containing exactly one `01-*.md`…`20-*.md` per prefix or from a “single-pack form” file; enforce out-dir resolution rules for packs under `docs/oracle-questions-YYYY-MM-DD/...` (use sibling `oracle-out`, else `repo_root/oracle-out`).  
+* Add Stage-3 helper contracts: validate Action Pack structure pre-execution (exactly one ```bash fence, step headers like `# 01) ...` sequential) and summarize canonical artifacts (e.g., `_actions.json`, `_actions.md`, PRD path, `tm-complexity.json`, pipelines doc). Backwards-compat constraint: MCP validation must not be looser than the existing validator expectations, or “passes in MCP, fails in real usage” drift occurs.   
+* Expand/define the public input schema for `oraclepack_run_pack` beyond “run all” to include non-interactive flags and runtime controls (e.g., `no_tui`, `yes`, `run_all`, `resume`, `stop_on_fail`, ROI threshold/mode, `out_dir`, `timeout_s`), plus response-format selection (`markdown` vs `json`). Backwards-compat constraint: keep explicit, typed fields rather than an “extra args” escape hatch to avoid unstable tool contracts.  
+* Attach MCP tool annotations as part of the contract/UX surface: validate/list/read tools should be marked read-only; run tools should be marked destructive/open-world (so clients can require approvals).   
+* Transport semantics become part of the public surface: `streamable-http` must be wired as Streamable HTTP (not SSE-as-alias), and HTTP deployments require hardening (Origin validation/auth/local binding) to preserve the intended safety posture; backwards-compat constraint is that changing the transport string/behavior breaks client configs, so the chosen values must remain stable once shipped.   
+```
+
+docs/oracle-questions-2026-01-09-030000/mcp/01-contracts-interfaces-ticket-surface-risks-unknowns.md
+```
+Risks/unknownoraclepack-llms-fulloraclepack-llms-fulloraclepack-llms-full
+```
+
+docs/oracle-questions-2026-01-09-030000/mcp/02-contracts-interfaces-integration-points-direct-answer.md
+```
+Direct answer
+
+oraclepack_mcp_server
+```
+
+docs/oracle-questions-2026-01-09-030000/mcp/02-contracts-interfaces-integration-points-missing-evidence.md
+```
+## Risks/unknowns
+
+* Streamable HTTP transport may be mis-wired or inconsistently specified (proposal conflates SSE vs Streamable HTTP), risking client incompatibility for non-stdio deployments.
+* Remote/HTTP deployment security posture is under-specified (auth/TLS/origin validation/DNS-rebinding mitigations), which is a material risk if integrations expect a reachable HTTP endpoint rather than local stdio.
+* MCP Python SDK dependency pinning/patch-level requirements are unclear; tickets explicitly call out an advisory and “unpinned dependency” risk, while the reference requirements are only lower-bounded (e.g., `mcp>=...`).
+* External integration configs (client-specific onboarding: Codex/Inspector/other MCP clients) are implied but not concretely locked down; changes to `command/args/cwd/env` conventions can break existing MCP configs.
+* Execution safety relies primarily on a single env gate (`ORACLEPACK_ENABLE_EXEC`) with open-world/destructive semantics for run tools; least-privilege scoping (per-tool allowlists, auth flows for HTTP) is not defined.
+* Filesystem boundary enforcement may be incomplete against symlink traversal (normalize/resolve + open patterns called out as risky); absence of explicit realpath-based checks/tests creates an escape/exfil risk.
+* Failure/timeout behavior is only partially contract-defined: tools return bounded stdout/stderr with hard timeouts + truncation, but lack streaming progress, cancellation hooks, and structured “in-progress state” retrieval; long runs may feel wedged to clients.
+* Tool schema parity with the underlying `oraclepack` CLI is uncertain (tickets call out missing run-time controls and “wizard parity” gaps), increasing the chance of ad-hoc “extra args” escape hatches or repeated schema churn.
+* Stage-2 auto-discovery + validation determinism is a known sharp edge (ambiguous `NN-*.md` matches, differing search order expectations across tools/skills); rollout could break workflows that previously “worked by accident.”
+* Stage-3 Action Pack validation parity is explicitly called out as weaker than existing shell validation scripts; mismatched validators create split-brain behavior (“valid” in MCP, “invalid” in real execution).
+```
+
+docs/oracle-questions-2026-01-09-030000/mcp/02-contracts-interfaces-integration-points-next-experiment.md
+```
+Next smallest
+
+oraclepack_mcp_server
+```
+
+docs/oracle-questions-2026-01-09-030000/mcp/02-contracts-interfaces-integration-points-risks-unknowns.md
+```
+## Missing evidence
+
+* None.
+```
+
+docs/oracle-questions-2026-01-09-030000/mcp/03-invariants-invariant-map-direct-answer.md
+```
+Next smallest concrete experiment
+
+* Execute a timeout smoke-test against the proposed `run_cmd(...)` subprocess wrapper (expect `exit_code=124` and a `Timed out after 1s:` message in `stderr`):
+
+  ````bash
+  python - <<'PY'
+  import asyncio
+  from pathlib import Path
+  from oraclepack_mcp_server.oraclepack_cli import run_cmd
+
+  async def main():
+      r = await run_cmd(["bash", "-lc", "sleep 2"], cwd=Path("."), timeout_s=1, env={}, character_limit=25000)
+      print({"ok": r.ok, "exit_code": r.exit_code, "stderr": r.stderr})
+
+  asyncio.run(main())
+  PY
+  ``` :contentReference[oaicite:0]{index=0}
+  ````
+```
+
+docs/oracle-questions-2026-01-09-030000/mcp/03-invariants-invariant-map-missing-evidence.md
+```
+## Risks/unknowns
+
+* “Action Pack” invariants are not fully specified (formal grammar for step headers, exact fence rules beyond examples), so validators can drift between MCP and the canonical `validate-action-pack.sh` guardrails.
+* Stage-2 discovery/validation invariants are partly underspecified for “auto” mode (ordered search locations, tie-break rules across multiple date-stamped runs); inconsistent selection can break determinism and downstream Stage-3 assumptions.
+* Filesystem boundary invariant (“must stay under allowed roots”) is vulnerable to symlink traversal unless realpath/TOCTOU-safe checks are enforced and tested; tickets explicitly call out symlink escape risk.
+* Execution-safety invariants are incomplete: gating is a single env boolean, without least-privilege scoping (per-tool allowlists/authorization) and without concurrency/cancellation/streaming, which raises “wedged run” and unsafe execution risks.
+* Output/observability invariants are weakly enforced: MCP tools primarily return truncated stdout/stderr and do not provide structured access to oraclepack run state/report artifacts, limiting reliable “resume/re-run failed only” workflows.
+* “Write locations” invariants are unclear: reads are allowlisted, but the contract for where packs are permitted to write (e.g., validating/normalizing `out_dir` for all run paths) is called out as still needed for safe operation.
+* Artifact inventory invariants for Stage-3 are only example-based (e.g., `_actions.json`, PRD path, `tm-complexity.json`, pipelines doc); the exact required set, naming, and stable locations are not fully defined.
+* Transport invariants for “streamable-http” correctness and security are not locked down (SSE vs streamable-http mapping confusion; origin/auth hardening requirements), risking client breakage and insecure deployments.
+* CLI surface parity invariants are uncertain: if MCP tool schemas expose only a subset of oraclepack runtime controls, users will rely on undefined behavior or demand ad-hoc “extra args” escape hatches, causing ongoing contract churn.
+```
+
+docs/oracle-questions-2026-01-09-030000/mcp/03-invariants-invariant-map-next-experiment.md
+```
+Next smallest
+
+oraclepack_mcp_server
+
+gaps-still-not-covered
+```
+
+docs/oracle-questions-2026-01-09-030000/mcp/03-invariants-invariant-map-risks-unknowns.md
+```
+## Missing evidence
+
+* None.
+```
+
+docs/oracle-questions-2026-01-09-030000/mcp/04-invariants-validation-boundaries-direct-answer.md
+```
+Direct answeroraclepack-llms-fulloraclepack-llms-fulloraclepack-llms-fulloraclepack-llms-full
+```
+
+docs/oracle-questions-2026-01-09-030000/mcp/04-invariants-validation-boundaries-missing-evidence.md
+```
+## Risks/unknowns
+
+* Validation parity drift risk: MCP-side “validate_action_pack” is called out as weaker than the repo’s `validate-action-pack.sh`, so “passes in MCP, fails in real usage” remains likely unless boundaries are unified.
+* Stage-2 discovery/validation boundary ambiguity: “auto” discovery order and candidate selection rules are incomplete and can yield non-deterministic or surprising selections unless the detector validates candidates before returning them.
+* Filesystem security validation boundary is incomplete against symlink traversal: current allowlisted-root checks rely on `resolve()/relative_to()` patterns that tickets explicitly flag as likely bypassable without realpath/TOCTOU-safe enforcement + tests.
+* Pack execution gating boundary is coarse: a single env flag enables open-world/destructive “run” tools without least-privilege scoping (per-tool allowlists/authorization), especially problematic for HTTP transport.
+* Transport validation boundary is unclear: tickets note `--transport streamable-http` wiring mistakes (SSE conflation) and missing production hardening requirements, which can invalidate any rollout assumptions for HTTP mode.
+* Dependency/version boundary uncertainty: tickets explicitly flag an unpinned MCP Python SDK dependency in the presence of a DNS-rebinding advisory, but the reference requirements only specify broad minimums, leaving “known-safe” versions undefined.
+* Observability/state validation boundary gap: MCP tools return truncated stdout/stderr but do not provide structured read APIs for oraclepack state/report artifacts, weakening deterministic “validate → run → inspect → recover” workflows.
+* Ticket parsing / pack generation boundary is underspecified in the MCP surface: capability gaps explicitly note no “write/update pack” support, so it’s unclear where/when to validate generated packs derived from tickets (pre-write vs post-write) within this MCP design.
+* Artifact contract validation boundary is fuzzy: “artifact summary” lists example files/paths but not a strict schema or required set, so validators and downstream tooling can diverge on what constitutes a “complete” Stage-3 output.
+```
+
+docs/oracle-questions-2026-01-09-030000/mcp/04-invariants-validation-boundaries-next-experiment.md
+```
+Direct answer
+
+* Ticket parsing boundary: before any “ticketify” logic, validate `.tickets/` exists and ticket files are readable; then require the ticket index artifact to be produced (e.g., `.oraclepack/ticketify/_tickets_index.json`) before continuing downstream. 
+* Pack generation boundary: generation must be “fail-fast” and deterministic—render packs without unresolved placeholders and ensure outputs are runner-ingestible (e.g., exact ` ```bash … ``` ` shape + “exactly 20 steps” contract), then immediately validate generated packs using the existing validator. 
+* Pack validation boundary (core): `oraclepack validate` must enforce strict code-fence invariants—reject packs with multiple/non-bash fences or any extra fences (explicitly called out as needed to prevent “shape drift”). 
+* Pack lint boundary (pre-execution): add/maintain a “Stage-1 lint” that rejects packs early unless they have exactly one ` ```bash ` fence, exactly 20 steps, and step IDs are strictly `01..20` sequential (plus optional header-token enforcement if enabled). 
+* Stage-2 output boundary: validate the Stage-2 output directory contract as “exactly one file per prefix `01-*.md` … `20-*.md`” (missing/duplicate prefixes are hard failures); MCP already models this as `oraclepack_taskify_validate_stage2` backed by `validate_stage2_dir`.
+* Stage-3 action pack boundary: validate the Action Pack markdown as “exactly one ` ```bash ` fence, no other fences, and sequential `# 01)` headers”; refuse execution if invalid (MCP enforces both lint + refusal-to-run on failure).
+* Execution boundary (MCP): require explicit opt-in to execution (`ORACLEPACK_ENABLE_EXEC=1`) before any `run` tools are usable, so validation/inspection can remain safe-by-default.
+* Minimal validation plan: implement CI gating for the “manifest-first workflow” as (1) validate manifest, (2) render Markdown deterministically, (3) run `oraclepack validate` on rendered packs, (4) optionally run oracle dry-run; additionally enforce filesystem boundaries in MCP by resolving all user-supplied paths under `ORACLEPACK_ALLOWED_ROOTS`.
+```
+
+docs/oracle-questions-2026-01-09-030000/mcp/04-invariants-validation-boundaries-risks-unknowns.md
+```
+## Missing evidence
+
+* None.
 ```
 
 </source_code>
